@@ -367,8 +367,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun cycleTaskStatus(task: TaskItem) {
         viewModelScope.launch {
             val nextStatus = when (task.status) {
-                TaskStatus.PENDING -> TaskStatus.IN_PROGRESS
-                TaskStatus.IN_PROGRESS -> TaskStatus.COMPLETED
+                TaskStatus.PENDING -> TaskStatus.COMPLETED
                 TaskStatus.COMPLETED -> TaskStatus.PENDING
             }
             repository.updateTaskStatus(task.id, nextStatus)
@@ -411,7 +410,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         dueMinute: Int,
         priority: Priority,
         status: TaskStatus,
-        reminderOption: ReminderOption,
+        reminderOptions: Set<ReminderOption>,
         newAttachments: List<SavedAttachmentInfo> = emptyList()
     ) {
         viewModelScope.launch {
@@ -427,7 +426,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     dueTimeMinute = dueMinute,
                     priority = priority,
                     status = status,
-                    reminderOption = reminderOption
+                    reminderOptions = reminderOptions
                 )
                 repository.updateTask(updated)
                 targetTaskId = currentTask.id
@@ -441,7 +440,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     dueTimeMinute = dueMinute,
                     priority = priority,
                     status = status,
-                    reminderOption = reminderOption
+                    reminderOptions = reminderOptions
                 )
                 targetTaskId = repository.insertTask(newTask)
             }

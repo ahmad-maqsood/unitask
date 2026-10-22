@@ -31,8 +31,8 @@
         "dueTimeHour": { "type": "number", "description": "Due time hour (0-23)" },
         "dueTimeMinute": { "type": "number", "description": "Due time minute (0-59)" },
         "priority": { "type": "string", "description": "LOW, MEDIUM, or HIGH" },
-        "status": { "type": "string", "description": "PENDING, IN_PROGRESS, or COMPLETED" },
-        "reminderOption": { "type": "string", "description": "Reminder enum string" },
+        "status": { "type": "string", "description": "PENDING or COMPLETED" },
+        "reminderOption": { "type": "string", "description": "Comma-separated reminder enums (e.g. AT_DEADLINE,ONE_DAY_BEFORE), or NONE" },
         "createdAt": { "type": "timestamp", "description": "Server timestamp of creation" },
         "updatedAt": { "type": "timestamp", "description": "Server timestamp of last update" }
       },

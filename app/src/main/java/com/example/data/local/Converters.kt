@@ -16,6 +16,7 @@ class Converters {
     @TypeConverter
     fun fromTaskStatus(status: TaskStatus): String = status.name
 
+    // Unknown values, including the removed IN_PROGRESS, read as PENDING.
     @TypeConverter
     fun toTaskStatus(value: String): TaskStatus = try {
         TaskStatus.valueOf(value)
@@ -24,12 +25,8 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromReminderOption(option: ReminderOption): String = option.name
+    fun fromReminderOptions(options: Set<ReminderOption>): String = encodeReminderOptions(options)
 
     @TypeConverter
-    fun toReminderOption(value: String): ReminderOption = try {
-        ReminderOption.valueOf(value)
-    } catch (_: Exception) {
-        ReminderOption.NONE
-    }
+    fun toReminderOptions(value: String): Set<ReminderOption> = decodeReminderOptions(value)
 }

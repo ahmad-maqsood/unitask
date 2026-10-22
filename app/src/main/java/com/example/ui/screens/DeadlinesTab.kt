@@ -158,7 +158,7 @@ fun DeadlinesTab(
                     )
                     StatItem(
                         count = completedCountStr,
-                        label = "Completed",
+                        label = "Done",
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     Box(
@@ -276,19 +276,11 @@ fun DeadlinesTab(
                         modifier = Modifier.testTag("filter_status_pending")
                     )
                 }
-                item(key = "status_filter_in_progress") {
-                    FilterChip(
-                        selected = statusFilter == TaskStatus.IN_PROGRESS,
-                        onClick = { onStatusFilterSelect(TaskStatus.IN_PROGRESS) },
-                        label = { Text("In Progress") },
-                        modifier = Modifier.testTag("filter_status_in_progress")
-                    )
-                }
                 item(key = "status_filter_completed") {
                     FilterChip(
                         selected = statusFilter == TaskStatus.COMPLETED,
                         onClick = { onStatusFilterSelect(TaskStatus.COMPLETED) },
-                        label = { Text("Completed") },
+                        label = { Text("Done") },
                         modifier = Modifier.testTag("filter_status_completed")
                     )
                 }

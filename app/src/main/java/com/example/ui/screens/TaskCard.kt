@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -54,7 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Priority
 import com.example.util.AttachmentManager
-import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
@@ -65,7 +63,6 @@ import com.example.ui.theme.PriorityLowContainer
 import com.example.ui.theme.PriorityMedium
 import com.example.ui.theme.PriorityMediumContainer
 import com.example.ui.theme.StatusCompleted
-import com.example.ui.theme.StatusInProgress
 import com.example.ui.theme.StatusPending
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -173,10 +170,10 @@ fun TaskCard(
                         PriorityBadge(priority = task.priority)
 
                         // Reminder Icon indicator
-                        if (task.reminderOption != ReminderOption.NONE) {
+                        if (task.reminderOptions.isNotEmpty()) {
                             Icon(
                                 imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "Reminder active: ${task.reminderOption.label}",
+                                contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -397,17 +394,11 @@ fun StatusToggleChip(
             Icons.Default.RadioButtonUnchecked,
             "Pending"
         )
-        TaskStatus.IN_PROGRESS -> Quadruple(
-            Color(0xFFDBEAFE),
-            StatusInProgress,
-            Icons.Default.Sync,
-            "In Progress"
-        )
         TaskStatus.COMPLETED -> Quadruple(
             Color(0xFFD1FAE5),
             StatusCompleted,
             Icons.Default.CheckCircle,
-            "Completed"
+            "Done"
         )
     }
 

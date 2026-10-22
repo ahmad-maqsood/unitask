@@ -1,5 +1,6 @@
 package com.example.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -11,18 +12,37 @@ enum class Priority {
     HIGH
 }
 
+// Old data may still contain IN_PROGRESS. Converters.toTaskStatus() and the sync
+// code read unknown values as PENDING, so no data migration is needed.
 enum class TaskStatus {
     PENDING,
-    IN_PROGRESS,
     COMPLETED
 }
 
+// A task can have any number of these. An empty set means no reminder.
+// Append new options at the end; do not reorder.
 enum class ReminderOption(val label: String, val offsetMinutes: Long) {
-    NONE("No reminder", 0),
     AT_DEADLINE("At deadline", 0),
     TWO_HOURS_BEFORE("2 hours before", 120),
     ONE_DAY_BEFORE("1 day before", 1440)
 }
+
+private const val NO_REMINDERS = "NONE"
+
+/**
+ * Stored as comma-separated enum names, e.g. "AT_DEADLINE,ONE_DAY_BEFORE", or "NONE".
+ * A single old-style value such as "TWO_HOURS_BEFORE" decodes to a one-item set, so
+ * existing local rows and cloud documents keep working.
+ */
+fun encodeReminderOptions(options: Set<ReminderOption>): String =
+    if (options.isEmpty()) NO_REMINDERS
+    else options.sortedBy { it.ordinal }.joinToString(",") { it.name }
+
+fun decodeReminderOptions(value: String?): Set<ReminderOption> =
+    value.orEmpty()
+        .split(",")
+        .mapNotNull { part -> ReminderOption.entries.firstOrNull { it.name == part.trim() } }
+        .toSet()
 
 @Entity(
     tableName = "tasks",
@@ -47,7 +67,10 @@ data class TaskItem(
     val dueTimeMinute: Int = 59,
     val priority: Priority = Priority.MEDIUM,
     val status: TaskStatus = TaskStatus.PENDING,
-    val reminderOption: ReminderOption = ReminderOption.NONE,
+    // Keeps the original column name and TEXT type so the Room schema is unchanged.
+    @ColumnInfo(name = "reminderOption")
+    val reminderOptions: Set<ReminderOption> = emptySet(),
+    // Earliest upcoming reminder time, or null when there is none.
     val reminderEpochMillis: Long? = null,
     val isSynced: Boolean = false,
     val cloudId: String = "",

@@ -6,10 +6,10 @@ An offline-first Android app for managing university life: assignment deadlines,
 
 ## Features
 
-- **Deadlines tab:** tasks with due date and time, priority (low, medium, high), status (pending, in progress, completed), and a course tag.
+- **Deadlines tab:** tasks with due date and time, priority (low, medium, high), status (pending or done), and a course tag.
 - **Timetable tab:** weekly lecture slots per course, plus a card showing your current and next class.
 - **Courses tab:** course code, name, instructor, location, and a color tag, with a count of tasks per course.
-- **Reminders:** per-task notifications scheduled before the deadline.
+- **Reminders:** choose one or several notifications per task (at the deadline, 2 hours before, 1 day before).
 - **Attachments:** attach files to a task, stored on the device.
 - **Optional cloud backup:** sign in with Google to back up courses and tasks to Firestore. The app works fully offline without it.
 

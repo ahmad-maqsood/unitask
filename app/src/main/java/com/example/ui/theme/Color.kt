@@ -56,7 +56,6 @@ val PriorityLowContainer = Color(0xFFD1FAE5)
 
 // Status Colors
 val StatusPending = Color(0xFF64748B)
-val StatusInProgress = Color(0xFF2563EB)
 val StatusCompleted = Color(0xFF059669)
 
 // Palette of course color choices

@@ -8,9 +8,10 @@ import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.Priority
-import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.data.local.decodeReminderOptions
+import com.example.data.local.encodeReminderOptions
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
@@ -111,7 +112,7 @@ class SyncWorker(
                     "dueTimeMinute" to task.dueTimeMinute,
                     "priority" to task.priority.name,
                     "status" to task.status.name,
-                    "reminderOption" to task.reminderOption.name,
+                    "reminderOption" to encodeReminderOptions(task.reminderOptions),
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
 
@@ -190,7 +191,7 @@ class SyncWorker(
                         dueTimeMinute = doc.getLong("dueTimeMinute")?.toInt() ?: 59,
                         priority = try { Priority.valueOf(priorityStr) } catch (_: Exception) { Priority.MEDIUM },
                         status = try { TaskStatus.valueOf(statusStr) } catch (_: Exception) { TaskStatus.PENDING },
-                        reminderOption = try { ReminderOption.valueOf(reminderStr) } catch (_: Exception) { ReminderOption.NONE },
+                        reminderOptions = decodeReminderOptions(reminderStr),
                         isSynced = true,
                         cloudId = doc.id,
                         isDeleted = false

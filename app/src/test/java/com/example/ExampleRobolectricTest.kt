@@ -6,11 +6,14 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.CourseDao
+import com.example.data.local.Converters
 import com.example.data.local.Priority
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskDao
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.data.local.decodeReminderOptions
+import com.example.data.local.encodeReminderOptions
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -80,7 +83,7 @@ class ExampleRobolectricTest {
             dueDateEpochMillis = System.currentTimeMillis() + 86400000L,
             priority = Priority.HIGH,
             status = TaskStatus.PENDING,
-            reminderOption = ReminderOption.AT_DEADLINE
+            reminderOptions = setOf(ReminderOption.AT_DEADLINE, ReminderOption.ONE_DAY_BEFORE)
         )
         val taskId = taskDao.insertTask(task)
         assertTrue(taskId > 0)
@@ -90,11 +93,35 @@ class ExampleRobolectricTest {
         assertEquals("HW 1", tasksWithCourse[0].task.title)
         assertNotNull(tasksWithCourse[0].course)
         assertEquals("CS 301", tasksWithCourse[0].course?.code)
+        assertEquals(
+            setOf(ReminderOption.AT_DEADLINE, ReminderOption.ONE_DAY_BEFORE),
+            tasksWithCourse[0].task.reminderOptions
+        )
 
         // Status update
         taskDao.updateStatus(taskId, TaskStatus.COMPLETED)
         val updated = taskDao.getTaskById(taskId)
         assertEquals(TaskStatus.COMPLETED, updated?.status)
+    }
+
+    @Test
+    fun `reminder options encode and decode, including old single values`() {
+        val both = setOf(ReminderOption.ONE_DAY_BEFORE, ReminderOption.AT_DEADLINE)
+        assertEquals("AT_DEADLINE,ONE_DAY_BEFORE", encodeReminderOptions(both))
+        assertEquals(both, decodeReminderOptions("AT_DEADLINE,ONE_DAY_BEFORE"))
+
+        // Values written by earlier versions of the app
+        assertEquals(setOf(ReminderOption.TWO_HOURS_BEFORE), decodeReminderOptions("TWO_HOURS_BEFORE"))
+        assertEquals(emptySet<ReminderOption>(), decodeReminderOptions("NONE"))
+        assertEquals(emptySet<ReminderOption>(), decodeReminderOptions(null))
+        assertEquals(emptySet<ReminderOption>(), decodeReminderOptions("garbage"))
+        assertEquals("NONE", encodeReminderOptions(emptySet()))
+    }
+
+    @Test
+    fun `removed in-progress status is read as pending`() {
+        assertEquals(TaskStatus.PENDING, Converters().toTaskStatus("IN_PROGRESS"))
+        assertEquals(TaskStatus.COMPLETED, Converters().toTaskStatus("COMPLETED"))
     }
 
     @Test

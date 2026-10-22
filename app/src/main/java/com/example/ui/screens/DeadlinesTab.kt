@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Course
 import com.example.data.local.TaskItem
@@ -158,7 +159,7 @@ fun DeadlinesTab(
                     )
                     StatItem(
                         count = completedCountStr,
-                        label = "Completed",
+                        label = "Done",
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     Box(
@@ -188,7 +189,13 @@ fun DeadlinesTab(
                     modifier = Modifier
                         .weight(1f)
                         .testTag("task_search_input"),
-                    placeholder = { Text("Search assignments or courses...") },
+                    placeholder = {
+                        Text(
+                            text = "Search tasks or courses",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -276,19 +283,11 @@ fun DeadlinesTab(
                         modifier = Modifier.testTag("filter_status_pending")
                     )
                 }
-                item(key = "status_filter_in_progress") {
-                    FilterChip(
-                        selected = statusFilter == TaskStatus.IN_PROGRESS,
-                        onClick = { onStatusFilterSelect(TaskStatus.IN_PROGRESS) },
-                        label = { Text("In Progress") },
-                        modifier = Modifier.testTag("filter_status_in_progress")
-                    )
-                }
                 item(key = "status_filter_completed") {
                     FilterChip(
                         selected = statusFilter == TaskStatus.COMPLETED,
                         onClick = { onStatusFilterSelect(TaskStatus.COMPLETED) },
-                        label = { Text("Completed") },
+                        label = { Text("Done") },
                         modifier = Modifier.testTag("filter_status_completed")
                     )
                 }

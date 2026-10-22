@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +63,11 @@ import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.ui.theme.StatusDoneBgDark
+import com.example.ui.theme.StatusDoneBgLight
+import com.example.ui.theme.StatusDoneFgDark
+import com.example.ui.theme.StatusDoneFgLight
+import com.example.ui.theme.isDarkTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,14 +97,14 @@ fun CloudBackupSheet(
             // Header Icon & Title
             Surface(
                 shape = CircleShape,
-                color = if (currentUser != null) Color(0xFFD1FAE5) else MaterialTheme.colorScheme.primaryContainer,
+                color = if (currentUser != null) (if (isDarkTheme()) StatusDoneBgDark else StatusDoneBgLight) else MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(60.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = if (currentUser != null) Icons.Default.CloudDone else Icons.Default.CloudSync,
                         contentDescription = null,
-                        tint = if (currentUser != null) Color(0xFF059669) else MaterialTheme.colorScheme.primary,
+                        tint = if (currentUser != null) (if (isDarkTheme()) StatusDoneFgDark else StatusDoneFgLight) else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
                 }

@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -54,19 +53,26 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Priority
 import com.example.util.AttachmentManager
-import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
-import com.example.ui.theme.PriorityHigh
-import com.example.ui.theme.PriorityHighContainer
-import com.example.ui.theme.PriorityLow
-import com.example.ui.theme.PriorityLowContainer
-import com.example.ui.theme.PriorityMedium
-import com.example.ui.theme.PriorityMediumContainer
-import com.example.ui.theme.StatusCompleted
-import com.example.ui.theme.StatusInProgress
-import com.example.ui.theme.StatusPending
+import com.example.ui.theme.PriorityHighBgDark
+import com.example.ui.theme.PriorityHighBgLight
+import com.example.ui.theme.PriorityHighFgDark
+import com.example.ui.theme.PriorityHighFgLight
+import com.example.ui.theme.PriorityLowBgDark
+import com.example.ui.theme.PriorityLowBgLight
+import com.example.ui.theme.PriorityLowFgDark
+import com.example.ui.theme.PriorityLowFgLight
+import com.example.ui.theme.PriorityMediumBgDark
+import com.example.ui.theme.PriorityMediumBgLight
+import com.example.ui.theme.PriorityMediumFgDark
+import com.example.ui.theme.PriorityMediumFgLight
+import com.example.ui.theme.StatusDoneBgDark
+import com.example.ui.theme.StatusDoneBgLight
+import com.example.ui.theme.StatusDoneFgDark
+import com.example.ui.theme.StatusDoneFgLight
+import com.example.ui.theme.isDarkTheme
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -173,10 +179,10 @@ fun TaskCard(
                         PriorityBadge(priority = task.priority)
 
                         // Reminder Icon indicator
-                        if (task.reminderOption != ReminderOption.NONE) {
+                        if (task.reminderOptions.isNotEmpty()) {
                             Icon(
                                 imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "Reminder active: ${task.reminderOption.label}",
+                                contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -364,10 +370,23 @@ fun TaskCard(
 
 @Composable
 fun PriorityBadge(priority: Priority) {
+    val dark = isDarkTheme()
     val (bgColor, textColor, label) = when (priority) {
-        Priority.HIGH -> Triple(PriorityHighContainer, PriorityHigh, "High")
-        Priority.MEDIUM -> Triple(PriorityMediumContainer, PriorityMedium, "Medium")
-        Priority.LOW -> Triple(PriorityLowContainer, PriorityLow, "Low")
+        Priority.HIGH -> Triple(
+            if (dark) PriorityHighBgDark else PriorityHighBgLight,
+            if (dark) PriorityHighFgDark else PriorityHighFgLight,
+            "High"
+        )
+        Priority.MEDIUM -> Triple(
+            if (dark) PriorityMediumBgDark else PriorityMediumBgLight,
+            if (dark) PriorityMediumFgDark else PriorityMediumFgLight,
+            "Medium"
+        )
+        Priority.LOW -> Triple(
+            if (dark) PriorityLowBgDark else PriorityLowBgLight,
+            if (dark) PriorityLowFgDark else PriorityLowFgLight,
+            "Low"
+        )
     }
 
     Surface(
@@ -390,24 +409,19 @@ fun StatusToggleChip(
     onClick: () -> Unit,
     testTag: String
 ) {
+    val dark = isDarkTheme()
     val (bgColor, textColor, icon, label) = when (status) {
         TaskStatus.PENDING -> Quadruple(
             MaterialTheme.colorScheme.surfaceVariant,
-            StatusPending,
+            MaterialTheme.colorScheme.onSurfaceVariant,
             Icons.Default.RadioButtonUnchecked,
             "Pending"
         )
-        TaskStatus.IN_PROGRESS -> Quadruple(
-            Color(0xFFDBEAFE),
-            StatusInProgress,
-            Icons.Default.Sync,
-            "In Progress"
-        )
         TaskStatus.COMPLETED -> Quadruple(
-            Color(0xFFD1FAE5),
-            StatusCompleted,
+            if (dark) StatusDoneBgDark else StatusDoneBgLight,
+            if (dark) StatusDoneFgDark else StatusDoneFgLight,
             Icons.Default.CheckCircle,
-            "Completed"
+            "Done"
         )
     }
 

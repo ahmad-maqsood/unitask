@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
@@ -23,64 +24,84 @@ class ReminderScheduler(private val context: Context) {
         return cal.timeInMillis
     }
 
-    fun calculateReminderMillis(task: TaskItem): Long? {
-        if (task.reminderOption == ReminderOption.NONE) return null
+    /** Trigger time for each selected reminder that is still in the future. */
+    private fun upcomingTriggers(task: TaskItem): Map<ReminderOption, Long> {
         val deadlineMillis = calculateDeadlineMillis(task)
-        val offsetMillis = task.reminderOption.offsetMinutes * 60 * 1000L
-        val triggerTime = deadlineMillis - offsetMillis
-        return if (triggerTime > System.currentTimeMillis()) triggerTime else null
+        val now = System.currentTimeMillis()
+        return task.reminderOptions
+            .associateWith { deadlineMillis - it.offsetMinutes * 60 * 1000L }
+            .filterValues { it > now }
     }
 
+    /** The earliest upcoming reminder, or null if none is left. */
+    fun calculateReminderMillis(task: TaskItem): Long? =
+        upcomingTriggers(task).values.minOrNull()
+
     fun scheduleReminder(task: TaskItem, courseCode: String) {
-        if (task.reminderOption == ReminderOption.NONE) {
-            cancelReminder(task.id)
-            return
-        }
+        // Clear everything first so reminders the user removed do not still fire.
+        cancelReminder(task.id)
 
-        val triggerTime = calculateReminderMillis(task) ?: return
+        for ((option, triggerTime) in upcomingTriggers(task)) {
+            val intent = reminderIntent(task.id, option).apply {
+                putExtra(TaskReminderReceiver.EXTRA_TASK_ID, task.id)
+                putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, task.title)
+                putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
+                putExtra(
+                    TaskReminderReceiver.EXTRA_DUE_INFO,
+                    "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+                )
+            }
 
-        val intent = Intent(context, TaskReminderReceiver::class.java).apply {
-            action = "com.example.ACTION_TASK_REMINDER"
-            putExtra(TaskReminderReceiver.EXTRA_TASK_ID, task.id)
-            putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, task.title)
-            putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
-            putExtra(
-                TaskReminderReceiver.EXTRA_DUE_INFO,
-                "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                task.id.toInt(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-        }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            task.id.toInt(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        alarmManager?.let { am ->
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (am.canScheduleExactAlarms()) {
+            alarmManager?.let { am ->
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (am.canScheduleExactAlarms()) {
+                            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                        } else {
+                            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                        }
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                     } else {
-                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                        am.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                     }
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                } else {
-                    am.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                } catch (_: SecurityException) {
+                    // Fallback to standard inexact alarm
+                    am.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                 }
-            } catch (_: SecurityException) {
-                // Fallback to standard inexact alarm
-                am.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
             }
         }
     }
 
     fun cancelReminder(taskId: Long) {
-        val intent = Intent(context, TaskReminderReceiver::class.java).apply {
-            action = "com.example.ACTION_TASK_REMINDER"
+        // Alarm set by earlier app versions: one per task, no data URI.
+        cancelAlarm(taskId, reminderIntent(taskId, null))
+        // One alarm per selected reminder.
+        ReminderOption.entries.forEach { option ->
+            cancelAlarm(taskId, reminderIntent(taskId, option))
         }
+    }
+
+    /**
+     * Each (task, reminder) pair gets its own data URI. PendingIntents are matched on
+     * action, data and request code, so this keeps every alarm separate.
+     */
+    private fun reminderIntent(taskId: Long, option: ReminderOption?): Intent =
+        Intent(context, TaskReminderReceiver::class.java).apply {
+            action = "com.example.ACTION_TASK_REMINDER"
+            if (option != null) {
+                data = Uri.parse("unitask://reminder/$taskId/${option.name}")
+            }
+        }
+
+    private fun cancelAlarm(taskId: Long, intent: Intent) {
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             taskId.toInt(),

@@ -97,7 +97,7 @@ fun AddEditTaskDialog(
         dueMinute: Int,
         priority: Priority,
         status: TaskStatus,
-        reminderOption: ReminderOption,
+        reminderOptions: Set<ReminderOption>,
         newAttachments: List<SavedAttachmentInfo>
     ) -> Unit,
     onNeedCreateCourse: () -> Unit
@@ -130,7 +130,9 @@ fun AddEditTaskDialog(
     var dueMinute by remember { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
     var priority by remember { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
     var status by remember { mutableStateOf(taskToEdit?.status ?: TaskStatus.PENDING) }
-    var reminderOption by remember { mutableStateOf(taskToEdit?.reminderOption ?: ReminderOption.TWO_HOURS_BEFORE) }
+    var reminderOptions by remember {
+        mutableStateOf(taskToEdit?.reminderOptions ?: setOf(ReminderOption.TWO_HOURS_BEFORE))
+    }
 
     // Offline Attachments State
     var newAttachments by remember { mutableStateOf<List<SavedAttachmentInfo>>(emptyList()) }
@@ -492,7 +494,6 @@ fun AddEditTaskDialog(
                         TaskStatus.entries.forEach { s ->
                             val label = when (s) {
                                 TaskStatus.PENDING -> "Pending"
-                                TaskStatus.IN_PROGRESS -> "In Progress"
                                 TaskStatus.COMPLETED -> "Done"
                             }
                             FilterChip(
@@ -520,11 +521,17 @@ fun AddEditTaskDialog(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Notification Reminder",
+                            text = "Notification Reminders",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Select as many as you like. Select none for no reminder.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.height(6.dp))
 
                     FlowRow(
@@ -533,8 +540,14 @@ fun AddEditTaskDialog(
                     ) {
                         ReminderOption.entries.forEach { opt ->
                             FilterChip(
-                                selected = reminderOption == opt,
-                                onClick = { reminderOption = opt },
+                                selected = opt in reminderOptions,
+                                onClick = {
+                                    reminderOptions = if (opt in reminderOptions) {
+                                        reminderOptions - opt
+                                    } else {
+                                        reminderOptions + opt
+                                    }
+                                },
                                 label = { Text(opt.label, style = MaterialTheme.typography.labelSmall) },
                                 modifier = Modifier.testTag("reminder_chip_${opt.name}")
                             )
@@ -675,7 +688,7 @@ fun AddEditTaskDialog(
                             dueMinute,
                             priority,
                             status,
-                            reminderOption,
+                            reminderOptions,
                             newAttachments
                         )
                     }

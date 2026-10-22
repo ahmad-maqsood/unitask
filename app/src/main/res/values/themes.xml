@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MyApplication" parent="android:Theme.DeviceDefault.NoActionBar" />
+
+    <!-- Shown only while the app starts. MainActivity switches to Theme.MyApplication
+         before the first frame, so the splash background never sits behind the UI. -->
+    <style name="Theme.MyApplication.Starting" parent="Theme.MyApplication">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+</resources>

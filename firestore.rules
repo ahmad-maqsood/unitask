@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidCourse(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.code is string &&
+             data.code.size() > 0 &&
+             data.code.size() <= 30 &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() <= 100 &&
+             (!('instructor' in data) || data.instructor is string) &&
+             (!('colorHex' in data) || data.colorHex is string) &&
+             (!('location' in data) || data.location is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidTask(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.title is string &&
+             data.title.size() > 0 &&
+             data.title.size() <= 200 &&
+             data.dueDateEpochMillis is number &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH'] &&
+             data.status in ['PENDING', 'IN_PROGRESS', 'COMPLETED'] &&
+             (!('description' in data) || data.description is string) &&
+             (!('courseCode' in data) || data.courseCode is string) &&
+             (!('dueTimeHour' in data) || (data.dueTimeHour is number && data.dueTimeHour >= 0 && data.dueTimeHour <= 23)) &&
+             (!('dueTimeMinute' in data) || (data.dueTimeMinute is number && data.dueTimeMinute >= 0 && data.dueTimeMinute <= 59)) &&
+             (!('reminderOption' in data) || data.reminderOption is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /courses/{courseId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidCourse(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidTask(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

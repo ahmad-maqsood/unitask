@@ -1,0 +1,42 @@
+{
+  "title": "UniTask Offline-First Cloud Backup Schema",
+  "description": "Firestore schema for backing up student courses and assignment tasks scoped to authenticated Google users",
+  "entities": {
+    "Course": {
+      "collection": "courses",
+      "path": "users/{userId}/courses/{courseId}",
+      "description": "Backed up academic courses for a university student",
+      "fields": {
+        "userId": { "type": "string", "description": "Owner Google UID" },
+        "code": { "type": "string", "description": "Course code e.g. CS 301" },
+        "name": { "type": "string", "description": "Full course name" },
+        "instructor": { "type": "string", "description": "Instructor or professor name" },
+        "colorHex": { "type": "string", "description": "Hex color code for course tag" },
+        "location": { "type": "string", "description": "Classroom or hall location" },
+        "createdAt": { "type": "timestamp", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "timestamp", "description": "Server timestamp of last update" }
+      },
+      "required": ["userId", "code", "name"]
+    },
+    "Task": {
+      "collection": "tasks",
+      "path": "users/{userId}/tasks/{taskId}",
+      "description": "Backed up assignment tasks for a university student",
+      "fields": {
+        "userId": { "type": "string", "description": "Owner Google UID" },
+        "courseCode": { "type": "string", "description": "Course code reference" },
+        "title": { "type": "string", "description": "Assignment title" },
+        "description": { "type": "string", "description": "Detailed notes and instructions" },
+        "dueDateEpochMillis": { "type": "number", "description": "Due date timestamp in epoch millis" },
+        "dueTimeHour": { "type": "number", "description": "Due time hour (0-23)" },
+        "dueTimeMinute": { "type": "number", "description": "Due time minute (0-59)" },
+        "priority": { "type": "string", "description": "LOW, MEDIUM, or HIGH" },
+        "status": { "type": "string", "description": "PENDING, IN_PROGRESS, or COMPLETED" },
+        "reminderOption": { "type": "string", "description": "Reminder enum string" },
+        "createdAt": { "type": "timestamp", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "timestamp", "description": "Server timestamp of last update" }
+      },
+      "required": ["userId", "title", "dueDateEpochMillis", "priority", "status"]
+    }
+  }
+}

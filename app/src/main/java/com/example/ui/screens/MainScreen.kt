@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -69,13 +68,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.theme.StatusDoneFgDark
+import com.example.ui.theme.StatusDoneFgLight
+import com.example.ui.theme.isDarkTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -261,12 +264,16 @@ fun MainScreen(
                                 text = "UniTask",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "University Assignment Manager",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -308,7 +315,7 @@ fun MainScreen(
                             Icon(
                                 imageVector = Icons.Default.CloudDone,
                                 contentDescription = "Cloud backup active",
-                                tint = Color(0xFF059669)
+                                tint = if (isDarkTheme()) StatusDoneFgDark else StatusDoneFgLight
                             )
                         }
                     }
@@ -503,110 +510,29 @@ fun MainScreen(
                     )
                 }
             ) {
-                Tab(
+                MainTabItem(
                     selected = currentTab == MainTab.DEADLINES,
                     onClick = { viewModel.setTab(MainTab.DEADLINES) },
-                    modifier = Modifier.testTag("tab_deadlines"),
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccessTime,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Deadlines",
-                                fontWeight = if (currentTab == MainTab.DEADLINES) FontWeight.Bold else FontWeight.Medium
-                            )
-                            if (pendingCount > 0) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (currentTab == MainTab.DEADLINES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = if (currentTab == MainTab.DEADLINES) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                ) {
-                                    Text(
-                                        text = "$pendingCount",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    label = "Deadlines",
+                    icon = Icons.Default.AccessTime,
+                    count = pendingCount,
+                    testTag = "tab_deadlines"
                 )
-
-                Tab(
+                MainTabItem(
                     selected = currentTab == MainTab.TIMETABLE,
                     onClick = { viewModel.setTab(MainTab.TIMETABLE) },
-                    modifier = Modifier.testTag("tab_timetable"),
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Timetable",
-                                fontWeight = if (currentTab == MainTab.TIMETABLE) FontWeight.Bold else FontWeight.Medium
-                            )
-                            if (allLectureSlots.isNotEmpty()) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (currentTab == MainTab.TIMETABLE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = if (currentTab == MainTab.TIMETABLE) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                ) {
-                                    Text(
-                                        text = "${allLectureSlots.size}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    label = "Timetable",
+                    icon = Icons.Default.Schedule,
+                    count = allLectureSlots.size,
+                    testTag = "tab_timetable"
                 )
-
-                Tab(
+                MainTabItem(
                     selected = currentTab == MainTab.COURSES,
                     onClick = { viewModel.setTab(MainTab.COURSES) },
-                    modifier = Modifier.testTag("tab_courses"),
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.School,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Courses",
-                                fontWeight = if (currentTab == MainTab.COURSES) FontWeight.Bold else FontWeight.Medium
-                            )
-                            Surface(
-                                shape = CircleShape,
-                                color = if (currentTab == MainTab.COURSES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (currentTab == MainTab.COURSES) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ) {
-                                Text(
-                                    text = "${coursesWithCounts.size}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
+                    label = "Courses",
+                    icon = Icons.Default.School,
+                    count = coursesWithCounts.size,
+                    testTag = "tab_courses"
                 )
             }
 
@@ -736,4 +662,58 @@ fun MainScreen(
             onAuthChanged = { viewModel.refreshAuth() }
         )
     }
+}
+
+
+/**
+ * One tab of the main tab row. The icon sits above a single-line label and the count is a
+ * badge on the icon, so the label keeps its space on narrow screens and with large system
+ * font sizes instead of wrapping.
+ */
+@Composable
+private fun MainTabItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    icon: ImageVector,
+    count: Int,
+    testTag: String
+) {
+    Tab(
+        selected = selected,
+        onClick = onClick,
+        modifier = Modifier.testTag(testTag),
+        selectedContentColor = MaterialTheme.colorScheme.primary,
+        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        icon = {
+            BadgedBox(
+                badge = {
+                    if (count > 0) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Text(if (count > 99) "99+" else "$count")
+                        }
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        },
+        text = {
+            Text(
+                text = label,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+        }
+    )
 }

@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Course
 import com.example.data.local.TaskItem
@@ -188,7 +189,13 @@ fun DeadlinesTab(
                     modifier = Modifier
                         .weight(1f)
                         .testTag("task_search_input"),
-                    placeholder = { Text("Search assignments or courses...") },
+                    placeholder = {
+                        Text(
+                            text = "Search tasks or courses",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,

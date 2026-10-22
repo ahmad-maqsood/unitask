@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
+import com.example.ui.theme.ActiveClassGreen
 
 data class HighlightedClassInfo(
     val slotWithCourse: LectureSlotWithCourse,
@@ -104,7 +105,7 @@ fun CurrentNextClassCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(if (classInfo.isActiveNow) Color(0xFF10B981) else courseColor)
+                    .background(if (classInfo.isActiveNow) ActiveClassGreen else courseColor)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Row(

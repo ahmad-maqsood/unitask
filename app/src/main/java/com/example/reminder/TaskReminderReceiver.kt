@@ -19,6 +19,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_TASK_TITLE = "extra_task_title"
         const val EXTRA_COURSE_CODE = "extra_course_code"
         const val EXTRA_DUE_INFO = "extra_due_info"
+        const val EXTRA_REMINDER_LABEL = "extra_reminder_label"
+        const val EXTRA_REMINDER_OPTION = "extra_reminder_option"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -26,6 +28,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Upcoming Assignment"
         val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: "Course"
         val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: "Due soon"
+        val reminderLabel = intent.getStringExtra(EXTRA_REMINDER_LABEL)
+        val reminderOption = intent.getStringExtra(EXTRA_REMINDER_OPTION)
 
         createNotificationChannel(context)
 
@@ -34,20 +38,38 @@ class TaskReminderReceiver : BroadcastReceiver() {
             putExtra("opened_task_id", taskId)
         }
 
+        val activityRequestCode = if (!reminderOption.isNullOrBlank()) {
+            ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()
+        } else {
+            taskId.toInt()
+        }
+
         val pendingIntent = PendingIntent.getActivity(
             context,
-            taskId.toInt(),
+            activityRequestCode,
             openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val title = if (!reminderLabel.isNullOrBlank()) {
+            "⏰ Reminder ($reminderLabel): $taskTitle"
+        } else {
+            "⏰ Reminder: $taskTitle"
+        }
+
+        val contentText = if (!reminderLabel.isNullOrBlank()) {
+            "[$courseCode] $reminderLabel • $dueInfo"
+        } else {
+            "[$courseCode] $dueInfo"
+        }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("⏰ Reminder: $taskTitle")
-            .setContentText("[$courseCode] $dueInfo")
+            .setContentTitle(title)
+            .setContentText(contentText)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Assignment for $courseCode is due soon ($dueInfo).\nTitle: $taskTitle")
+                    .bigText("Assignment for $courseCode: $taskTitle\n$dueInfo${if (!reminderLabel.isNullOrBlank()) " ($reminderLabel)" else ""}")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -55,8 +77,14 @@ class TaskReminderReceiver : BroadcastReceiver() {
             .setContentIntent(pendingIntent)
             .build()
 
+        val notificationId = if (!reminderOption.isNullOrBlank()) {
+            ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()
+        } else {
+            taskId.toInt()
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        notificationManager?.notify(taskId.toInt(), notification)
+        notificationManager?.notify(notificationId, notification)
     }
 
     private fun createNotificationChannel(context: Context) {

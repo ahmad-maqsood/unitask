@@ -25,13 +25,16 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE id = :id")
     suspend fun getAnyCourseByIdSync(id: Long): Course?
 
-    @Query("SELECT * FROM courses WHERE code = :code AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) AND isDeleted = 0 LIMIT 1")
     suspend fun getCourseByCode(code: String): Course?
 
-    @Query("SELECT * FROM courses WHERE code = :code LIMIT 1")
+    @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) LIMIT 1")
     suspend fun getAnyCourseByCode(code: String): Course?
 
-    @Query("SELECT COUNT(*) > 0 FROM courses WHERE code = :code AND isDeleted = 1")
+    @Query("SELECT * FROM courses WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun getCourseByCloudId(cloudId: String): Course?
+
+    @Query("SELECT COUNT(*) > 0 FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) AND isDeleted = 1")
     suspend fun isCourseDeletedByCode(code: String): Boolean
 
     @Query("SELECT * FROM courses WHERE isSynced = 0 AND isDeleted = 0")

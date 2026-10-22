@@ -120,7 +120,7 @@ fun CloudBackupSheet(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (currentUser != null)
-                        "Your assignments and courses automatically sync with Google Cloud."
+                        "Your assignments, courses, and timetable automatically sync with Google Cloud."
                     else
                         "UniTask works 100% offline. Sign in to optionally back up and sync across devices.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -204,16 +204,39 @@ fun CloudBackupSheet(
                 // Sync Now Button
                 Button(
                     onClick = {
-                        SyncScheduler.scheduleSync(context)
-                        syncMessage = "Backup & sync triggered. Connected items will sync automatically."
+                        isLoading = true
+                        syncMessage = null
+                        errorMessage = null
+                        coroutineScope.launch {
+                            val db = com.example.data.local.AppDatabase.getDatabase(context)
+                            val success = com.example.sync.FirestoreSyncManager.syncAllDataNow(context, db)
+                            com.example.sync.SyncScheduler.scheduleSync(context)
+                            isLoading = false
+                            syncMessage = if (success) {
+                                "All courses, timetable slots, and assignments are backed up and synced!"
+                            } else {
+                                "Sync completed with offline retry scheduled."
+                            }
+                        }
                     },
+                    enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("sync_now_button")
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text("Sync Now")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text("Syncing...")
+                    } else {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text("Sync Now")
+                    }
                 }
 
                 // Sign Out Button
@@ -247,9 +270,13 @@ fun CloudBackupSheet(
                             context = context,
                             credentialManager = credentialManager,
                             onSuccess = {
-                                isLoading = false
-                                SyncScheduler.scheduleSync(context)
-                                onAuthChanged()
+                                coroutineScope.launch {
+                                    val db = com.example.data.local.AppDatabase.getDatabase(context)
+                                    com.example.sync.FirestoreSyncManager.syncAllDataNow(context, db)
+                                    com.example.sync.SyncScheduler.scheduleSync(context)
+                                    isLoading = false
+                                    onAuthChanged()
+                                }
                             },
                             onError = { err ->
                                 isLoading = false

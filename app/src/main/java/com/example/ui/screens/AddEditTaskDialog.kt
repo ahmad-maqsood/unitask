@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
@@ -508,29 +509,48 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Local Notification Reminder
+                // Local Notification Reminders (Multiple selections allowed)
                 Column {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Notification Reminders",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Notification Reminders",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        if (reminderOptions.isNotEmpty()) {
+                            TextButton(
+                                onClick = { reminderOptions = emptySet() },
+                                modifier = Modifier.testTag("clear_reminders_button")
+                            ) {
+                                Text("Clear all", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Select as many as you like. Select none for no reminder.",
+                        text = if (reminderOptions.isEmpty()) {
+                            "Select multiple times to receive multiple alerts, or none."
+                        } else {
+                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected (alerts will fire at each time)"
+                        },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                        fontWeight = if (reminderOptions.isEmpty()) FontWeight.Normal else FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
@@ -538,7 +558,7 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        ReminderOption.entries.forEach { opt ->
+                        ReminderOption.entries.sortedBy { it.offsetMinutes }.forEach { opt ->
                             FilterChip(
                                 selected = opt in reminderOptions,
                                 onClick = {
@@ -548,6 +568,15 @@ fun AddEditTaskDialog(
                                         reminderOptions + opt
                                     }
                                 },
+                                leadingIcon = if (opt in reminderOptions) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                } else null,
                                 label = { Text(opt.label, style = MaterialTheme.typography.labelSmall) },
                                 modifier = Modifier.testTag("reminder_chip_${opt.name}")
                             )

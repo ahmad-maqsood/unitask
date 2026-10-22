@@ -40,6 +40,12 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isSynced = 0 AND isDeleted = 0")
     suspend fun getUnsyncedTasks(): List<TaskItem>
 
+    @Query("SELECT * FROM tasks WHERE isDeleted = 0")
+    suspend fun getAllActiveTasksSync(): List<TaskItem>
+
+    @Query("SELECT * FROM tasks WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun getTaskByCloudId(cloudId: String): TaskItem?
+
     @Query("SELECT * FROM tasks WHERE isDeleted = 1")
     suspend fun getDeletedTasks(): List<TaskItem>
 

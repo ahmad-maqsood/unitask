@@ -45,6 +45,33 @@ service cloud.firestore {
              (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
+    function isValidSlot(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.courseCode is string &&
+             data.courseCode.size() > 0 &&
+             data.courseCode.size() <= 30 &&
+             data.dayOfWeek is number &&
+             data.dayOfWeek >= 1 &&
+             data.dayOfWeek <= 7 &&
+             data.startHour is number &&
+             data.startHour >= 0 &&
+             data.startHour <= 23 &&
+             data.startMinute is number &&
+             data.startMinute >= 0 &&
+             data.startMinute <= 59 &&
+             data.endHour is number &&
+             data.endHour >= 0 &&
+             data.endHour <= 23 &&
+             data.endMinute is number &&
+             data.endMinute >= 0 &&
+             data.endMinute <= 59 &&
+             (!('classroom' in data) || data.classroom is string) &&
+             (!('instructor' in data) || data.instructor is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
     match /users/{userId} {
       allow read, write: if isOwner(userId);
 
@@ -57,6 +84,12 @@ service cloud.firestore {
       match /tasks/{taskId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidTask(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /slots/{slotId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidSlot(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

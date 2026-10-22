@@ -251,4 +251,103 @@ class ExampleRobolectricTest {
         assertTrue(com.example.sync.FirestoreSyncManager.isCourseDeletionPending("CS 450"))
         assertTrue(com.example.sync.FirestoreSyncManager.isCourseDeletionPending("cs 450"))
     }
+
+    @Test
+    fun `test multiple reminders scheduling and persistence`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val courseId = courseDao.insertCourse(
+            Course(name = "Operating Systems", code = "CS 350", instructor = "Prof. Tanenbaum", colorHex = "#10B981")
+        )
+
+        val cal = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, 3)
+            set(java.util.Calendar.HOUR_OF_DAY, 18)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+
+        val allOptions = setOf(
+            ReminderOption.AT_DEADLINE,
+            ReminderOption.ONE_HOUR_BEFORE,
+            ReminderOption.TWO_HOURS_BEFORE,
+            ReminderOption.ONE_DAY_BEFORE,
+            ReminderOption.TWO_DAYS_BEFORE
+        )
+
+        val task = TaskItem(
+            courseId = courseId,
+            title = "Pintos Kernel Project",
+            dueDateEpochMillis = cal.timeInMillis,
+            dueTimeHour = 18,
+            dueTimeMinute = 0,
+            reminderOptions = allOptions
+        )
+
+        val taskId = taskDao.insertTask(task)
+        val retrieved = taskDao.getTaskById(taskId)
+        assertNotNull(retrieved)
+        assertEquals(allOptions, retrieved?.reminderOptions)
+
+        val scheduler = com.example.reminder.ReminderScheduler(context)
+        val earliestMillis = scheduler.calculateReminderMillis(task.copy(id = taskId))
+        assertNotNull(earliestMillis)
+        // With 3 days in future, 2 days before should be the earliest reminder
+        val expectedEarliest = cal.timeInMillis - (ReminderOption.TWO_DAYS_BEFORE.offsetMinutes * 60 * 1000L)
+        assertEquals(expectedEarliest, earliestMillis)
+
+        // Test scheduling and cancelling do not throw
+        scheduler.scheduleReminder(task.copy(id = taskId), "CS 350")
+        scheduler.cancelReminder(taskId)
+    }
+
+    @Test
+    fun `test course deduplication case-insensitive queries and cloudId lookup`() = runBlocking {
+        val course = Course(
+            name = "Software Engineering",
+            code = "CS 490",
+            instructor = "Prof. Brooks",
+            colorHex = "#6366F1",
+            cloudId = "course_CS_490"
+        )
+        val id = courseDao.insertCourse(course)
+        assertTrue(id > 0)
+
+        // Case-insensitive code search
+        val foundLower = courseDao.getCourseByCode("cs 490")
+        assertNotNull(foundLower)
+        assertEquals("CS 490", foundLower?.code)
+
+        val foundUpper = courseDao.getCourseByCode("CS 490")
+        assertNotNull(foundUpper)
+        assertEquals("CS 490", foundUpper?.code)
+
+        // Cloud ID search
+        val foundByCloudId = courseDao.getCourseByCloudId("course_CS_490")
+        assertNotNull(foundByCloudId)
+        assertEquals(id, foundByCloudId?.id)
+    }
+
+    @Test
+    fun `test lecture slot matching query prevents duplicate slots`() = runBlocking {
+        val courseId = courseDao.insertCourse(
+            Course(name = "Mobile Dev", code = "CS 480", instructor = "Prof. Page", colorHex = "#0EA5E9")
+        )
+        val slot = com.example.data.local.LectureSlot(
+            courseId = courseId,
+            dayOfWeek = 2,
+            startHour = 14,
+            startMinute = 0,
+            endHour = 15,
+            endMinute = 30,
+            classroom = "CS Building 202"
+        )
+        val slotId = lectureSlotDao.insertSlot(slot)
+        assertTrue(slotId > 0)
+
+        val matching = lectureSlotDao.findMatchingSlot(courseId, 2, 14, 0)
+        assertNotNull(matching)
+        assertEquals(slotId, matching?.id)
+        assertEquals("CS Building 202", matching?.classroom)
+    }
 }

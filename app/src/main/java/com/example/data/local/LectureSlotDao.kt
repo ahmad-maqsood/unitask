@@ -43,4 +43,19 @@ interface LectureSlotDao {
 
     @Query("DELETE FROM lecture_slots WHERE courseId = :courseId")
     suspend fun deleteSlotsForCourse(courseId: Long)
+
+    @Query("SELECT * FROM lecture_slots")
+    suspend fun getAllSlotsSync(): List<LectureSlot>
+
+    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId")
+    suspend fun getSlotsForCourseSync(courseId: Long): List<LectureSlot>
+
+    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND dayOfWeek = :dayOfWeek AND startHour = :startHour AND startMinute = :startMinute LIMIT 1")
+    suspend fun findMatchingSlot(courseId: Long, dayOfWeek: Int, startHour: Int, startMinute: Int): LectureSlot?
+
+    @Query("SELECT * FROM lecture_slots WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun getSlotByCloudId(cloudId: String): LectureSlot?
+
+    @Query("UPDATE lecture_slots SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
+    suspend fun markSlotSynced(id: Long, cloudId: String)
 }

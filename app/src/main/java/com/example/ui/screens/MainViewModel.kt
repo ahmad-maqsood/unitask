@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 import com.example.data.local.LectureSlot
@@ -93,6 +94,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _currentUser.value = auth.currentUser
             if (auth.currentUser != null) {
                 com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
+                viewModelScope.launch(Dispatchers.IO) {
+                    com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
+                }
                 com.example.sync.SyncScheduler.scheduleSync(application)
             } else {
                 com.example.sync.FirestoreSyncManager.stopRealtimeSync()
@@ -101,6 +105,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         if (Firebase.auth.currentUser != null) {
             com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
+            viewModelScope.launch(Dispatchers.IO) {
+                com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
+            }
         }
     }
 
@@ -119,16 +126,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Pull to refresh. Local data is live from Room, so this re-evaluates the class schedule
-     * and, when signed in, starts a cloud sync (which finishes in the background).
+     * and, when signed in, starts a cloud sync.
      */
     fun refreshData() {
         viewModelScope.launch {
             _isRefreshing.value = true
             _clockTick.value = System.currentTimeMillis()
             if (Firebase.auth.currentUser != null) {
+                val database = AppDatabase.getDatabase(getApplication())
+                viewModelScope.launch(Dispatchers.IO) {
+                    com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
+                }
                 com.example.sync.SyncScheduler.scheduleSync(getApplication())
             }
-            delay(700L)
+            delay(500L)
             _isRefreshing.value = false
         }
     }
@@ -136,6 +147,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshAuth() {
         _currentUser.value = Firebase.auth.currentUser
         if (_currentUser.value != null) {
+            val database = AppDatabase.getDatabase(getApplication())
+            com.example.sync.FirestoreSyncManager.startRealtimeSync(getApplication(), database)
+            viewModelScope.launch(Dispatchers.IO) {
+                com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
+            }
             com.example.sync.SyncScheduler.scheduleSync(getApplication())
         }
     }

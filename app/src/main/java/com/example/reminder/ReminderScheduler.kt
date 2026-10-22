@@ -46,15 +46,18 @@ class ReminderScheduler(private val context: Context) {
                 putExtra(TaskReminderReceiver.EXTRA_TASK_ID, task.id)
                 putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, task.title)
                 putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
+                putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, option.label)
+                putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, option.name)
                 putExtra(
                     TaskReminderReceiver.EXTRA_DUE_INFO,
                     "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
                 )
             }
 
+            val requestCode = requestCodeFor(task.id, option)
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                task.id.toInt(),
+                requestCode,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -82,11 +85,17 @@ class ReminderScheduler(private val context: Context) {
 
     fun cancelReminder(taskId: Long) {
         // Alarm set by earlier app versions: one per task, no data URI.
-        cancelAlarm(taskId, reminderIntent(taskId, null))
-        // One alarm per selected reminder.
+        cancelAlarm(taskId.toInt(), reminderIntent(taskId, null))
+        // Cancel all reminder options for this task with both requestCode and legacy taskId code.
         ReminderOption.entries.forEach { option ->
-            cancelAlarm(taskId, reminderIntent(taskId, option))
+            cancelAlarm(requestCodeFor(taskId, option), reminderIntent(taskId, option))
+            cancelAlarm(taskId.toInt(), reminderIntent(taskId, option))
         }
+    }
+
+    private fun requestCodeFor(taskId: Long, option: ReminderOption?): Int {
+        val optIndex = option?.ordinal?.plus(1) ?: 0
+        return ((taskId and 0x7FFFFFFF) * 31 + optIndex).toInt()
     }
 
     /**
@@ -101,10 +110,10 @@ class ReminderScheduler(private val context: Context) {
             }
         }
 
-    private fun cancelAlarm(taskId: Long, intent: Intent) {
+    private fun cancelAlarm(requestCode: Int, intent: Intent) {
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            taskId.toInt(),
+            requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )

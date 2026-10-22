@@ -20,10 +20,12 @@ import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppRepository(
@@ -67,20 +69,24 @@ class AppRepository(
     }
 
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
+        val normCode = course.code.trim().uppercase()
+        FirestoreSyncManager.clearPendingDeletionForCourse(normCode)
+
         // If a previously soft-deleted course exists with the same code, purge it first
-        val existingDeleted = courseDao.getAnyCourseByCode(course.code)
+        val existingDeleted = courseDao.getAnyCourseByCode(normCode)
         if (existingDeleted != null && existingDeleted.isDeleted) {
             taskDao.deleteTasksForCourse(existingDeleted.id)
+            lectureSlotDao.deleteSlotsForCourse(existingDeleted.id)
             courseDao.deleteCourseById(existingDeleted.id)
         }
-        val courseToInsert = course.copy(isSynced = false, isDeleted = false)
+        val courseToInsert = course.copy(code = normCode, isSynced = false, isDeleted = false)
         val id = courseDao.insertCourse(courseToInsert)
         triggerSyncIfLoggedIn()
         id
     }
 
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {
-        val courseToUpdate = course.copy(isSynced = false)
+        val courseToUpdate = course.copy(code = course.code.trim().uppercase(), isSynced = false)
         courseDao.updateCourse(courseToUpdate)
         triggerSyncIfLoggedIn()
     }
@@ -97,6 +103,7 @@ class AppRepository(
         }
 
         // 2. Remove lecture slots for this course
+        val slots = lectureSlotDao.getSlotsForCourseSync(course.id)
         lectureSlotDao.deleteSlotsForCourse(course.id)
 
         // 3. Soft-delete course and tasks in Room (ensures immediate disappearance from UI and guards against resurrection)
@@ -108,12 +115,15 @@ class AppRepository(
         for (t in tasks) {
             FirestoreSyncManager.recordPendingTaskDeletion(t.id, t.cloudId)
         }
+        for (s in slots) {
+            FirestoreSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
+        }
 
         // 5. If user is authenticated, immediately issue Cloud Firestore deletion
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null) {
             try {
-                val success = FirestoreSyncManager.deleteCourseFromCloud(context, course, tasks)
+                val success = FirestoreSyncManager.deleteCourseFromCloud(context, course, tasks, slots)
                 if (success) {
                     taskDao.deleteTasksForCourse(course.id)
                     courseDao.deleteCourseById(course.id)
@@ -221,19 +231,43 @@ class AppRepository(
 
     // Lecture slots
     suspend fun insertLectureSlot(slot: LectureSlot): Long = withContext(Dispatchers.IO) {
-        lectureSlotDao.insertSlot(slot)
+        val id = lectureSlotDao.insertSlot(slot.copy(isSynced = false))
+        triggerSyncIfLoggedIn()
+        id
     }
 
     suspend fun updateLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        lectureSlotDao.updateSlot(slot)
+        lectureSlotDao.updateSlot(slot.copy(isSynced = false))
+        triggerSyncIfLoggedIn()
     }
 
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
+        FirestoreSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
+        val course = courseDao.getCourseByIdSync(slot.courseId) ?: courseDao.getAnyCourseByIdSync(slot.courseId)
+        val currentUser = Firebase.auth.currentUser
+        if (currentUser != null) {
+            try {
+                FirestoreSyncManager.deleteSlotFromCloud(context, slot, course?.code)
+            } catch (e: Exception) {
+                Log.w("AppRepository", "Error deleting slot from cloud: ${e.message}")
+            }
+        }
         lectureSlotDao.deleteSlot(slot)
+        triggerSyncIfLoggedIn()
     }
 
     fun triggerSyncIfLoggedIn() {
         if (Firebase.auth.currentUser != null) {
+            // Eager immediate background sync
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val db = com.example.data.local.AppDatabase.getDatabase(context)
+                    FirestoreSyncManager.syncAllDataNow(context, db)
+                } catch (e: Exception) {
+                    Log.w("AppRepository", "Eager sync exception: ${e.message}")
+                }
+            }
+            // WorkManager schedule for offline retry resilience
             SyncScheduler.scheduleSync(context)
         }
     }

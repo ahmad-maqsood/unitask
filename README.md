@@ -21,8 +21,6 @@ Get the latest stable release APK directly on your Android device:
 2. Download `unitask.apk`.
 3. Open the downloaded file on your Android device and allow installation from your browser/file manager.
 
-> ⚠️ **Updating Notice**: If you have a previous development/debug version installed, please uninstall it first before installing `unitask.apk` to avoid signature conflict errors.
-
 ---
 
 ## ✨ Features
@@ -53,7 +51,7 @@ Get the latest stable release APK directly on your Android device:
 
 ## ⚙️ Important Settings
 
-Due to aggressive battery management in some phones like Xiaomi HyperOS and Realme, background alarms may be delayed or silenced by default. Follow these quick steps to ensure 100% on-time deadline notifications:
+Due to aggressive battery management in some phones like Xiaomi HyperOS, background alarms may be delayed or silenced by default. Follow these quick steps to ensure 100% on-time deadline notifications:
 
 1. **Autostart**: Go to `Settings` > `Apps` > `Manage apps` > `UniTask` > Toggle **Autostart** ON.
 2. **Battery Saver**: In the same menu, set `Battery saver` to **No restrictions**.

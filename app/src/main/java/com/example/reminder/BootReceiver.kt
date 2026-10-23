@@ -20,6 +20,7 @@ class BootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 ReminderScheduler(appContext).rescheduleAll(AppDatabase.getDatabase(appContext))
+                GroupReminderScheduler(appContext).rescheduleAll()
             } finally {
                 pending.finish()
             }

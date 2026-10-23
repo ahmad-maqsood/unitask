@@ -8,6 +8,8 @@ import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMembership
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTask
+import com.example.reminder.GroupReminderScheduler
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -78,6 +80,31 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    
+    private val reminderScheduler = GroupReminderScheduler(application)
+
+    private suspend fun refreshAllGroupReminders(memberships: List<GroupMembership>) {
+        val uid = _currentUser.value?.uid ?: return
+        if (memberships.isEmpty()) return
+        reminderScheduler.cancelGroupsNotIn(memberships.map { it.groupId }.toSet())
+        for (m in memberships) {
+            val done = repository.getDoneTaskIdsOnce(uid, m.groupId)
+            repository.getGroupTasksOnce(m.groupId)
+                .onSuccess { tasks ->
+                    reminderScheduler.sync(m.groupId, m.name.ifBlank { m.username }, tasks, done)
+                }
+                .onFailure { e ->
+                    // Removed from the group or group deleted: stop its alarms.
+                    if (e is FirebaseFirestoreException &&
+                        (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ||
+                            e.code == FirebaseFirestoreException.Code.NOT_FOUND)
+                    ) {
+                        reminderScheduler.cancelGroup(m.groupId)
+                    }
+                }
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val selectedGroupDetail: StateFlow<GroupDetail?> = _selectedGroupId.flatMapLatest { groupId ->
         if (!groupId.isNullOrBlank()) {
@@ -119,6 +146,27 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    
+    init {
+        // Every group you belong to: set alarms for its tasks whenever the group list loads.
+        viewModelScope.launch {
+            myMemberships.collect { refreshAllGroupReminders(it) }
+        }
+        // The group you have open: keep alarms in step with edits, deletions and "done" marks.
+        viewModelScope.launch {
+            kotlinx.coroutines.flow.combine(
+                selectedGroupTasks, myDoneTaskIds, _selectedGroupId
+            ) { tasks, done, groupId -> Triple(tasks, done, groupId) }
+                .collect { (tasks, done, groupId) ->
+                    if (groupId == null) return@collect
+                    val mine = tasks.filter { it.groupId == groupId }
+                    if (mine.isEmpty()) return@collect
+                    val label = myMemberships.value.firstOrNull { it.groupId == groupId }
+                        ?.let { it.name.ifBlank { it.username } } ?: "Group"
+                    reminderScheduler.sync(groupId, label, mine, done)
+                }
+        }
+    }
     fun selectGroup(groupId: String) {
         _selectedGroupId.value = groupId
         // Verify if stale in background
@@ -281,6 +329,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteTask(task: GroupTask) {
+        reminderScheduler.cancel(task.groupId, task.id)
         repository.deleteTask(task.groupId, task.id) { e ->
             viewModelScope.launch {
                 _snackbarMessage.emit("Failed to delete task: ${e.message}")
@@ -324,6 +373,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             _isActionLoading.value = false
             result.onSuccess {
                 clearSelectedGroup()
+                reminderScheduler.cancelGroup(groupId)
                 onSuccess()
             }.onFailure { e ->
                 _snackbarMessage.emit("Failed to leave group: ${e.message}")
@@ -341,6 +391,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             _isActionLoading.value = false
             result.onSuccess {
                 clearSelectedGroup()
+                reminderScheduler.cancelGroup(groupId)
                 onSuccess()
             }.onFailure { e ->
                 _snackbarMessage.emit("Failed to delete group: ${e.message}")

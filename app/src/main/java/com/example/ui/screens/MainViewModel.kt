@@ -36,7 +36,8 @@ import java.util.Calendar
 enum class MainTab {
     DEADLINES,
     TIMETABLE,
-    COURSES
+    COURSES,
+    GROUPS
 }
 
 enum class TaskSortOption(val label: String) {

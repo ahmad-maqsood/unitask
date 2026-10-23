@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
@@ -326,10 +327,11 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+            if (currentTab != MainTab.GROUPS) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                 AnimatedVisibility(
                     visible = isFabMenuExpanded,
                     enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
@@ -443,8 +445,9 @@ fun MainScreen(
                     )
                 }
             }
-        },
-        modifier = modifier.fillMaxSize()
+        }
+    },
+    modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -534,6 +537,14 @@ fun MainScreen(
                     count = coursesWithCounts.size,
                     testTag = "tab_courses"
                 )
+                MainTabItem(
+                    selected = currentTab == MainTab.GROUPS,
+                    onClick = { viewModel.setTab(MainTab.GROUPS) },
+                    label = "Groups",
+                    icon = Icons.Default.Groups,
+                    count = 0,
+                    testTag = "tab_groups"
+                )
             }
 
             PullToRefreshBox(
@@ -585,6 +596,12 @@ fun MainScreen(
                             onEditCourse = { viewModel.openEditCourseDialog(it) },
                             onDeleteCourse = { viewModel.deleteCourse(it) },
                             onAddCourseClick = { viewModel.openAddCourseDialog() }
+                        )
+                    }
+
+                    MainTab.GROUPS -> {
+                        GroupsTab(
+                            onOpenCloudSheet = { viewModel.openCloudBackupSheet() }
                         )
                     }
                 }

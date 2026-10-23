@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -124,8 +125,10 @@ fun GroupDetailScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 title = {
                     Column {
                         Text(
@@ -208,12 +211,12 @@ fun GroupDetailScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -275,14 +278,13 @@ fun GroupDetailScreen(
                     selected = selectedSectionTab == 0,
                     onClick = { selectedSectionTab = 0 },
                     text = { Text("Tasks (${sortedTasks.size})") },
-                    icon = { Icon(Icons.Default.Assignment, contentDescription = null) },
                     modifier = Modifier.testTag("group_tab_tasks")
                 )
                 Tab(
                     selected = selectedSectionTab == 1,
                     onClick = { selectedSectionTab = 1 },
                     text = { Text("Members (${members.size})") },
-                    icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                   
                     modifier = Modifier.testTag("group_tab_members")
                 )
             }
@@ -593,24 +595,19 @@ fun GroupTaskRow(
 
                     Spacer(Modifier.height(6.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         Text(
-                            text = "Due: $dueDateStr at $timeStr",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        text = "Due: $dueDateStr at $timeStr",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-                        if (task.createdByName.isNotBlank()) {
-                            Text(
-                                text = "• Added by ${task.createdByName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    if (task.createdByName.isNotBlank()) {
+                        Text(
+                            text = "Added by ${task.createdByName}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 

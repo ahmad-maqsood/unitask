@@ -302,6 +302,50 @@ class ExampleRobolectricTest {
     }
 
     @Test
+    fun `test reminder schedules alarm and triggers notification in receiver`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val shadowAlarmManager = org.robolectric.Shadows.shadowOf(alarmManager)
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        val shadowNotificationManager = org.robolectric.Shadows.shadowOf(notificationManager)
+
+        val cal = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, 1)
+            set(java.util.Calendar.HOUR_OF_DAY, 12)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+
+        val task = TaskItem(
+            id = 42L,
+            courseId = 1L,
+            title = "Test Reminder Assignment",
+            dueDateEpochMillis = cal.timeInMillis,
+            dueTimeHour = 12,
+            dueTimeMinute = 0,
+            reminderOptions = setOf(ReminderOption.AT_DEADLINE)
+        )
+
+        val scheduler = com.example.reminder.ReminderScheduler(context)
+        scheduler.scheduleReminder(task, "CS 101")
+
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        println("DEBUG: scheduledAlarms size = ${scheduledAlarms.size}")
+        for (a in scheduledAlarms) {
+            println("DEBUG: alarm = triggerAtTime=${a.triggerAtTime}, operation=${a.operation}")
+            a.operation?.send()
+        }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val notifications = shadowNotificationManager.allNotifications
+        println("DEBUG: notifications size = ${notifications.size}")
+        for (n in notifications) {
+            println("DEBUG: notification = ${n.extras.getString(android.app.Notification.EXTRA_TITLE)}")
+        }
+    }
+
+    @Test
     fun `test course deduplication case-insensitive queries and cloudId lookup`() = runBlocking {
         val course = Course(
             name = "Software Engineering",

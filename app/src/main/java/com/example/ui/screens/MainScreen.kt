@@ -110,6 +110,36 @@ fun MainScreen(
         showNotificationBanner = !isGranted
     }
 
+        // Request notification permission once on first launch.
+    // If permission is denied, keep the existing banner available for retry.
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val prefs = context.getSharedPreferences(
+                "unitask_settings",
+                android.content.Context.MODE_PRIVATE
+            )
+            val alreadyPrompted = prefs.getBoolean(
+                "notification_permission_prompted",
+                false
+            )
+
+            if (!permissionGranted && !alreadyPrompted) {
+                prefs.edit()
+                    .putBoolean("notification_permission_prompted", true)
+                    .apply()
+
+                permissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            }
+        }
+    }
+
     // ViewModel states
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val allCourses by viewModel.allCourses.collectAsStateWithLifecycle()

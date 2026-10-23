@@ -115,6 +115,8 @@ fun GroupsTab(
                     onEditTaskClick = { task -> viewModel.openEditTaskDialog(task) },
                     onDeleteTaskClick = { task -> viewModel.deleteTask(task) },
                     onToggleTaskDone = { task -> viewModel.toggleTaskDone(task) },
+                    onSetMemberRole = { member, makeAdmin -> viewModel.setMemberRole(member, makeAdmin) },
+                    onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
                         viewModel.leaveCurrentGroup {
                             Toast.makeText(context, "Left group", Toast.LENGTH_SHORT).show()

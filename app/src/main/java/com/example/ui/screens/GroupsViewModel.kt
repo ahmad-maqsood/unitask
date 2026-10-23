@@ -288,6 +288,32 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    
+    fun setMemberRole(member: GroupMember, makeAdmin: Boolean) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            repository.setMemberRole(groupId, member.uid, if (makeAdmin) "admin" else "member")
+                .onSuccess {
+                    _snackbarMessage.emit(
+                        if (makeAdmin) "${member.displayName} is now an admin"
+                        else "${member.displayName} is no longer an admin"
+                    )
+                }
+                .onFailure { e ->
+                    _snackbarMessage.emit("Could not change role: ${e.message}")
+                }
+        }
+    }
+
+    fun removeMember(member: GroupMember) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            repository.removeMember(groupId, member.uid)
+                .onSuccess { _snackbarMessage.emit("${member.displayName} was removed") }
+                .onFailure { e -> _snackbarMessage.emit("Could not remove member: ${e.message}") }
+        }
+    }
+
     fun leaveCurrentGroup(onSuccess: () -> Unit) {
         val user = _currentUser.value ?: return
         val groupId = _selectedGroupId.value ?: return

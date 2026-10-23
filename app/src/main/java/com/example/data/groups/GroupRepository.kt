@@ -370,10 +370,15 @@ class GroupRepository(private val context: Context) {
                 val groupId = nameDoc.getString("groupId")
                     ?: return@withTimeout Result.failure(IllegalArgumentException("No group with that username"))
 
-                // Check if already a member
-                val existingMembership = db.collection("users").document(uid)
-                    .collection("groupMemberships").document(groupId).get().await()
-                if (existingMembership.exists()) {
+                                // Check the real member document (not the bookmark) so that someone who was
+                // removed from the group can join again with the code.
+                val existingMember = try {
+                    db.collection("groups").document(groupId)
+                        .collection("members").document(uid).get().await()
+                } catch (_: FirebaseFirestoreException) {
+                    null
+                }
+                if (existingMember != null && existingMember.exists()) {
                     return@withTimeout Result.failure(IllegalStateException("You are already in this group"))
                 }
 
@@ -617,6 +622,41 @@ class GroupRepository(private val context: Context) {
         val taskRef = db.collection("groups").document(groupId).collection("tasks").document(taskId)
         taskRef.delete().addOnFailureListener { e ->
             onFailure(e)
+        }
+    }
+    
+    /**
+     * Change a member's role between "member" and "admin" (owner only, enforced by the rules).
+     */
+    suspend fun setMemberRole(groupId: String, memberUid: String, newRole: String): Result<Unit> {
+        if (newRole != "admin" && newRole != "member") {
+            return Result.failure(IllegalArgumentException("Invalid role"))
+        }
+        return try {
+            withTimeout(TIMEOUT_MILLIS) {
+                db.collection("groups").document(groupId)
+                    .collection("members").document(memberUid)
+                    .update("role", newRole).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Remove a member from the group (owner can remove anyone, admin can remove plain members).
+     */
+    suspend fun removeMember(groupId: String, memberUid: String): Result<Unit> {
+        return try {
+            withTimeout(TIMEOUT_MILLIS) {
+                db.collection("groups").document(groupId)
+                    .collection("members").document(memberUid)
+                    .delete().await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

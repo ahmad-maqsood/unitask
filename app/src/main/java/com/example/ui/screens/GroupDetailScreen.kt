@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
@@ -100,6 +103,8 @@ fun GroupDetailScreen(
     onEditTaskClick: (GroupTask) -> Unit,
     onDeleteTaskClick: (GroupTask) -> Unit,
     onToggleTaskDone: (GroupTask) -> Unit,
+    onSetMemberRole: (GroupMember, Boolean) -> Unit,
+    onRemoveMember: (GroupMember) -> Unit,
     onLeaveGroupClick: () -> Unit,
     onDeleteGroupClick: () -> Unit
 ) {
@@ -115,6 +120,21 @@ fun GroupDetailScreen(
     val isOwner = groupDetail?.ownerId == currentUid || fallbackRole == "owner"
     val joinCode = groupDetail?.joinCode ?: ""
 
+    val myRole = members.find { it.uid == currentUid }?.role ?: fallbackRole
+    val isAdmin = myRole == "admin"
+    val isStaff = isOwner || isAdmin
+    var memberToRemove by remember { mutableStateOf<GroupMember?>(null) }
+    val sortedMembers = remember(members) {
+        members.sortedWith(
+            compareBy<GroupMember> {
+                when (it.role) {
+                    "owner" -> 0
+                    "admin" -> 1
+                    else -> 2
+                }
+            }.thenBy { it.displayName.lowercase() }
+        )
+    }
     // Sort tasks: due date and time ascending
     val sortedTasks = remember(tasks) {
         tasks.sortedWith(
@@ -329,7 +349,7 @@ fun GroupDetailScreen(
                     ) {
                         items(sortedTasks, key = { it.id }) { task ->
                             val isDone = doneTaskIds.contains(task.id)
-                            val canModify = task.createdBy == currentUid || isOwner
+                            val canModify = task.createdBy == currentUid || isStaff
 
                             GroupTaskRow(
                                 task = task,
@@ -353,7 +373,7 @@ fun GroupDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(members, key = { it.uid }) { member ->
+                        items(sortedMembers, key = { it.uid }) { member ->
                         val isMemberOwner = member.role == "owner"
                         Card(
                             colors = CardDefaults.cardColors(
@@ -408,18 +428,67 @@ fun GroupDetailScreen(
                                     }
                                 }
 
-                                if (isMemberOwner) {
+                                                               val roleLabel = when (member.role) {
+                                    "owner" -> "Owner"
+                                    "admin" -> "Admin"
+                                    else -> null
+                                }
+                                if (roleLabel != null) {
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer
+                                        color = if (isMemberOwner) MaterialTheme.colorScheme.primaryContainer
+                                        else MaterialTheme.colorScheme.tertiaryContainer
                                     ) {
                                         Text(
-                                            text = "Owner",
+                                            text = roleLabel,
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            color = if (isMemberOwner) MaterialTheme.colorScheme.onPrimaryContainer
+                                            else MaterialTheme.colorScheme.onTertiaryContainer,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                         )
+                                    }
+                                }
+
+                                // Owner manages everyone except themselves; admins can only remove plain members.
+                                val canManage = member.uid != currentUid && !isMemberOwner &&
+                                    (isOwner || (isAdmin && member.role == "member"))
+                                if (canManage) {
+                                    var menuOpen by remember { mutableStateOf(false) }
+                                    Box {
+                                        IconButton(
+                                            onClick = { menuOpen = true },
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .testTag("member_menu_${member.uid}")
+                                        ) {
+                                            Icon(Icons.Default.MoreVert, contentDescription = "Member options")
+                                        }
+                                        DropdownMenu(
+                                            expanded = menuOpen,
+                                            onDismissRequest = { menuOpen = false }
+                                        ) {
+                                            if (isOwner) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(if (member.role == "admin") "Remove admin role" else "Make admin")
+                                                    },
+                                                    onClick = {
+                                                        menuOpen = false
+                                                        onSetMemberRole(member, member.role != "admin")
+                                                    }
+                                                )
+                                            }
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text("Remove from group", color = MaterialTheme.colorScheme.error)
+                                                },
+                                                onClick = {
+                                                    menuOpen = false
+                                                    memberToRemove = member
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -477,6 +546,31 @@ fun GroupDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    memberToRemove?.let { target ->
+        AlertDialog(
+            onDismissRequest = { memberToRemove = null },
+            title = { Text("Remove member?") },
+            text = { Text("Remove ${target.displayName} from \"$effectiveName\"? They can join again with the join code.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        memberToRemove = null
+                        onRemoveMember(target)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_remove_member_button")
+                ) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { memberToRemove = null }) {
                     Text("Cancel")
                 }
             }

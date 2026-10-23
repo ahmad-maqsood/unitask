@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import com.example.data.local.AppDatabase
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
+import com.example.data.local.TaskStatus
 import java.util.Calendar
 
 class ReminderScheduler(private val context: Context) {
@@ -80,6 +82,21 @@ class ReminderScheduler(private val context: Context) {
                     am.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                 }
             }
+        }
+    }
+
+        /**
+     * Re-creates the alarms of every unfinished task. Alarms are lost on reboot and on app
+     * update, and tasks pulled from the cloud have never had one, so this runs after both.
+     */
+    suspend fun rescheduleAll(database: AppDatabase) {
+        for (task in database.taskDao().getAllActiveTasksSync()) {
+            if (task.status == TaskStatus.COMPLETED) {
+                cancelReminder(task.id)
+                continue
+            }
+            val course = database.courseDao().getCourseByIdSync(task.courseId) ?: continue
+            scheduleReminder(task, course.code)
         }
     }
 

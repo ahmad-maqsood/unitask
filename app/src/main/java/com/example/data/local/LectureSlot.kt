@@ -29,5 +29,6 @@ data class LectureSlot(
     val classroom: String = "",
     val instructor: String = "",
     val isSynced: Boolean = false,
-    val cloudId: String = ""
+    val cloudId: String = "",
+    val isDeleted: Boolean = false
 )

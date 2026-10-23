@@ -100,6 +100,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.sync.SyncScheduler.scheduleSync(application)
             } else {
                 com.example.sync.FirestoreSyncManager.stopRealtimeSync()
+                                // Signed out: mark everything as not yet backed up, so the next account starts
+                // from a full upload instead of treating old cloud ids as deleted elsewhere.
+                viewModelScope.launch(Dispatchers.IO) {
+                    database.courseDao().markAllCoursesUnsynced()
+                    database.taskDao().markAllTasksUnsynced()
+                    database.lectureSlotDao().markAllSlotsUnsynced()
+                }
             }
         }
 

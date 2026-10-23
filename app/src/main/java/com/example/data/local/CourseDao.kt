@@ -31,10 +31,19 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) LIMIT 1")
     suspend fun getAnyCourseByCode(code: String): Course?
 
+    @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') AND isDeleted = 0 LIMIT 1")
+    suspend fun getCourseByNormalizedCode(code: String): Course?
+
+    @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') LIMIT 1")
+    suspend fun getAnyCourseByNormalizedCode(code: String): Course?
+
+    @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '')")
+    suspend fun getAllCoursesMatchingNormalizedCode(code: String): List<Course>
+
     @Query("SELECT * FROM courses WHERE cloudId = :cloudId LIMIT 1")
     suspend fun getCourseByCloudId(cloudId: String): Course?
 
-    @Query("SELECT COUNT(*) > 0 FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) AND isDeleted = 1")
+    @Query("SELECT COUNT(*) > 0 FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') AND isDeleted = 1")
     suspend fun isCourseDeletedByCode(code: String): Boolean
 
     @Query("SELECT * FROM courses WHERE isSynced = 0 AND isDeleted = 0")
@@ -45,6 +54,9 @@ interface CourseDao {
 
     @Query("UPDATE courses SET isSynced = 1 WHERE id IN (:ids)")
     suspend fun markCoursesSynced(ids: List<Long>)
+
+    @Query("UPDATE courses SET isSynced = 0")
+    suspend fun markAllCoursesUnsynced()
 
     @Query("UPDATE courses SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
     suspend fun markCourseSynced(id: Long, cloudId: String)

@@ -20,7 +20,11 @@ class SyncWorker(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val user = Firebase.auth.currentUser ?: run {
+        val user = try {
+            Firebase.auth.currentUser
+        } catch (_: Exception) {
+            null
+        } ?: run {
             Log.d(TAG, "No Google user logged in; skipping cloud sync")
             return@withContext Result.success()
         }

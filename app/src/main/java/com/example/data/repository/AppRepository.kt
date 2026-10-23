@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -37,11 +38,24 @@ class AppRepository(
     private val reminderScheduler: ReminderScheduler
 ) {
 
-    val allCourses: Flow<List<Course>> = courseDao.getAllCourses().flowOn(Dispatchers.IO)
+    val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
+        .map { list ->
+            list.filter { !it.isDeleted }
+                .distinctBy { it.code.trim().replace("\\s+".toRegex(), "").uppercase() }
+        }
+        .flowOn(Dispatchers.IO)
 
-    val allTasksWithCourse: Flow<List<TaskWithCourse>> = taskDao.getAllTasksWithCourse().flowOn(Dispatchers.IO)
+    val allTasksWithCourse: Flow<List<TaskWithCourse>> = taskDao.getAllTasksWithCourse()
+        .map { list ->
+            list.filter { it.course != null && !it.course.isDeleted && !it.task.isDeleted }
+        }
+        .flowOn(Dispatchers.IO)
 
-    val allLectureSlots: Flow<List<LectureSlotWithCourse>> = lectureSlotDao.getAllSlotsWithCourse().flowOn(Dispatchers.IO)
+    val allLectureSlots: Flow<List<LectureSlotWithCourse>> = lectureSlotDao.getAllSlotsWithCourse()
+        .map { list ->
+            list.filter { it.course != null && !it.course.isDeleted }
+        }
+        .flowOn(Dispatchers.IO)
 
     val coursesWithTaskCounts: Flow<List<CourseWithTaskCount>> = combine(
         allCourses,
@@ -69,17 +83,27 @@ class AppRepository(
     }
 
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
-        val normCode = course.code.trim().uppercase()
+        val normCode = FirestoreSyncManager.normalizeCode(course.code)
         FirestoreSyncManager.clearPendingDeletionForCourse(normCode)
 
-        // If a previously soft-deleted course exists with the same code, purge it first
-        val existingDeleted = courseDao.getAnyCourseByCode(normCode)
-        if (existingDeleted != null && existingDeleted.isDeleted) {
-            taskDao.deleteTasksForCourse(existingDeleted.id)
-            lectureSlotDao.deleteSlotsForCourse(existingDeleted.id)
-            courseDao.deleteCourseById(existingDeleted.id)
+        // Check if an existing course already matches this normalized code
+        val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getAnyCourseByNormalizedCode(normCode)
+        if (existing != null) {
+            val updated = existing.copy(
+                code = course.code.trim().uppercase(),
+                name = course.name.trim(),
+                instructor = course.instructor.trim(),
+                colorHex = course.colorHex,
+                location = course.location.trim(),
+                isSynced = false,
+                isDeleted = false
+            )
+            courseDao.updateCourse(updated)
+            triggerSyncIfLoggedIn()
+            return@withContext existing.id
         }
-        val courseToInsert = course.copy(code = normCode, isSynced = false, isDeleted = false)
+
+        val courseToInsert = course.copy(code = course.code.trim().uppercase(), isSynced = false, isDeleted = false)
         val id = courseDao.insertCourse(courseToInsert)
         triggerSyncIfLoggedIn()
         id
@@ -92,9 +116,23 @@ class AppRepository(
     }
 
     suspend fun deleteCourse(course: Course) = withContext(Dispatchers.IO) {
-        // 1. Cancel reminders for all tasks under this course and delete attachment files
-        val tasks = taskDao.getTasksForCourseSync(course.id)
-        for (t in tasks) {
+        val normCode = course.code.trim().replace("\\s+".toRegex(), "").uppercase()
+
+        // 1. Find all local course entries that match this normalized code (in case of duplicates)
+        val matchingCourses = courseDao.getAllCoursesMatchingNormalizedCode(normCode)
+        val allIds = (matchingCourses.map { it.id } + course.id).distinct()
+
+        // 2. Gather all tasks and slots across all matching course IDs
+        val allTasks = mutableListOf<TaskItem>()
+        val allSlots = mutableListOf<LectureSlot>()
+        for (cId in allIds) {
+            allTasks.addAll(taskDao.getTasksForCourseSync(cId))
+            allTasks.addAll(taskDao.getAnyTasksForCourseSync(cId))
+            allSlots.addAll(lectureSlotDao.getSlotsForCourseSync(cId))
+        }
+
+        // 3. Cancel reminders and remove attachment files for all tasks
+        for (t in allTasks.distinctBy { it.id }) {
             reminderScheduler.cancelReminder(t.id)
             val attachments = taskAttachmentDao.getAttachmentsForTaskSync(t.id)
             for (att in attachments) {
@@ -102,43 +140,34 @@ class AppRepository(
             }
         }
 
-        // 2. Remove lecture slots for this course
-        val slots = lectureSlotDao.getSlotsForCourseSync(course.id)
-        lectureSlotDao.deleteSlotsForCourse(course.id)
+               // 4. Soft-delete in Room. The sync removes the course from the cloud and only then
+        //    purges the rows, so the delete survives being offline or the app being killed.
+        for (cId in allIds) {
+            taskDao.softDeleteTasksForCourse(cId)
+            courseDao.softDeleteCourse(cId)
+        }
 
-        // 3. Soft-delete course and tasks in Room (ensures immediate disappearance from UI and guards against resurrection)
-        courseDao.softDeleteCourse(course.id)
-        taskDao.softDeleteTasksForCourse(course.id)
-
-        // 4. Record in pending deletion guards
+        // 5. Record in pending deletion guards
         FirestoreSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)
-        for (t in tasks) {
+        FirestoreSyncManager.recordPendingCourseDeletion(course.id, normCode, course.cloudId)
+        for (t in allTasks) {
             FirestoreSyncManager.recordPendingTaskDeletion(t.id, t.cloudId)
         }
-        for (s in slots) {
+        for (s in allSlots) {
             FirestoreSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
         }
 
-        // 5. If user is authenticated, immediately issue Cloud Firestore deletion
-        val currentUser = Firebase.auth.currentUser
-        if (currentUser != null) {
-            try {
-                val success = FirestoreSyncManager.deleteCourseFromCloud(context, course, tasks, slots)
-                if (success) {
-                    taskDao.deleteTasksForCourse(course.id)
-                    courseDao.deleteCourseById(course.id)
-                }
-            } catch (e: Exception) {
-                Log.e("AppRepository", "Error deleting course from cloud: ${e.message}", e)
-            }
-        } else {
-            if (!course.isSynced && course.cloudId.isBlank()) {
-                taskDao.deleteTasksForCourse(course.id)
-                courseDao.deleteCourseById(course.id)
-            }
-        }
+        // 6. The cloud delete happens in the sync (step 0 of syncAllDataNow)
 
         triggerSyncIfLoggedIn()
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return try {
+            Firebase.auth.currentUser != null
+        } catch (_: Exception) {
+            false
+        }
     }
 
     suspend fun insertTask(task: TaskItem): Long = withContext(Dispatchers.IO) {
@@ -195,22 +224,10 @@ class AppRepository(
         taskDao.softDeleteTask(task.id)
         FirestoreSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
 
-        val currentUser = Firebase.auth.currentUser
-        if (currentUser != null) {
-            val course = courseDao.getAnyCourseByIdSync(task.courseId)
-            try {
-                val success = FirestoreSyncManager.deleteTaskFromCloud(context, task, course?.code)
-                if (success) {
-                    taskDao.deleteTaskById(task.id)
-                }
-            } catch (e: Exception) {
-                Log.e("AppRepository", "Error deleting task from cloud: ${e.message}", e)
-            }
-        } else {
-            if (!task.isSynced && task.cloudId.isBlank()) {
-                taskDao.deleteTaskById(task.id)
-            }
+        if (!isUserLoggedIn() && !task.isSynced && task.cloudId.isBlank()) {
+            taskDao.deleteTaskById(task.id)
         }
+        // When signed in, the sync removes it from the cloud and then purges the row.
 
         triggerSyncIfLoggedIn()
     }
@@ -243,21 +260,18 @@ class AppRepository(
 
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
         FirestoreSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
-        val course = courseDao.getCourseByIdSync(slot.courseId) ?: courseDao.getAnyCourseByIdSync(slot.courseId)
-        val currentUser = Firebase.auth.currentUser
-        if (currentUser != null) {
-            try {
-                FirestoreSyncManager.deleteSlotFromCloud(context, slot, course?.code)
-            } catch (e: Exception) {
-                Log.w("AppRepository", "Error deleting slot from cloud: ${e.message}")
-            }
+        if (!isUserLoggedIn() && !slot.isSynced && slot.cloudId.isBlank()) {
+            lectureSlotDao.deleteSlot(slot)
+        } else {
+            // Soft-delete; the sync removes it from the cloud and then purges the row.
+            lectureSlotDao.softDeleteSlot(slot.id)
         }
-        lectureSlotDao.deleteSlot(slot)
         triggerSyncIfLoggedIn()
     }
 
     fun triggerSyncIfLoggedIn() {
-        if (Firebase.auth.currentUser != null) {
+        if (!isUserLoggedIn()) return
+        try {
             // Eager immediate background sync
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -269,6 +283,8 @@ class AppRepository(
             }
             // WorkManager schedule for offline retry resilience
             SyncScheduler.scheduleSync(context)
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Error scheduling sync: ${e.message}")
         }
     }
 }

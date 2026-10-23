@@ -350,4 +350,72 @@ class ExampleRobolectricTest {
         assertEquals(slotId, matching?.id)
         assertEquals("CS Building 202", matching?.classroom)
     }
+
+    @Test
+    fun `test removing course automatically removes its tasks and lecture slots`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val repo = com.example.data.repository.AppRepository(
+            context = context,
+            courseDao = courseDao,
+            taskDao = taskDao,
+            taskAttachmentDao = taskAttachmentDao,
+            lectureSlotDao = lectureSlotDao,
+            reminderScheduler = com.example.reminder.ReminderScheduler(context)
+        )
+
+        val course = Course(name = "AI", code = "CS 501", instructor = "Prof. Hinton", colorHex = "#EF4444")
+        val cId = repo.insertCourse(course)
+        val savedCourse = course.copy(id = cId)
+
+        val taskId = repo.insertTask(
+            TaskItem(courseId = cId, title = "Backpropagation Paper", dueDateEpochMillis = System.currentTimeMillis() + 86400000L)
+        )
+        val slotId = repo.insertLectureSlot(
+            com.example.data.local.LectureSlot(courseId = cId, dayOfWeek = 3, startHour = 10, startMinute = 0, endHour = 11, endMinute = 30)
+        )
+
+        // Verify task and slot exist
+        assertEquals(1, taskDao.getTasksForCourseSync(cId).size)
+        assertEquals(1, lectureSlotDao.getSlotsForCourseSync(cId).size)
+
+        // Delete course through repository
+        repo.deleteCourse(savedCourse)
+
+        // Tasks and slots must be removed automatically
+        assertEquals(0, taskDao.getTasksForCourseSync(cId).size)
+        assertEquals(0, repo.allLectureSlots.first().size)
+        assertEquals(0, repo.allCourses.first().size)
+        assertEquals(0, repo.allTasksWithCourse.first().size)
+        assertEquals(0, repo.allLectureSlots.first().size)
+    }
+
+    @Test
+    fun `test course deduplication prevents same course loaded twice with different spacing`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val repo = com.example.data.repository.AppRepository(
+            context = context,
+            courseDao = courseDao,
+            taskDao = taskDao,
+            taskAttachmentDao = taskAttachmentDao,
+            lectureSlotDao = lectureSlotDao,
+            reminderScheduler = com.example.reminder.ReminderScheduler(context)
+        )
+
+        // Insert first course "CS 101"
+        val id1 = repo.insertCourse(
+            Course(name = "Intro to CS", code = "CS 101", instructor = "Prof. A", colorHex = "#6366F1")
+        )
+        // Attempt to insert second course with different spacing/case "cs101"
+        val id2 = repo.insertCourse(
+            Course(name = "Intro to CS", code = "cs101", instructor = "Prof. A", colorHex = "#6366F1")
+        )
+
+        // IDs must be the same (updated instead of duplicated)
+        assertEquals(id1, id2)
+
+        // Flow must only return 1 course
+        val courses = repo.allCourses.first()
+        assertEquals(1, courses.size)
+        assertEquals("CS101", courses[0].code)
+    }
 }

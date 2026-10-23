@@ -12,15 +12,15 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LectureSlotDao {
     @Transaction
-    @Query("SELECT * FROM lecture_slots ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 0 ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
     fun getAllSlotsWithCourse(): Flow<List<LectureSlotWithCourse>>
 
     @Transaction
-    @Query("SELECT * FROM lecture_slots WHERE dayOfWeek = :dayOfWeek ORDER BY startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE dayOfWeek = :dayOfWeek AND isDeleted = 0 ORDER BY startHour ASC, startMinute ASC")
     fun getSlotsForDay(dayOfWeek: Int): Flow<List<LectureSlotWithCourse>>
 
     @Transaction
-    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND isDeleted = 0 ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
     fun getSlotsForCourse(courseId: Long): Flow<List<LectureSlotWithCourse>>
 
     @Query("SELECT * FROM lecture_slots WHERE id = :id")
@@ -44,6 +44,9 @@ interface LectureSlotDao {
     @Query("DELETE FROM lecture_slots WHERE courseId = :courseId")
     suspend fun deleteSlotsForCourse(courseId: Long)
 
+    @Query("DELETE FROM lecture_slots WHERE courseId NOT IN (SELECT id FROM courses WHERE isDeleted = 0)")
+    suspend fun deleteOrphanedSlots()
+
     @Query("SELECT * FROM lecture_slots")
     suspend fun getAllSlotsSync(): List<LectureSlot>
 
@@ -58,4 +61,17 @@ interface LectureSlotDao {
 
     @Query("UPDATE lecture_slots SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
     suspend fun markSlotSynced(id: Long, cloudId: String)
+
+    @Query("UPDATE lecture_slots SET isSynced = 0 WHERE courseId = :courseId")
+    suspend fun markSlotsUnsyncedForCourse(courseId: Long)
+
+    
+    @Query("UPDATE lecture_slots SET isSynced = 0")
+    suspend fun markAllSlotsUnsynced()
+    
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 1")
+    suspend fun getDeletedSlots(): List<LectureSlot>
+
+    @Query("UPDATE lecture_slots SET isDeleted = 1, isSynced = 0 WHERE id = :id")
+    suspend fun softDeleteSlot(id: Long)
 }

@@ -18,10 +18,10 @@ Get the latest stable release APK directly on your Android device:
 [![Download APK](https://img.shields.io/badge/Download_APK-Direct_Release-brightgreen?style=for-the-badge&logo=android)](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
 1. Head to [**Releases**](https://github.com/ahmad-maqsood/unitask/releases/latest).
-2. Download `app-release.apk`.
+2. Download `unitask.apk`.
 3. Open the downloaded file on your Android device and allow installation from your browser/file manager.
 
-> ⚠️ **Updating Notice**: If you have a previous development/debug version installed, please uninstall it first before installing `app-release.apk` to avoid signature conflict errors.
+> ⚠️ **Updating Notice**: If you have a previous development/debug version installed, please uninstall it first before installing `unitask.apk` to avoid signature conflict errors.
 
 ---
 
@@ -98,7 +98,7 @@ cd unitask
    ```bash
    ./gradlew assembleRelease
    ```
-4. Output binary will be generated at `app/build/outputs/apk/release/app-release.apk`.
+4. Output binary will be generated at `app/build/outputs/apk/release/unitask.apk`.
 
 ---
 

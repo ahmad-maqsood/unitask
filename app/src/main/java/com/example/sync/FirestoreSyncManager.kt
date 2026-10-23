@@ -312,7 +312,7 @@ object FirestoreSyncManager {
      * 4. Local duplicates are consolidated so each course exists exactly once.
      * 5. Orphaned tasks and slots are cleaned up.
      */
-    suspend fun syncAllDataNow(context: Context, database: AppDatabase): Boolean = withContext(Dispatchers.IO) {
+   
     private const val SYNC_TIMEOUT_MS = 45_000L
     private val rerunRequested = AtomicBoolean(false)
 

@@ -74,7 +74,7 @@ fun AddEditCourseDialog(
                 OutlinedTextField(
                     value = code,
                     onValueChange = {
-                        code = it
+                        code = it.take(30)
                         if (it.isNotBlank()) codeError = false
                     },
                     label = { Text("Course Code *") },
@@ -93,7 +93,7 @@ fun AddEditCourseDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
-                        name = it
+                        name = it.take(100)
                         if (it.isNotBlank()) nameError = false
                     },
                     label = { Text("Course Name *") },

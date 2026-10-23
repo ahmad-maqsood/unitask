@@ -315,7 +315,7 @@ fun AddEditTaskDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
-                        title = it
+                        title = it.take(200)
                         if (it.isNotBlank()) titleError = false
                     },
                     label = { Text("Assignment Title *") },

@@ -102,7 +102,7 @@ service cloud.firestore {
           && request.resource.data.username is string
           && request.resource.data.name is string
           && request.resource.data.name.size() <= 60
-          && request.resource.data.role in ['owner', 'member'];
+          && request.resource.data.role in ['owner', 'member', 'admin'];
       }
  
       // This user's own "done" marks for group tasks. Never visible to other members.
@@ -133,6 +133,16 @@ service cloud.firestore {
         && exists(groupPath(groupId))
         && get(groupPath(groupId)).data.ownerId == request.auth.uid;
     }
+
+    function isGroupAdmin(groupId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isGroupStaff(groupId) {
+      return isGroupOwner(groupId) || isGroupAdmin(groupId);
+    }
  
     function isValidUsername(name) {
       return name is string && name.matches('^[a-z0-9_]{3,20}$');
@@ -141,7 +151,7 @@ service cloud.firestore {
     function isValidGroupTask(data) {
       return data.keys().hasOnly(['title', 'description', 'courseLabel', 'dueDateEpochMillis',
                                   'dueTimeHour', 'dueTimeMinute', 'priority',
-                                  'createdBy', 'createdByName', 'createdAt', 'updatedAt'])
+                                  'createdBy', 'createdByName', 'createdAt', 'updatedAt', 'reminderOptions'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.dueDateEpochMillis is number
         && data.dueTimeHour is number && data.dueTimeHour >= 0 && data.dueTimeHour <= 23
@@ -151,6 +161,7 @@ service cloud.firestore {
         && data.createdByName is string && data.createdByName.size() <= 60
         && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
         && (!('courseLabel' in data) || (data.courseLabel is string && data.courseLabel.size() <= 60))
+        && (!('reminderOptions' in data) || (data.reminderOptions is string && data.reminderOptions.size() <= 100))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -211,12 +222,15 @@ service cloud.firestore {
               && request.resource.data.joinCode is string
               && request.resource.data.joinCode == get(groupPath(groupId)).data.joinCode)
           );
-        allow update: if false;
-        // A member can leave. The owner can remove others. The owner's own record can only
-        // go in the same batch that deletes the group.
+        allow update: if isGroupOwner(groupId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+          && request.resource.data.role in ['admin', 'member'];
+        // A member or admin can leave. The owner can remove others. Admins can remove plain members.
+        // The owner's own record can only go in the same batch that deletes the group.
         allow delete: if isAuthenticated() && (
-          (request.auth.uid == uid && resource.data.role == 'member')
+          (request.auth.uid == uid && resource.data.role in ['member', 'admin'])
           || (isGroupOwner(groupId) && (uid != request.auth.uid || !existsAfter(groupPath(groupId))))
+          || (isGroupAdmin(groupId) && resource.data.role == 'member')
         );
       }
  
@@ -228,14 +242,29 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time;
         allow update: if isGroupMember(groupId)
-          && (resource.data.createdBy == request.auth.uid || isGroupOwner(groupId))
+          && (resource.data.createdBy == request.auth.uid || isGroupStaff(groupId))
           && isValidGroupTask(request.resource.data)
           && request.resource.data.createdBy == resource.data.createdBy
           && request.resource.data.createdByName == resource.data.createdByName
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.updatedAt == request.time;
         allow delete: if isGroupMember(groupId)
-          && (resource.data.createdBy == request.auth.uid || isGroupOwner(groupId));
+          && (resource.data.createdBy == request.auth.uid || isGroupStaff(groupId));
+      }
+
+      match /messages/{messageId} {
+        allow read: if isGroupMember(groupId);
+        allow create: if isGroupMember(groupId)
+          && request.resource.data.keys().hasOnly(['text', 'senderId', 'senderName', 'createdAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 60
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isGroupMember(groupId)
+          && (resource.data.senderId == request.auth.uid || isGroupStaff(groupId));
       }
     }
  

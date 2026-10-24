@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan identifying all runtime, security rule, and configuration errors with change size estimates, and presenting targeted fixes for approval before making any code modifications.",
+  "updatedAt":  "2026-10-24T16:12:12.642578555Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

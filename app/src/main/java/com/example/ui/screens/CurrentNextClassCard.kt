@@ -10,18 +10,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
@@ -101,19 +104,20 @@ fun CurrentNextClassCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header Tag Banner
+            // Header Tag Banner (Two stacked lines: Tag on Line 1, Time label on Line 2)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(if (classInfo.isActiveNow) ActiveClassGreen else courseColor)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
+                    // Line 1: White dot + Status Tag
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -126,16 +130,39 @@ fun CurrentNextClassCard(
                             text = if (classInfo.isActiveNow) "CURRENT CLASS IN PROGRESS" else "NEXT UPCOMING CLASS",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     }
 
-                    Text(
-                        text = classInfo.timeLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    // Line 2: Time label indented to start under tag text (8dp dot + 6dp space = 14dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.92f),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = classInfo.timeLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.92f),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
                 }
             }
 
@@ -145,57 +172,62 @@ fun CurrentNextClassCard(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
+                // Code + Time Range Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = courseColor.copy(alpha = 0.2f),
-                                contentColor = courseColor
-                            ) {
-                                Text(
-                                    text = course?.code ?: "Class",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-
-                            Text(
-                                text = timeRangeText,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = courseColor.copy(alpha = 0.2f),
+                        contentColor = courseColor
+                    ) {
                         Text(
-                            text = course?.name ?: "Lecture",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = course?.code ?: "Class",
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
+
+                    Text(
+                        text = timeRangeText,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Course Name (fixed to exactly 2 lines reservation)
+                Text(
+                    text = course?.name ?: "Lecture",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    minLines = 2,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Location and Instructor
-                Row(
+                // Location and Instructor (stacked vertically with reserved height)
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (classroom.isNotBlank()) {
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 20.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -208,13 +240,20 @@ fun CurrentNextClassCard(
                             Text(
                                 text = classroom,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
 
                     if (instructor.isNotBlank()) {
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 20.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -227,15 +266,20 @@ fun CurrentNextClassCard(
                             Text(
                                 text = instructor,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
                 }
 
-                // Expandable Section: Pending Assignments for this course
+                // Pending assignments strip (always present with identical shape, padding & height)
+                Spacer(modifier = Modifier.height(12.dp))
+
                 if (classInfo.pendingTasks.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -247,13 +291,16 @@ fun CurrentNextClassCard(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 24.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f, fill = false)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Assignment,
@@ -265,7 +312,9 @@ fun CurrentNextClassCard(
                                         text = pendingTasksCountLabel,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
 
@@ -308,6 +357,39 @@ fun CurrentNextClassCard(
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 24.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "No pending assignments",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }

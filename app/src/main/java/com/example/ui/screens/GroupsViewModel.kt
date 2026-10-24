@@ -243,7 +243,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         dueDateEpochMillis: Long,
         dueTimeHour: Int,
         dueTimeMinute: Int,
-        priority: String
+        priority: String,
+        reminderOptions: String
     ) {
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
@@ -261,6 +262,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 dueTimeHour = dueTimeHour,
                 dueTimeMinute = dueTimeMinute,
                 priority = priority,
+                reminderOptions = reminderOptions,
                 uid = user.uid,
                 rawDisplayName = user.displayName ?: "Student",
                 onFailure = { e ->
@@ -280,6 +282,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 dueTimeHour = dueTimeHour,
                 dueTimeMinute = dueTimeMinute,
                 priority = priority,
+                                reminderOptions = reminderOptions,
                 onFailure = { e ->
                     viewModelScope.launch {
                         _snackbarMessage.emit("Failed to update task: ${e.message}")

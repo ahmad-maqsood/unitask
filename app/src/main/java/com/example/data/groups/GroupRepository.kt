@@ -58,7 +58,8 @@ data class GroupTask(
     val createdBy: String = "",
     val createdByName: String = "",
     val createdAt: Timestamp? = null,
-    val updatedAt: Timestamp? = null
+    val updatedAt: Timestamp? = null,
+    val reminderOptions: String? = null
 )
 
 /** One group as seen by this user: its tasks and which of them this user marked done. */
@@ -237,7 +238,8 @@ class GroupRepository(private val context: Context) {
             createdBy = doc.getString("createdBy") ?: "",
             createdByName = doc.getString("createdByName") ?: "",
             createdAt = doc.getTimestamp("createdAt"),
-            updatedAt = doc.getTimestamp("updatedAt")
+            updatedAt = doc.getTimestamp("updatedAt"),
+            reminderOptions = doc.getString("reminderOptions")
         )
     }
 
@@ -679,6 +681,7 @@ class GroupRepository(private val context: Context) {
         dueTimeHour: Int,
         dueTimeMinute: Int,
         priority: String,
+        reminderOptions: String,
         uid: String,
         rawDisplayName: String,
         onFailure: (Exception) -> Unit
@@ -689,7 +692,7 @@ class GroupRepository(private val context: Context) {
             "dueDateEpochMillis" to dueDateEpochMillis,
             "dueTimeHour" to dueTimeHour,
             "dueTimeMinute" to dueTimeMinute,
-            "priority" to priority,
+            "reminderOptions" to reminderOptions,
             "createdBy" to uid,
             "createdByName" to rawDisplayName.trim().take(60).ifEmpty { "Student" },
             "createdAt" to FieldValue.serverTimestamp(),
@@ -724,6 +727,7 @@ class GroupRepository(private val context: Context) {
         dueTimeHour: Int,
         dueTimeMinute: Int,
         priority: String,
+        reminderOptions: String,
         onFailure: (Exception) -> Unit
     ) {
         val taskRef = db.collection("groups").document(groupId).collection("tasks").document(taskId)
@@ -733,6 +737,7 @@ class GroupRepository(private val context: Context) {
             "dueTimeHour" to dueTimeHour,
             "dueTimeMinute" to dueTimeMinute,
             "priority" to priority,
+            "reminderOptions" to reminderOptions,
             "updatedAt" to FieldValue.serverTimestamp()
         )
 

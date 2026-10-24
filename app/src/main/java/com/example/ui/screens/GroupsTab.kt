@@ -193,8 +193,8 @@ fun GroupsTab(
                 GroupTaskDialog(
                     taskToEdit = taskToEdit,
                     onDismiss = { viewModel.closeAddEditTaskDialog() },
-                    onSave = { title, desc, course, dueMillis, hour, minute, priority ->
-                        viewModel.saveTask(title, desc, course, dueMillis, hour, minute, priority)
+                    onSave = { title, desc, course, dueMillis, hour, minute, priority, reminders ->
+                        viewModel.saveTask(title, desc, course, dueMillis, hour, minute, priority, reminders)
                     }
                 )
             }

@@ -43,6 +43,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupTask
+import androidx.compose.material.icons.filled.Check
+import com.example.data.local.ReminderOption
+import com.example.data.local.encodeReminderOptions
+import com.example.reminder.GroupReminderScheduler
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -60,7 +64,8 @@ fun GroupTaskDialog(
         dueDateMillis: Long,
         dueHour: Int,
         dueMinute: Int,
-        priority: String
+        priority: String,
+        reminderOptions: String
     ) -> Unit
 ) {
     val context = LocalContext.current
@@ -82,7 +87,13 @@ fun GroupTaskDialog(
     var dueHour by remember { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
     var dueMinute by remember { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
     var priority by remember { mutableStateOf(taskToEdit?.priority ?: "MEDIUM") }
-
+    // New tasks start with the usual three alerts. Old tasks show what they really use today.
+    var reminderOptions by remember {
+        mutableStateOf(
+            taskToEdit?.let { GroupReminderScheduler.optionsFor(it) }
+                ?: GroupReminderScheduler.DEFAULT_REMINDERS
+        )
+    }
     var showTimePicker by remember { mutableStateOf(false) }
     var titleError by remember { mutableStateOf(false) }
 
@@ -275,6 +286,58 @@ fun GroupTaskDialog(
                         }
                     }
                 }
+
+                // Reminders: every member of the group gets an alert at each time you pick
+                Column {
+                    Text(
+                        text = "Reminders",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (reminderOptions.isEmpty()) {
+                            "No reminders. Tap times below to add some."
+                        } else {
+                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected. Everyone in the group gets them."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (reminderOptions.isEmpty()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ReminderOption.entries.sortedBy { it.offsetMinutes }.forEach { opt ->
+                            FilterChip(
+                                selected = opt in reminderOptions,
+                                onClick = {
+                                    reminderOptions = if (opt in reminderOptions) {
+                                        reminderOptions - opt
+                                    } else {
+                                        reminderOptions + opt
+                                    }
+                                },
+                                leadingIcon = if (opt in reminderOptions) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                } else null,
+                                label = { Text(opt.label, style = MaterialTheme.typography.labelSmall) },
+                                modifier = Modifier.testTag("group_reminder_chip_${opt.name}")
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -291,7 +354,8 @@ fun GroupTaskDialog(
                         selectedDueDateMillis,
                         dueHour,
                         dueMinute,
-                        priority
+                        priority,
+                        encodeReminderOptions(reminderOptions)
                     )
                 },
                 modifier = Modifier.testTag("group_task_save_button")

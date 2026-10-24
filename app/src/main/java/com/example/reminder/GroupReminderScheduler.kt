@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import com.example.data.groups.GroupTask
 import com.example.data.local.ReminderOption
+import com.example.data.local.decodeReminderOptions
 import com.example.util.TimeFormatter
 import java.util.Calendar
 
@@ -33,6 +34,13 @@ class GroupReminderScheduler(private val context: Context) {
             ReminderOption.TWO_HOURS_BEFORE,
             ReminderOption.AT_DEADLINE
         )
+
+        /**
+         * The reminders chosen for this task. Tasks made before this feature have nothing saved,
+         * so they keep [DEFAULT_REMINDERS]. A saved "NONE" means no reminders at all.
+         */
+        fun optionsFor(task: GroupTask): Set<ReminderOption> =
+            task.reminderOptions?.let { decodeReminderOptions(it) } ?: DEFAULT_REMINDERS
     }
 
     // groupId|taskId|OPTION_NAME
@@ -62,7 +70,7 @@ class GroupReminderScheduler(private val context: Context) {
             val deadline = deadlineMillis(task)
             val dueInfo = "Due at ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
 
-            for (option in DEFAULT_REMINDERS) {
+            for (option in optionsFor(task)) {
                 val trigger = deadline - option.offsetMinutes * 60_000L
                 if (trigger <= now) continue
 

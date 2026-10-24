@@ -35,7 +35,7 @@ fun GroupTaskEntry.toTaskWithCourse(): TaskWithCourse {
         dueTimeMinute = t.dueTimeMinute,
         priority = try { Priority.valueOf(t.priority) } catch (_: Exception) { Priority.MEDIUM },
         status = if (isDone) TaskStatus.COMPLETED else TaskStatus.PENDING,
-        reminderOptions = GroupReminderScheduler.DEFAULT_REMINDERS,
+        reminderOptions = GroupReminderScheduler.optionsFor(t),
         isSynced = true,
         createdAt = t.createdAt?.toDate()?.time ?: 0L
     )

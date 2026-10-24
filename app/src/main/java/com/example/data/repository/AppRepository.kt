@@ -109,6 +109,13 @@ class AppRepository(
         id
     }
 
+        /** Another (not deleted) course with the same code, ignoring spaces and capitals. */
+    suspend fun findActiveCourseByCode(code: String, excludeCourseId: Long = 0L): Course? = withContext(Dispatchers.IO) {
+        val normCode = FirestoreSyncManager.normalizeCode(code)
+        courseDao.getAllCoursesMatchingNormalizedCode(normCode)
+            .firstOrNull { !it.isDeleted && it.id != excludeCourseId }
+    }
+
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {
         val courseToUpdate = course.copy(code = course.code.trim().uppercase(), isSynced = false)
         courseDao.updateCourse(courseToUpdate)

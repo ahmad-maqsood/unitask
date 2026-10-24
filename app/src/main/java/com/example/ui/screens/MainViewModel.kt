@@ -210,6 +210,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _courseToEdit = MutableStateFlow<Course?>(null)
     val courseToEdit: StateFlow<Course?> = _courseToEdit.asStateFlow()
+    
+    // Set when the course being saved has the same code as another course.
+    private val _courseSaveError = MutableStateFlow<String?>(null)
+    val courseSaveError: StateFlow<String?> = _courseSaveError.asStateFlow()
+
 
     private val _selectedCourseDetailId = MutableStateFlow<Long?>(null)
     val selectedCourseDetailId: StateFlow<Long?> = _selectedCourseDetailId.asStateFlow()
@@ -661,19 +666,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openAddCourseDialog() {
+        _courseSaveError.value = null
         _courseToEdit.value = null
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun openEditCourseDialog(course: Course) {
+        _courseSaveError.value = null
         _courseToEdit.value = course
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun closeCourseDialog() {
+        _courseSaveError.value = null
         _isAddEditCourseDialogOpen.value = false
         _courseToEdit.value = null
     }
+
 
     fun saveCourse(
         name: String,
@@ -684,6 +693,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             val currentCourse = _courseToEdit.value
+            // Refuse a code that already belongs to another course (instead of overwriting it).
+            val duplicate = repository.findActiveCourseByCode(code, currentCourse?.id ?: 0L)
+            if (duplicate != null) {
+                _courseSaveError.value = "A course with this code already exists: ${duplicate.code} (${duplicate.name})"
+                return@launch
+            }
             if (currentCourse != null) {
                 val updated = currentCourse.copy(
                     name = name.trim(),
@@ -706,6 +721,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             closeCourseDialog()
         }
     }
+
+    fun clearCourseSaveError() {
+        _courseSaveError.value = null
+    }
+
 
     fun deleteCourse(course: Course) {
         viewModelScope.launch {

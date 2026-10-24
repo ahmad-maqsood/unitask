@@ -43,9 +43,12 @@ import com.example.ui.theme.CourseColors
 @Composable
 fun AddEditCourseDialog(
     courseToEdit: Course?,
-    onDismiss: () -> Unit,
-    onSave: (name: String, code: String, instructor: String, colorHex: String, location: String) -> Unit
+        onDismiss: () -> Unit,
+    onSave: (name: String, code: String, instructor: String, colorHex: String, location: String) -> Unit,
+    duplicateError: String? = null,
+    onClearDuplicateError: () -> Unit = {}
 ) {
+
     var code by remember { mutableStateOf(courseToEdit?.code ?: "") }
     var name by remember { mutableStateOf(courseToEdit?.name ?: "") }
     var instructor by remember { mutableStateOf(courseToEdit?.instructor ?: "") }
@@ -73,16 +76,21 @@ fun AddEditCourseDialog(
                 // Course Code
                 OutlinedTextField(
                     value = code,
-                    onValueChange = {
+                     onValueChange = {
                         code = it.take(30)
                         if (it.isNotBlank()) codeError = false
+                        onClearDuplicateError()
                     },
+
                     label = { Text("Course Code *") },
                     placeholder = { Text("e.g. CS 301, MATH 240") },
-                    isError = codeError,
+                    isError = codeError || duplicateError != null,
                     supportingText = if (codeError) {
                         { Text("Course code is required") }
+                    } else if (duplicateError != null) {
+                        { Text(duplicateError) }
                     } else null,
+
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()

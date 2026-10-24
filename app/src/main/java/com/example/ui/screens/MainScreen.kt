@@ -165,6 +165,8 @@ fun MainScreen(
 
     val isAddEditCourseDialogOpen by viewModel.isAddEditCourseDialogOpen.collectAsStateWithLifecycle()
     val courseToEdit by viewModel.courseToEdit.collectAsStateWithLifecycle()
+    val courseSaveError by viewModel.courseSaveError.collectAsStateWithLifecycle()
+
 
     val isAddEditSlotDialogOpen by viewModel.isAddEditSlotDialogOpen.collectAsStateWithLifecycle()
     val slotToEdit by viewModel.slotToEdit.collectAsStateWithLifecycle()
@@ -243,7 +245,10 @@ fun MainScreen(
                     onDismiss = { viewModel.closeCourseDialog() },
                     onSave = { name, code, inst, color, loc ->
                         viewModel.saveCourse(name, code, inst, color, loc)
-                    }
+                    },
+                    duplicateError = courseSaveError,
+                    onClearDuplicateError = { viewModel.clearCourseSaveError() }
+
                 )
             }
 
@@ -695,7 +700,10 @@ fun MainScreen(
             onDismiss = { viewModel.closeCourseDialog() },
             onSave = { name, code, instructor, color, location ->
                 viewModel.saveCourse(name, code, instructor, color, location)
-            }
+            },
+            duplicateError = courseSaveError,
+            onClearDuplicateError = { viewModel.clearCourseSaveError() }
+
         )
     }
 

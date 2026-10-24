@@ -169,6 +169,7 @@ fun MainScreen(
     val isAddEditSlotDialogOpen by viewModel.isAddEditSlotDialogOpen.collectAsStateWithLifecycle()
     val slotToEdit by viewModel.slotToEdit.collectAsStateWithLifecycle()
     val preselectedCourseIdForSlot by viewModel.preselectedCourseIdForSlot.collectAsStateWithLifecycle()
+    val preselectedDayForSlot by viewModel.preselectedDayForSlot.collectAsStateWithLifecycle()
 
     val selectedCourseDetailId by viewModel.selectedCourseDetailId.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
@@ -251,6 +252,7 @@ fun MainScreen(
                     courses = allCourses,
                     slotToEdit = slotToEdit,
                     preselectedCourseId = preselectedCourseIdForSlot,
+                    preselectedDay = preselectedDayForSlot,
                     onDismiss = { viewModel.closeSlotDialog() },
                     onSave = { cId, day, sHour, sMin, eHour, eMin, classroom, instructor ->
                         viewModel.saveLectureSlot(cId, day, sHour, sMin, eHour, eMin, classroom, instructor)
@@ -312,6 +314,7 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    UpdateCheckButton()
                     if (currentUser == null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
@@ -616,6 +619,7 @@ fun MainScreen(
                             allTasks = allTasksWithCourse,
                             courses = allCourses,
                             onAddSlotClick = { viewModel.openAddSlotDialog() },
+                            onSelectedDayChange = { viewModel.setTimetableSelectedDay(it) },
                             onEditSlot = { viewModel.openEditSlotDialog(it) },
                             onDeleteSlot = { viewModel.deleteLectureSlot(it) },
                             onTaskClick = { viewModel.openEditTaskDialog(it.task) }
@@ -700,6 +704,7 @@ fun MainScreen(
             courses = allCourses,
             slotToEdit = slotToEdit,
             preselectedCourseId = preselectedCourseIdForSlot,
+            preselectedDay = preselectedDayForSlot,
             onDismiss = { viewModel.closeSlotDialog() },
             onSave = { courseId, dayOfWeek, startHour, startMinute, endHour, endMinute, classroom, instructor ->
                 viewModel.saveLectureSlot(courseId, dayOfWeek, startHour, startMinute, endHour, endMinute, classroom, instructor)

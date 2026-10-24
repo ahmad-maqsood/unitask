@@ -223,6 +223,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _preselectedCourseIdForSlot = MutableStateFlow<Long?>(null)
     val preselectedCourseIdForSlot: StateFlow<Long?> = _preselectedCourseIdForSlot.asStateFlow()
+    
+    // Day (1 = Monday ... 7 = Sunday) shown on the Timetable tab. New classes start on this day.
+    private val _timetableSelectedDay = MutableStateFlow((java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7 + 1)
+    private val _preselectedDayForSlot = MutableStateFlow(1)
+    val preselectedDayForSlot: StateFlow<Int> = _preselectedDayForSlot.asStateFlow()
+
+    fun setTimetableSelectedDay(day: Int) {
+        _timetableSelectedDay.value = day
+    }
+
 
     // Courses & Tasks streams
     val allCourses: StateFlow<List<Course>> = repository.allCourses
@@ -587,6 +597,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun openAddSlotDialog(courseId: Long? = null) {
         _slotToEdit.value = null
         _preselectedCourseIdForSlot.value = courseId
+        _preselectedDayForSlot.value = _timetableSelectedDay.value
         _isAddEditSlotDialogOpen.value = true
     }
 

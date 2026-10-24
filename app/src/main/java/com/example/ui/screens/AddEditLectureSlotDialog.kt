@@ -59,6 +59,7 @@ fun AddEditLectureSlotDialog(
     courses: List<Course>,
     slotToEdit: LectureSlot?,
     preselectedCourseId: Long?,
+    preselectedDay: Int = 1,
     onDismiss: () -> Unit,
     onSave: (
         courseId: Long,
@@ -82,7 +83,7 @@ fun AddEditLectureSlotDialog(
         )
     }
 
-    var dayOfWeek by remember { mutableIntStateOf(slotToEdit?.dayOfWeek ?: 1) }
+    var dayOfWeek by remember { mutableIntStateOf(slotToEdit?.dayOfWeek ?: preselectedDay) }
     var startHour by remember { mutableIntStateOf(slotToEdit?.startHour ?: 10) }
     var startMinute by remember { mutableIntStateOf(slotToEdit?.startMinute ?: 0) }
     var endHour by remember { mutableIntStateOf(slotToEdit?.endHour ?: 11) }

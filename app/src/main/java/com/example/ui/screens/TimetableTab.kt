@@ -70,6 +70,7 @@ fun TimetableTab(
     allTasks: List<TaskWithCourse>,
     courses: List<Course>,
     onAddSlotClick: () -> Unit,
+    onSelectedDayChange: (Int) -> Unit = {},
     onEditSlot: (LectureSlot) -> Unit,
     onDeleteSlot: (LectureSlot) -> Unit,
     onTaskClick: (TaskWithCourse) -> Unit,
@@ -91,6 +92,9 @@ fun TimetableTab(
     }
 
     var selectedDay by remember { mutableIntStateOf(todayDayOfWeek) }
+    
+    // Tell the rest of the app which day is showing, so "Add class" starts on that day.
+    androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
 
     // Slots for the selected day, sorted chronologically
     val daySlots = remember(allSlots, selectedDay) {

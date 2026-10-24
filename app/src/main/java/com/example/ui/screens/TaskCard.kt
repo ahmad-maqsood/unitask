@@ -79,7 +79,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TaskCard(
@@ -123,37 +124,45 @@ fun TaskCard(
             cal.timeInMillis < System.currentTimeMillis()
         }
     }
-
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete task?",
+            message = "\"${task.title}\" will be removed from this phone and from your cloud backup.",
+            onConfirm = { onDeleteClick(task) },
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
+    val cardColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isCompleted) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = androidx.compose.animation.core.tween(250),
+        label = "task_card_color"
+    )
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("task_item_${task.id}")
             .clickable { onEditClick(task) },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCompleted) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
+                colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isCompleted) 0.dp else 2.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                // Left colour strip, as tall as the card whatever it contains.
+                .drawBehind {
+                    drawRect(color = courseColor, size = Size(6.dp.toPx(), size.height))
+                }
         ) {
-            // Left color strip corresponding to course
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .height(130.dp)
-                    .background(courseColor)
-            )
-
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(14.dp)
+                    .padding(start = 20.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
             ) {
                 // Top row: Course tag badge & Priority & Menu
                 Row(
@@ -279,7 +288,7 @@ fun TaskCard(
                                     text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
-                                        onDeleteClick(task)
+                                        showDeleteConfirm = true
                                     },
                                     leadingIcon = {
                                         Icon(

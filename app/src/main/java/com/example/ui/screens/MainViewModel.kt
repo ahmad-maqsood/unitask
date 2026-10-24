@@ -41,7 +41,9 @@ import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment
 import com.example.util.SavedAttachmentInfo
 import java.util.Calendar
-
+import com.example.data.local.deadlineMillis
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
 enum class MainTab {
     DEADLINES,
     TIMETABLE,
@@ -83,7 +85,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isCloudBackupSheetOpen = MutableStateFlow(false)
     val isCloudBackupSheetOpen: StateFlow<Boolean> = _isCloudBackupSheetOpen.asStateFlow()
-
+    private lateinit var authStateListener: FirebaseAuth.AuthStateListener
     init {
         val database = AppDatabase.getDatabase(application)
         val scheduler = ReminderScheduler(application)
@@ -102,7 +104,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         com.example.sync.SyncScheduler.scheduleGroupSync(application)
 
         // Listen for auth state changes and attach real-time guarded sync
-        Firebase.auth.addAuthStateListener { auth: FirebaseAuth ->
+        authStateListener = FirebaseAuth.AuthStateListener { auth: FirebaseAuth ->
             _currentUser.value = auth.currentUser
             if (auth.currentUser != null) {
                 com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
@@ -121,18 +123,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
-
-        if (Firebase.auth.currentUser != null) {
-            com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
-            viewModelScope.launch(Dispatchers.IO) {
-                com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
-            }
-        }
+        Firebase.auth.addAuthStateListener(authStateListener)
+       
     }
 
     override fun onCleared() {
         super.onCleared()
         com.example.sync.FirestoreSyncManager.stopRealtimeSync()
+        Firebase.auth.removeAuthStateListener(authStateListener)
     }
 
     fun openCloudBackupSheet() {
@@ -172,6 +170,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
             }
             com.example.sync.SyncScheduler.scheduleSync(getApplication())
+        }
+    }
+        /** Sets every personal and group reminder again, for example after exact alarms were allowed. */
+    fun rescheduleAllReminders() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            ReminderScheduler(app).rescheduleAll(AppDatabase.getDatabase(app))
+            com.example.reminder.GroupReminderScheduler(app).rescheduleAll()
         }
     }
 
@@ -248,6 +254,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val allTasksWithCourse: StateFlow<List<TaskWithCourse>> = repository.allTasksWithCourse
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+        // False until Room has answered once, so the Deadlines tab does not flash its empty message.
+    val tasksLoaded: StateFlow<Boolean> = repository.allTasksWithCourse
+        .map { true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val allLectureSlots: StateFlow<List<LectureSlotWithCourse>> = repository.allLectureSlots
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -389,9 +400,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Filtered & Sorted Tasks
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     val filteredTasks: StateFlow<List<TaskWithCourse>> = combine(
         allDeadlineTasks,
-        _searchQuery,
+        _searchQuery.debounce { if (it.isEmpty()) 0L else 200L },
         _statusFilter,
         _courseFilter,
         _sortOption
@@ -420,24 +432,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // Sorting
+                // Sort by the real deadline (date plus chosen time), worked out once per task.
+        val withDeadline = list.map { it to it.task.deadlineMillis }
         when (sort) {
-            TaskSortOption.DUE_DATE_ASC -> list.sortedWith(
-                compareBy<TaskWithCourse> { it.task.dueDateEpochMillis }
-                    .thenBy { it.task.dueTimeHour }
-                    .thenBy { it.task.dueTimeMinute }
-            )
-            TaskSortOption.DUE_DATE_DESC -> list.sortedWith(
-                compareByDescending<TaskWithCourse> { it.task.dueDateEpochMillis }
-                    .thenByDescending { it.task.dueTimeHour }
-                    .thenByDescending { it.task.dueTimeMinute }
-            )
-            TaskSortOption.PRIORITY_HIGH_FIRST -> list.sortedWith(
-                compareByDescending<TaskWithCourse> { it.task.priority.ordinal }
-                    .thenBy { it.task.dueDateEpochMillis }
-            )
+            TaskSortOption.DUE_DATE_ASC -> withDeadline.sortedBy { it.second }.map { it.first }
+            TaskSortOption.DUE_DATE_DESC -> withDeadline.sortedByDescending { it.second }.map { it.first }
+            TaskSortOption.PRIORITY_HIGH_FIRST -> withDeadline
+                .sortedWith(
+                    compareByDescending<Pair<TaskWithCourse, Long>> { it.first.task.priority.ordinal }
+                        .thenBy { it.second }
+                )
+                .map { it.first }
             TaskSortOption.TITLE_ASC -> list.sortedBy { it.task.title.lowercase() }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+       }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Quick stats
     val pendingCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
@@ -536,8 +546,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         reminderOptions: Set<ReminderOption>,
         newAttachments: List<SavedAttachmentInfo> = emptyList()
     ) {
+                // Take what we need and close the dialog first, so a second tap cannot save twice.
+        val currentTask = _taskToEdit.value
+        closeTaskDialog()
         viewModelScope.launch {
-            val currentTask = _taskToEdit.value
             val targetTaskId: Long
             if (currentTask != null) {
                 val updated = currentTask.copy(
@@ -580,7 +592,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 repository.insertAttachment(attachmentEntity)
             }
 
-            closeTaskDialog()
         }
     }
 
@@ -628,8 +639,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         classroom: String,
         instructor: String
     ) {
+                // Take what we need and close the dialog first, so a second tap cannot save twice.
+        val currentSlot = _slotToEdit.value
+        closeSlotDialog()
         viewModelScope.launch {
-            val currentSlot = _slotToEdit.value
             if (currentSlot != null) {
                 val updated = currentSlot.copy(
                     courseId = courseId,
@@ -655,7 +668,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 repository.insertLectureSlot(newSlot)
             }
-            closeSlotDialog()
         }
     }
 

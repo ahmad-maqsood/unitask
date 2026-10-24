@@ -11,12 +11,9 @@ object TimeFormatter {
      * Examples: (9, 30) -> "09:30 AM", (14, 15) -> "02:15 PM", (0, 5) -> "12:05 AM"
      */
     fun format12Hour(hour: Int, minute: Int): String {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-        }
-        val sdf = SimpleDateFormat("hh:mm a", Locale.US)
-        return sdf.format(cal.time)
+         val h12 = if (hour % 12 == 0) 12 else hour % 12
+        val suffix = if (hour % 24 < 12) "AM" else "PM"
+        return String.format(java.util.Locale.US, "%02d:%02d %s", h12, minute, suffix)
     }
 
     /**

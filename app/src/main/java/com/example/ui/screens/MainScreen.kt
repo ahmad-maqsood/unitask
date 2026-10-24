@@ -80,7 +80,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
-
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.Crossfade
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -139,6 +142,21 @@ fun MainScreen(
             }
         }
     }
+        // Android 12+ can refuse exact alarms. Without them, reminders can arrive minutes late.
+    val alarmManager = remember {
+        context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager
+    }
+    var needsExactAlarmAccess by remember { mutableStateOf(false) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        val blocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            alarmManager?.canScheduleExactAlarms() == false
+        if (needsExactAlarmAccess && !blocked) {
+            // The user just allowed it: set every reminder again as an exact alarm.
+            viewModel.rescheduleAllReminders()
+        }
+        needsExactAlarmAccess = blocked
+        onPauseOrDispose { }
+    }
 
     // ViewModel states
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
@@ -157,7 +175,7 @@ fun MainScreen(
     val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
     val completedCount by viewModel.completedCount.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-
+     val tasksLoaded by viewModel.tasksLoaded.collectAsStateWithLifecycle()
     val isAddEditTaskDialogOpen by viewModel.isAddEditTaskDialogOpen.collectAsStateWithLifecycle()
     val taskToEdit by viewModel.taskToEdit.collectAsStateWithLifecycle()
     val taskAttachmentsToEdit by viewModel.taskAttachmentsToEdit.collectAsStateWithLifecycle()
@@ -178,104 +196,28 @@ fun MainScreen(
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullToRefreshState()
-
+    val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     // FAB Speed-dial menu expanded state
     var isFabMenuExpanded by remember { mutableStateOf(false) }
 
-    // Back closes the speed-dial menu first; otherwise ask before exiting the app.
+        // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
     BackHandler {
-        if (isFabMenuExpanded) {
-            isFabMenuExpanded = false
-        } else {
-            showExitConfirmDialog = true
+        when {
+            isFabMenuExpanded -> isFabMenuExpanded = false
+            currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
+            else -> showExitConfirmDialog = true
         }
     }
 
-    // If a course detail is open, show CourseDetailSheet
-    if (selectedCourseDetailId != null) {
-        val selectedCourseCount = remember(coursesWithCounts, selectedCourseDetailId) {
-            coursesWithCounts.find { it.course.id == selectedCourseDetailId }
-        }
-        val courseTasks = remember(filteredTasks, selectedCourseDetailId) {
-            filteredTasks.filter { it.task.courseId == selectedCourseDetailId }
-        }
-        val courseSlots = remember(allLectureSlots, selectedCourseDetailId) {
-            allLectureSlots.filter { it.slot.courseId == selectedCourseDetailId }
-        }
-
-        if (selectedCourseCount != null) {
-            CourseDetailSheet(
-                courseWithCount = selectedCourseCount,
-                tasks = courseTasks,
-                slots = courseSlots,
-                onBack = { viewModel.closeCourseDetail() },
-                onEditCourse = { viewModel.openEditCourseDialog(it) },
-                onDeleteCourse = { viewModel.deleteCourse(it) },
-                onAddTask = { courseId -> viewModel.openAddTaskDialog(courseId) },
-                onAddSlot = { courseId -> viewModel.openAddSlotDialog(courseId) },
-                onEditSlot = { viewModel.openEditSlotDialog(it) },
-                onDeleteSlot = { viewModel.deleteLectureSlot(it) },
-                onStatusCycle = { viewModel.cycleTaskStatus(it) },
-                onEditTask = { viewModel.openEditTaskDialog(it) },
-                onDeleteTask = { viewModel.deleteTask(it) }
-            )
-
-            // Render Dialogs even when course detail is open
-            if (isAddEditTaskDialogOpen) {
-                AddEditTaskDialog(
-                    courses = allCourses,
-                    taskToEdit = taskToEdit,
-                    existingAttachments = taskAttachmentsToEdit,
-                    initialCourseId = preselectedCourseId,
-                    onDismiss = { viewModel.closeTaskDialog() },
-                    onDeleteExistingAttachment = { viewModel.deleteTaskAttachment(it) },
-                    onSave = { title, desc, cId, dueDate, hour, min, priority, status, rem, newAtt ->
-                        viewModel.saveTask(title, desc, cId, dueDate, hour, min, priority, status, rem, newAtt)
-                    },
-                    onNeedCreateCourse = {
-                        viewModel.closeTaskDialog()
-                        viewModel.openAddCourseDialog()
-                    }
-                )
-            }
-
-            if (isAddEditCourseDialogOpen) {
-                AddEditCourseDialog(
-                    courseToEdit = courseToEdit,
-                    onDismiss = { viewModel.closeCourseDialog() },
-                    onSave = { name, code, inst, color, loc ->
-                        viewModel.saveCourse(name, code, inst, color, loc)
-                    },
-                    duplicateError = courseSaveError,
-                    onClearDuplicateError = { viewModel.clearCourseSaveError() }
-
-                )
-            }
-
-            if (isAddEditSlotDialogOpen) {
-                AddEditLectureSlotDialog(
-                    courses = allCourses,
-                    slotToEdit = slotToEdit,
-                    preselectedCourseId = preselectedCourseIdForSlot,
-                    preselectedDay = preselectedDayForSlot,
-                    onDismiss = { viewModel.closeSlotDialog() },
-                    onSave = { cId, day, sHour, sMin, eHour, eMin, classroom, instructor ->
-                        viewModel.saveLectureSlot(cId, day, sHour, sMin, eHour, eMin, classroom, instructor)
-                    }
-                )
-            }
-
-            if (isCloudBackupSheetOpen) {
-                CloudBackupSheet(
-                    currentUser = currentUser,
-                    onDismiss = { viewModel.closeCloudBackupSheet() },
-                    onAuthChanged = { viewModel.refreshAuth() }
-                )
-            }
-            return
-        }
+        // The course detail screen is drawn over the tabs further down. Remember the last course
+    // so it can finish its slide-out animation after it is closed or deleted.
+    val detailCourse = remember(coursesWithCounts, selectedCourseDetailId) {
+        coursesWithCounts.find { it.course.id == selectedCourseDetailId }
     }
+    val lastDetailCourse = remember { mutableStateOf<com.example.data.local.CourseWithTaskCount?>(null) }
+    if (detailCourse != null) lastDetailCourse.value = detailCourse
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -503,6 +445,50 @@ fun MainScreen(
                     }
                 }
             }
+                        if (needsExactAlarmAccess) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                context.startActivity(
+                                    android.content.Intent(
+                                        android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                        android.net.Uri.parse("package:${context.packageName}")
+                                    )
+                                )
+                            }
+                        }
+                        .testTag("exact_alarm_banner")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Allow exact reminders",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Tap to open the setting. Without it, deadline alerts can arrive late.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
 
             TabRow(
                 selectedTabIndex = currentTab.ordinal,
@@ -556,7 +542,14 @@ fun MainScreen(
                 onRefresh = { viewModel.refreshData() },
                 state = pullRefreshState
             ) {
-                when (currentTab) {
+                Crossfade(
+                    targetState = currentTab,
+                    animationSpec = tween(180),
+                    label = "main_tabs"
+                ) { tab ->
+                    // Each tab keeps its own scroll position while you look at another one.
+                    tabStateHolder.SaveableStateProvider(tab.name) {
+                        when (tab) {
                     MainTab.DEADLINES -> {
                         DeadlinesTab(
                             tasks = filteredTasks,
@@ -577,7 +570,8 @@ fun MainScreen(
                             onAddTaskClick = { viewModel.openAddTaskDialog() },
                             highlightedClassInfo = highlightedClassInfo,
                             onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) },
-                            groupEntries = groupEntryByItemId
+                            groupEntries = groupEntryByItemId,
+                            isLoading = !tasksLoaded
                         )
                     }
 
@@ -612,10 +606,43 @@ fun MainScreen(
                         )
                     }
                 }
+                }
+                }
             }
         }
     }
-
+        // Course detail slides in over the tabs, so the tabs underneath keep their scroll position.
+    AnimatedVisibility(
+        visible = detailCourse != null,
+        enter = slideInHorizontally(animationSpec = tween(220), initialOffsetX = { it / 5 }) +
+            fadeIn(animationSpec = tween(220)),
+        exit = slideOutHorizontally(animationSpec = tween(180), targetOffsetX = { it / 5 }) +
+            fadeOut(animationSpec = tween(180))
+    ) {
+        lastDetailCourse.value?.let { detail ->
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                CourseDetailSheet(
+                    courseWithCount = detail,
+                    tasks = allTasksWithCourse.filter { it.task.courseId == detail.course.id },
+                    slots = allLectureSlots.filter { it.slot.courseId == detail.course.id },
+                    onBack = { viewModel.closeCourseDetail() },
+                    onEditCourse = { viewModel.openEditCourseDialog(it) },
+                    onDeleteCourse = { viewModel.deleteCourse(it) },
+                    onAddTask = { courseId -> viewModel.openAddTaskDialog(courseId) },
+                    onAddSlot = { courseId -> viewModel.openAddSlotDialog(courseId) },
+                    onEditSlot = { viewModel.openEditSlotDialog(it) },
+                    onDeleteSlot = { viewModel.deleteLectureSlot(it) },
+                    onStatusCycle = { viewModel.cycleTaskStatus(it) },
+                    onEditTask = { viewModel.openEditTaskDialog(it) },
+                    onDeleteTask = { viewModel.deleteTask(it) }
+                )
+            }
+        }
+    }
+    }
     if (showExitConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showExitConfirmDialog = false },

@@ -85,7 +85,15 @@ fun CourseDetailSheet(
             Color(0xFF4F46E5)
         }
     }
-
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete course?",
+            message = "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            onConfirm = { onDeleteCourse(course) },
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,7 +117,7 @@ fun CourseDetailSheet(
                         Icon(Icons.Default.Edit, contentDescription = "Edit Course")
                     }
                     IconButton(
-                        onClick = { onDeleteCourse(course) },
+                        onClick = { showDeleteConfirm = true },
                         modifier = Modifier.testTag("course_detail_delete_button")
                     ) {
                         Icon(

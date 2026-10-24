@@ -85,6 +85,7 @@ import com.example.data.groups.GroupTask
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.data.local.computeDeadlineMillis
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,13 +137,12 @@ fun GroupDetailScreen(
         )
     }
     // Sort tasks: due date and time ascending
-    val sortedTasks = remember(tasks) {
-        tasks.sortedWith(
-            compareBy<GroupTask> { it.dueDateEpochMillis }
-                .thenBy { it.dueTimeHour }
-                .thenBy { it.dueTimeMinute }
-        )
+        val sortedTasks = remember(tasks) {
+        tasks.map { it to computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute) }
+            .sortedBy { it.second }
+            .map { it.first }
     }
+
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -352,6 +352,7 @@ fun GroupDetailScreen(
                             val canModify = task.createdBy == currentUid || isStaff
 
                             GroupTaskRow(
+                                modifier = Modifier.animateItem(),
                                 task = task,
                                 isDone = isDone,
                                 canModify = canModify,
@@ -585,11 +586,24 @@ fun GroupTaskRow(
     canModify: Boolean,
     onToggleDone: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val dateFormatter = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
-    val dueDateStr = dateFormatter.format(Date(task.dueDateEpochMillis))
-    val timeStr = String.format(Locale.getDefault(), "%02d:%02d", task.dueTimeHour, task.dueTimeMinute)
+        var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete task?",
+            message = "\"${task.title}\" will be deleted for everyone in the group.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
+    val dueDateStr = remember(task.dueDateEpochMillis) {
+        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(task.dueDateEpochMillis))
+    }
+    val timeStr = remember(task.dueTimeHour, task.dueTimeMinute) {
+        com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)
+    }
 
     val priorityColor = when (task.priority) {
         "HIGH" -> MaterialTheme.colorScheme.error
@@ -604,7 +618,7 @@ fun GroupTaskRow(
         ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDone) 0.dp else 2.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .testTag("group_task_card_${task.id}")
     ) {
@@ -716,7 +730,7 @@ fun GroupTaskRow(
                             Icon(Icons.Default.Edit, contentDescription = "Edit task", modifier = Modifier.size(18.dp))
                         }
                         IconButton(
-                            onClick = onDelete,
+                            onClick = { showDeleteConfirm = true },
                             modifier = Modifier
                                 .size(32.dp)
                                 .testTag("group_task_delete_${task.id}")

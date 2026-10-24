@@ -24,7 +24,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        println("DEBUG: TaskReminderReceiver.onReceive entered! action=${intent.action}, data=${intent.data}")
+
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, 0L)
         val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Upcoming Assignment"
         val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: "Course"
@@ -35,7 +35,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         createNotificationChannel(context)
 
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("opened_task_id", taskId)
         }
 
@@ -90,9 +90,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        println("DEBUG: Calling notify with id=$notificationId, notif=$notification")
+
         notificationManager?.notify(notificationId, notification)
-        println("DEBUG: Done calling notify")
+
     }
 
     private fun createNotificationChannel(context: Context) {

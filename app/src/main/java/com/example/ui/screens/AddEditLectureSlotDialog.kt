@@ -311,7 +311,15 @@ fun AddEditLectureSlotDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (selectedCourseId > 0) {
+                    val startTotal = startHour * 60 + startMinute
+                    val endTotal = endHour * 60 + endMinute
+                    if (endTotal <= startTotal) {
+                        android.widget.Toast.makeText(
+                            context,
+                            "End time must be after the start time",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else if (selectedCourseId > 0) {
                         onSave(
                             selectedCourseId,
                             dayOfWeek,

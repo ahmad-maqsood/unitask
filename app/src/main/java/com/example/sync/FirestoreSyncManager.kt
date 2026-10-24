@@ -749,6 +749,7 @@ object FirestoreSyncManager {
             val courseDao = database.courseDao()
             val taskDao = database.taskDao()
             val slotDao = database.lectureSlotDao()
+            val reminderScheduler = ReminderScheduler(context.applicationContext)
 
             // 1. Courses listener
             coursesListenerRegistration = coursesRef.addSnapshotListener { snapshot, error ->
@@ -870,7 +871,11 @@ object FirestoreSyncManager {
                                             cloudId = doc.id,
                                             isDeleted = false
                                         )
-                                        taskDao.insertTask(newTask)
+                                        val newId = taskDao.insertTask(newTask)
+                                        if (parsedStatus != TaskStatus.COMPLETED) {
+                                            reminderScheduler.scheduleReminder(newTask.copy(id = newId), course.code)
+                                        }
+
                                     } else if (existing.isDeleted) {
                                         try { doc.reference.delete() } catch (_: Exception) {}
                                     } else if (!existing.isSynced) {
@@ -890,12 +895,20 @@ object FirestoreSyncManager {
                                             cloudId = doc.id
                                         )
                                         taskDao.updateTask(updated)
+                                        if (parsedStatus == TaskStatus.COMPLETED) {
+                                            reminderScheduler.cancelReminder(updated.id)
+                                        } else {
+                                            reminderScheduler.scheduleReminder(updated, course.code)
+                                        }
+
                                     }
                                 }
                                 DocumentChange.Type.REMOVED -> {
                                     val existing = taskDao.getTaskByCloudId(doc.id)
                                     if (existing != null) {
+                                         reminderScheduler.cancelReminder(existing.id)
                                         taskDao.deleteTaskById(existing.id)
+
                                     }
                                 }
                             }

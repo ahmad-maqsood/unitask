@@ -175,9 +175,18 @@ fun AddEditTaskDialog(
     var courseDropdownExpanded by remember { mutableStateOf(false) }
 
     val selectedCourse = courses.find { it.id == selectedCourseId }
-
+    // Deleting the unsaved files must not depend on this screen staying alive, so use its own scope.
+    val cleanupAndDismiss: () -> Unit = {
+        val unsaved = newAttachments
+        if (unsaved.isNotEmpty()) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                unsaved.forEach { AttachmentManager.deleteAttachmentFile(context, it.relativePath) }
+            }
+        }
+        onDismiss()
+    }
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = cleanupAndDismiss,
         title = {
             Text(
                 text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
@@ -729,18 +738,7 @@ fun AddEditTaskDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = {
-                    // Clean up any uncommitted new attachments
-                    val attachmentsToClean = newAttachments
-                    if (attachmentsToClean.isNotEmpty()) {
-                        coroutineScope.launch {
-                            attachmentsToClean.forEach {
-                                AttachmentManager.deleteAttachmentFile(context, it.relativePath)
-                            }
-                        }
-                    }
-                    onDismiss()
-                },
+                onClick = cleanupAndDismiss,
                 modifier = Modifier.testTag("task_cancel_button")
             ) {
                 Text("Cancel")

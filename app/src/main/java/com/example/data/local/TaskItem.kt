@@ -79,3 +79,18 @@ data class TaskItem(
     val isDeleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )
+/**
+ * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was
+ * picked at, so never sort on it alone. Use this instead.
+ */
+fun computeDeadlineMillis(dueDateEpochMillis: Long, hour: Int, minute: Int): Long =
+    java.util.Calendar.getInstance().apply {
+        timeInMillis = dueDateEpochMillis
+        set(java.util.Calendar.HOUR_OF_DAY, hour)
+        set(java.util.Calendar.MINUTE, minute)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+val TaskItem.deadlineMillis: Long
+    get() = computeDeadlineMillis(dueDateEpochMillis, dueTimeHour, dueTimeMinute)

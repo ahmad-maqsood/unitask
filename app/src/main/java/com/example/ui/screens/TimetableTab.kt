@@ -63,7 +63,8 @@ import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
 import java.util.Calendar
-
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 @Composable
 fun TimetableTab(
     allSlots: List<LectureSlotWithCourse>,
@@ -91,7 +92,7 @@ fun TimetableTab(
         }
     }
 
-    var selectedDay by remember { mutableIntStateOf(todayDayOfWeek) }
+    var selectedDay by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(todayDayOfWeek) }
     
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
@@ -268,7 +269,8 @@ fun TimetableTab(
                     allTasks = allTasks,
                     onEditClick = { onEditSlot(slotWithCourse.slot) },
                     onDeleteClick = { onDeleteSlot(slotWithCourse.slot) },
-                    onTaskClick = onTaskClick
+                                        onTaskClick = onTaskClick,
+                    modifier = Modifier.animateItem()
                 )
             }
         }
@@ -309,19 +311,18 @@ fun TimetableSlotCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // Left color bar
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .height(130.dp)
-                    .background(courseColor)
-            )
-
+               Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                // Left colour bar, as tall as the card whatever it contains.
+                .drawBehind {
+                    drawRect(color = courseColor, size = Size(6.dp.toPx(), size.height))
+                }
+        ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(14.dp)
+                    .padding(start = 20.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
             ) {
                 // Time Range and Dropdown Menu
                 Row(

@@ -64,7 +64,15 @@ fun CourseCard(
             Color(0xFF4F46E5)
         }
     }
-
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete course?",
+            message = "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            onConfirm = { onDeleteClick(course) },
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -148,7 +156,7 @@ fun CourseCard(
                                 text = { Text("Delete Course", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
-                                    onDeleteClick(course)
+                                    showDeleteConfirm = true
                                 },
                                 leadingIcon = {
                                     Icon(

@@ -84,6 +84,7 @@ fun DeadlinesTab(
     onHighlightedClassTaskClick: ((TaskWithCourse) -> Unit)? = null,
     // Tasks that come from groups, keyed by the (negative) id they have in [tasks].
     groupEntries: Map<Long, GroupTaskEntry> = emptyMap(),
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -388,7 +389,9 @@ fun DeadlinesTab(
         }
 
         // Tasks List or Empty State
-        if (tasks.isEmpty()) {
+            if (tasks.isEmpty() && isLoading) {
+            // Still reading the database: show nothing instead of the empty message.
+        } else if (tasks.isEmpty()) {
             item(key = "empty_tasks_card") {
                 Card(
                     modifier = Modifier
@@ -455,12 +458,13 @@ fun DeadlinesTab(
                 }
             }
         } else {
-            items(tasks, key = { it.task.id }) { taskWithCourse ->
+            items(tasks, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                 TaskCard(
                     taskWithCourse = taskWithCourse,
                     onStatusCycle = onStatusCycle,
                     onEditClick = onEditTask,
                     onDeleteClick = onDeleteTask,
+                    modifier = Modifier.animateItem(),
                     groupEntry = groupEntries[taskWithCourse.task.id]
                 )
             }

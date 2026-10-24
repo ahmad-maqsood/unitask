@@ -148,6 +148,8 @@ fun MainScreen(
     val allTasksWithCourse by viewModel.allTasksWithCourse.collectAsStateWithLifecycle()
     val allLectureSlots by viewModel.allLectureSlots.collectAsStateWithLifecycle()
     val highlightedClassInfo by viewModel.highlightedClassInfo.collectAsStateWithLifecycle()
+    val groupEntryByItemId by viewModel.groupEntryByItemId.collectAsStateWithLifecycle()
+    val groupToOpen by viewModel.groupToOpen.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
     val courseFilter by viewModel.courseFilter.collectAsStateWithLifecycle()
@@ -603,7 +605,8 @@ fun MainScreen(
                             onDeleteTask = { viewModel.deleteTask(it) },
                             onAddTaskClick = { viewModel.openAddTaskDialog() },
                             highlightedClassInfo = highlightedClassInfo,
-                            onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) }
+                            onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) },
+                            groupEntries = groupEntryByItemId
                         )
                     }
 
@@ -631,7 +634,9 @@ fun MainScreen(
 
                     MainTab.GROUPS -> {
                         GroupsTab(
-                            onOpenCloudSheet = { viewModel.openCloudBackupSheet() }
+                            onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
+                            groupToOpen = groupToOpen,
+                            onGroupOpened = { viewModel.onGroupOpened() }
                         )
                     }
                 }

@@ -7,14 +7,16 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import com.example.data.groups.GroupTask
+import com.example.data.local.ReminderOption
 import com.example.util.TimeFormatter
 import java.util.Calendar
 
 /**
  * Deadline alarms for group tasks. Every phone sets its own alarms, so no server is needed.
  *
- * Each alarm is remembered in SharedPreferences so it can be put back after a reboot
- * (see BootReceiver) and cancelled later (task done, deleted, or you left the group).
+ * Group tasks get the same kind of reminders as personal tasks: one alarm per offset in
+ * [DEFAULT_REMINDERS]. Each alarm is remembered in SharedPreferences so it can be put back after
+ * a reboot (see BootReceiver) and cancelled later (task done, deleted, or you left the group).
  */
 class GroupReminderScheduler(private val context: Context) {
 
@@ -24,9 +26,18 @@ class GroupReminderScheduler(private val context: Context) {
     companion object {
         private const val SEP = "\u001F"
         private const val ACTION = "com.example.ACTION_GROUP_TASK_REMINDER"
+
+        /** Change this list to change when group-task reminders fire. */
+        val DEFAULT_REMINDERS: Set<ReminderOption> = linkedSetOf(
+            ReminderOption.ONE_DAY_BEFORE,
+            ReminderOption.TWO_HOURS_BEFORE,
+            ReminderOption.AT_DEADLINE
+        )
     }
 
-    private fun keyOf(groupId: String, taskId: String) = "$groupId|$taskId"
+    // groupId|taskId|OPTION_NAME
+    private fun keyOf(groupId: String, taskId: String, option: ReminderOption) =
+        "$groupId|$taskId|${option.name}"
 
     fun deadlineMillis(task: GroupTask): Long {
         val cal = Calendar.getInstance()
@@ -39,7 +50,7 @@ class GroupReminderScheduler(private val context: Context) {
     }
 
     /**
-     * Makes the alarms of one group match [tasks]: sets an alarm for every task that is not
+     * Makes the alarms of one group match [tasks]: sets the reminders of every task that is not
      * done and still in the future, and cancels alarms of tasks that are gone, done or past.
      */
     fun sync(groupId: String, groupLabel: String, tasks: List<GroupTask>, doneIds: Set<String>) {
@@ -48,27 +59,35 @@ class GroupReminderScheduler(private val context: Context) {
 
         for (task in tasks) {
             if (task.id in doneIds) continue
-            val trigger = deadlineMillis(task)
-            if (trigger <= now) continue
-
-            wanted.add(task.id)
-            val label = task.courseLabel?.takeIf { it.isNotBlank() } ?: groupLabel
+            val deadline = deadlineMillis(task)
             val dueInfo = "Due at ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
-            val key = keyOf(groupId, task.id)
-            prefs.edit()
-                .putString(key, listOf(trigger.toString(), task.title, label, dueInfo).joinToString(SEP))
-                .apply()
-            setAlarm(key, trigger, task.title, label, dueInfo)
+
+            for (option in DEFAULT_REMINDERS) {
+                val trigger = deadline - option.offsetMinutes * 60_000L
+                if (trigger <= now) continue
+
+                val key = keyOf(groupId, task.id, option)
+                wanted.add(key)
+                val value = listOf(trigger.toString(), task.title, groupLabel, dueInfo, option.label)
+                    .joinToString(SEP)
+                if (prefs.getString(key, null) != value) {
+                    prefs.edit().putString(key, value).apply()
+                }
+                // Always (re)set: it is idempotent, and it repairs alarms the system dropped.
+                setAlarm(key, trigger, task.title, groupLabel, dueInfo, option.label)
+            }
         }
 
         for (key in prefs.all.keys.toList()) {
-            if (key.startsWith("$groupId|") && key.substringAfter('|') !in wanted) {
-                cancelKey(key)
-            }
+            if (key.startsWith("$groupId|") && key !in wanted) cancelKey(key)
         }
     }
 
-    fun cancel(groupId: String, taskId: String) = cancelKey(keyOf(groupId, taskId))
+    fun cancel(groupId: String, taskId: String) {
+        for (key in prefs.all.keys.toList()) {
+            if (key.startsWith("$groupId|$taskId|")) cancelKey(key)
+        }
+    }
 
     fun cancelGroup(groupId: String) {
         for (key in prefs.all.keys.toList()) {
@@ -89,11 +108,12 @@ class GroupReminderScheduler(private val context: Context) {
         for (key in prefs.all.keys.toList()) {
             val parts = (prefs.getString(key, null) ?: continue).split(SEP)
             val trigger = parts.getOrNull(0)?.toLongOrNull()
-            if (parts.size < 4 || trigger == null || trigger <= now) {
+            // Entries written by older versions have 4 parts; drop them, the next sync re-creates them.
+            if (parts.size < 5 || trigger == null || trigger <= now) {
                 prefs.edit().remove(key).apply()
                 continue
             }
-            setAlarm(key, trigger, parts[1], parts[2], parts[3])
+            setAlarm(key, trigger, parts[1], parts[2], parts[3], parts[4])
         }
     }
 
@@ -103,13 +123,20 @@ class GroupReminderScheduler(private val context: Context) {
             data = Uri.parse("unitask://group-reminder/" + Uri.encode(key))
         }
 
-    private fun setAlarm(key: String, trigger: Long, title: String, label: String, dueInfo: String) {
+    private fun setAlarm(
+        key: String,
+        trigger: Long,
+        title: String,
+        label: String,
+        dueInfo: String,
+        optionLabel: String
+    ) {
         val intent = intentFor(key).apply {
             putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, title)
             putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, label)
             putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, dueInfo)
-            putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, "Group deadline")
-            // The receiver derives its notification id from this, so every task gets its own.
+            putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, optionLabel)
+            // The receiver derives its notification id from this, so every alarm gets its own.
             putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, "GROUP_$key")
         }
         val pendingIntent = PendingIntent.getBroadcast(

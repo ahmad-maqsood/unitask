@@ -14,6 +14,7 @@ object SyncScheduler {
 
     private const val UNIQUE_WORK_NAME = "unitask_cloud_sync_onetime"
     private const val PERIODIC_WORK_NAME = "unitask_cloud_sync_periodic"
+    private const val GROUP_PERIODIC_WORK_NAME = "unitask_group_sync_periodic"
 
     fun scheduleSync(context: Context) {
         val constraints = Constraints.Builder()
@@ -29,6 +30,24 @@ object SyncScheduler {
                 UNIQUE_WORK_NAME,
                 ExistingWorkPolicy.REPLACE,
                 syncRequest
+            )
+    }
+
+    /** Checks the user's groups every 15 minutes (the minimum WorkManager allows). */
+    fun scheduleGroupSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = PeriodicWorkRequestBuilder<GroupSyncWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(context.applicationContext)
+            .enqueueUniquePeriodicWork(
+                GROUP_PERIODIC_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
             )
     }
 

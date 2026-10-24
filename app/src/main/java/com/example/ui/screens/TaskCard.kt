@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Priority
+import com.example.data.groups.GroupTaskEntry
 import com.example.util.AttachmentManager
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -85,7 +87,9 @@ fun TaskCard(
     onStatusCycle: (TaskItem) -> Unit,
     onEditClick: (TaskItem) -> Unit,
     onDeleteClick: (TaskItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Set for tasks that come from a group: shows who added it and limits the menu.
+    groupEntry: GroupTaskEntry? = null
 ) {
     val task = taskWithCourse.task
     val course = taskWithCourse.course
@@ -167,12 +171,27 @@ fun TaskCard(
                             color = courseColor.copy(alpha = 0.15f),
                             contentColor = courseColor
                         ) {
-                            Text(
-                                text = course?.code ?: "General",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (groupEntry != null) {
+                                    Icon(
+                                        imageVector = Icons.Default.Groups,
+                                        contentDescription = "Group task",
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                                Text(
+                                    text = course?.code ?: "General",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 130.dp)
+                                )
+                            }
                         }
 
                         // Priority Badge
@@ -233,30 +252,44 @@ fun TaskCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit Task") },
-                                onClick = {
-                                    showMenu = false
-                                    onEditClick(task)
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Edit, contentDescription = null)
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showMenu = false
-                                    onDeleteClick(task)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.DeleteOutline,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            )
+                            if (groupEntry != null) {
+                                // Group tasks are edited or deleted inside the group.
+                                DropdownMenuItem(
+                                    text = { Text("Open group") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEditClick(task)
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Groups, contentDescription = null)
+                                    }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Edit Task") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEditClick(task)
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Edit, contentDescription = null)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMenu = false
+                                        onDeleteClick(task)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.DeleteOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -274,6 +307,18 @@ fun TaskCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                if (groupEntry != null) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = "Added by ${groupEntry.task.createdByName.ifBlank { "a member" }}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 // Optional description snippet
                 if (task.description.isNotBlank()) {

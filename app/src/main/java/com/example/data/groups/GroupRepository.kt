@@ -8,9 +8,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.DocumentSnapshot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import java.security.SecureRandom
@@ -52,6 +59,30 @@ data class GroupTask(
     val createdByName: String = "",
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null
+)
+
+/** One group as seen by this user: its tasks and which of them this user marked done. */
+data class GroupSnapshot(
+    val groupId: String,
+    val groupName: String,
+    val tasks: List<GroupTask>,
+    val done: Set<String>
+)
+
+/**
+ * [groupIds] is every group the user belongs to. [loaded] holds only the groups whose data has
+ * arrived, so a group that is still loading is never mistaken for a group with no tasks.
+ */
+data class GroupsState(
+    val groupIds: Set<String>,
+    val loaded: List<GroupSnapshot>
+)
+
+/** A group task together with what the Deadlines tab needs to show it as a personal task. */
+data class GroupTaskEntry(
+    val task: GroupTask,
+    val groupName: String,
+    val isDone: Boolean
 )
 
 class GroupRepository(private val context: Context) {
@@ -184,38 +215,147 @@ class GroupRepository(private val context: Context) {
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { doc ->
-                    val title = doc.getString("title") ?: return@mapNotNull null
-                    val desc = doc.getString("description")
-                    val courseLabel = doc.getString("courseLabel")
-                    val dueEpoch = doc.getLong("dueDateEpochMillis") ?: 0L
-                    val dueHour = doc.getLong("dueTimeHour")?.toInt() ?: 23
-                    val dueMin = doc.getLong("dueTimeMinute")?.toInt() ?: 59
-                    val priority = doc.getString("priority") ?: "MEDIUM"
-                    val createdBy = doc.getString("createdBy") ?: ""
-                    val createdByName = doc.getString("createdByName") ?: ""
-                    val createdAt = doc.getTimestamp("createdAt")
-                    val updatedAt = doc.getTimestamp("updatedAt")
-                    GroupTask(
-                        id = doc.id,
-                        groupId = groupId,
-                        title = title,
-                        description = desc,
-                        courseLabel = courseLabel,
-                        dueDateEpochMillis = dueEpoch,
-                        dueTimeHour = dueHour,
-                        dueTimeMinute = dueMin,
-                        priority = priority,
-                        createdBy = createdBy,
-                        createdByName = createdByName,
-                        createdAt = createdAt,
-                        updatedAt = updatedAt
-                    )
-                }
+                val list = snapshot.documents.mapNotNull { doc -> parseGroupTask(groupId, doc) }
                 trySend(list)
             }
         }
         awaitClose { registration.remove() }
+    }
+
+    private fun parseGroupTask(groupId: String, doc: DocumentSnapshot): GroupTask? {
+        val title = doc.getString("title") ?: return null
+        return GroupTask(
+            id = doc.id,
+            groupId = groupId,
+            title = title,
+            description = doc.getString("description"),
+            courseLabel = doc.getString("courseLabel"),
+            dueDateEpochMillis = doc.getLong("dueDateEpochMillis") ?: 0L,
+            dueTimeHour = doc.getLong("dueTimeHour")?.toInt() ?: 23,
+            dueTimeMinute = doc.getLong("dueTimeMinute")?.toInt() ?: 59,
+            priority = doc.getString("priority") ?: "MEDIUM",
+            createdBy = doc.getString("createdBy") ?: "",
+            createdByName = doc.getString("createdByName") ?: "",
+            createdAt = doc.getTimestamp("createdAt"),
+            updatedAt = doc.getTimestamp("updatedAt")
+        )
+    }
+
+    private fun <T : Any> Flow<T>.startWithNull(): Flow<T?> = flow {
+        emit(null)
+        collect { emit(it) }
+    }
+
+    /**
+     * Like [observeGroupTasks], but meant for the always-on app-level watcher: when the user is no
+     * longer allowed to read the group (removed, or group deleted) it emits an empty list and
+     * removes the stale bookmark, instead of silently keeping the last tasks.
+     */
+    private fun observeGroupTasksForApp(uid: String, groupId: String): Flow<List<GroupTask>> = callbackFlow {
+        val ref = db.collection("groups").document(groupId).collection("tasks")
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    trySend(emptyList())
+                    launch { checkAndCleanStaleMembership(uid, groupId) }
+                }
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                // An empty answer from the local cache only means "nothing downloaded yet" (fresh
+                // install, just joined). Wait for the server so existing tasks are not mistaken
+                // for brand new ones.
+                if (snapshot.metadata.isFromCache && snapshot.isEmpty) return@addSnapshotListener
+                trySend(snapshot.documents.mapNotNull { parseGroupTask(groupId, it) })
+            }
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun observeGroupSnapshot(uid: String, m: GroupMembership): Flow<GroupSnapshot?> =
+        combine(
+            observeGroupTasksForApp(uid, m.groupId).startWithNull(),
+            observeGroupDoneTasks(uid, m.groupId).startWithNull()
+        ) { tasks, done ->
+            if (tasks == null || done == null) null
+            else GroupSnapshot(
+                groupId = m.groupId,
+                groupName = m.name.ifBlank { m.username }.ifBlank { "Group" },
+                tasks = tasks,
+                done = done
+            )
+        }
+
+    /**
+     * Live view of every group the user is in: tasks and personal done marks, all groups at once.
+     * Runs independently of which screen is open.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeGroupsState(uid: String): Flow<GroupsState> =
+        observeMyGroupMemberships(uid).flatMapLatest { memberships ->
+            val ids = memberships.map { it.groupId }.toSet()
+            if (memberships.isEmpty()) {
+                flowOf(GroupsState(ids, emptyList()))
+            } else {
+                combine(memberships.map { observeGroupSnapshot(uid, it) }) { all ->
+                    GroupsState(ids, all.filterNotNull())
+                }
+            }
+        }
+
+    suspend fun getGroupTasksOnce(groupId: String): Result<List<GroupTask>> = try {
+        val snap = db.collection("groups").document(groupId).collection("tasks").get().await()
+        if (snap.metadata.isFromCache && snap.isEmpty) {
+            throw IllegalStateException("Only the empty local cache was available")
+        }
+        Result.success(snap.documents.mapNotNull { parseGroupTask(groupId, it) })
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getDoneTaskIdsOnce(uid: String, groupId: String): Set<String> = try {
+        db.collection("users").document(uid).collection("groupDone")
+            .whereEqualTo("groupId", groupId).get().await()
+            .documents.mapNotNull { it.getString("taskId") }.toSet()
+    } catch (_: Exception) {
+        emptySet()
+    }
+
+    /**
+     * One-shot version of [observeGroupsState] for the background worker. Returns null when the
+     * group list itself could not be read, so the caller leaves existing alarms alone. A group
+     * whose data cannot be read for any reason other than "not allowed" is left out of
+     * [GroupsState.loaded], so its alarms are kept too.
+     */
+    suspend fun fetchGroupsStateOnce(uid: String): GroupsState? {
+        if (uid.isBlank()) return null
+        return try {
+            withTimeout(TIMEOUT_MILLIS * 2) {
+                val memberships = db.collection("users").document(uid)
+                    .collection("groupMemberships").get().await().documents
+                val ids = HashSet<String>()
+                val loaded = ArrayList<GroupSnapshot>()
+                for (doc in memberships) {
+                    val gid = doc.getString("groupId") ?: doc.id
+                    ids.add(gid)
+                    val name = (doc.getString("name") ?: doc.getString("username") ?: "")
+                        .ifBlank { "Group" }
+                    val tasks = getGroupTasksOnce(gid)
+                    val failure = tasks.exceptionOrNull()
+                    if (failure == null) {
+                        loaded.add(GroupSnapshot(gid, name, tasks.getOrThrow(), getDoneTaskIdsOnce(uid, gid)))
+                    } else if (failure is FirebaseFirestoreException &&
+                        failure.code == FirebaseFirestoreException.Code.PERMISSION_DENIED
+                    ) {
+                        checkAndCleanStaleMembership(uid, gid)
+                        loaded.add(GroupSnapshot(gid, name, emptyList(), emptySet()))
+                    }
+                }
+                GroupsState(ids, loaded)
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**

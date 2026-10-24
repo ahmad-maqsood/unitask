@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.Course
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -81,6 +82,8 @@ fun DeadlinesTab(
     onAddTaskClick: () -> Unit,
     highlightedClassInfo: List<HighlightedClassInfo> = emptyList(),
     onHighlightedClassTaskClick: ((TaskWithCourse) -> Unit)? = null,
+    // Tasks that come from groups, keyed by the (negative) id they have in [tasks].
+    groupEntries: Map<Long, GroupTaskEntry> = emptyMap(),
     modifier: Modifier = Modifier
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -457,7 +460,8 @@ fun DeadlinesTab(
                     taskWithCourse = taskWithCourse,
                     onStatusCycle = onStatusCycle,
                     onEditClick = onEditTask,
-                    onDeleteClick = onDeleteTask
+                    onDeleteClick = onDeleteTask,
+                    groupEntry = groupEntries[taskWithCourse.task.id]
                 )
             }
         }

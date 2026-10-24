@@ -3,6 +3,9 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.groups.GroupRepository
+import com.example.data.groups.GroupTaskEntry
+import com.example.data.groups.GroupsState
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.CourseWithTaskCount
@@ -12,16 +15,22 @@ import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.repository.AppRepository
+import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +98,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // Schedule periodic sync
         com.example.sync.SyncScheduler.schedulePeriodicSync(application)
+        // Group deadline alarms and "new group task" notices while the app is closed
+        com.example.sync.SyncScheduler.scheduleGroupSync(application)
 
         // Listen for auth state changes and attach real-time guarded sync
         Firebase.auth.addAuthStateListener { auth: FirebaseAuth ->
@@ -226,6 +237,61 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allLectureSlots: StateFlow<List<LectureSlotWithCourse>> = repository.allLectureSlots
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // ---- Group tasks shown as personal tasks on the Deadlines tab ----
+    // This lives here (not in GroupsViewModel) because MainViewModel starts with the app, so group
+    // alarms and notifications work without ever opening the Groups tab.
+    private val groupRepository = GroupRepository(application)
+    private val groupTaskProcessor = GroupTaskProcessor(application)
+
+    // null until the first answer arrives, so "still loading" is never mistaken for "no groups".
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val groupsState: StateFlow<GroupsState?> = _currentUser.flatMapLatest { user ->
+        if (user == null) flowOf(GroupsState(emptySet(), emptyList()))
+        else groupRepository.observeGroupsState(user.uid)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            groupsState.filterNotNull().collect { state ->
+                val uid = _currentUser.value?.uid
+                if (uid == null) groupTaskProcessor.clearAll()
+                else groupTaskProcessor.process(uid, state)
+            }
+        }
+    }
+
+    private val groupEntries: StateFlow<List<GroupTaskEntry>> = groupsState.map { state ->
+        state?.loaded.orEmpty().flatMap { snapshot ->
+            snapshot.tasks.map { GroupTaskEntry(it, snapshot.groupName, it.id in snapshot.done) }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Lookup used by the Deadlines tab to show "added by" and to route clicks of group tasks. */
+    val groupEntryByItemId: StateFlow<Map<Long, GroupTaskEntry>> = groupEntries.map { list ->
+        list.associateBy { groupTaskItemId(it.task.groupId, it.task.id) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    // Personal tasks plus group tasks: everything the Deadlines tab lists.
+    private val allDeadlineTasks: StateFlow<List<TaskWithCourse>> = combine(
+        repository.allTasksWithCourse,
+        groupEntries
+    ) { personal, groups ->
+        personal + groups.map { it.toTaskWithCourse() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Set when a group task is tapped on the Deadlines tab; the Groups tab opens that group.
+    private val _groupToOpen = MutableStateFlow<String?>(null)
+    val groupToOpen: StateFlow<String?> = _groupToOpen.asStateFlow()
+
+    fun openGroup(groupId: String) {
+        _groupToOpen.value = groupId
+        _currentTab.value = MainTab.GROUPS
+    }
+
+    fun onGroupOpened() {
+        _groupToOpen.value = null
+    }
+
     // Class schedule shown on the Deadlines tab. Re-evaluated every minute and on pull to refresh.
     // Today's classes that have not ended and started no more than STALE_CLASS_MINUTES ago are
     // shown. When nothing is left today, the full schedule of the next day with classes is shown.
@@ -309,7 +375,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Filtered & Sorted Tasks
     val filteredTasks: StateFlow<List<TaskWithCourse>> = combine(
-        repository.allTasksWithCourse,
+        allDeadlineTasks,
         _searchQuery,
         _statusFilter,
         _courseFilter,
@@ -359,11 +425,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Quick stats
-    val pendingCount: StateFlow<Int> = allTasksWithCourse.combine(allTasksWithCourse) { tasks, _ ->
+    val pendingCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
         tasks.count { it.task.status != TaskStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val completedCount: StateFlow<Int> = allTasksWithCourse.combine(allTasksWithCourse) { tasks, _ ->
+    val completedCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
         tasks.count { it.task.status == TaskStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -389,6 +455,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun cycleTaskStatus(task: TaskItem) {
+        if (isGroupTaskItem(task)) {
+            // Group tasks: "done" is your own mark in the cloud, other members are not affected.
+            val entry = groupEntryByItemId.value[task.id] ?: return
+            val uid = _currentUser.value?.uid ?: return
+            groupRepository.setTaskDone(uid, entry.task.groupId, entry.task.id, !entry.isDone)
+            return
+        }
         viewModelScope.launch {
             val nextStatus = when (task.status) {
                 TaskStatus.PENDING -> TaskStatus.COMPLETED
@@ -399,6 +472,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setTaskStatus(task: TaskItem, newStatus: TaskStatus) {
+        if (isGroupTaskItem(task)) {
+            val entry = groupEntryByItemId.value[task.id] ?: return
+            val uid = _currentUser.value?.uid ?: return
+            groupRepository.setTaskDone(uid, entry.task.groupId, entry.task.id, newStatus == TaskStatus.COMPLETED)
+            return
+        }
         viewModelScope.launch {
             repository.updateTaskStatus(task.id, newStatus)
         }
@@ -412,6 +491,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openEditTaskDialog(task: TaskItem) {
+        if (isGroupTaskItem(task)) {
+            // Group tasks are edited inside their group.
+            groupEntryByItemId.value[task.id]?.let { openGroup(it.task.groupId) }
+            return
+        }
         _taskToEdit.value = task
         _taskAttachmentsToEdit.value = allTasksWithCourse.value.find { it.task.id == task.id }?.attachments ?: emptyList()
         _preselectedCourseId.value = task.courseId
@@ -486,6 +570,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deleteTask(task: TaskItem) {
+        if (isGroupTaskItem(task)) return
         viewModelScope.launch {
             repository.deleteTask(task)
         }

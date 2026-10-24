@@ -58,6 +58,9 @@ import kotlinx.coroutines.flow.collectLatest
 fun GroupsTab(
     onOpenCloudSheet: () -> Unit,
     modifier: Modifier = Modifier,
+    // Set when the user taps a group task on the Deadlines tab: open that group.
+    groupToOpen: String? = null,
+    onGroupOpened: () -> Unit = {},
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -78,6 +81,13 @@ fun GroupsTab(
     val taskToEdit by viewModel.taskToEdit.collectAsStateWithLifecycle()
 
     var createdGroupSuccessInfo by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+
+    LaunchedEffect(groupToOpen, currentUser) {
+        if (groupToOpen != null && currentUser != null) {
+            viewModel.selectGroup(groupToOpen)
+            onGroupOpened()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collectLatest { msg ->

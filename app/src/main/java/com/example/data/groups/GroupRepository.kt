@@ -247,6 +247,7 @@ class GroupRepository(private val context: Context) {
             .limit(100)
         val registration = ref.addSnapshotListener { snapshot, error ->
             if (error != null || snapshot == null) {
+                if (error != null) android.util.Log.w("GroupChat", "Message listener failed", error)
                 return@addSnapshotListener
             }
             val list = snapshot.documents.mapNotNull { doc ->

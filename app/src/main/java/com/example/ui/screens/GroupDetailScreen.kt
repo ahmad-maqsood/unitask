@@ -81,6 +81,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
+import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupTask
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -107,12 +108,16 @@ fun GroupDetailScreen(
     onSetMemberRole: (GroupMember, Boolean) -> Unit,
     onRemoveMember: (GroupMember) -> Unit,
     onLeaveGroupClick: () -> Unit,
-    onDeleteGroupClick: () -> Unit
+    onDeleteGroupClick: () -> Unit,
+    chatMessages: List<GroupMessage>,
+    onSendMessage: (String) -> Unit,
+    onDeleteMessage: (GroupMessage) -> Unit
+
 ) {
     BackHandler { onBack() }
 
     val context = LocalContext.current
-    var selectedSectionTab by remember { mutableIntStateOf(0) } // 0: Tasks, 1: Members
+    var selectedSectionTab by remember { mutableIntStateOf(0) } // 0: Tasks, 1: Members, 2: Chat
     var showLeaveConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -307,9 +312,25 @@ fun GroupDetailScreen(
                    
                     modifier = Modifier.testTag("group_tab_members")
                 )
+                Tab(
+                    selected = selectedSectionTab == 2,
+                    onClick = { selectedSectionTab = 2 },
+                    text = { Text("Chat") },
+                    modifier = Modifier.testTag("group_tab_chat")
+                )
+
             }
 
-            if (selectedSectionTab == 0) {
+            if (selectedSectionTab == 2) {
+                GroupChatPanel(
+                    messages = chatMessages,
+                    currentUid = currentUid,
+                    canModerate = isStaff,
+                    onSend = onSendMessage,
+                    onDelete = onDeleteMessage
+                )
+            } else if (selectedSectionTab == 0) {
+
                 // Tasks list
                 if (sortedTasks.isEmpty()) {
                     Box(

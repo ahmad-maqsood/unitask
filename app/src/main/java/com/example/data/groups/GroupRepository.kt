@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -60,6 +61,16 @@ data class GroupTask(
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
     val reminderOptions: String? = null
+)
+
+/** One chat message in a group. */
+data class GroupMessage(
+    val id: String = "",
+    val groupId: String = "",
+    val text: String = "",
+    val senderId: String = "",
+    val senderName: String = "Student",
+    val createdAtMillis: Long = 0L
 )
 
 /** One group as seen by this user: its tasks and which of them this user marked done. */
@@ -221,6 +232,69 @@ class GroupRepository(private val context: Context) {
             }
         }
         awaitClose { registration.remove() }
+    }
+
+    /** Chat: the newest 100 messages of a group, oldest first. Live: updates when anyone sends. */
+    fun observeGroupMessages(groupId: String): Flow<List<GroupMessage>> = callbackFlow {
+        if (groupId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        val ref = db.collection("groups").document(groupId).collection("messages")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(100)
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            if (error != null || snapshot == null) {
+                return@addSnapshotListener
+            }
+            val list = snapshot.documents.mapNotNull { doc ->
+                val text = doc.getString("text") ?: return@mapNotNull null
+                GroupMessage(
+                    id = doc.id,
+                    groupId = groupId,
+                    text = text,
+                    senderId = doc.getString("senderId") ?: "",
+                    senderName = doc.getString("senderName") ?: "Student",
+                    // A message you just sent has no server time yet, so use the phone's estimate.
+                    createdAtMillis = doc.getTimestamp(
+                        "createdAt",
+                        DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
+                    )?.toDate()?.time ?: System.currentTimeMillis()
+                )
+            }.reversed()
+            trySend(list)
+        }
+        awaitClose { registration.remove() }
+    }
+
+    /** Sends a chat message. Non-blocking: it also works offline and goes out when you are back online. */
+    fun sendMessage(
+        groupId: String,
+        uid: String,
+        rawDisplayName: String,
+        text: String,
+        onFailure: (Exception) -> Unit
+    ) {
+        val clean = text.trim().take(500)
+        if (clean.isEmpty()) return
+        val data = hashMapOf<String, Any>(
+            "text" to clean,
+            "senderId" to uid,
+            "senderName" to rawDisplayName.trim().take(60).ifEmpty { "Student" },
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+        db.collection("groups").document(groupId).collection("messages").document()
+            .set(data)
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    /** Deletes one chat message (your own, or any message if you are the owner or an admin). */
+    fun deleteMessage(groupId: String, messageId: String, onFailure: (Exception) -> Unit) {
+        db.collection("groups").document(groupId).collection("messages").document(messageId)
+            .delete()
+            .addOnFailureListener { e -> onFailure(e) }
     }
 
     private fun parseGroupTask(groupId: String, doc: DocumentSnapshot): GroupTask? {
@@ -638,6 +712,16 @@ class GroupRepository(private val context: Context) {
                 }
                 batch.commit().await()
             }
+            // Chat messages go too, so nothing is left behind in the database.
+            val messageDocs = db.collection("groups").document(groupId).collection("messages").get().await().documents
+            for (chunk in messageDocs.chunked(400)) {
+                val batch = db.batch()
+                for (doc in chunk) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().await()
+            }
+
 
             // 2. Delete all members except own in batches <= 400
             val membersSnapshot = db.collection("groups").document(groupId).collection("members").get().await()
@@ -692,6 +776,7 @@ class GroupRepository(private val context: Context) {
             "dueDateEpochMillis" to dueDateEpochMillis,
             "dueTimeHour" to dueTimeHour,
             "dueTimeMinute" to dueTimeMinute,
+            "priority" to priority,
             "reminderOptions" to reminderOptions,
             "createdBy" to uid,
             "createdByName" to rawDisplayName.trim().take(60).ifEmpty { "Student" },

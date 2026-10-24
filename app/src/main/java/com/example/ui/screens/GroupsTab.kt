@@ -72,6 +72,7 @@ fun GroupsTab(
     val selectedGroupDetail by viewModel.selectedGroupDetail.collectAsStateWithLifecycle()
     val selectedGroupMembers by viewModel.selectedGroupMembers.collectAsStateWithLifecycle()
     val selectedGroupTasks by viewModel.selectedGroupTasks.collectAsStateWithLifecycle()
+    val selectedGroupMessages by viewModel.selectedGroupMessages.collectAsStateWithLifecycle()
     val myDoneTaskIds by viewModel.myDoneTaskIds.collectAsStateWithLifecycle()
     val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
 
@@ -119,6 +120,9 @@ fun GroupsTab(
                     tasks = selectedGroupTasks,
                     members = selectedGroupMembers,
                     doneTaskIds = myDoneTaskIds,
+                    chatMessages = selectedGroupMessages,
+                    onSendMessage = { text -> viewModel.sendMessage(text) },
+                    onDeleteMessage = { message -> viewModel.deleteMessage(message) },
                     isLoading = isActionLoading,
                     onBack = { viewModel.clearSelectedGroup() },
                     onAddTaskClick = { viewModel.openAddTaskDialog() },

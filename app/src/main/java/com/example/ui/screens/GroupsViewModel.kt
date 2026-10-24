@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
+import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupMembership
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTask
@@ -104,6 +105,15 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     val selectedGroupTasks: StateFlow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
         if (!groupId.isNullOrBlank()) {
             repository.observeGroupTasks(groupId)
+        } else {
+            flowOf(emptyList())
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val selectedGroupMessages: StateFlow<List<GroupMessage>> = _selectedGroupId.flatMapLatest { groupId ->
+        if (!groupId.isNullOrBlank()) {
+            repository.observeGroupMessages(groupId)
         } else {
             flowOf(emptyList())
         }
@@ -291,6 +301,24 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
     }
+    fun sendMessage(text: String) {
+        val groupId = _selectedGroupId.value ?: return
+        val user = _currentUser.value ?: return
+        repository.sendMessage(groupId, user.uid, user.displayName ?: "Student", text) { e ->
+            viewModelScope.launch {
+                _snackbarMessage.emit("Message not sent: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteMessage(message: GroupMessage) {
+        repository.deleteMessage(message.groupId, message.id) { e ->
+            viewModelScope.launch {
+                _snackbarMessage.emit("Could not delete message: ${e.message}")
+            }
+        }
+    }
+
 
     fun deleteTask(task: GroupTask) {
         reminderScheduler.cancel(task.groupId, task.id)

@@ -44,6 +44,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.Switch
+import com.example.util.NotificationSound
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
 import com.google.firebase.auth.FirebaseUser
@@ -66,7 +69,7 @@ fun SettingsButton(
     var showSheet by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var isChecking by remember { mutableStateOf(false) }
-
+    var useSystemSound by remember { mutableStateOf(NotificationSound.useSystem(context)) }
     // Silent check when the app opens: only a found update is remembered.
     LaunchedEffect(Unit) {
         val result = UpdateChecker.check(context)
@@ -127,6 +130,27 @@ fun SettingsButton(
                     }
                 }
 
+                Spacer(Modifier.height(8.dp))
+                SettingsSectionLabel("Notifications")
+                SettingsRow(
+                    icon = Icons.Default.NotificationsActive,
+                    title = "Use system notification sound",
+                    subtitle = if (useSystemSound) "Using your phone's default sound" else "Using the UniTask sound",
+                    onClick = {
+                        useSystemSound = !useSystemSound
+                        NotificationSound.setUseSystem(context, useSystemSound)
+                    },
+                    trailing = {
+                        Switch(
+                            checked = useSystemSound,
+                            onCheckedChange = {
+                                useSystemSound = it
+                                NotificationSound.setUseSystem(context, it)
+                            }
+                        )
+                    },
+                    testTag = "settings_system_sound_row"
+                )
                 Spacer(Modifier.height(8.dp))
                 SettingsSectionLabel("About")
                 val currentVersion = UpdateChecker.currentVersion(context)

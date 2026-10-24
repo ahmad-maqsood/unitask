@@ -117,7 +117,7 @@ class GroupTaskProcessor(context: Context) {
             openApp,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(text)
@@ -139,7 +139,7 @@ class GroupTaskProcessor(context: Context) {
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
+                NotificationSound.channelId(appContext, CHANNEL_ID),
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
@@ -149,6 +149,7 @@ class GroupTaskProcessor(context: Context) {
             }
             val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             manager?.deleteNotificationChannel("unitask_group_updates")
+            manager?.deleteNotificationChannel(NotificationSound.otherChannelId(appContext, CHANNEL_ID))
             manager?.createNotificationChannel(channel)
         }
     }

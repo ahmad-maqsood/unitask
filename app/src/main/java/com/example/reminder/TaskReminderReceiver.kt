@@ -64,7 +64,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             "[$courseCode] $dueInfo"
         }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(contentText)
@@ -98,7 +98,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
     private fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
+                NotificationSound.channelId(context, CHANNEL_ID),
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
@@ -109,6 +109,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             }
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             notificationManager?.deleteNotificationChannel("unitask_assignment_reminders")
+            notificationManager?.deleteNotificationChannel(NotificationSound.otherChannelId(context, CHANNEL_ID))
             notificationManager?.createNotificationChannel(channel)
         }
     }

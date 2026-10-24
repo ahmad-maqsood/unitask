@@ -9,11 +9,11 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
-
+import com.example.util.NotificationSound
 class TaskReminderReceiver : BroadcastReceiver() {
 
     companion object {
-        const val CHANNEL_ID = "unitask_assignment_reminders"
+        const val CHANNEL_ID = "unitask_assignment_reminders_v2"
         const val CHANNEL_NAME = "Assignment Deadlines & Reminders"
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_TASK_TITLE = "extra_task_title"
@@ -76,7 +76,12 @@ class TaskReminderReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .apply {
+                val customSound = NotificationSound.uri(context)
+                if (customSound != null) setSound(customSound) else setDefaults(NotificationCompat.DEFAULT_SOUND)
+            }
             .build()
+
 
         val notificationId = if (!reminderOption.isNullOrBlank()) {
             ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()
@@ -99,8 +104,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
             ).apply {
                 description = "Notifies students about upcoming assignments and homework deadlines"
                 enableVibration(true)
+                NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
+
             }
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.deleteNotificationChannel("unitask_assignment_reminders")
             notificationManager?.createNotificationChannel(channel)
         }
     }

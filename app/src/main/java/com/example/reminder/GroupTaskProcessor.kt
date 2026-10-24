@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.data.groups.GroupSnapshot
 import com.example.data.groups.GroupsState
+import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 
 /**
@@ -31,7 +32,7 @@ class GroupTaskProcessor(context: Context) {
     private val seenPrefs = appContext.getSharedPreferences("group_seen_tasks", Context.MODE_PRIVATE)
 
     companion object {
-        const val CHANNEL_ID = "unitask_group_updates"
+        const val CHANNEL_ID = "unitask_group_updates_v2"
         private const val CHANNEL_NAME = "Group updates"
         private const val BASELINE = "__baseline__"
         private const val MAX_INDIVIDUAL_NOTICES = 3
@@ -125,7 +126,12 @@ class GroupTaskProcessor(context: Context) {
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .apply {
+                val customSound = NotificationSound.uri(appContext)
+                if (customSound != null) setSound(customSound) else setDefaults(NotificationCompat.DEFAULT_SOUND)
+            }
             .build()
+
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(id, notification)
     }
@@ -138,8 +144,11 @@ class GroupTaskProcessor(context: Context) {
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Tells you when someone adds a task to one of your groups"
+                NotificationSound.uri(appContext)?.let { setSound(it, NotificationSound.audioAttributes()) }
+
             }
             val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            manager?.deleteNotificationChannel("unitask_group_updates")
             manager?.createNotificationChannel(channel)
         }
     }

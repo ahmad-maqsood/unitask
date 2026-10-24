@@ -100,10 +100,4 @@ cd unitask
 
 ---
 
-## Known Bugs
-
-1. Group members don't receive notifications for the tasks in the groups.
-2. A bit laggy UI.
-3. Inaccurate word wrapping.
-
 Suggestions are welcome.

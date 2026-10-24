@@ -21,6 +21,8 @@ Get the latest stable release APK directly on your Android device:
 2. Download `unitask.apk`.
 3. Open the downloaded file on your Android device and allow installation from your browser/file manager.
 
+**Already installed?** Open the settings (gear icon) in the app and tap **Check for update**. The app compares its own version with the newest GitHub release and opens the download page when a newer one exists.
+
 ---
 
 ## ✨ Features
@@ -41,11 +43,19 @@ Get the latest stable release APK directly on your Android device:
 - **Shared Group Tasks**: Add group project milestones and deadlines that automatically synchronize across every member's app.
 - **Multi-Admin Controls**: Group owners can appoint multiple admins, transfer permissions, or remove members.
 - **Personal Checklists**: Track your own completion status for shared group tasks without affecting other members.
+- **Group Chat**: Every group has a Chat tab. Messages show up live for all members, with your own on the right and others on the left with their name and time. Long-press a message to delete it (your own, or any message if you are the owner or an admin). The chat opens at the newest message and only jumps down for a new message when you are already at the bottom or you sent it.
+- **Group Tasks in Your Deadlines**: Tasks added to a group also appear in your Deadlines tab, labelled with the group name and who added them.
+- **Group Reminders for Everyone**: Pick several reminders per group task (for example 2 days, 1 day and 2 hours before) and every member gets them.
+- **Tidy Task Cards**: Long course names and long titles wrap cleanly. The join code card scrolls out of the way, and the chat gets the full screen while you type.
 
 ### 🔔 Smart Reminders & Alarms
 - **Multiple Triggers**: Configure alerts at deadline, 1 hour before, 2 hours before, 1 day before, or 2 days before.
 - **Device Reboot Resilience**: Built-in broadcast receivers automatically reschedule all active alarms after device reboots or app updates.
 - **Zero Server Dependency**: Alarms trigger directly via Android's local `AlarmManager`, keeping battery usage minimal.
+
+### 🎨 App & Updates
+- **Theme**: Choose light, dark or follow the system.
+- **In-app Update Check**: A button in the settings looks at the latest GitHub release and tells you when a newer version is out.
 
 ---
 
@@ -64,9 +74,16 @@ Due to aggressive battery management in some phones like Xiaomi HyperOS, backgro
 
 - **UI**: 100% Jetpack Compose with Material 3 design and dynamic dark mode.
 - **Local Storage**: Room Database (SQLite) with structured migrations for local persistence.
-- **Cloud Infrastructure**: Firebase Authentication (Google Sign-In), Cloud Firestore for real-time group sync and optional personal backups.
+- **Cloud Infrastructure**: Firebase Authentication (Google Sign-In), Cloud Firestore for real-time group sync, group chat and optional personal backups, all on the free Spark plan.
 - **Scheduling**: Android `AlarmManager` for exact deadline delivery and `WorkManager` for background synchronization.
 - **Platform Specs**: Minimum SDK 24 (Android 7.0), Target SDK 36 (Android 16).
+
+---
+
+## ⚠️ Known Limits
+
+- **Group chat has no push notifications.** New messages appear while the app is open. Alerts for a closed app would need a server (Firebase Cloud Functions, paid plan).
+- **Chat is text only**, shows the newest 100 messages, and sent messages cannot be edited.
 
 ---
 
@@ -91,12 +108,21 @@ cd unitask
 ```
 
 1. Add your `google-services.json` to the `app/` directory.
-2. Place your signing keystore (`my-upload-key.jks`) in the project root.
-3. Build the release APK with Gradle:
+2. Publish the rules in `firestore.rules` to your Firestore database (they include the group chat rules).
+3. Place your signing keystore (`my-upload-key.jks`) in the project root.
+4. Build the release APK with Gradle:
    ```bash
    ./gradlew assembleRelease
    ```
-4. Output binary will be generated at `app/build/outputs/apk/release/unitask.apk`.
+5. Output binary will be generated at `app/build/outputs/apk/release/unitask.apk`.
+
+### Publishing a release (so the in-app update check works)
+
+1. Raise `versionName` and `versionCode` in `app/build.gradle.kts` (for example `"1.1.0"` and `2`).
+2. Build the APK.
+3. On GitHub, create a release whose **tag** matches the `versionName` with a `v` in front (for example `v1.1.0`) and attach the APK.
+
+The update check reads only the tag. The release title and the APK file name do not matter to it.
 
 ---
 

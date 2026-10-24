@@ -319,47 +319,10 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    UpdateCheckButton()
-                    if (currentUser == null) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { viewModel.openCloudBackupSheet() }
-                                .testTag("top_bar_backup_button")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CloudSync,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = "Sign in to back up data",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    } else {
-                        IconButton(
-                            onClick = { viewModel.openCloudBackupSheet() },
-                            modifier = Modifier.testTag("top_bar_backup_active_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDone,
-                                contentDescription = "Cloud backup active",
-                                tint = if (isDarkTheme()) StatusDoneFgDark else StatusDoneFgLight
-                            )
-                        }
-                    }
+                    SettingsButton(
+                        currentUser = currentUser,
+                        onOpenCloudSheet = { viewModel.openCloudBackupSheet() }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface

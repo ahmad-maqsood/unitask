@@ -228,70 +228,7 @@ fun GroupDetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Join Code banner card
-            if (joinCode.isNotBlank()) {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "Group Join Code",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                            )
-                            Text(
-                                text = joinCode,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(
-                                onClick = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    val clip = ClipData.newPlainText("Join Code", joinCode)
-                                    clipboard.setPrimaryClip(clip)
-                                    Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.testTag("copy_join_code_button")
-                            ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy join code")
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(
-                                            Intent.EXTRA_TEXT,
-                                            "Join my UniTask group @$effectiveUsername with code $joinCode"
-                                        )
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share Group Join Code"))
-                                },
-                                modifier = Modifier.testTag("share_join_code_button")
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = "Share join code")
-                            }
-                        }
-                    }
-                }
-            }
 
             // Tab bar for Tasks vs Members
             TabRow(
@@ -330,44 +267,46 @@ fun GroupDetailScreen(
                     onDelete = onDeleteMessage
                 )
             } else if (selectedSectionTab == 0) {
-
-                // Tasks list
-                if (sortedTasks.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Assignment,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
-                            Text(
-                                text = "No tasks in this group yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "Tap the + button to add the first assignment or milestone.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                // Tasks list. The join code card is the first item, so it scrolls away with the list.
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (joinCode.isNotBlank()) {
+                        item(key = "join_code") {
+                            JoinCodeCard(joinCode = joinCode, username = effectiveUsername)
                         }
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    if (sortedTasks.isEmpty()) {
+                        item(key = "empty") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 48.dp, horizontal = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Assignment,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                                Text(
+                                    text = "No tasks in this group yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Tap the + button to add the first assignment or milestone.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
                         items(sortedTasks, key = { it.id }) { task ->
                             val isDone = doneTaskIds.contains(task.id)
                             val canModify = task.createdBy == currentUid || isStaff
@@ -382,7 +321,7 @@ fun GroupDetailScreen(
                                 onDelete = { onDeleteTaskClick(task) }
                             )
                         }
-                        item {
+                        item(key = "bottom_space") {
                             Spacer(Modifier.height(72.dp))
                         }
                     }
@@ -395,6 +334,11 @@ fun GroupDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    if (joinCode.isNotBlank()) {
+                        item(key = "join_code") {
+                            JoinCodeCard(joinCode = joinCode, username = effectiveUsername)
+                        }
+                    }
                         items(sortedMembers, key = { it.uid }) { member ->
                         val isMemberOwner = member.role == "owner"
                         Card(
@@ -438,7 +382,10 @@ fun GroupDetailScreen(
                                         Text(
                                             text = member.displayName,
                                             style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.SemiBold
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
                                         )
                                         if (member.uid == currentUid) {
                                             Text(
@@ -672,32 +619,68 @@ fun GroupTaskRow(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (!task.courseLabel.isNullOrBlank()) {
+                        // Chips take the free width. A long course name shrinks and wraps instead of
+                        // pushing the priority chip and the buttons out of the card.
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (!task.courseLabel.isNullOrBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                    modifier = Modifier.weight(1f, fill = false)
+                                ) {
+                                    Text(
+                                        text = task.courseLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                                color = priorityColor.copy(alpha = 0.15f)
                             ) {
                                 Text(
-                                    text = task.courseLabel,
+                                    text = task.priority,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1,
+                                    color = priorityColor,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = priorityColor.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                text = task.priority,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = priorityColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
+                        if (canModify) {
+                            IconButton(
+                                onClick = onEdit,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .testTag("group_task_edit_${task.id}")
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit task", modifier = Modifier.size(18.dp))
+                            }
+                            IconButton(
+                                onClick = { showDeleteConfirm = true },
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .testTag("group_task_delete_${task.id}")
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete task",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
 
@@ -707,6 +690,8 @@ fun GroupTaskRow(
                         text = task.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                         textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
                         color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
@@ -735,35 +720,80 @@ fun GroupTaskRow(
                         Text(
                             text = "Added by ${task.createdByName}",
                             style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
+            }
+        }
+    }
+}
 
-                if (canModify) {
-                    Row {
-                        IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("group_task_edit_${task.id}")
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit task", modifier = Modifier.size(18.dp))
-                        }
-                        IconButton(
-                            onClick = { showDeleteConfirm = true },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("group_task_delete_${task.id}")
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Delete task",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.error
+@Composable
+private fun JoinCodeCard(
+    joinCode: String,
+    username: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Group Join Code",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = joinCode,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Join Code", joinCode))
+                        Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.testTag("copy_join_code_button")
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy join code")
+                }
+
+                IconButton(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Join my UniTask group @$username with code $joinCode"
                             )
                         }
-                    }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Group Join Code"))
+                    },
+                    modifier = Modifier.testTag("share_join_code_button")
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = "Share join code")
                 }
             }
         }

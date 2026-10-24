@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -71,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -216,11 +219,14 @@ fun MainScreen(
     }
     val lastDetailCourse = remember { mutableStateOf<com.example.data.local.CourseWithTaskCount?>(null) }
     if (detailCourse != null) lastDetailCourse.value = detailCourse
-
+    // While the keyboard is open on the Groups tab, hide the app title bar and the tab row so the
+    // chat gets the space. They come back when the keyboard closes.
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val hideMainChrome = imeVisible && currentTab == MainTab.GROUPS
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!hideMainChrome) TopAppBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -490,7 +496,7 @@ fun MainScreen(
                 }
             }
 
-            TabRow(
+            if (!hideMainChrome) TabRow(
                 selectedTabIndex = currentTab.ordinal,
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,

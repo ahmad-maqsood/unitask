@@ -4,18 +4,19 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -62,9 +63,18 @@ fun GroupChatPanel(
     var messageToDelete by remember { mutableStateOf<GroupMessage?>(null) }
     val listState = rememberLazyListState()
 
-    // Jump to the newest message when the chat opens and whenever a new one arrives.
+    // The list is drawn upside down (newest message at index 0, at the bottom). This keeps the newest
+    // messages visible when the keyboard opens and the list gets shorter.
+    val newestFirst = remember(messages) { messages.reversed() }
+
+    // A new message scrolls the list down only if you sent it, or you were already at (or next to)
+    // the bottom. If you are reading older messages, the list stays where it is.
     LaunchedEffect(messages.lastOrNull()?.id) {
-        if (messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
+        val newest = messages.lastOrNull() ?: return@LaunchedEffect
+        val nearBottom = listState.firstVisibleItemIndex <= 1
+        if (newest.senderId == currentUid || nearBottom) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     messageToDelete?.let { message ->
@@ -80,7 +90,8 @@ fun GroupChatPanel(
         )
     }
 
-    // imePadding lifts the typing box above the keyboard.
+    // Lifts the typing box above the keyboard. The navigation bar height is subtracted because the
+    // screen around this already leaves room for it.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -108,14 +119,16 @@ fun GroupChatPanel(
                     .weight(1f)
                     .fillMaxWidth()
                     .testTag("group_chat_list"),
+                reverseLayout = true,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
-                    val previous = messages.getOrNull(index - 1)
+                itemsIndexed(newestFirst, key = { _, message -> message.id }) { index, message ->
+                    // The list is newest first, so the older neighbour is the next index.
+                    val older = newestFirst.getOrNull(index + 1)
                     val isMine = message.senderId == currentUid
                     Column {
-                        if (previous == null || !isSameDay(previous.createdAtMillis, message.createdAtMillis)) {
+                        if (older == null || !isSameDay(older.createdAtMillis, message.createdAtMillis)) {
                             ChatDayLabel(message.createdAtMillis)
                         }
                         ChatBubble(
@@ -184,6 +197,9 @@ private fun ChatBubble(
     val timeText = remember(message.createdAtMillis) {
         SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(message.createdAtMillis))
     }
+    // A bubble is at most 80% of the available width, so it fits small phones and tablets alike.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    val maxBubbleWidth = maxWidth * 0.8f
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
@@ -201,7 +217,7 @@ private fun ChatBubble(
                 MaterialTheme.colorScheme.surfaceVariant
             },
             modifier = Modifier
-                .widthIn(max = 300.dp)
+                .widthIn(max = maxBubbleWidth)
                 .combinedClickable(
                     onClick = {},
                     onLongClick = { if (canDelete) onLongPress() }
@@ -228,6 +244,7 @@ private fun ChatBubble(
                 )
             }
         }
+    }
     }
 }
 

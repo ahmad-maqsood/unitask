@@ -355,12 +355,13 @@ private fun signInWithGoogle(
     onCancelled: () -> Unit,
     scope: CoroutineScope
 ) {
-    val clientId = try {
-        context.getString(R.string.default_web_client_id)
-    } catch (_: Exception) {
+      // Looked up by name so the build doesn't depend on google-services.json generating it.
+    val clientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+    if (clientIdRes == 0) {
         onError("Google Client configuration missing (default_web_client_id)")
         return
     }
+    val clientId = context.getString(clientIdRes)
 
     val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
     val request = GetCredentialRequest.Builder()

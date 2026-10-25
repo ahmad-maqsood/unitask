@@ -44,7 +44,9 @@
         <receiver
             android:name=".reminder.ClassStartReceiver"
             android:exported="false" />
-
+        <receiver
+            android:name=".reminder.DailySummaryReceiver"
+            android:exported="false" />
         <receiver
             android:name=".reminder.BootReceiver"
             android:exported="true">

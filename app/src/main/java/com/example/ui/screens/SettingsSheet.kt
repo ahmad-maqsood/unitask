@@ -64,7 +64,10 @@ import androidx.compose.material.icons.filled.School
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
 import kotlinx.coroutines.Dispatchers
-
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.WbSunny
+import com.example.reminder.DailySummaryScheduler
+import com.example.util.TimeFormatter
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
 
 /**
@@ -88,6 +91,15 @@ fun SettingsButton(
     var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     var classStartEnabled by remember { mutableStateOf(ClassReminderScheduler.isEnabled(context)) }
+    var summaryEnabled by remember { mutableStateOf(DailySummaryScheduler.isEnabled(context)) }
+    var summaryHour by remember { mutableStateOf(DailySummaryScheduler.hour(context)) }
+    var summaryMinute by remember { mutableStateOf(DailySummaryScheduler.minute(context)) }
+    var showSummaryTimePicker by remember { mutableStateOf(false) }
+    val setSummaryEnabled: (Boolean) -> Unit = { enabled ->
+        summaryEnabled = enabled
+        DailySummaryScheduler.setEnabled(context, enabled)
+        DailySummaryScheduler(context).reschedule()
+    }
     val setClassStartEnabled: (Boolean) -> Unit = { enabled ->
         classStartEnabled = enabled
         ClassReminderScheduler.setEnabled(context, enabled)
@@ -130,7 +142,21 @@ fun SettingsButton(
             }
         )
     }
-
+    if (showSummaryTimePicker) {
+        Material3TimePickerDialog(
+            title = "Daily summary time",
+            initialHour = summaryHour,
+            initialMinute = summaryMinute,
+            onDismiss = { showSummaryTimePicker = false },
+            onConfirm = { hour, minute ->
+                summaryHour = hour
+                summaryMinute = minute
+                DailySummaryScheduler.setTime(context, hour, minute)
+                DailySummaryScheduler(context).reschedule()
+                showSummaryTimePicker = false
+            }
+        )
+    }
     if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
@@ -221,7 +247,32 @@ fun SettingsButton(
                     },
                     testTag = "settings_class_start_row"
                 )
-
+                SettingsRow(
+                    icon = Icons.Default.WbSunny,
+                    title = "Daily summary",
+                    subtitle = if (summaryEnabled) {
+                        "Every day at ${TimeFormatter.format12Hour(summaryHour, summaryMinute)}"
+                    } else {
+                        "Off. Get one alert with today's classes and tasks"
+                    },
+                    onClick = { setSummaryEnabled(!summaryEnabled) },
+                    trailing = {
+                        Switch(
+                            checked = summaryEnabled,
+                            onCheckedChange = { setSummaryEnabled(it) }
+                        )
+                    },
+                    testTag = "settings_daily_summary_row"
+                )
+                if (summaryEnabled) {
+                    SettingsRow(
+                        icon = Icons.Default.Schedule,
+                        title = "Summary time",
+                        subtitle = TimeFormatter.format12Hour(summaryHour, summaryMinute),
+                        onClick = { showSummaryTimePicker = true },
+                        testTag = "settings_daily_summary_time_row"
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 LocalBackupSection()
                 Spacer(Modifier.height(8.dp))

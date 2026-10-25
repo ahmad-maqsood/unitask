@@ -121,6 +121,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 GroupReminderScheduler(application).rescheduleAll()
             } catch (_: Exception) {
             }
+            try {
+                com.example.reminder.DailySummaryScheduler(application).reschedule()
+            } catch (_: Exception) {
+            }
         }
         // Schedule periodic sync
         com.example.sync.SyncScheduler.schedulePeriodicSync(application)

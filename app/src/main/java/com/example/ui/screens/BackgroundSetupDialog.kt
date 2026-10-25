@@ -51,7 +51,7 @@ fun BackgroundSetupDialog(
 
     // What happens after the battery step: the auto-start step on phones that have one, else finish.
     val afterBatteryStep: () -> Unit = {
-        if (BackgroundAccess.needsAutostartStep()) {
+        if (BackgroundAccess.needsAutostartStep() && !BackgroundAccess.isAutostartStepDone(context)) {
             currentStep = SetupStep.AUTOSTART
         } else {
             dismissDialog()

@@ -138,7 +138,10 @@ class GroupRepository(private val context: Context) {
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { doc ->
+                // Skip bookmarks that are still waiting for the server to confirm them. Otherwise
+                // the group's listeners start before the server knows the group, get
+                // PERMISSION_DENIED, and wrongly delete the bookmark as "stale".
+                val list = snapshot.documents.filter { !it.metadata.hasPendingWrites() }.mapNotNull { doc ->
                     val gid = doc.getString("groupId") ?: doc.id
                     val uname = doc.getString("username") ?: ""
                     val name = doc.getString("name") ?: uname
@@ -584,6 +587,35 @@ class GroupRepository(private val context: Context) {
                 // 1. Pre-check username
                 val nameDoc = db.collection("groupNames").document(cleanUsername).get().await()
                 if (nameDoc.exists()) {
+                    // Repair: an earlier attempt may have created the group but lost your bookmark.
+                    // If this username is yours and the group still exists, bring the group back.
+                    val existingGroupId = nameDoc.getString("groupId")
+                    val existingOwnerId = nameDoc.getString("ownerId")
+                    if (existingGroupId != null && existingOwnerId == uid) {
+                        val existingGroup = try {
+                            db.collection("groups").document(existingGroupId).get().await()
+                        } catch (_: Exception) {
+                            null
+                        }
+                        val existingJoinCode = existingGroup?.getString("joinCode")
+                        if (existingGroup != null && existingGroup.exists() &&
+                            existingGroup.getString("ownerId") == uid &&
+                            existingJoinCode != null
+                        ) {
+                            db.collection("users").document(uid)
+                                .collection("groupMemberships").document(existingGroupId)
+                                .set(
+                                    hashMapOf(
+                                        "groupId" to existingGroupId,
+                                        "username" to cleanUsername,
+                                        "name" to (existingGroup.getString("name") ?: cleanName).take(60),
+                                        "role" to "owner",
+                                        "joinedAt" to FieldValue.serverTimestamp()
+                                    )
+                                ).await()
+                            return@withTimeout Result.success(Pair(existingGroupId, existingJoinCode))
+                        }
+                    }
                     return@withTimeout Result.failure(IllegalStateException("That username is taken"))
                 }
 

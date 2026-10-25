@@ -5,125 +5,223 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-An offline-first Android app designed for university students to manage tasks and assignments, track course schedules, set deadline alarms, and collaborate with study groups in real time.
+UniTask is an offline-first Android app for university students to
+manage assignments, keep track of class schedules, receive reminders,
+organize courses, and collaborate with classmates in shared study
+groups.
 
-> 💡 **Built with AI Assistance**: Designed and directed as a personal project, co-engineered with Google AI Studio and Claude. Built to solve real-world university schedule management without bloat or ads.
+> 💡 **Built with AI assistance:** A personal project designed and
+> directed to solve everyday university planning needs without
+> unnecessary bloat or ads.
 
----
+------------------------------------------------------------------------
 
 ## 📥 Download & Install
 
-Get the latest stable release APK directly on your Android device:
+Download the latest stable APK from the [GitHub Releases
+page](https://github.com/ahmad-maqsood/unitask/releases/latest).
 
-[![Download APK](https://img.shields.io/badge/Download_APK-Direct_Release-brightgreen?style=for-the-badge&logo=android)](https://github.com/ahmad-maqsood/unitask/releases/latest)
+1.  Open [**Latest
+    Releases**](https://github.com/ahmad-maqsood/unitask/releases/latest).
+2.  Download `unitask.apk`.
+3.  Open the downloaded APK on your Android device and allow
+    installation from your browser or file manager if prompted.
 
-1. Head to [**Releases**](https://github.com/ahmad-maqsood/unitask/releases/latest).
-2. Download `unitask.apk`.
-3. Open the downloaded file on your Android device and allow installation from your browser/file manager.
+**Already installed?** Open UniTask Settings and select **Check for
+update**. The app checks the latest GitHub release and opens the release
+page if a newer version is available.
 
-**Already installed?** Open the settings (gear icon) in the app and tap **Check for update**. The app compares its own version with the newest GitHub release and opens the download page when a newer one exists.
-
----
+------------------------------------------------------------------------
 
 ## ✨ Features
 
 ### 📅 Deadlines & Assignments
-- **Comprehensive Task Manager**: Set priority (`Low`, `Medium`, `High`), due date, and exact submission time.
-- **Course Linking**: Tag tasks directly to your enrolled courses with matching color indicators.
-- **Status Toggles**: Mark assignments as pending or completed with instant visual feedback.
-- **Offline File Attachments**: Attach lecture PDFs, syllabus documents, and rubrics directly to tasks for offline viewing.
 
-### ⏰ Class Timetable & Schedule Tracker
-- **Weekly Schedule**: Visual day-by-day timetable showing recurring lectures, lecture halls, and instructors.
-- **Current & Next Class Highlights**: An active banner on the dashboard shows ongoing classes and calculates countdowns to your next lecture.
-- **Course Dashboard**: Track overall completion progress, instructors, and pending workloads per subject.
+-   **Task management:** Add a title, priority (`Low`, `Medium`,
+    `High`), due date, and exact submission time.
+-   **Course linking:** Associate assignments with courses and identify
+    them using course color indicators.
+-   **Clear task status:** Track work as pending or done.
+-   **Offline attachments:** Attach lecture PDFs, syllabi, and rubrics
+    to tasks for local access.
+-   **Group tasks in Deadlines:** Shared tasks can appear alongside
+    personal deadlines, with group and creator information.
+-   **Multiple reminders:** Choose supported reminder times for tasks
+    instead of relying on a single default alert.
+
+### ⏰ Class Timetable & Reminders
+
+-   **Weekly timetable:** View recurring lectures by day, including
+    lecture times, rooms, and instructors.
+-   **Current and next class:** A dashboard highlight shows the ongoing
+    class or counts down to the next lecture.
+-   **Class-start alerts:** Receive a notification when a scheduled
+    class begins.
+-   **10-minute early reminder:** Get an advance alert before class
+    starts.
+-   **Course progress:** Review course details, completion progress,
+    instructors, and pending workload.
+-   **Schedule validation:** Lecture times and course information are
+    validated to help prevent conflicting or invalid entries.
 
 ### 👥 Collaborative Study Groups
-- **Unique Handle & Join Code**: Create private study groups with unique usernames (`@handle`) and 8-character invite codes.
-- **Shared Group Tasks**: Add group project milestones and deadlines that automatically synchronize across every member's app.
-- **Multi-Admin Controls**: Group owners can appoint multiple admins, transfer permissions, or remove members.
-- **Personal Checklists**: Track your own completion status for shared group tasks without affecting other members.
-- **Group Chat**: Every group has a Chat tab. Messages show up live for all members, with your own on the right and others on the left with their name and time. Long-press a message to delete it (your own, or any message if you are the owner or an admin). The chat opens at the newest message and only jumps down for a new message when you are already at the bottom or you sent it.
-- **Group Tasks in Your Deadlines**: Tasks added to a group also appear in your Deadlines tab, labelled with the group name and who added them.
-- **Group Reminders for Everyone**: Pick several reminders per group task (for example 2 days, 1 day and 2 hours before) and every member gets them.
-- **Tidy Task Cards**: Long course names and long titles wrap cleanly. The join code card scrolls out of the way, and the chat gets the full screen while you type.
 
-### 🔔 Smart Reminders & Alarms
-- **Multiple Triggers**: Configure alerts at deadline, 1 hour before, 2 hours before, 1 day before, or 2 days before.
-- **Device Reboot Resilience**: Built-in broadcast receivers automatically reschedule all active alarms after device reboots or app updates.
-- **Zero Server Dependency**: Alarms trigger directly via Android's local `AlarmManager`, keeping battery usage minimal.
+-   **Create or join groups:** Use a unique handle (`@handle`) and an
+    invite code to collaborate with classmates.
+-   **Shared tasks:** Create group project tasks and synchronize them
+    across group members.
+-   **Assign tasks to members:** Tag individual members or use `@all`.
+    Assigned tasks appear in the relevant members' Deadlines tabs, while
+    group task announcements remain visible to the group.
+-   **Group roles and management:** Owners can manage members, appoint
+    admins, change roles, and remove members.
+-   **Personal checklists:** Track your own progress on shared tasks
+    without changing another member's completion status.
+-   **Group chat:** Exchange text messages in each group's Chat tab,
+    with live updates while the chat is open.
+-   **Unread message indicators:** See when a group or chat has unread
+    messages.
+-   **Background chat notifications:** The app checks for new messages
+    in the background and can notify you when a new message arrives
+    while you are not viewing the chat. Delivery may depend on Android
+    background restrictions.
+-   **Configurable group reminders:** Select reminder times for group
+    tasks; reminders are scheduled locally on each member's device.
+-   **Chat controls:** Long-press a message to delete your own message,
+    or use owner/admin permissions where applicable. The chat opens at
+    the latest messages and avoids unnecessary jumps when you are
+    reading older messages.
 
-### 🎨 App & Updates
-- **Theme**: Choose light, dark or follow the system.
-- **In-app Update Check**: A button in the settings looks at the latest GitHub release and tells you when a newer version is out.
+### 🔔 Notifications & Alarms
 
----
+-   **Configurable deadline alerts:** Use supported intervals such as at
+    the deadline, 1 or 2 hours before, and 1 or 2 days before, depending
+    on the task reminder options.
+-   **Custom notification sound:** Choose UniTask's custom sound or the
+    Android system default.
+-   **Reliable scheduling:** Local Android alarms are used for deadline
+    and class reminders.
+-   **Restart recovery:** Scheduled reminders are restored after device
+    restarts or app updates.
+-   **Background reliability guidance:** Settings can help you configure
+    autostart and battery restrictions on devices that limit background
+    work.
 
-## ⚙️ Important Settings
+### 💾 Local Backup & Preferences
 
-Due to aggressive battery management in some phones like Xiaomi HyperOS, background alarms may be delayed or silenced by default. Follow these quick steps to ensure 100% on-time deadline notifications:
+-   **Encrypted local backup:** Export and import an encrypted local
+    database backup using Android's system file picker.
+-   **Light and dark themes:** Choose light mode, dark mode, or follow
+    the system where supported.
+-   **Update checker:** Check GitHub Releases from inside the app.
 
-1. **Autostart**: Go to `Settings` > `Apps` > `Manage apps` > `UniTask` > Toggle **Autostart** ON.
-2. **Battery Saver**: In the same menu, set `Battery saver` to **No restrictions**.
-3. **Lock in Memory**: Open the App Switcher (Recent Apps), long-press the `UniTask` preview card, and tap the **Lock icon** 🔒.
-4. **Alarms & Reminders**: Ensure `Allow alarms and reminders` is enabled under Special App Access settings.
+------------------------------------------------------------------------
 
----
+## ⚙️ Important Notification Settings
+
+Some manufacturers apply aggressive battery management that can delay or
+suppress background reminders. If alerts do not arrive on time, check
+your device's settings:
+
+1.  **Autostart:** Allow UniTask to start automatically, if your device
+    provides this option.
+2.  **Battery restrictions:** Set UniTask to unrestricted or **No
+    restrictions** where available.
+3.  **Background activity:** Allow background activity and keep the app
+    available in Recent Apps if your device requires it.
+4.  **Alarms and reminders:** Allow exact alarms if Android requests
+    this permission.
+5.  **Notifications:** Make sure UniTask notifications are enabled in
+    Android settings.
+
+The exact menu names vary by Android version and phone manufacturer.
+
+------------------------------------------------------------------------
 
 ## 🛠️ Architecture & Tech Stack
 
-- **UI**: 100% Jetpack Compose with Material 3 design and dynamic dark mode.
-- **Local Storage**: Room Database (SQLite) with structured migrations for local persistence.
-- **Cloud Infrastructure**: Firebase Authentication (Google Sign-In), Cloud Firestore for real-time group sync, group chat and optional personal backups, all on the free Spark plan.
-- **Scheduling**: Android `AlarmManager` for exact deadline delivery and `WorkManager` for background synchronization.
-- **Platform Specs**: Minimum SDK 24 (Android 7.0), Target SDK 36 (Android 16).
+-   **UI:** Kotlin, Jetpack Compose, and Material 3.
+-   **Local storage:** Room database (SQLite) with schema migrations.
+-   **Cloud services:** Firebase Authentication and Cloud Firestore for
+    optional account features, group synchronization, and group chat.
+-   **Scheduling:** Android `AlarmManager` for scheduled reminders and
+    `WorkManager` for background synchronization and message checks.
+-   **Platform:** Minimum SDK 24 (Android 7.0); target SDK 36 (Android
+    16).
 
----
+------------------------------------------------------------------------
 
-## ⚠️ Known Limits
+## ⚠️ Known Limitations
 
-- **Group chat has no push notifications.** New messages appear while the app is open. Alerts for a closed app would need a server (Firebase Cloud Functions, paid plan).
-- **Chat is text only**, shows the newest 100 messages, and sent messages cannot be edited.
+-   Background chat notifications use background synchronization/polling
+    and may be affected by Android battery restrictions or
+    manufacturer-specific task management.
+-   Group chat is text-only. Messages cannot be edited, and the chat
+    displays a limited recent message history.
+-   Class and task reminders depend on notification permissions and
+    Android's alarm/background execution settings.
+-   Cloud-based group features require an internet connection; core
+    personal task and timetable workflows are designed to work offline.
 
----
+------------------------------------------------------------------------
 
 ## 🔒 Privacy & Permissions
 
-- **100% Usable Offline**: All assignments, timetable schedules, and course notes work completely offline without needing an account.
-- **Optional Google Sign-In**: Used strictly to sync personal data or join collaborative groups.
-- **Permissions**:
-  - `POST_NOTIFICATIONS`: To show assignment reminder alerts.
-  - `SCHEDULE_EXACT_ALARM`: To ring reminders precisely at your selected intervals.
-  - `RECEIVE_BOOT_COMPLETED`: To restore active deadline reminders after phone restarts.
+-   **Offline-first:** Core personal tasks, courses, and timetable data
+    are stored locally and can be used without signing in.
+-   **Optional sign-in:** Google sign-in is used for cloud
+    synchronization and collaborative features.
+-   **Local backup:** Backup files are encrypted; store exported files
+    somewhere safe and only import backups you trust.
+-   **Notifications:** `POST_NOTIFICATIONS` allows deadline, class, and
+    chat alerts.
+-   **Exact alarms:** `SCHEDULE_EXACT_ALARM` supports precise reminder
+    scheduling where required by Android.
+-   **Restart recovery:** `RECEIVE_BOOT_COMPLETED` allows scheduled
+    reminders to be restored after a reboot.
+-   **Network access:** Used for update checks and optional
+    Firebase-backed features.
 
----
+------------------------------------------------------------------------
 
 ## 👨‍💻 Developer & Build Setup
 
-To clone and compile your own release APK:
+Clone the repository:
 
-```bash
+``` bash
 git clone https://github.com/ahmad-maqsood/unitask.git
 cd unitask
 ```
 
-1. Add your `google-services.json` to the `app/` directory.
-2. Publish the rules in `firestore.rules` to your Firestore database (they include the group chat rules).
-3. Place your signing keystore (`my-upload-key.jks`) in the project root.
-4. Build the release APK with Gradle:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-5. Output binary will be generated at `app/build/outputs/apk/release/unitask.apk`.
+1.  Add your Firebase `google-services.json` file to the `app/`
+    directory for Firebase-enabled builds.
 
-### Publishing a release (so the in-app update check works)
+2.  Publish the rules in `firestore.rules` to your Firestore database.
 
-1. Raise `versionName` and `versionCode` in `app/build.gradle.kts` (for example `"1.1.0"` and `2`).
-2. Build the APK.
-3. On GitHub, create a release whose **tag** matches the `versionName` with a `v` in front (for example `v1.1.0`) and attach the APK.
+3.  Configure your release signing key using the project's expected
+    Gradle properties/environment setup. Do not commit signing keys or
+    Firebase secrets.
 
-The update check reads only the tag. The release title and the APK file name do not matter to it.
+4.  Build the release APK:
 
----
+    ``` bash
+    ./gradlew assembleRelease
+    ```
 
-Suggestions are welcome.
+5.  The APK is generated at `app/build/outputs/apk/release/unitask.apk`.
+
+### Publishing a release
+
+1.  Update `versionName` and `versionCode` in `app/build.gradle.kts`.
+2.  Build and test the release APK.
+3.  Create a GitHub release with a tag matching the version name
+    prefixed with `v` (for example, `v1.2.0`) and attach the APK as
+    `unitask.apk`.
+4.  Add user-facing release notes describing the new features and fixes.
+
+The in-app update checker uses the GitHub release tag to identify the
+latest version. Keep the tag and app version aligned.
+
+------------------------------------------------------------------------
+
+Suggestions and contributions are welcome.

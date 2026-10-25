@@ -202,7 +202,7 @@ fun SettingsButton(
                 SettingsRow(
                     icon = Icons.Default.School,
                     title = "Class start notifications",
-                    subtitle = if (classStartEnabled) "You get an alert when each class starts" else "Off",
+                    subtitle = if (classStartEnabled) "You get an alert 10 minutes before and when each class starts" else "Off",
                     onClick = { setClassStartEnabled(!classStartEnabled) },
                     trailing = {
                         Switch(

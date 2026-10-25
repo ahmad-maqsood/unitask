@@ -30,7 +30,11 @@ class ClassReminderScheduler(context: Context) {
         private const val KEY_ENABLED = "class_start_notifications_enabled"
         private const val KEY_SCHEDULED_IDS = "class_start_scheduled_slot_ids"
         const val ACTION_CLASS_START = "com.example.ACTION_CLASS_START"
+        const val ACTION_CLASS_SOON = "com.example.ACTION_CLASS_SOON"
 
+        /** How many minutes before a class the early alert comes. Change 10 to any number you like. */
+        const val LEAD_MINUTES = 10
+        const val LEAD_MILLIS = LEAD_MINUTES * 60_000L
         private val LOCK = Any()
 
         fun isEnabled(context: Context): Boolean =
@@ -45,7 +49,11 @@ class ClassReminderScheduler(context: Context) {
 
         fun notificationIdFor(slotId: Long): Int = ("class|" + slotId).hashCode()
 
+        fun soonNotificationIdFor(slotId: Long): Int = ("class_soon|" + slotId).hashCode()
+
         private fun requestCodeFor(slotId: Long): Int = ("class_alarm|" + slotId).hashCode()
+
+        private fun soonRequestCodeFor(slotId: Long): Int = ("class_soon_alarm|" + slotId).hashCode()
 
         /** The next time after [afterMillis] that this weekly slot starts (1 = Monday ... 7 = Sunday). */
         fun nextStartMillis(slot: LectureSlot, afterMillis: Long): Long {
@@ -90,14 +98,34 @@ class ClassReminderScheduler(context: Context) {
         }
     }
 
-    /** Sets the alarm for the first start of [slot] after [afterMillis]. */
+    /** Sets both alarms (10 minutes before, and at the start) for the next time [slot] happens. */
     fun scheduleSlot(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
-        val am = alarmManager ?: return
+        scheduleSoonAlarm(slot, afterMillis)
+        scheduleStartAlarm(slot, afterMillis)
+    }
+
+    /** Sets only the "class started" alarm. */
+    fun scheduleStartAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
         val trigger = nextStartMillis(slot, afterMillis)
+        setAlarm(trigger, requestCodeFor(slot.id), intentFor(slot.id, trigger))
+    }
+
+    /** Sets only the "class starts in 10 minutes" alarm. */
+    fun scheduleSoonAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
+        val classStart = nextStartMillis(slot, afterMillis + LEAD_MILLIS)
+        setAlarm(
+            classStart - LEAD_MILLIS,
+            soonRequestCodeFor(slot.id),
+            soonIntentFor(slot.id, classStart)
+        )
+    }
+
+    private fun setAlarm(trigger: Long, requestCode: Int, intent: Intent) {
+        val am = alarmManager ?: return
         val pendingIntent = PendingIntent.getBroadcast(
             appContext,
-            requestCodeFor(slot.id),
-            intentFor(slot.id, trigger),
+            requestCode,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         try {
@@ -115,20 +143,26 @@ class ClassReminderScheduler(context: Context) {
         }
     }
 
-    /** Removes the alarm of one slot and any notification it already posted. */
+    /** Removes both alarms of one slot and any notification they already posted. */
     fun cancelSlot(slotId: Long) {
+        cancelAlarm(requestCodeFor(slotId), intentFor(slotId, 0L))
+        cancelAlarm(soonRequestCodeFor(slotId), soonIntentFor(slotId, 0L))
+        val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        manager?.cancel(notificationIdFor(slotId))
+        manager?.cancel(soonNotificationIdFor(slotId))
+    }
+
+    private fun cancelAlarm(requestCode: Int, intent: Intent) {
         val pendingIntent = PendingIntent.getBroadcast(
             appContext,
-            requestCodeFor(slotId),
-            intentFor(slotId, 0L),
+            requestCode,
+            intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
         if (pendingIntent != null) {
             alarmManager?.cancel(pendingIntent)
             pendingIntent.cancel()
         }
-        val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        manager?.cancel(notificationIdFor(slotId))
     }
 
     /** Alarms are matched on action, data and request code; the extras may differ between calls. */
@@ -136,6 +170,15 @@ class ClassReminderScheduler(context: Context) {
         Intent(appContext, ClassStartReceiver::class.java).apply {
             action = ACTION_CLASS_START
             data = Uri.parse("unitask://class-start/$slotId")
+            putExtra(ClassStartReceiver.EXTRA_SLOT_ID, slotId)
+            putExtra(ClassStartReceiver.EXTRA_START_MILLIS, startMillis)
+        }
+
+    /** Same idea for the "10 minutes before" alarm. [startMillis] is when the class itself starts. */
+    private fun soonIntentFor(slotId: Long, startMillis: Long): Intent =
+        Intent(appContext, ClassStartReceiver::class.java).apply {
+            action = ACTION_CLASS_SOON
+            data = Uri.parse("unitask://class-soon/$slotId")
             putExtra(ClassStartReceiver.EXTRA_SLOT_ID, slotId)
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, startMillis)
         }

@@ -38,7 +38,10 @@ class ClassStartReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != ClassReminderScheduler.ACTION_CLASS_START) return
+        val action = intent.action
+        if (action != ClassReminderScheduler.ACTION_CLASS_START &&
+            action != ClassReminderScheduler.ACTION_CLASS_SOON
+        ) return
         val slotId = intent.getLongExtra(EXTRA_SLOT_ID, -1L)
         if (slotId <= 0L) return
         val startMillis = intent.getLongExtra(EXTRA_START_MILLIS, 0L)
@@ -47,7 +50,12 @@ class ClassStartReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                handle(appContext, slotId, startMillis)
+                 handle(
+                    appContext,
+                    slotId,
+                    startMillis,
+                    action == ClassReminderScheduler.ACTION_CLASS_SOON
+                )
             } catch (e: Exception) {
                 Log.w(TAG, "Could not handle class start: ${e.message}")
             } finally {
@@ -56,7 +64,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun handle(context: Context, slotId: Long, startMillis: Long) {
+    private suspend fun handle(context: Context, slotId: Long, startMillis: Long, isEarlyAlert: Boolean) {
         val database = AppDatabase.getDatabase(context)
         val scheduler = ClassReminderScheduler(context)
 
@@ -73,9 +81,19 @@ class ClassStartReceiver : BroadcastReceiver() {
         }
         if (!ClassReminderScheduler.isEnabled(context)) return
 
-        // Set next week's alarm first, so a problem below can never end the series.
         val now = System.currentTimeMillis()
-        scheduler.scheduleSlot(slot, maxOf(now, startMillis) + 1_000L)
+
+        if (isEarlyAlert) {
+            // Set next week's early alarm first, so a problem below can never end the series.
+            scheduler.scheduleSoonAlarm(slot, maxOf(now, startMillis) + 1_000L)
+            // For the early alert, startMillis is the moment the class starts.
+            if (startMillis <= 0L || now >= startMillis) return // too late, the class has started
+            postSoonNotification(context, slot, course, startMillis, now)
+            return
+        }
+
+        // Set next week's alarm first, so a problem below can never end the series.
+        scheduler.scheduleStartAlarm(slot, maxOf(now, startMillis) + 1_000L)
 
         val endMillis = classEndMillis(slot, startMillis)
         if (now >= endMillis) return // the phone was off or asleep and the class is already over
@@ -145,6 +163,73 @@ class ClassStartReceiver : BroadcastReceiver() {
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setTimeoutAfter(endMillis - now)
+            .apply {
+                val customSound = NotificationSound.uri(context)
+                if (customSound != null) setSound(customSound) else setDefaults(NotificationCompat.DEFAULT_SOUND)
+            }
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        manager?.notify(notificationId, notification)
+        // The class has started, so the "starts soon" notification is no longer needed.
+        manager?.cancel(ClassReminderScheduler.soonNotificationIdFor(slot.id))
+    }
+
+    /** "Class in 10 min" alert, shown shortly before the class starts. */
+    private fun postSoonNotification(
+        context: Context,
+        slot: LectureSlot,
+        course: Course,
+        startMillis: Long,
+        now: Long
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) return
+
+        ensureChannel(context)
+
+        val notificationId = ClassReminderScheduler.soonNotificationIdFor(slot.id)
+        val openApp = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            openApp,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val room = slot.classroom.ifBlank { course.location }
+        val teacher = slot.instructor.ifBlank { course.instructor }
+        val timeRange = TimeFormatter.formatTimeRange(
+            slot.startHour, slot.startMinute, slot.endHour, slot.endMinute
+        )
+        val details = buildList {
+            add(timeRange)
+            if (room.isNotBlank()) add("Room: $room")
+            if (teacher.isNotBlank()) add(teacher)
+        }.joinToString(" • ")
+
+        // Normally 10; smaller if the phone delivered the alarm a little late.
+        val minutesLeft = ((startMillis - now + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
+
+        val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Class in $minutesLeft min: ${course.code}")
+            .setContentText("${course.name} • $timeRange")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent)
+            // Counts down to the start of the class and removes itself when the class begins.
+            .setWhen(startMillis)
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setTimeoutAfter(startMillis - now)
             .apply {
                 val customSound = NotificationSound.uri(context)
                 if (customSound != null) setSound(customSound) else setDefaults(NotificationCompat.DEFAULT_SOUND)

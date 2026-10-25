@@ -3,6 +3,8 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.groups.GroupChatInfo
+import com.example.data.groups.GroupChatTracker
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.groups.GroupsState
@@ -757,5 +759,76 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeCourseDetail() {
         _selectedCourseDetailId.value = null
+    }
+
+    // -------------------------------------------------------------------------
+    // Group chat unread message tracking (in-app, phone-local)
+    // -------------------------------------------------------------------------
+    private val groupChatTracker = GroupChatTracker(application)
+    private val _chatReadVersion = MutableStateFlow(0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val groupChatInfo: StateFlow<Map<String, GroupChatInfo>> = _currentUser.flatMapLatest { user ->
+        if (user == null) {
+            groupChatTracker.clearAll()
+            flowOf(emptyMap())
+        } else {
+            val myUid = user.uid
+            groupRepository.observeMyGroupMemberships(myUid).flatMapLatest { memberships ->
+                val currentGroupIds = memberships.map { it.groupId }.toSet()
+                groupChatTracker.retainOnly(currentGroupIds)
+                if (memberships.isEmpty()) {
+                    flowOf(emptyMap())
+                } else {
+                    val flows = memberships.map { m ->
+                        val gid = m.groupId
+                        combine(
+                            groupRepository.observeGroupChatTail(gid),
+                            _chatReadVersion
+                        ) { tail, _ ->
+                            val storedLastRead = groupChatTracker.lastRead(gid)
+                            val effectiveLastRead: Long
+                            val unreadCount: Int
+
+                            if (storedLastRead == null) {
+                                if (tail.fromServer) {
+                                    val newestMillis = tail.messages.lastOrNull()?.createdAtMillis ?: 0L
+                                    groupChatTracker.setBaseline(gid, newestMillis)
+                                    effectiveLastRead = newestMillis
+                                } else {
+                                    effectiveLastRead = 0L
+                                }
+                                unreadCount = 0
+                            } else {
+                                effectiveLastRead = storedLastRead
+                                unreadCount = tail.messages.count { msg ->
+                                    msg.senderId != myUid && msg.createdAtMillis > storedLastRead
+                                }
+                            }
+
+                            GroupChatInfo(
+                                groupId = gid,
+                                unreadCount = unreadCount,
+                                lastMessage = tail.messages.lastOrNull(),
+                                lastReadMillis = effectiveLastRead
+                            )
+                        }
+                    }
+                    combine(flows) { array ->
+                        array.associateBy { it.groupId }
+                    }
+                }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val totalUnreadMessages: StateFlow<Int> = groupChatInfo.map { map ->
+        map.values.sumOf { it.unreadCount }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun markGroupChatRead(groupId: String, upToMillis: Long) {
+        if (groupId.isBlank()) return
+        groupChatTracker.markRead(groupId, upToMillis)
+        _chatReadVersion.value++
     }
 }

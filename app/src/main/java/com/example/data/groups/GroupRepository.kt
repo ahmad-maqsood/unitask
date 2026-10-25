@@ -73,6 +73,8 @@ data class GroupMessage(
     val createdAtMillis: Long = 0L
 )
 
+data class ChatTail(val messages: List<GroupMessage>, val fromServer: Boolean)
+
 /** One group as seen by this user: its tasks and which of them this user marked done. */
 data class GroupSnapshot(
     val groupId: String,
@@ -266,6 +268,42 @@ class GroupRepository(private val context: Context) {
                 )
             }.reversed()
             trySend(list)
+        }
+        awaitClose { registration.remove() }
+    }
+
+    /** Chat tail: the newest 50 messages of a group, oldest first, with cache vs server indicator. */
+    fun observeGroupChatTail(groupId: String): Flow<ChatTail> = callbackFlow {
+        if (groupId.isBlank()) {
+            trySend(ChatTail(emptyList(), fromServer = false))
+            close()
+            return@callbackFlow
+        }
+
+        val ref = db.collection("groups").document(groupId).collection("messages")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(50)
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            if (error != null || snapshot == null) {
+                if (error != null) android.util.Log.w("GroupChat", "observeGroupChatTail failed for $groupId", error)
+                return@addSnapshotListener
+            }
+            val list = snapshot.documents.mapNotNull { doc ->
+                val text = doc.getString("text") ?: return@mapNotNull null
+                GroupMessage(
+                    id = doc.id,
+                    groupId = groupId,
+                    text = text,
+                    senderId = doc.getString("senderId") ?: "",
+                    senderName = doc.getString("senderName") ?: "Student",
+                    createdAtMillis = doc.getTimestamp(
+                        "createdAt",
+                        DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
+                    )?.toDate()?.time ?: System.currentTimeMillis()
+                )
+            }.reversed()
+            val fromServer = !snapshot.metadata.isFromCache
+            trySend(ChatTail(list, fromServer))
         }
         awaitClose { registration.remove() }
     }

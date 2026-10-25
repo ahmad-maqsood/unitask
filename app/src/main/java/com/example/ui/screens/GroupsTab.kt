@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
@@ -52,7 +54,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.groups.GroupChatInfo
 import com.example.data.groups.GroupMembership
+import com.example.data.groups.GroupMessage
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -62,6 +66,8 @@ fun GroupsTab(
     // Set when the user taps a group task on the Deadlines tab: open that group.
     groupToOpen: String? = null,
     onGroupOpened: () -> Unit = {},
+    chatInfo: Map<String, GroupChatInfo> = emptyMap(),
+    onChatRead: (groupId: String, upToMillis: Long) -> Unit = { _, _ -> },
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -113,6 +119,7 @@ fun GroupsTab(
             } else if (selectedGroupId != null) {
                 // Detail screen for selected group
                 val activeMembership = memberships.find { it.groupId == selectedGroupId }
+                val currentChatInfo = chatInfo[selectedGroupId]
                 GroupDetailScreen(
                     currentUid = currentUser?.uid ?: "",
                     groupDetail = selectedGroupDetail,
@@ -143,7 +150,10 @@ fun GroupsTab(
                         viewModel.deleteCurrentGroup(username) {
                             Toast.makeText(context, "Group deleted", Toast.LENGTH_SHORT).show()
                         }
-                    }
+                    },
+                    chatUnreadCount = currentChatInfo?.unreadCount ?: 0,
+                    chatLastReadMillis = currentChatInfo?.lastReadMillis ?: 0L,
+                    onChatRead = { upToMillis -> onChatRead(selectedGroupId ?: "", upToMillis) }
                 )
             } else {
                 // Group list screen
@@ -151,7 +161,9 @@ fun GroupsTab(
                     memberships = memberships,
                     onCreateGroupClick = { viewModel.openCreateDialog() },
                     onJoinGroupClick = { viewModel.openJoinDialog() },
-                    onSelectGroup = { groupId -> viewModel.selectGroup(groupId) }
+                    onSelectGroup = { groupId -> viewModel.selectGroup(groupId) },
+                    chatInfo = chatInfo,
+                    currentUid = currentUser?.uid ?: ""
                 )
             }
 
@@ -281,7 +293,9 @@ fun GroupsListScreen(
     memberships: List<GroupMembership>,
     onCreateGroupClick: () -> Unit,
     onJoinGroupClick: () -> Unit,
-    onSelectGroup: (String) -> Unit
+    onSelectGroup: (String) -> Unit,
+    chatInfo: Map<String, GroupChatInfo> = emptyMap(),
+    currentUid: String = ""
 ) {
     Column(
         modifier = Modifier
@@ -356,9 +370,13 @@ fun GroupsListScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(memberships, key = { it.groupId }) { group ->
+                    val info = chatInfo[group.groupId]
                     GroupCardItem(
                         membership = group,
-                        onClick = { onSelectGroup(group.groupId) }
+                        onClick = { onSelectGroup(group.groupId) },
+                        unreadCount = info?.unreadCount ?: 0,
+                        lastMessage = info?.lastMessage,
+                        currentUid = currentUid
                     )
                 }
             }
@@ -369,7 +387,10 @@ fun GroupsListScreen(
 @Composable
 fun GroupCardItem(
     membership: GroupMembership,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    unreadCount: Int = 0,
+    lastMessage: GroupMessage? = null,
+    currentUid: String = ""
 ) {
     val isOwner = membership.role == "owner"
 
@@ -416,21 +437,63 @@ fun GroupCardItem(
                 Text(
                     text = "@${membership.username}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (lastMessage != null) {
+                    val previewPrefix = if (currentUid.isNotBlank() && lastMessage.senderId == currentUid) {
+                        "You: "
+                    } else {
+                        "${lastMessage.senderName}: "
+                    }
+                    Text(
+                        text = "$previewPrefix${lastMessage.text}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (unreadCount > 0) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (unreadCount > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = if (isOwner) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = if (isOwner) "Owner" else "Member",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isOwner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isOwner) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Text(
+                        text = if (isOwner) "Owner" else "Member",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isOwner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                if (unreadCount > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                        modifier = Modifier.defaultMinSize(minWidth = 20.dp, minHeight = 20.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = if (unreadCount >= 50) "50+" else "$unreadCount",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             }
         }
     }

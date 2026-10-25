@@ -71,6 +71,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -197,6 +198,8 @@ fun MainScreen(
     val selectedCourseDetailId by viewModel.selectedCourseDetailId.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
+    val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
+    val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
@@ -537,8 +540,10 @@ fun MainScreen(
                     onClick = { viewModel.setTab(MainTab.GROUPS) },
                     label = "Groups",
                     icon = Icons.Default.Groups,
-                    count = 0,
-                    testTag = "tab_groups"
+                    count = totalUnreadMessages,
+                    testTag = "tab_groups",
+                    badgeContainerColor = MaterialTheme.colorScheme.error,
+                    badgeContentColor = MaterialTheme.colorScheme.onError
                 )
             }
 
@@ -608,7 +613,9 @@ fun MainScreen(
                         GroupsTab(
                             onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
                             groupToOpen = groupToOpen,
-                            onGroupOpened = { viewModel.onGroupOpened() }
+                            onGroupOpened = { viewModel.onGroupOpened() },
+                            chatInfo = groupChatInfo,
+                            onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) }
                         )
                     }
                 }
@@ -738,7 +745,9 @@ private fun MainTabItem(
     label: String,
     icon: ImageVector,
     count: Int,
-    testTag: String
+    testTag: String,
+    badgeContainerColor: Color = MaterialTheme.colorScheme.primary,
+    badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
     Tab(
         selected = selected,
@@ -751,8 +760,8 @@ private fun MainTabItem(
                 badge = {
                     if (count > 0) {
                         Badge(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = badgeContainerColor,
+                            contentColor = badgeContentColor
                         ) {
                             Text(if (count > 99) "99+" else "$count")
                         }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -111,8 +112,10 @@ fun GroupDetailScreen(
     onDeleteGroupClick: () -> Unit,
     chatMessages: List<GroupMessage>,
     onSendMessage: (String) -> Unit,
-    onDeleteMessage: (GroupMessage) -> Unit
-
+    onDeleteMessage: (GroupMessage) -> Unit,
+    chatUnreadCount: Int = 0,
+    chatLastReadMillis: Long = 0L,
+    onChatRead: (Long) -> Unit = {}
 ) {
     BackHandler { onBack() }
 
@@ -252,7 +255,33 @@ fun GroupDetailScreen(
                 Tab(
                     selected = selectedSectionTab == 2,
                     onClick = { selectedSectionTab = 2 },
-                    text = { Text("Chat") },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("Chat")
+                            if (chatUnreadCount > 0 && selectedSectionTab != 2) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError,
+                                    modifier = Modifier.defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = if (chatUnreadCount >= 50) "50+" else "$chatUnreadCount",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier.testTag("group_tab_chat")
                 )
 
@@ -264,7 +293,9 @@ fun GroupDetailScreen(
                     currentUid = currentUid,
                     canModerate = isStaff,
                     onSend = onSendMessage,
-                    onDelete = onDeleteMessage
+                    onDelete = onDeleteMessage,
+                    lastReadAtOpenMillis = chatLastReadMillis,
+                    onMarkRead = onChatRead
                 )
             } else if (selectedSectionTab == 0) {
                 // Tasks list. The join code card is the first item, so it scrolls away with the list.

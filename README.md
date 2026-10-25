@@ -5,7 +5,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-An offline-first Android app designed for university students to manage assignments, track course schedules, set deadline alarms, and collaborate with study groups in real time.
+An offline-first Android app designed for university students to manage tasks and assignments, track course schedules, set deadline alarms, and collaborate with study groups in real time.
 
 > 💡 **Built with AI Assistance**: Designed and directed as a personal project, co-engineered with Google AI Studio and Claude. Built to solve real-world university schedule management without bloat or ads.
 

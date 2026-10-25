@@ -44,13 +44,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Switch
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.example.util.BackgroundAccess
 import com.example.util.NotificationSound
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
+
+private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
 
 /**
  * The gear button in the top bar. It opens a Settings sheet with:
@@ -70,6 +77,14 @@ fun SettingsButton(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var isChecking by remember { mutableStateOf(false) }
     var useSystemSound by remember { mutableStateOf(NotificationSound.useSystem(context)) }
+    var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
+    var showBackgroundSetupDialog by remember { mutableStateOf(false) }
+
+    LifecycleResumeEffect(Unit) {
+        isBatteryIgnoring = BackgroundAccess.isIgnoringBatteryOptimizations(context)
+        onPauseOrDispose { }
+    }
+
     // Silent check when the app opens: only a found update is remembered.
     LaunchedEffect(Unit) {
         val result = UpdateChecker.check(context)
@@ -85,6 +100,15 @@ fun SettingsButton(
         BadgedBox(badge = { if (available != null) Badge() }) {
             Icon(Icons.Default.Settings, contentDescription = "Settings")
         }
+    }
+
+    if (showBackgroundSetupDialog) {
+        BackgroundSetupDialog(
+            onFinished = {
+                showBackgroundSetupDialog = false
+                isBatteryIgnoring = BackgroundAccess.isIgnoringBatteryOptimizations(context)
+            }
+        )
     }
 
     if (showSheet) {
@@ -151,8 +175,37 @@ fun SettingsButton(
                     },
                     testTag = "settings_system_sound_row"
                 )
+                SettingsRow(
+                    icon = Icons.Default.BatteryChargingFull,
+                    title = "Background alerts",
+                    subtitle = if (isBatteryIgnoring) "Battery restrictions are off. Tap to review." else "Tap to keep alerts reliable",
+                    onClick = {
+                        showBackgroundSetupDialog = true
+                    },
+                    testTag = "settings_background_row"
+                )
+
                 Spacer(Modifier.height(8.dp))
                 SettingsSectionLabel("About")
+                SettingsRow(
+                    icon = Icons.Default.Code,
+                    title = "Source code",
+                    subtitle = "github.com/ahmad-maqsood/unitask",
+                    onClick = {
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
+                        } catch (_: Exception) {}
+                    },
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    testTag = "settings_source_code_row"
+                )
                 val currentVersion = UpdateChecker.currentVersion(context)
                 val statusText = when (val r = updateResult) {
                     is UpdateResult.Available -> "Update available: ${r.latestVersion} (you have $currentVersion)"

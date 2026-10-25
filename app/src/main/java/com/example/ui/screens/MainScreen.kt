@@ -84,6 +84,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
+import com.example.util.BackgroundAccess
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -110,14 +111,29 @@ fun MainScreen(
     }
 
     var showExitConfirmDialog by remember { mutableStateOf(false) }
+    var showBackgroundSetupDialog by remember { mutableStateOf(false) }
+
+    val checkAndShowBackgroundSetup: () -> Unit = {
+        if (!BackgroundAccess.isBackgroundSetupPrompted(context)) {
+            val needsBattery = !BackgroundAccess.isIgnoringBatteryOptimizations(context)
+            val needsAutostart = BackgroundAccess.needsAutostartStep() && !BackgroundAccess.isAutostartStepDone(context)
+            if (needsBattery || needsAutostart) {
+                BackgroundAccess.setBackgroundSetupPrompted(context, true)
+                showBackgroundSetupDialog = true
+            } else {
+                BackgroundAccess.setBackgroundSetupPrompted(context, true)
+            }
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         showNotificationBanner = !isGranted
+        checkAndShowBackgroundSetup()
     }
 
-        // Request notification permission once on first launch.
+    // Request notification permission once on first launch.
     // If permission is denied, keep the existing banner available for retry.
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -143,7 +159,11 @@ fun MainScreen(
                 permissionLauncher.launch(
                     Manifest.permission.POST_NOTIFICATIONS
                 )
+            } else {
+                checkAndShowBackgroundSetup()
             }
+        } else {
+            checkAndShowBackgroundSetup()
         }
     }
         // Android 12+ can refuse exact alarms. Without them, reminders can arrive minutes late.
@@ -261,7 +281,7 @@ fun MainScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = "University Assignment Manager",
+                                text = "University Task Manager",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -678,6 +698,12 @@ fun MainScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    if (showBackgroundSetupDialog && !showExitConfirmDialog) {
+        BackgroundSetupDialog(
+            onDismiss = { showBackgroundSetupDialog = false }
         )
     }
 

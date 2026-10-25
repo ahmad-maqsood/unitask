@@ -247,6 +247,7 @@ fun AddEditTaskDialog(
                                             Color(0xFF4F46E5)
                                         }
                                         Row(
+                                            modifier = Modifier.weight(1f, fill = false),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
@@ -259,7 +260,9 @@ fun AddEditTaskDialog(
                                             Text(
                                                 text = "${selectedCourse.code} - ${selectedCourse.name}",
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     } else {

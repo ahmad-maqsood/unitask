@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,7 +73,7 @@ private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
  * It also checks GitHub once when the app opens and shows a dot on the gear if a newer
  * release exists.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsButton(
     currentUser: FirebaseUser?,
@@ -161,7 +163,10 @@ fun SettingsButton(
 
                 Spacer(Modifier.height(8.dp))
                 SettingsSectionLabel("Appearance")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     ThemeMode.entries.forEach { themeMode ->
                         FilterChip(
                             selected = ThemePreference.mode == themeMode,

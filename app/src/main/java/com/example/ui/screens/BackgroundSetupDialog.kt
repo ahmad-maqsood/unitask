@@ -5,6 +5,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -121,7 +124,12 @@ fun BackgroundSetupDialog(
             AlertDialog(
                 onDismissRequest = dismissDialog,
                 title = { Text("Allow auto-start") },
-                text = { Text(BackgroundAccess.brandHint()) },
+                text = {
+                    Text(
+                        text = BackgroundAccess.brandHint(),
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    )
+                },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -158,7 +166,11 @@ fun BackgroundSetupDialog(
                             },
                             modifier = Modifier.testTag("background_setup_guide_button")
                         ) {
-                            Text("Steps for my phone")
+                            Text(
+                                text = "Steps for my phone",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         TextButton(
                             onClick = dismissDialog,

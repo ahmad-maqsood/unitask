@@ -329,24 +329,26 @@ fun GroupsListScreen(
         ) {
             Button(
                 onClick = onCreateGroupClick,
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)
                     .testTag("create_group_button")
             ) {
                 Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Create a group", maxLines = 1)
+                Text("Create a group", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
 
             FilledTonalButton(
                 onClick = onJoinGroupClick,
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)
                     .testTag("join_group_button")
             ) {
                 Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Join a group", maxLines = 1)
+                Text("Join a group", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
 

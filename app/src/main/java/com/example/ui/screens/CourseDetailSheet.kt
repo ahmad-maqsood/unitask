@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -100,7 +101,7 @@ fun CourseDetailSheet(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(course.code, fontWeight = FontWeight.Bold) },
+                title = { Text(course.code, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -369,6 +370,7 @@ fun CourseDetailSheet(
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Row(
+                                                modifier = Modifier.weight(1f),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                                             ) {
@@ -385,7 +387,7 @@ fun CourseDetailSheet(
                                                     )
                                                 }
 
-                                                Column {
+                                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                                     Text(
                                                         text = com.example.util.TimeFormatter.formatTimeRange(
                                                             slot.startHour, slot.startMinute,
@@ -393,14 +395,18 @@ fun CourseDetailSheet(
                                                         ),
                                                         style = MaterialTheme.typography.bodySmall,
                                                         fontWeight = FontWeight.SemiBold,
-                                                        color = MaterialTheme.colorScheme.onSurface
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
                                                     )
                                                     val loc = slot.classroom.ifBlank { course.location }
                                                     if (loc.isNotBlank()) {
                                                         Text(
                                                             text = loc,
                                                             style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
                                                         )
                                                     }
                                                 }

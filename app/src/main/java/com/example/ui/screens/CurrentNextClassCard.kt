@@ -239,6 +239,7 @@ fun CurrentNextClassCard(
                             )
                             Text(
                                 text = classroom,
+                                modifier = Modifier.weight(1f, fill = false),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -265,6 +266,7 @@ fun CurrentNextClassCard(
                             )
                             Text(
                                 text = instructor,
+                                modifier = Modifier.weight(1f, fill = false),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,

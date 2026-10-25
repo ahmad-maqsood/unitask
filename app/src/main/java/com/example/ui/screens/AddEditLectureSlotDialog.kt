@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
@@ -170,8 +171,11 @@ fun AddEditLectureSlotDialog(
                             ) {
                                 Text(
                                     text = selectedCourse?.let { "${it.code} - ${it.name}" } ?: "Select Course",
+                                    modifier = Modifier.weight(1f, fill = false),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowDown,

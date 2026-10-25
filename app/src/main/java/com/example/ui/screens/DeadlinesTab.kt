@@ -154,7 +154,8 @@ fun DeadlinesTab(
                     StatItem(
                         count = pendingCountStr,
                         label = "Pending Tasks",
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
                     )
                     Box(
                         modifier = Modifier
@@ -164,7 +165,8 @@ fun DeadlinesTab(
                     StatItem(
                         count = completedCountStr,
                         label = "Done",
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.weight(1f)
                     )
                     Box(
                         modifier = Modifier
@@ -174,7 +176,8 @@ fun DeadlinesTab(
                     StatItem(
                         count = coursesCountStr,
                         label = "Enrolled Courses",
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -377,13 +380,16 @@ fun DeadlinesTab(
                     text = "Upcoming Deadlines",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
 
                 Text(
                     text = sortOption.label,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -473,8 +479,16 @@ fun DeadlinesTab(
 }
 
 @Composable
-private fun StatItem(count: String, label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StatItem(
+    count: String,
+    label: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(
             text = count,
             style = MaterialTheme.typography.titleLarge,
@@ -484,7 +498,10 @@ private fun StatItem(count: String, label: String, color: Color) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

@@ -15,6 +15,8 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import android.util.Log
 import com.example.reminder.ReminderScheduler
+import com.example.data.local.AppDatabase
+import com.example.reminder.ClassReminderScheduler
 import com.example.sync.FirestoreSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
@@ -147,10 +149,13 @@ class AppRepository(
             }
         }
 
-               // 4. Soft-delete in Room. The sync removes the course from the cloud and only then
-        //    purges the rows, so the delete survives being offline or the app being killed.
+        // 4. Soft-delete in Room (tasks, timetable slots and the course). The sync removes them from
+        //    the cloud and only then purges the rows, so the delete survives being offline or the
+        //    app being killed. Slots must be soft-deleted too, or they come back when a course with
+        //    the same code is added again.
         for (cId in allIds) {
             taskDao.softDeleteTasksForCourse(cId)
+            lectureSlotDao.softDeleteSlotsForCourse(cId)
             courseDao.softDeleteCourse(cId)
         }
 
@@ -164,8 +169,17 @@ class AppRepository(
             FirestoreSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
         }
 
-        // 6. The cloud delete happens in the sync (step 0 of syncAllDataNow)
+        // 6. The cloud delete happens in the sync (step 0 of syncAllDataNow).
+        //    Signed out and never uploaded: there is nothing to tell the cloud, so remove the rows
+        //    now (foreign keys cascade to tasks, slots and attachments) instead of keeping them forever.
+        if (!isUserLoggedIn()) {
+            for (cId in allIds) {
+                val row = courseDao.getAnyCourseByIdSync(cId) ?: continue
+                if (row.cloudId.isBlank()) courseDao.deleteCourseById(cId)
+            }
+        }
 
+        refreshClassAlarms()
         triggerSyncIfLoggedIn()
     }
 
@@ -176,7 +190,14 @@ class AppRepository(
             false
         }
     }
-
+    /** Re-arms the "class started" alarms after any change to slots or courses. */
+    private suspend fun refreshClassAlarms() {
+        try {
+            ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Could not refresh class alarms: ${e.message}")
+        }
+    }
     suspend fun insertTask(task: TaskItem): Long = withContext(Dispatchers.IO) {
         val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
         val taskToInsert = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false, isDeleted = false)
@@ -253,15 +274,24 @@ class AppRepository(
         taskAttachmentDao.deleteAttachment(attachment)
     }
 
-    // Lecture slots
+       // Lecture slots
     suspend fun insertLectureSlot(slot: LectureSlot): Long = withContext(Dispatchers.IO) {
+        // A slot with the same course, day and time may have been deleted earlier in this session.
+        // Its cloud id is still in the "pending deletion" guard, which would make the next sync
+        // delete the new slot from the cloud and then from this phone.
+        val slotCourse = courseDao.getAnyCourseByIdSync(slot.courseId)
+        FirestoreSyncManager.clearPendingDeletionForSlot(
+            FirestoreSyncManager.getSlotDocId(slot, slotCourse?.code ?: "")
+        )
         val id = lectureSlotDao.insertSlot(slot.copy(isSynced = false))
+        refreshClassAlarms()
         triggerSyncIfLoggedIn()
         id
     }
 
     suspend fun updateLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
         lectureSlotDao.updateSlot(slot.copy(isSynced = false))
+        refreshClassAlarms()
         triggerSyncIfLoggedIn()
     }
 
@@ -273,6 +303,7 @@ class AppRepository(
             // Soft-delete; the sync removes it from the cloud and then purges the row.
             lectureSlotDao.softDeleteSlot(slot.id)
         }
+        refreshClassAlarms()
         triggerSyncIfLoggedIn()
     }
 

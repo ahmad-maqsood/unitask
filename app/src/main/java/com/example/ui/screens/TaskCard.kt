@@ -77,6 +77,7 @@ import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import com.example.data.local.deadlineMillis
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.draw.drawBehind
@@ -115,14 +116,7 @@ fun TaskCard(
     }
 
     val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status) {
-        if (task.status == TaskStatus.COMPLETED) false
-        else {
-            val cal = Calendar.getInstance()
-            cal.timeInMillis = task.dueDateEpochMillis
-            cal.set(Calendar.HOUR_OF_DAY, task.dueTimeHour)
-            cal.set(Calendar.MINUTE, task.dueTimeMinute)
-            cal.timeInMillis < System.currentTimeMillis()
-        }
+        task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
     }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     if (showDeleteConfirm) {

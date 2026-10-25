@@ -74,4 +74,6 @@ interface LectureSlotDao {
 
     @Query("UPDATE lecture_slots SET isDeleted = 1, isSynced = 0 WHERE id = :id")
     suspend fun softDeleteSlot(id: Long)
+        @Query("UPDATE lecture_slots SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
+    suspend fun softDeleteSlotsForCourse(courseId: Long)
 }

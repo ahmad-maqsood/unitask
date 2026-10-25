@@ -56,6 +56,10 @@ import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.School
+import com.example.data.local.AppDatabase
+import com.example.reminder.ClassReminderScheduler
+import kotlinx.coroutines.Dispatchers
 
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
 
@@ -79,7 +83,18 @@ fun SettingsButton(
     var useSystemSound by remember { mutableStateOf(NotificationSound.useSystem(context)) }
     var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
-
+    var classStartEnabled by remember { mutableStateOf(ClassReminderScheduler.isEnabled(context)) }
+    val setClassStartEnabled: (Boolean) -> Unit = { enabled ->
+        classStartEnabled = enabled
+        ClassReminderScheduler.setEnabled(context, enabled)
+        // Turning it on sets the alarms, turning it off removes them.
+        scope.launch(Dispatchers.IO) {
+            try {
+                ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+            } catch (_: Exception) {
+            }
+        }
+    }
     LifecycleResumeEffect(Unit) {
         isBatteryIgnoring = BackgroundAccess.isIgnoringBatteryOptimizations(context)
         onPauseOrDispose { }
@@ -184,7 +199,22 @@ fun SettingsButton(
                     },
                     testTag = "settings_background_row"
                 )
+                SettingsRow(
+                    icon = Icons.Default.School,
+                    title = "Class start notifications",
+                    subtitle = if (classStartEnabled) "You get an alert when each class starts" else "Off",
+                    onClick = { setClassStartEnabled(!classStartEnabled) },
+                    trailing = {
+                        Switch(
+                            checked = classStartEnabled,
+                            onCheckedChange = { setClassStartEnabled(it) }
+                        )
+                    },
+                    testTag = "settings_class_start_row"
+                )
 
+                Spacer(Modifier.height(8.dp))
+                LocalBackupSection()
                 Spacer(Modifier.height(8.dp))
                 SettingsSectionLabel("About")
                 SettingsRow(

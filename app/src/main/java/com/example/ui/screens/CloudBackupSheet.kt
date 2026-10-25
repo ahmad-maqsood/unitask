@@ -178,7 +178,8 @@ fun CloudBackupSheet(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = currentUser.displayName?.take(1) ?: currentUser.email?.take(1)?.uppercase() ?: "U",
+                                    text = (currentUser.displayName?.takeIf { it.isNotBlank() } ?: currentUser.email)
+                                        ?.take(1)?.uppercase() ?: "U",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimary

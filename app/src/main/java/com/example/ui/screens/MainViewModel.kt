@@ -21,6 +21,7 @@ import com.example.data.repository.AppRepository
 import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
+import com.example.reminder.ClassReminderScheduler
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -103,7 +104,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             lectureSlotDao = database.lectureSlotDao(),
             reminderScheduler = scheduler
         )
-
+        // Alarms can be lost (force stop, battery cleaners): set the class-start alarms again
+        // every time the app opens.
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                ClassReminderScheduler(application).rescheduleAll(database)
+            } catch (_: Exception) {
+            }
+        }
         // Schedule periodic sync
         com.example.sync.SyncScheduler.schedulePeriodicSync(application)
         // Group deadline alarms and "new group task" notices while the app is closed
@@ -185,6 +193,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val app = getApplication<Application>()
             ReminderScheduler(app).rescheduleAll(AppDatabase.getDatabase(app))
             com.example.reminder.GroupReminderScheduler(app).rescheduleAll()
+            ClassReminderScheduler(app).rescheduleAll(AppDatabase.getDatabase(app))
         }
     }
 

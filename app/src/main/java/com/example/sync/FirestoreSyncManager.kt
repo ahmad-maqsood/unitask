@@ -12,6 +12,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.decodeReminderOptions
 import com.example.data.local.encodeReminderOptions
 import com.example.reminder.ReminderScheduler
+import com.example.reminder.ClassReminderScheduler
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentChange
@@ -77,7 +78,16 @@ object FirestoreSyncManager {
         if (norm.isNotBlank()) {
             pendingDeletedCourseCodes.remove(norm)
             pendingDeletedCourseCodes.remove(code.trim().uppercase())
+            // The cloud document id of a course is built from its code. If it stays in the guard,
+            // the next sync deletes the freshly re-added course from the cloud, and the sync after
+            // that removes it (and its tasks) from this phone as "deleted on another device".
+            pendingDeletedCourseDocIds.remove(getCourseDocId(norm))
         }
+    }
+
+    /** Same idea for timetable slots, whose cloud id is built from course code, day and times. */
+    fun clearPendingDeletionForSlot(docId: String) {
+        if (docId.isNotBlank()) pendingDeletedSlotDocIds.remove(docId)
     }
 
     fun recordPendingTaskDeletion(taskId: Long, cloudId: String) {
@@ -720,6 +730,7 @@ object FirestoreSyncManager {
                 
                 // Cloud changes may have added or changed tasks: make sure their alarms exist.
                 reminderScheduler.rescheduleAll(database)
+                ClassReminderScheduler(context).rescheduleAll(database)
                 }
             }
 
@@ -997,6 +1008,12 @@ object FirestoreSyncManager {
                                     }
                                 }
                             }
+                        }
+                        // Slots changed in the cloud: keep the "class started" alarms in step.
+                        try {
+                            ClassReminderScheduler(context.applicationContext).rescheduleAll(database)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Could not refresh class alarms: ${e.message}")
                         }
                     }
                 }

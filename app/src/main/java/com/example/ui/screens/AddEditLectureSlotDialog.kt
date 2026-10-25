@@ -330,6 +330,12 @@ fun AddEditLectureSlotDialog(
                             classroom.trim(),
                             instructor.trim()
                         )
+                    } else {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Add a course first, then choose it for this class",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
                 },
                 modifier = Modifier.testTag("slot_save_button")

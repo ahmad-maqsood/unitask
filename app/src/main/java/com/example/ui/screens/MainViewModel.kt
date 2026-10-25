@@ -26,6 +26,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.example.util.safeAuth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -87,7 +88,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val _currentUser = MutableStateFlow<FirebaseUser?>(Firebase.auth.currentUser)
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(safeAuth()?.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
     private val _isCloudBackupSheetOpen = MutableStateFlow(false)
@@ -137,7 +138,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
-        Firebase.auth.addAuthStateListener(authStateListener)
+        safeAuth()?.addAuthStateListener(authStateListener)
 
 
     }
@@ -145,7 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         com.example.sync.FirestoreSyncManager.stopRealtimeSync()
-        Firebase.auth.removeAuthStateListener(authStateListener)
+        safeAuth()?.removeAuthStateListener(authStateListener)
     }
 
     fun openCloudBackupSheet() {
@@ -164,7 +165,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isRefreshing.value = true
             _clockTick.value = System.currentTimeMillis()
-            if (Firebase.auth.currentUser != null) {
+            if (safeAuth()?.currentUser != null) {
                 val database = AppDatabase.getDatabase(getApplication())
                 viewModelScope.launch(Dispatchers.IO) {
                     com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
@@ -177,7 +178,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshAuth() {
-        _currentUser.value = Firebase.auth.currentUser
+        _currentUser.value = safeAuth()?.currentUser
         if (_currentUser.value != null) {
             val database = AppDatabase.getDatabase(getApplication())
             com.example.sync.FirestoreSyncManager.startRealtimeSync(getApplication(), database)

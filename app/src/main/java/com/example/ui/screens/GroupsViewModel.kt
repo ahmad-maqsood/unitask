@@ -14,6 +14,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.example.util.safeAuth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,9 +32,9 @@ import kotlinx.coroutines.launch
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = GroupRepository(application)
-    private val auth: FirebaseAuth = Firebase.auth
+    private val auth: FirebaseAuth? = safeAuth()
 
-    private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(auth?.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
     private val _selectedGroupId = MutableStateFlow<String?>(null)
@@ -63,12 +64,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             _currentUser.value = firebaseAuth.currentUser
         }
-        auth.addAuthStateListener(authListener!!)
+        auth?.addAuthStateListener(authListener!!)
     }
 
     override fun onCleared() {
         super.onCleared()
-        authListener?.let { auth.removeAuthStateListener(it) }
+        authListener?.let { auth?.removeAuthStateListener(it) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

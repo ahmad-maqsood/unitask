@@ -61,10 +61,11 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     private var authListener: FirebaseAuth.AuthStateListener? = null
 
     init {
-        authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             _currentUser.value = firebaseAuth.currentUser
         }
-        auth?.addAuthStateListener(authListener!!)
+        authListener = listener
+        auth?.addAuthStateListener(listener)
     }
 
     override fun onCleared() {

@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.groups.GroupChatTracker
 import com.example.data.groups.GroupMessage
 import com.example.util.AppVisibility
@@ -129,7 +130,7 @@ class GroupChatNotifier(context: Context) {
 
         val channelId = NotificationSound.channelId(appContext, CHANNEL_BASE_ID)
         val builder = NotificationCompat.Builder(appContext, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle(title)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)

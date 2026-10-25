@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,13 +53,13 @@ fun AddEditCourseDialog(
     onClearDuplicateError: () -> Unit = {}
 ) {
 
-    var code by remember { mutableStateOf(courseToEdit?.code ?: "") }
-    var name by remember { mutableStateOf(courseToEdit?.name ?: "") }
-    var instructor by remember { mutableStateOf(courseToEdit?.instructor ?: "") }
-    var location by remember { mutableStateOf(courseToEdit?.location ?: "") }
-    var selectedColor by remember { mutableStateOf(courseToEdit?.colorHex ?: CourseColors.first()) }
-    var codeError by remember { mutableStateOf(false) }
-    var nameError by remember { mutableStateOf(false) }
+    var code by rememberSaveable { mutableStateOf(courseToEdit?.code ?: "") }
+    var name by rememberSaveable { mutableStateOf(courseToEdit?.name ?: "") }
+    var instructor by rememberSaveable { mutableStateOf(courseToEdit?.instructor ?: "") }
+    var location by rememberSaveable { mutableStateOf(courseToEdit?.location ?: "") }
+    var selectedColor by rememberSaveable { mutableStateOf(courseToEdit?.colorHex ?: CourseColors.first()) }
+    var codeError by rememberSaveable { mutableStateOf(false) }
+    var nameError by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

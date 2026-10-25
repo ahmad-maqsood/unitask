@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +77,7 @@ fun AddEditLectureSlotDialog(
 ) {
     val context = LocalContext.current
 
-    var selectedCourseId by remember {
+    var selectedCourseId by rememberSaveable {
         mutableLongStateOf(
             slotToEdit?.courseId
                 ?: preselectedCourseId
@@ -85,21 +86,21 @@ fun AddEditLectureSlotDialog(
         )
     }
 
-    var dayOfWeek by remember { mutableIntStateOf(slotToEdit?.dayOfWeek ?: preselectedDay) }
-    var startHour by remember { mutableIntStateOf(slotToEdit?.startHour ?: 10) }
-    var startMinute by remember { mutableIntStateOf(slotToEdit?.startMinute ?: 0) }
-    var endHour by remember { mutableIntStateOf(slotToEdit?.endHour ?: 11) }
-    var endMinute by remember { mutableIntStateOf(slotToEdit?.endMinute ?: 30) }
+    var dayOfWeek by rememberSaveable { mutableIntStateOf(slotToEdit?.dayOfWeek ?: preselectedDay) }
+    var startHour by rememberSaveable { mutableIntStateOf(slotToEdit?.startHour ?: 10) }
+    var startMinute by rememberSaveable { mutableIntStateOf(slotToEdit?.startMinute ?: 0) }
+    var endHour by rememberSaveable { mutableIntStateOf(slotToEdit?.endHour ?: 11) }
+    var endMinute by rememberSaveable { mutableIntStateOf(slotToEdit?.endMinute ?: 30) }
 
     val defaultCourse = courses.find { it.id == selectedCourseId }
-    var classroom by remember { mutableStateOf(slotToEdit?.classroom ?: defaultCourse?.location ?: "") }
-    var instructor by remember { mutableStateOf(slotToEdit?.instructor ?: defaultCourse?.instructor ?: "") }
+    var classroom by rememberSaveable { mutableStateOf(slotToEdit?.classroom ?: defaultCourse?.location ?: "") }
+    var instructor by rememberSaveable { mutableStateOf(slotToEdit?.instructor ?: defaultCourse?.instructor ?: "") }
 
-    var courseDropdownExpanded by remember { mutableStateOf(false) }
+    var courseDropdownExpanded by rememberSaveable { mutableStateOf(false) }
     val selectedCourse = courses.find { it.id == selectedCourseId }
 
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showEndTimePicker by remember { mutableStateOf(false) }
+    var showStartTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showEndTimePicker by rememberSaveable { mutableStateOf(false) }
 
     if (showStartTimePicker) {
         Material3TimePickerDialog(

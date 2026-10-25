@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
@@ -149,7 +150,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         }.joinToString(" \u2022 ")
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle("Class in progress: ${course.code}")
             .setContentText("${course.name} \u2022 $timeRange")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
@@ -216,7 +217,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         val minutesLeft = ((startMillis - now + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle("Class in $minutesLeft min: ${course.code}")
             .setContentText("${course.name} • $timeRange")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))

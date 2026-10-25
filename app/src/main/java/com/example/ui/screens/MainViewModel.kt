@@ -19,6 +19,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.repository.AppRepository
 import com.example.reminder.GroupChatNotifier
+import com.example.reminder.GroupReminderScheduler
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
 import com.example.reminder.ClassReminderScheduler
@@ -105,11 +106,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             lectureSlotDao = database.lectureSlotDao(),
             reminderScheduler = scheduler
         )
-        // Alarms can be lost (force stop, battery cleaners): set the class-start alarms again
-        // every time the app opens.
+        // Alarms can be lost (force stop, battery cleaners): set the class-start,
+        // personal task, and group task alarms again every time the app opens.
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 ClassReminderScheduler(application).rescheduleAll(database)
+            } catch (_: Exception) {
+            }
+            try {
+                ReminderScheduler(application).rescheduleAll(database)
+            } catch (_: Exception) {
+            }
+            try {
+                GroupReminderScheduler(application).rescheduleAll()
             } catch (_: Exception) {
             }
         }

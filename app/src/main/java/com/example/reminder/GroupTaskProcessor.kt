@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.groups.GroupSnapshot
 import com.example.data.groups.GroupsState
 import com.example.util.NotificationSound
@@ -87,7 +88,8 @@ class GroupTaskProcessor(context: Context) {
             postNotification(
                 id = ("summary|" + snapshot.groupId).hashCode(),
                 title = "${fresh.size} new tasks in ${snapshot.groupName}",
-                text = "Open the Deadlines tab to see them."
+                text = "Open the Deadlines tab to see them.",
+                groupId = snapshot.groupId
             )
             return
         }
@@ -97,12 +99,13 @@ class GroupTaskProcessor(context: Context) {
             postNotification(
                 id = ("new|" + snapshot.groupId + "|" + task.id).hashCode(),
                 title = "New task in ${snapshot.groupName}",
-                text = "$who added: ${task.title} • $due"
+                text = "$who added: ${task.title} • $due",
+                groupId = snapshot.groupId
             )
         }
     }
 
-    private fun postNotification(id: Int, title: String, text: String) {
+    private fun postNotification(id: Int, title: String, text: String, groupId: String? = null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -110,6 +113,9 @@ class GroupTaskProcessor(context: Context) {
 
         val openApp = Intent(appContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (!groupId.isNullOrBlank()) {
+                putExtra("open_group_id", groupId)
+            }
         }
         val pendingIntent = PendingIntent.getActivity(
             appContext,
@@ -118,7 +124,7 @@ class GroupTaskProcessor(context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))

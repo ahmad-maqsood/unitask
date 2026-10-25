@@ -35,6 +35,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,11 +77,11 @@ fun GroupTaskDialog(
 ) {
     val context = LocalContext.current
 
-    var title by remember { mutableStateOf(taskToEdit?.title ?: "") }
-    var description by remember { mutableStateOf(taskToEdit?.description ?: "") }
-    var courseLabel by remember { mutableStateOf(taskToEdit?.courseLabel ?: "") }
+    var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
+    var description by rememberSaveable { mutableStateOf(taskToEdit?.description ?: "") }
+    var courseLabel by rememberSaveable { mutableStateOf(taskToEdit?.courseLabel ?: "") }
 
-    var selectedDueDateMillis by remember {
+    var selectedDueDateMillis by rememberSaveable {
         mutableLongStateOf(
             taskToEdit?.dueDateEpochMillis ?: run {
                 val cal = Calendar.getInstance()
@@ -89,22 +91,32 @@ fun GroupTaskDialog(
         )
     }
 
-    var dueHour by remember { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
-    var dueMinute by remember { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
-    var priority by remember { mutableStateOf(taskToEdit?.priority ?: "MEDIUM") }
+    var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
+    var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
+    var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: "MEDIUM") }
     // New tasks start with the usual three alerts. Old tasks show what they really use today.
-    var reminderOptions by remember {
+    var reminderOptions by rememberSaveable(
+        stateSaver = listSaver<Set<ReminderOption>, String>(
+            save = { it.map { opt -> opt.name } },
+            restore = { list -> list.mapNotNull { name -> ReminderOption.entries.firstOrNull { o -> o.name == name } }.toSet() }
+        )
+    ) {
         mutableStateOf(
             taskToEdit?.let { GroupReminderScheduler.optionsFor(it) }
                 ?: GroupReminderScheduler.DEFAULT_REMINDERS
         )
     }
-    var showTimePicker by remember { mutableStateOf(false) }
-    var titleError by remember { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var titleError by rememberSaveable { mutableStateOf(false) }
     // Empty assignedTo means @all. New tasks start as @all; editing keeps what was saved.
-    var tagAll by remember { mutableStateOf(taskToEdit == null || taskToEdit.assignedTo.isEmpty()) }
-    var taggedUids by remember { mutableStateOf<Set<String>>(taskToEdit?.assignedTo?.toSet() ?: emptySet()) }
-    var tagError by remember { mutableStateOf(false) }
+    var tagAll by rememberSaveable { mutableStateOf(taskToEdit == null || taskToEdit.assignedTo.isEmpty()) }
+    var taggedUids by rememberSaveable(
+        stateSaver = listSaver<Set<String>, String>(
+            save = { it.toList() },
+            restore = { it.toSet() }
+        )
+    ) { mutableStateOf<Set<String>>(taskToEdit?.assignedTo?.toSet() ?: emptySet()) }
+    var tagError by rememberSaveable { mutableStateOf(false) }
 
     if (showTimePicker) {
         Material3TimePickerDialog(

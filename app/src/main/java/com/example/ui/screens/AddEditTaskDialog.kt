@@ -56,6 +56,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -105,10 +107,10 @@ fun AddEditTaskDialog(
 ) {
     val context = LocalContext.current
 
-    var title by remember { mutableStateOf(taskToEdit?.title ?: "") }
-    var description by remember { mutableStateOf(taskToEdit?.description ?: "") }
+    var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
+    var description by rememberSaveable { mutableStateOf(taskToEdit?.description ?: "") }
 
-    var selectedCourseId by remember {
+    var selectedCourseId by rememberSaveable {
         mutableLongStateOf(
             taskToEdit?.courseId
                 ?: initialCourseId
@@ -117,7 +119,7 @@ fun AddEditTaskDialog(
         )
     }
 
-    var selectedDueDateMillis by remember {
+    var selectedDueDateMillis by rememberSaveable {
         mutableLongStateOf(
             taskToEdit?.dueDateEpochMillis ?: run {
                 val cal = Calendar.getInstance()
@@ -127,18 +129,41 @@ fun AddEditTaskDialog(
         )
     }
 
-    var dueHour by remember { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
-    var dueMinute by remember { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
-    var priority by remember { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
-    var status by remember { mutableStateOf(taskToEdit?.status ?: TaskStatus.PENDING) }
-    var reminderOptions by remember {
+    var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
+    var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
+    var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
+    var status by rememberSaveable { mutableStateOf(taskToEdit?.status ?: TaskStatus.PENDING) }
+    var reminderOptions by rememberSaveable(
+        stateSaver = listSaver<Set<ReminderOption>, String>(
+            save = { it.map { opt -> opt.name } },
+            restore = { list -> list.mapNotNull { name -> ReminderOption.entries.firstOrNull { o -> o.name == name } }.toSet() }
+        )
+    ) {
         mutableStateOf(taskToEdit?.reminderOptions ?: setOf(ReminderOption.TWO_HOURS_BEFORE))
     }
 
     // Offline Attachments State
-    var newAttachments by remember { mutableStateOf<List<SavedAttachmentInfo>>(emptyList()) }
-    var isAttachingFile by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
+    var newAttachments by rememberSaveable(
+        stateSaver = listSaver<List<SavedAttachmentInfo>, String>(
+            save = { list ->
+                list.flatMap { listOf(it.fileName, it.relativePath, it.fileSize.toString(), it.mimeType) }
+            },
+            restore = { flat ->
+                flat.chunked(4).mapNotNull { chunk ->
+                    if (chunk.size == 4) {
+                        SavedAttachmentInfo(
+                            fileName = chunk[0],
+                            relativePath = chunk[1],
+                            fileSize = chunk[2].toLongOrNull() ?: 0L,
+                            mimeType = chunk[3]
+                        )
+                    } else null
+                }
+            }
+        )
+    ) { mutableStateOf<List<SavedAttachmentInfo>>(emptyList()) }
+    var isAttachingFile by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     if (showTimePicker) {

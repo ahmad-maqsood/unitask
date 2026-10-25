@@ -60,7 +60,7 @@ class GroupTaskProcessor(context: Context) {
     }
 
     private fun announceNewTasks(myUid: String, snapshot: GroupSnapshot) {
-        val currentIds = snapshot.tasks.map { it.id }
+        val currentIds = snapshot.allTasks.map { it.id }
         val seen = seenPrefs.getStringSet(snapshot.groupId, null)
 
         if (seen == null) {
@@ -72,7 +72,7 @@ class GroupTaskProcessor(context: Context) {
             return
         }
 
-        val fresh = snapshot.tasks.filter { it.id !in seen && it.createdBy != myUid }
+        val fresh = snapshot.allTasks.filter { it.id !in seen && it.createdBy != myUid }
         // Keep only ids that still exist, so the set cannot grow forever.
         val updated = HashSet<String>().apply {
             add(BASELINE)

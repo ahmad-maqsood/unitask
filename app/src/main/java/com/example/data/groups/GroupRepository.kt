@@ -61,8 +61,14 @@ data class GroupTask(
     val createdByName: String = "",
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
-    val reminderOptions: String? = null
+    val reminderOptions: String? = null,
+    // Uids of the tagged members. Empty means @all (every member). Tasks made before
+    // tagging existed have no such field, so they read as @all too.
+    val assignedTo: List<String> = emptyList()
 )
+
+/** True when this task belongs on [uid]'s Deadlines tab: it is tagged @all or tags this user. */
+fun GroupTask.isForUser(uid: String): Boolean = assignedTo.isEmpty() || uid in assignedTo
 
 /** One chat message in a group. */
 data class GroupMessage(
@@ -81,7 +87,10 @@ data class GroupSnapshot(
     val groupId: String,
     val groupName: String,
     val tasks: List<GroupTask>,
-    val done: Set<String>
+    val done: Set<String>,
+    // Every task of the group, including ones that do not tag you. Used only for the
+    // "new task" notification; Deadlines and alarms use [tasks].
+    val allTasks: List<GroupTask> = tasks
 )
 
 /**
@@ -397,7 +406,8 @@ class GroupRepository(private val context: Context) {
             createdByName = doc.getString("createdByName") ?: "",
             createdAt = doc.getTimestamp("createdAt"),
             updatedAt = doc.getTimestamp("updatedAt"),
-            reminderOptions = doc.getString("reminderOptions")
+            reminderOptions = doc.getString("reminderOptions"),
+            assignedTo = (doc.get("assignedTo") as? List<*>)?.filterIsInstance<String>().orEmpty()
         )
     }
 
@@ -441,7 +451,8 @@ class GroupRepository(private val context: Context) {
             else GroupSnapshot(
                 groupId = m.groupId,
                 groupName = m.name.ifBlank { m.username }.ifBlank { "Group" },
-                tasks = tasks,
+                tasks = tasks.filter { it.isForUser(uid) },
+                allTasks = tasks,
                 done = done
             )
         }
@@ -503,7 +514,16 @@ class GroupRepository(private val context: Context) {
                     val tasks = getGroupTasksOnce(gid)
                     val failure = tasks.exceptionOrNull()
                     if (failure == null) {
-                        loaded.add(GroupSnapshot(gid, name, tasks.getOrThrow(), getDoneTaskIdsOnce(uid, gid)))
+                        val allTasks = tasks.getOrThrow()
+                        loaded.add(
+                            GroupSnapshot(
+                                gid,
+                                name,
+                                allTasks.filter { it.isForUser(uid) },
+                                getDoneTaskIdsOnce(uid, gid),
+                                allTasks
+                            )
+                        )
                     } else if (failure is FirebaseFirestoreException &&
                         failure.code == FirebaseFirestoreException.Code.PERMISSION_DENIED
                     ) {
@@ -879,6 +899,7 @@ class GroupRepository(private val context: Context) {
         dueTimeMinute: Int,
         priority: String,
         reminderOptions: String,
+        assignedTo: List<String>,
         uid: String,
         rawDisplayName: String,
         onFailure: (Exception) -> Unit
@@ -897,6 +918,10 @@ class GroupRepository(private val context: Context) {
             "updatedAt" to FieldValue.serverTimestamp()
         )
 
+        // Empty list = @all, so the field is only stored when specific people are tagged.
+        if (assignedTo.isNotEmpty()) {
+            data["assignedTo"] = assignedTo.distinct().take(200)
+        }
         val cleanDesc = description?.trim()?.take(2000)
         if (!cleanDesc.isNullOrBlank()) {
             data["description"] = cleanDesc
@@ -926,6 +951,7 @@ class GroupRepository(private val context: Context) {
         dueTimeMinute: Int,
         priority: String,
         reminderOptions: String,
+        assignedTo: List<String>,
         onFailure: (Exception) -> Unit
     ) {
         val taskRef = db.collection("groups").document(groupId).collection("tasks").document(taskId)
@@ -951,6 +977,13 @@ class GroupRepository(private val context: Context) {
             updates["courseLabel"] = FieldValue.delete()
         } else {
             updates["courseLabel"] = cleanCourse
+        }
+
+        // Empty list = @all: remove the field so everyone sees the task again.
+        if (assignedTo.isEmpty()) {
+            updates["assignedTo"] = FieldValue.delete()
+        } else {
+            updates["assignedTo"] = assignedTo.distinct().take(200)
         }
 
         taskRef.update(updates).addOnFailureListener { e ->

@@ -348,6 +348,8 @@ fun GroupDetailScreen(
                             GroupTaskRow(
                                 modifier = Modifier.animateItem(),
                                 task = task,
+                                members = members,
+                                currentUid = currentUid,
                                 isDone = isDone,
                                 canModify = canModify,
                                 onToggleDone = { onToggleTaskDone(task) },
@@ -584,6 +586,8 @@ fun GroupDetailScreen(
 @Composable
 fun GroupTaskRow(
     task: GroupTask,
+    members: List<GroupMember>,
+    currentUid: String,
     isDone: Boolean,
     canModify: Boolean,
     onToggleDone: () -> Unit,
@@ -759,6 +763,24 @@ fun GroupTaskRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    val tagText = remember(task.assignedTo, members) {
+                        if (task.assignedTo.isEmpty()) {
+                            "@all"
+                        } else {
+                            task.assignedTo.joinToString(", ") { uid ->
+                                "@" + (members.find { it.uid == uid }?.displayName?.takeIf { it.isNotBlank() } ?: "Member")
+                            }
+                        }
+                    }
+                    val notOnMyDeadlines = task.assignedTo.isNotEmpty() && currentUid !in task.assignedTo
+                    Text(
+                        text = "Tagged: $tagText" + if (notOnMyDeadlines) " (not on your Deadlines)" else "",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

@@ -43,6 +43,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupTask
+import com.example.data.groups.GroupMember
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Check
 import com.example.data.local.ReminderOption
 import com.example.data.local.encodeReminderOptions
@@ -56,6 +58,8 @@ import java.util.Locale
 @Composable
 fun GroupTaskDialog(
     taskToEdit: GroupTask?,
+    members: List<GroupMember>,
+    currentUid: String,
     onDismiss: () -> Unit,
     onSave: (
         title: String,
@@ -65,7 +69,8 @@ fun GroupTaskDialog(
         dueHour: Int,
         dueMinute: Int,
         priority: String,
-        reminderOptions: String
+        reminderOptions: String,
+        assignedTo: List<String>
     ) -> Unit
 ) {
     val context = LocalContext.current
@@ -96,6 +101,10 @@ fun GroupTaskDialog(
     }
     var showTimePicker by remember { mutableStateOf(false) }
     var titleError by remember { mutableStateOf(false) }
+    // Empty assignedTo means @all. New tasks start as @all; editing keeps what was saved.
+    var tagAll by remember { mutableStateOf(taskToEdit == null || taskToEdit.assignedTo.isEmpty()) }
+    var taggedUids by remember { mutableStateOf<Set<String>>(taskToEdit?.assignedTo?.toSet() ?: emptySet()) }
+    var tagError by remember { mutableStateOf(false) }
 
     if (showTimePicker) {
         Material3TimePickerDialog(
@@ -299,7 +308,7 @@ fun GroupTaskDialog(
                         text = if (reminderOptions.isEmpty()) {
                             "No reminders. Tap times below to add some."
                         } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected. Everyone in the group gets them."
+                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected. Everyone tagged gets them."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (reminderOptions.isEmpty()) {
@@ -338,6 +347,90 @@ fun GroupTaskDialog(
                         }
                     }
                 }
+
+                // Tag members: only tagged members see this task on their Deadlines tab
+                Column {
+                    Text(
+                        text = "Tag members",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = when {
+                            tagError -> "Pick @all or at least one member."
+                            tagAll -> "@all: everyone in the group sees this in their Deadlines."
+                            else -> "${taggedUids.size} tagged. Only they see this in their Deadlines."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (tagError) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        FilterChip(
+                            selected = tagAll,
+                            onClick = {
+                                tagAll = true
+                                taggedUids = emptySet()
+                                tagError = false
+                            },
+                            leadingIcon = if (tagAll) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else null,
+                            label = { Text("@all", style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.testTag("group_task_tag_all")
+                        )
+                        members.sortedBy { it.displayName.lowercase() }.forEach { m ->
+                            val isTagged = !tagAll && m.uid in taggedUids
+                            FilterChip(
+                                selected = isTagged,
+                                onClick = {
+                                    tagError = false
+                                    if (tagAll) {
+                                        // Leaving @all: the creator of a new task starts out tagged
+                                        // and can tap their own chip to untag themselves.
+                                        tagAll = false
+                                        taggedUids = if (taskToEdit == null && currentUid.isNotBlank()) {
+                                            setOf(currentUid)
+                                        } else {
+                                            emptySet()
+                                        }
+                                    }
+                                    taggedUids = if (m.uid in taggedUids) taggedUids - m.uid else taggedUids + m.uid
+                                },
+                                leadingIcon = if (isTagged) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                } else null,
+                                label = {
+                                    Text(
+                                        text = "@" + m.displayName.ifBlank { "Student" } +
+                                            if (m.uid == currentUid) " (you)" else "",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                modifier = Modifier.testTag("group_task_tag_${m.uid}")
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -345,6 +438,10 @@ fun GroupTaskDialog(
                 onClick = {
                     if (title.isBlank()) {
                         titleError = true
+                        return@Button
+                    }
+                    if (!tagAll && taggedUids.isEmpty()) {
+                        tagError = true
                         return@Button
                     }
                     onSave(
@@ -355,7 +452,8 @@ fun GroupTaskDialog(
                         dueHour,
                         dueMinute,
                         priority,
-                        encodeReminderOptions(reminderOptions)
+                        encodeReminderOptions(reminderOptions),
+                        if (tagAll) emptyList() else taggedUids.toList()
                     )
                 },
                 modifier = Modifier.testTag("group_task_save_button")

@@ -85,50 +85,85 @@ fun BackgroundSetupDialog(
 
     when (currentStep) {
         SetupStep.INTRO -> {
-            AlertDialog(
-                onDismissRequest = dismissDialog,
-                title = { Text("Keep alerts on time") },
-                text = {
-                    Text("Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.")
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (!BackgroundAccess.isIgnoringBatteryOptimizations(context)) {
-                                leftApp = false
-                                currentStep = SetupStep.WAITING_BATTERY
-                                val started = BackgroundAccess.requestIgnoreBatteryOptimizations(context)
-                                // No battery screen could be opened on this phone: do not get stuck.
-                                if (!started) afterBatteryStep()
-                            } else if (reviewMode && BackgroundAccess.needsAutostartStep()) {
-                                // Opened from Settings and battery is already fine: show the auto-start step.
-                                currentStep = SetupStep.AUTOSTART
-                            } else {
-                                if (reviewMode) {
-                                    Toast.makeText(
-                                        context,
-                                        "Everything is already set up on this phone.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                                afterBatteryStep()
-                            }
-                        },
+            val batteryAlreadyOff = reviewMode && BackgroundAccess.isIgnoringBatteryOptimizations(context)
 
-                        modifier = Modifier.testTag("background_setup_start_button")
-                    ) {
-                        Text("Set up")
+            if (batteryAlreadyOff) {
+                // Opened from Settings and battery restrictions are already off: just inform.
+                val hasAutostart = BackgroundAccess.needsAutostartStep()
+                AlertDialog(
+                    onDismissRequest = dismissDialog,
+                    title = { Text("Battery optimization is already off") },
+                    text = {
+                        Text(
+                            if (hasAutostart)
+                                "UniTask is already allowed to run in the background. Some phones also need Auto-start turned on, so it's worth checking that in your phone's settings."
+                            else
+                                "UniTask is already allowed to run in the background. No other setting is needed on this phone."
+                        )
+                    },
+                    confirmButton = {
+                        if (hasAutostart) {
+                            Button(
+                                onClick = { currentStep = SetupStep.AUTOSTART },
+                                modifier = Modifier.testTag("background_setup_check_autostart_button")
+                            ) {
+                                Text("Check auto-start")
+                            }
+                        } else {
+                            Button(
+                                onClick = dismissDialog,
+                                modifier = Modifier.testTag("background_setup_ok_button")
+                            ) {
+                                Text("OK")
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        if (hasAutostart) {
+                            TextButton(
+                                onClick = dismissDialog,
+                                modifier = Modifier.testTag("background_setup_close_button")
+                            ) {
+                                Text("Close")
+                            }
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = dismissDialog,
-                        modifier = Modifier.testTag("background_setup_not_now_button")
-                    ) {
-                        Text("Not now")
+                )
+            } else {
+                AlertDialog(
+                    onDismissRequest = dismissDialog,
+                    title = { Text("Keep alerts on time") },
+                    text = {
+                        Text("Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.")
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (!BackgroundAccess.isIgnoringBatteryOptimizations(context)) {
+                                    leftApp = false
+                                    currentStep = SetupStep.WAITING_BATTERY
+                                    val started = BackgroundAccess.requestIgnoreBatteryOptimizations(context)
+                                    // No battery screen could be opened on this phone: do not get stuck.
+                                    if (!started) afterBatteryStep()
+                                } else {
+                                    afterBatteryStep()
+                                }
+                            },
+                            modifier = Modifier.testTag("background_setup_start_button")
+                        ) {
+                            Text("Set up")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = dismissDialog,
+                            modifier = Modifier.testTag("background_setup_not_now_button")
+                        ) {
+                            Text("Not now")
+                        }
                     }
-                }
-            )
+                )
+            }
         }
 
         SetupStep.WAITING_BATTERY -> {

@@ -2,6 +2,8 @@ package com.example.data.groups
 
 import android.content.Context
 import com.example.R
+import com.example.data.local.computeDeadlineMillis
+import com.example.reminder.GroupTaskProcessor
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -955,6 +957,14 @@ class GroupRepository(private val context: Context) {
         onFailure: (Exception) -> Unit
     ) {
         val taskRef = db.collection("groups").document(groupId).collection("tasks").document(taskId)
+        // So this phone does not announce the user's own edit back to them.
+        GroupTaskProcessor.rememberOwnEdit(
+            context,
+            groupId,
+            taskId,
+            computeDeadlineMillis(dueDateEpochMillis, dueTimeHour, dueTimeMinute),
+            title.trim().take(200)
+        )
         val updates = hashMapOf<String, Any>(
             "title" to title.trim().take(200),
             "dueDateEpochMillis" to dueDateEpochMillis,
@@ -987,6 +997,7 @@ class GroupRepository(private val context: Context) {
         }
 
         taskRef.update(updates).addOnFailureListener { e ->
+            GroupTaskProcessor.forgetOwnTask(context, groupId, taskId)
             onFailure(e)
         }
     }
@@ -996,6 +1007,7 @@ class GroupRepository(private val context: Context) {
      */
     fun deleteTask(groupId: String, taskId: String, onFailure: (Exception) -> Unit) {
         val taskRef = db.collection("groups").document(groupId).collection("tasks").document(taskId)
+        GroupTaskProcessor.forgetOwnTask(context, groupId, taskId)
         taskRef.delete().addOnFailureListener { e ->
             onFailure(e)
         }

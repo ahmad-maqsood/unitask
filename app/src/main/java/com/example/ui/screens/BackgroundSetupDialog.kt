@@ -38,7 +38,8 @@ private enum class SetupStep {
 @Composable
 fun BackgroundSetupDialog(
     onDismiss: () -> Unit = {},
-    onFinished: () -> Unit = {}
+    onFinished: () -> Unit = {},
+    reviewMode: Boolean = false
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -53,13 +54,17 @@ fun BackgroundSetupDialog(
     }
 
     // What happens after the battery step: the auto-start step on phones that have one, else finish.
+    // In review mode (opened from Settings) the step is shown again even if it was done before.
     val afterBatteryStep: () -> Unit = {
-        if (BackgroundAccess.needsAutostartStep() && !BackgroundAccess.isAutostartStepDone(context)) {
+        if (BackgroundAccess.needsAutostartStep() &&
+            (reviewMode || !BackgroundAccess.isAutostartStepDone(context))
+        ) {
             currentStep = SetupStep.AUTOSTART
         } else {
             dismissDialog()
         }
     }
+
 
     // While we wait for the system battery screen: move on only after the app was really left
     // (ON_PAUSE) and the user is back (ON_RESUME).
@@ -95,10 +100,21 @@ fun BackgroundSetupDialog(
                                 val started = BackgroundAccess.requestIgnoreBatteryOptimizations(context)
                                 // No battery screen could be opened on this phone: do not get stuck.
                                 if (!started) afterBatteryStep()
+                            } else if (reviewMode && BackgroundAccess.needsAutostartStep()) {
+                                // Opened from Settings and battery is already fine: show the auto-start step.
+                                currentStep = SetupStep.AUTOSTART
                             } else {
+                                if (reviewMode) {
+                                    Toast.makeText(
+                                        context,
+                                        "Everything is already set up on this phone.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                                 afterBatteryStep()
                             }
                         },
+
                         modifier = Modifier.testTag("background_setup_start_button")
                     ) {
                         Text("Set up")

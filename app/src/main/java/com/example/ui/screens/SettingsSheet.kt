@@ -123,6 +123,7 @@ fun SettingsButton(
 
     if (showBackgroundSetupDialog) {
         BackgroundSetupDialog(
+            reviewMode = true,
             onFinished = {
                 showBackgroundSetupDialog = false
                 isBatteryIgnoring = BackgroundAccess.isIgnoringBatteryOptimizations(context)

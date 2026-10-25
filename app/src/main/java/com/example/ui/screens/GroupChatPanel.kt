@@ -62,32 +62,31 @@ fun GroupChatPanel(
     canModerate: Boolean,
     onSend: (String) -> Unit,
     onDelete: (GroupMessage) -> Unit,
-    lastReadAtOpenMillis: Long = Long.MAX_VALUE,
+    lastReadAtOpenMillis: Long? = null,
     onMarkRead: (Long) -> Unit = {}
 ) {
     var draft by remember { mutableStateOf("") }
     var messageToDelete by remember { mutableStateOf<GroupMessage?>(null) }
     val listState = rememberLazyListState()
 
-    // Decide the divider once when the panel opens and messages is non-empty, then freeze it.
+    // Decide the divider once when messages is non-empty AND lastReadAtOpenMillis != null, then freeze it.
     var frozenDividerId by remember { mutableStateOf<String?>(null) }
     var dividerEvaluated by remember { mutableStateOf(false) }
 
-    if (!dividerEvaluated && messages.isNotEmpty()) {
-        if (lastReadAtOpenMillis != Long.MAX_VALUE && lastReadAtOpenMillis > 0L) {
-            frozenDividerId = messages.firstOrNull {
-                it.senderId != currentUid && it.createdAtMillis > lastReadAtOpenMillis
-            }?.id
-        }
+    if (!dividerEvaluated && messages.isNotEmpty() && lastReadAtOpenMillis != null) {
+        frozenDividerId = messages.firstOrNull {
+            it.senderId != currentUid && it.createdAtMillis > lastReadAtOpenMillis
+        }?.id
         dividerEvaluated = true
     }
 
     // Mark as read while the panel is on screen and the app is in the foreground (RESUMED).
+    // Must wait until the divider has been decided.
     val lifecycleOwner = LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
     val newestMessageMillis = messages.lastOrNull()?.createdAtMillis
-    LaunchedEffect(newestMessageMillis, lifecycleState) {
-        if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+    LaunchedEffect(newestMessageMillis, lifecycleState, dividerEvaluated) {
+        if (dividerEvaluated && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
             if (newestMessageMillis != null && newestMessageMillis > 0L) {
                 onMarkRead(newestMessageMillis)
             }

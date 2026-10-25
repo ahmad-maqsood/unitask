@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.groups.ChatTail
 import com.example.data.groups.GroupChatInfo
 import com.example.data.groups.GroupChatTracker
 import com.example.data.groups.GroupRepository
@@ -17,6 +18,7 @@ import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.repository.AppRepository
+import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
 import com.google.firebase.Firebase
@@ -28,11 +30,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -126,7 +130,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         Firebase.auth.addAuthStateListener(authStateListener)
-       
+
+        // Keep groupChatInfo active for the life of the ViewModel so background notifications work
+        viewModelScope.launch {
+            groupChatInfo.collect { }
+        }
     }
 
     override fun onCleared() {
@@ -311,13 +319,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _groupToOpen = MutableStateFlow<String?>(null)
     val groupToOpen: StateFlow<String?> = _groupToOpen.asStateFlow()
 
-    fun openGroup(groupId: String) {
+    private val _groupChatToOpen = MutableStateFlow<String?>(null)
+    val groupChatToOpen: StateFlow<String?> = _groupChatToOpen.asStateFlow()
+
+    fun openGroup(groupId: String, openChat: Boolean = false) {
         _groupToOpen.value = groupId
+        if (openChat) {
+            _groupChatToOpen.value = groupId
+        }
         _currentTab.value = MainTab.GROUPS
     }
 
     fun onGroupOpened() {
         _groupToOpen.value = null
+        _groupChatToOpen.value = null
     }
 
     // Class schedule shown on the Deadlines tab. Re-evaluated every minute and on pull to refresh.
@@ -762,32 +777,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // -------------------------------------------------------------------------
-    // Group chat unread message tracking (in-app, phone-local)
+    // Group chat unread message tracking (in-app, phone-local) and notifications
     // -------------------------------------------------------------------------
     private val groupChatTracker = GroupChatTracker(application)
+    private val groupChatNotifier = GroupChatNotifier(application)
     private val _chatReadVersion = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val groupChatInfo: StateFlow<Map<String, GroupChatInfo>> = _currentUser.flatMapLatest { user ->
         if (user == null) {
             groupChatTracker.clearAll()
+            groupChatNotifier.clearAll()
             flowOf(emptyMap())
         } else {
             val myUid = user.uid
             groupRepository.observeMyGroupMemberships(myUid).flatMapLatest { memberships ->
                 val currentGroupIds = memberships.map { it.groupId }.toSet()
-                groupChatTracker.retainOnly(currentGroupIds)
+                if (memberships.isNotEmpty()) {
+                    groupChatTracker.retainOnly(currentGroupIds)
+                }
                 if (memberships.isEmpty()) {
                     flowOf(emptyMap())
                 } else {
                     val flows = memberships.map { m ->
                         val gid = m.groupId
+                        val groupName = m.name.ifBlank { m.username }.ifBlank { "Group" }
                         combine(
-                            groupRepository.observeGroupChatTail(gid),
+                            groupRepository.observeGroupChatTail(gid)
+                                .onStart { emit(ChatTail(emptyList(), fromServer = false)) }
+                                .catch { emit(ChatTail(emptyList(), fromServer = false)) },
                             _chatReadVersion
                         ) { tail, _ ->
+                            groupChatNotifier.onMessages(myUid, gid, groupName, tail.messages, tail.fromServer)
+
                             val storedLastRead = groupChatTracker.lastRead(gid)
-                            val effectiveLastRead: Long
+                            val effectiveLastRead: Long?
                             val unreadCount: Int
 
                             if (storedLastRead == null) {
@@ -796,7 +820,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     groupChatTracker.setBaseline(gid, newestMillis)
                                     effectiveLastRead = newestMillis
                                 } else {
-                                    effectiveLastRead = 0L
+                                    effectiveLastRead = null
                                 }
                                 unreadCount = 0
                             } else {
@@ -830,5 +854,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (groupId.isBlank()) return
         groupChatTracker.markRead(groupId, upToMillis)
         _chatReadVersion.value++
+        groupChatNotifier.cancel(groupId)
     }
 }

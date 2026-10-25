@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import java.security.SecureRandom
+import java.util.Date
 
 data class GroupMembership(
     val groupId: String = "",
@@ -306,6 +307,46 @@ class GroupRepository(private val context: Context) {
             trySend(ChatTail(list, fromServer))
         }
         awaitClose { registration.remove() }
+    }
+
+    /**
+     * Reads up to 20 new messages created after [afterMillis] from the server once.
+     * When [afterMillis] <= 0L, fetches the single newest message (used for baseline).
+     * Returns null on any failure so failures never throw out of this function.
+     */
+    suspend fun getNewMessagesOnce(groupId: String, afterMillis: Long): ChatTail? = try {
+        if (groupId.isBlank()) null
+        else withTimeout(TIMEOUT_MILLIS) {
+            val query = if (afterMillis <= 0L) {
+                db.collection("groups").document(groupId).collection("messages")
+                    .orderBy("createdAt", Query.Direction.DESCENDING)
+                    .limit(1)
+            } else {
+                db.collection("groups").document(groupId).collection("messages")
+                    .whereGreaterThan("createdAt", Timestamp(Date(afterMillis)))
+                    .orderBy("createdAt", Query.Direction.ASCENDING)
+                    .limit(20)
+            }
+            val snap = query.get(com.google.firebase.firestore.Source.SERVER).await()
+            val list = snap.documents.mapNotNull { doc ->
+                val text = doc.getString("text") ?: return@mapNotNull null
+                GroupMessage(
+                    id = doc.id,
+                    groupId = groupId,
+                    text = text,
+                    senderId = doc.getString("senderId") ?: "",
+                    senderName = doc.getString("senderName") ?: "Student",
+                    createdAtMillis = doc.getTimestamp(
+                        "createdAt",
+                        DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
+                    )?.toDate()?.time ?: System.currentTimeMillis()
+                )
+            }
+            val ordered = if (afterMillis <= 0L) list.reversed() else list
+            ChatTail(ordered, fromServer = true)
+        }
+    } catch (_: Exception) {
+        null
     }
 
     /** Sends a chat message. Non-blocking: it also works offline and goes out when you are back online. */

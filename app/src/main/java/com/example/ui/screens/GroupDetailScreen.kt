@@ -114,13 +114,16 @@ fun GroupDetailScreen(
     onSendMessage: (String) -> Unit,
     onDeleteMessage: (GroupMessage) -> Unit,
     chatUnreadCount: Int = 0,
-    chatLastReadMillis: Long = 0L,
-    onChatRead: (Long) -> Unit = {}
+    chatLastReadMillis: Long? = null,
+    onChatRead: (Long) -> Unit = {},
+    startOnChat: Boolean = false
 ) {
     BackHandler { onBack() }
 
     val context = LocalContext.current
-    var selectedSectionTab by remember { mutableIntStateOf(0) } // 0: Tasks, 1: Members, 2: Chat
+    var selectedSectionTab by remember(groupDetail?.id ?: fallbackUsername, startOnChat) {
+        mutableIntStateOf(if (startOnChat) 2 else 0)
+    } // 0: Tasks, 1: Members, 2: Chat
     var showLeaveConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 

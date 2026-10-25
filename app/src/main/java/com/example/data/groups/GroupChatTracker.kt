@@ -7,7 +7,7 @@ data class GroupChatInfo(
     val groupId: String,
     val unreadCount: Int,          // messages from OTHER people newer than lastRead
     val lastMessage: GroupMessage?, // newest message of the group, any sender, or null
-    val lastReadMillis: Long        // 0 when unknown
+    val lastReadMillis: Long? = null // null when unknown
 )
 
 class GroupChatTracker(context: Context) {

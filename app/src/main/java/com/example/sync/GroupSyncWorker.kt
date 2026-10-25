@@ -33,12 +33,37 @@ class GroupSyncWorker(
         } ?: return@withContext Result.success()
 
         try {
-            val state = GroupRepository(applicationContext).fetchGroupsStateOnce(user.uid)
+            val repo = GroupRepository(applicationContext)
+            val state = repo.fetchGroupsStateOnce(user.uid)
             if (state == null) {
                 Log.w(TAG, "Could not read groups; keeping existing alarms")
                 return@withContext Result.retry()
             }
             GroupTaskProcessor(applicationContext).process(user.uid, state)
+
+            val notifier = com.example.reminder.GroupChatNotifier(applicationContext)
+            for (snapshot in state.loaded) {
+                try {
+                    val threshold = notifier.thresholdFor(snapshot.groupId)
+                    val tail = if (threshold == null) {
+                        repo.getNewMessagesOnce(snapshot.groupId, 0L)
+                    } else {
+                        repo.getNewMessagesOnce(snapshot.groupId, threshold)
+                    }
+                    if (tail != null) {
+                        notifier.onMessages(
+                            myUid = user.uid,
+                            groupId = snapshot.groupId,
+                            groupName = snapshot.groupName,
+                            messages = tail.messages,
+                            fromServer = tail.fromServer
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Chat check failed for group ${snapshot.groupId}: ${e.message}")
+                }
+            }
+
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "GroupSyncWorker error: ${e.message}", e)

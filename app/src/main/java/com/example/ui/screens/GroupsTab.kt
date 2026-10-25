@@ -68,6 +68,7 @@ fun GroupsTab(
     onGroupOpened: () -> Unit = {},
     chatInfo: Map<String, GroupChatInfo> = emptyMap(),
     onChatRead: (groupId: String, upToMillis: Long) -> Unit = { _, _ -> },
+    openChatGroupId: String? = null,
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -89,6 +90,13 @@ fun GroupsTab(
     val taskToEdit by viewModel.taskToEdit.collectAsStateWithLifecycle()
 
     var createdGroupSuccessInfo by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    var activeOpenChatGroupId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(openChatGroupId) {
+        if (openChatGroupId != null) {
+            activeOpenChatGroupId = openChatGroupId
+        }
+    }
 
     LaunchedEffect(groupToOpen, currentUser) {
         if (groupToOpen != null && currentUser != null) {
@@ -120,6 +128,7 @@ fun GroupsTab(
                 // Detail screen for selected group
                 val activeMembership = memberships.find { it.groupId == selectedGroupId }
                 val currentChatInfo = chatInfo[selectedGroupId]
+                val isChatTarget = selectedGroupId == openChatGroupId || selectedGroupId == activeOpenChatGroupId
                 GroupDetailScreen(
                     currentUid = currentUser?.uid ?: "",
                     groupDetail = selectedGroupDetail,
@@ -133,7 +142,10 @@ fun GroupsTab(
                     onSendMessage = { text -> viewModel.sendMessage(text) },
                     onDeleteMessage = { message -> viewModel.deleteMessage(message) },
                     isLoading = isActionLoading,
-                    onBack = { viewModel.clearSelectedGroup() },
+                    onBack = {
+                        activeOpenChatGroupId = null
+                        viewModel.clearSelectedGroup()
+                    },
                     onAddTaskClick = { viewModel.openAddTaskDialog() },
                     onEditTaskClick = { task -> viewModel.openEditTaskDialog(task) },
                     onDeleteTaskClick = { task -> viewModel.deleteTask(task) },
@@ -152,8 +164,9 @@ fun GroupsTab(
                         }
                     },
                     chatUnreadCount = currentChatInfo?.unreadCount ?: 0,
-                    chatLastReadMillis = currentChatInfo?.lastReadMillis ?: 0L,
-                    onChatRead = { upToMillis -> onChatRead(selectedGroupId ?: "", upToMillis) }
+                    chatLastReadMillis = currentChatInfo?.lastReadMillis,
+                    onChatRead = { upToMillis -> onChatRead(selectedGroupId ?: "", upToMillis) },
+                    startOnChat = isChatTarget
                 )
             } else {
                 // Group list screen
@@ -161,7 +174,10 @@ fun GroupsTab(
                     memberships = memberships,
                     onCreateGroupClick = { viewModel.openCreateDialog() },
                     onJoinGroupClick = { viewModel.openJoinDialog() },
-                    onSelectGroup = { groupId -> viewModel.selectGroup(groupId) },
+                    onSelectGroup = { groupId ->
+                        activeOpenChatGroupId = null
+                        viewModel.selectGroup(groupId)
+                    },
                     chatInfo = chatInfo,
                     currentUid = currentUser?.uid ?: ""
                 )

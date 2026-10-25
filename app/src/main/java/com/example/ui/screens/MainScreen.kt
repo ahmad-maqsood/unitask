@@ -200,6 +200,7 @@ fun MainScreen(
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
+    val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
@@ -615,7 +616,8 @@ fun MainScreen(
                             groupToOpen = groupToOpen,
                             onGroupOpened = { viewModel.onGroupOpened() },
                             chatInfo = groupChatInfo,
-                            onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) }
+                            onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) },
+                            openChatGroupId = groupChatToOpen
                         )
                     }
                 }

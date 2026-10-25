@@ -32,9 +32,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.currentStateAsState
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,10 +84,19 @@ fun GroupChatPanel(
     // Mark as read while the panel is on screen and the app is in the foreground (RESUMED).
     // Must wait until the divider has been decided.
     val lifecycleOwner = LocalLifecycleOwner.current
-    val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+    var isResumed by remember {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, _ ->
+            isResumed = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val newestMessageMillis = messages.lastOrNull()?.createdAtMillis
-    LaunchedEffect(newestMessageMillis, lifecycleState, dividerEvaluated) {
-        if (dividerEvaluated && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+    LaunchedEffect(newestMessageMillis, isResumed, dividerEvaluated) {
+        if (dividerEvaluated && isResumed) {
             if (newestMessageMillis != null && newestMessageMillis > 0L) {
                 onMarkRead(newestMessageMillis)
             }

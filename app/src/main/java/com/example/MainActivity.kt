@@ -41,8 +41,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNotificationIntent(intent: Intent?) {
-        val groupId = intent?.getStringExtra("open_group_id")
-        val openChat = intent?.getBooleanExtra("open_group_chat", false) ?: false
+        if (intent == null) return
+        val groupId = intent.getStringExtra("open_group_id")
+        val openChat = intent.getBooleanExtra("open_group_chat", false)
         if (!groupId.isNullOrBlank()) {
             mainViewModel.openGroup(groupId, openChat = openChat)
             intent.removeExtra("open_group_id")

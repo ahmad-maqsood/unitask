@@ -131,10 +131,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         Firebase.auth.addAuthStateListener(authStateListener)
 
-        // Keep groupChatInfo active for the life of the ViewModel so background notifications work
-        viewModelScope.launch {
-            groupChatInfo.collect { }
-        }
+
     }
 
     override fun onCleared() {
@@ -788,7 +785,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (user == null) {
             groupChatTracker.clearAll()
             groupChatNotifier.clearAll()
-            flowOf(emptyMap())
+            flowOf(emptyMap<String, GroupChatInfo>())
         } else {
             val myUid = user.uid
             groupRepository.observeMyGroupMemberships(myUid).flatMapLatest { memberships ->
@@ -797,7 +794,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     groupChatTracker.retainOnly(currentGroupIds)
                 }
                 if (memberships.isEmpty()) {
-                    flowOf(emptyMap())
+                    flowOf(emptyMap<String, GroupChatInfo>())
                 } else {
                     val flows = memberships.map { m ->
                         val gid = m.groupId
@@ -849,6 +846,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val totalUnreadMessages: StateFlow<Int> = groupChatInfo.map { map ->
         map.values.sumOf { it.unreadCount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    // Keeps groupChatInfo active for the whole life of the ViewModel, so chat notifications also work
+    // while the app is in the background. This block MUST stay below the groupChatInfo declaration.
+    init {
+        viewModelScope.launch {
+            groupChatInfo.collect { }
+        }
+    }
 
     fun markGroupChatRead(groupId: String, upToMillis: Long) {
         if (groupId.isBlank()) return

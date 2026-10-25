@@ -45,11 +45,8 @@ class GroupSyncWorker(
             for (snapshot in state.loaded) {
                 try {
                     val threshold = notifier.thresholdFor(snapshot.groupId)
-                    val tail = if (threshold == null) {
-                        repo.getNewMessagesOnce(snapshot.groupId, 0L)
-                    } else {
-                        repo.getNewMessagesOnce(snapshot.groupId, threshold)
-                    }
+                    // -1 means "no baseline yet": the repository then fetches only the newest message.
+                    val tail = repo.getNewMessagesOnce(snapshot.groupId, threshold ?: -1L)
                     if (tail != null) {
                         notifier.onMessages(
                             myUid = user.uid,

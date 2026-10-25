@@ -311,13 +311,14 @@ class GroupRepository(private val context: Context) {
 
     /**
      * Reads up to 20 new messages created after [afterMillis] from the server once.
-     * When [afterMillis] <= 0L, fetches the single newest message (used for baseline).
+     * When [afterMillis] is negative, fetches only the single newest message (used to set a baseline).
      * Returns null on any failure so failures never throw out of this function.
      */
     suspend fun getNewMessagesOnce(groupId: String, afterMillis: Long): ChatTail? = try {
         if (groupId.isBlank()) null
         else withTimeout(TIMEOUT_MILLIS) {
-            val query = if (afterMillis <= 0L) {
+            val newestOnly = afterMillis < 0L
+            val query = if (newestOnly) {
                 db.collection("groups").document(groupId).collection("messages")
                     .orderBy("createdAt", Query.Direction.DESCENDING)
                     .limit(1)
@@ -342,7 +343,7 @@ class GroupRepository(private val context: Context) {
                     )?.toDate()?.time ?: System.currentTimeMillis()
                 )
             }
-            val ordered = if (afterMillis <= 0L) list.reversed() else list
+            val ordered = if (newestOnly) list.reversed() else list
             ChatTail(ordered, fromServer = true)
         }
     } catch (_: Exception) {

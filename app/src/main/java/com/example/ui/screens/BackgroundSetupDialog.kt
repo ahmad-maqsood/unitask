@@ -7,20 +7,23 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.util.BackgroundAccess
 
 private enum class SetupStep {
@@ -32,25 +35,44 @@ private enum class SetupStep {
 @Composable
 fun BackgroundSetupDialog(
     onDismiss: () -> Unit = {},
-    onFinished: () -> Unit = onDismiss
+    onFinished: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var currentStep by remember { mutableStateOf(SetupStep.INTRO) }
-    val dismissDialog = {
-        onDismiss()
-        onFinished()
+    var leftApp by remember { mutableStateOf(false) }
+
+    val latestOnDismiss by rememberUpdatedState(onDismiss)
+    val latestOnFinished by rememberUpdatedState(onFinished)
+    val dismissDialog: () -> Unit = {
+        latestOnDismiss()
+        latestOnFinished()
     }
 
-    // When the user returns from the system battery optimization screen, advance to autostart or finish
-    LifecycleResumeEffect(currentStep) {
-        if (currentStep == SetupStep.WAITING_BATTERY) {
-            if (BackgroundAccess.needsAutostartStep()) {
-                currentStep = SetupStep.AUTOSTART
-            } else {
-                dismissDialog()
+    // What happens after the battery step: the auto-start step on phones that have one, else finish.
+    val afterBatteryStep: () -> Unit = {
+        if (BackgroundAccess.needsAutostartStep()) {
+            currentStep = SetupStep.AUTOSTART
+        } else {
+            dismissDialog()
+        }
+    }
+
+    // While we wait for the system battery screen: move on only after the app was really left
+    // (ON_PAUSE) and the user is back (ON_RESUME).
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (currentStep == SetupStep.WAITING_BATTERY) {
+                if (event == Lifecycle.Event.ON_PAUSE) {
+                    leftApp = true
+                } else if (event == Lifecycle.Event.ON_RESUME && leftApp) {
+                    leftApp = false
+                    afterBatteryStep()
+                }
             }
         }
-        onPauseOrDispose { }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     when (currentStep) {
@@ -65,12 +87,13 @@ fun BackgroundSetupDialog(
                     Button(
                         onClick = {
                             if (!BackgroundAccess.isIgnoringBatteryOptimizations(context)) {
+                                leftApp = false
                                 currentStep = SetupStep.WAITING_BATTERY
-                                BackgroundAccess.requestIgnoreBatteryOptimizations(context)
-                            } else if (BackgroundAccess.needsAutostartStep()) {
-                                currentStep = SetupStep.AUTOSTART
+                                val started = BackgroundAccess.requestIgnoreBatteryOptimizations(context)
+                                // No battery screen could be opened on this phone: do not get stuck.
+                                if (!started) afterBatteryStep()
                             } else {
-                                dismissDialog()
+                                afterBatteryStep()
                             }
                         },
                         modifier = Modifier.testTag("background_setup_start_button")
@@ -90,8 +113,8 @@ fun BackgroundSetupDialog(
         }
 
         SetupStep.WAITING_BATTERY -> {
-            // While the user is interacting with the system dialog/screen, no dialog is shown.
-            // LifecycleResumeEffect will trigger on return.
+            // No dialog is shown while the system battery screen is open.
+            // The lifecycle observer above moves on when the user comes back.
         }
 
         SetupStep.AUTOSTART -> {

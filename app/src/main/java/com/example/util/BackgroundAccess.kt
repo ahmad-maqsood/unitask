@@ -73,39 +73,37 @@ object BackgroundAccess {
         return powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
     }
 
-    fun requestIgnoreBatteryOptimizations(context: Context) {
+    fun requestIgnoreBatteryOptimizations(context: Context): Boolean {
         val pkg = context.packageName
-        val addFlags: (Intent) -> Intent = { intent ->
-            if (context !is Activity) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        fun launch(intent: Intent): Boolean {
+            return try {
+                if (context !is Activity) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+                true
+            } catch (_: Exception) {
+                false
             }
-            intent
         }
 
         // (1) Official one-tap dialog
-        try {
-            val intent = addFlags(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+        if (launch(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                 data = Uri.parse("package:$pkg")
             })
-            context.startActivity(intent)
-            return
-        } catch (_: Exception) {}
+        ) return true
 
         // (2) All-apps battery optimization list
-        try {
-            val intent = addFlags(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-            context.startActivity(intent)
-            return
-        } catch (_: Exception) {}
+        if (launch(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))) return true
 
-        // (3) App info details page fallback
-        try {
-            val intent = addFlags(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        // (3) App info page fallback
+        if (launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:$pkg")
             })
-            context.startActivity(intent)
-            return
-        } catch (_: Exception) {}
+        ) return true
+
+        return false
     }
 
     fun brand(): PhoneBrand {

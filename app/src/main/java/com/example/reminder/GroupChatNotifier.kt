@@ -37,14 +37,16 @@ class GroupChatNotifier(context: Context) {
      * Returns the threshold (max of lastRead and notifiedUpTo) for this group,
      * or null if the group has no baseline yet.
      */
-    fun thresholdFor(groupId: String): Long? = synchronized(LOCK) {
-        val lastRead = tracker.lastRead(groupId) ?: return null
-        val notified = if (notifiedPrefs.contains(groupId)) {
-            notifiedPrefs.getLong(groupId, 0L)
-        } else {
-            lastRead
+    fun thresholdFor(groupId: String): Long? {
+        synchronized(LOCK) {
+            val lastRead = tracker.lastRead(groupId) ?: return null
+            val notified = if (notifiedPrefs.contains(groupId)) {
+                notifiedPrefs.getLong(groupId, 0L)
+            } else {
+                lastRead
+            }
+            return maxOf(lastRead, notified)
         }
-        maxOf(lastRead, notified)
     }
 
     fun onMessages(
@@ -53,46 +55,46 @@ class GroupChatNotifier(context: Context) {
         groupName: String,
         messages: List<GroupMessage>,
         fromServer: Boolean
-    ) = synchronized(LOCK) {
-        // 1. If !fromServer, return (cache-only data is not trusted for decisions)
-        if (!fromServer) return
+    ) {
+        synchronized(LOCK) {
+            // 1. Cache-only data is not trusted for decisions.
+            if (!fromServer) return
 
-        val newest = messages.maxOfOrNull { it.createdAtMillis } ?: 0L
+            val newest = messages.maxOfOrNull { it.createdAtMillis } ?: 0L
 
-        // 3. If tracker.lastRead(groupId) == null: this group has no baseline yet.
-        // Call tracker.setBaseline(groupId, newest), store notified = newest, do not notify, return.
-        val storedLastRead = tracker.lastRead(groupId)
-        if (storedLastRead == null) {
-            tracker.setBaseline(groupId, newest)
-            notifiedPrefs.edit().putLong(groupId, newest).apply()
-            return
+            // 2. No baseline yet: set it silently, do not notify.
+            val storedLastRead = tracker.lastRead(groupId)
+            if (storedLastRead == null) {
+                tracker.setBaseline(groupId, newest)
+                notifiedPrefs.edit().putLong(groupId, newest).apply()
+                return
+            }
+
+            // 3. If the notified mark is missing, treat it as equal to lastRead.
+            val notifiedUpTo = if (notifiedPrefs.contains(groupId)) {
+                notifiedPrefs.getLong(groupId, 0L)
+            } else {
+                storedLastRead
+            }
+
+            // 4. Only messages from other people, newer than both marks.
+            val threshold = maxOf(storedLastRead, notifiedUpTo)
+            val candidates = messages.filter {
+                it.senderId != myUid && it.createdAtMillis > threshold
+            }.sortedBy { it.createdAtMillis }
+
+            if (candidates.isEmpty()) return
+
+            // 5. Remember what we notify about BEFORE posting, so a crash cannot cause repeats.
+            val lastMillis = candidates.last().createdAtMillis
+            notifiedPrefs.edit().putLong(groupId, lastMillis).apply()
+
+            // 6. In the foreground the in-app badges are enough.
+            if (AppVisibility.isForeground) return
+
+            // 7. Post the notification.
+            postNotification(groupId, groupName, candidates)
         }
-
-        // 4. If notified mark is missing, treat it as equal to lastRead
-        val notifiedUpTo = if (notifiedPrefs.contains(groupId)) {
-            notifiedPrefs.getLong(groupId, 0L)
-        } else {
-            storedLastRead
-        }
-
-        // 5. threshold = max(lastRead, notifiedUpTo)
-        val threshold = maxOf(storedLastRead, notifiedUpTo)
-        val candidates = messages.filter {
-            it.senderId != myUid && it.createdAtMillis > threshold
-        }.sortedBy { it.createdAtMillis }
-
-        // 6. If there are none, return
-        if (candidates.isEmpty()) return
-
-        // 7. Set notifiedUpTo = candidates.last().createdAtMillis before posting
-        val lastMillis = candidates.last().createdAtMillis
-        notifiedPrefs.edit().putLong(groupId, lastMillis).apply()
-
-        // 8. If AppVisibility.isForeground, return without posting
-        if (AppVisibility.isForeground) return
-
-        // 9. Post notification
-        postNotification(groupId, groupName, candidates)
     }
 
     private fun postNotification(

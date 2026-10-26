@@ -169,58 +169,6 @@ fun TaskCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Course Badge
-                        val badgeText = remember(course, groupEntry) {
-                            if (course == null) {
-                                "General"
-                            } else if (groupEntry != null) {
-                                val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
-                                if (hasSpecificCourse) {
-                                    if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                                        "${groupEntry.groupName} • ${course.code} • ${course.name}"
-                                    } else {
-                                        "${groupEntry.groupName} • ${course.code}"
-                                    }
-                                } else {
-                                    groupEntry.groupName
-                                }
-                            } else {
-                                if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                                    "${course.code} • ${course.name}"
-                                } else {
-                                    course.code
-                                }
-                            }
-                        }
-
-                        Surface(
-                            modifier = Modifier.weight(1f, fill = false),
-                            shape = RoundedCornerShape(6.dp),
-                            color = courseColor.copy(alpha = 0.15f),
-                            contentColor = courseColor
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                if (groupEntry != null) {
-                                    Icon(
-                                        imageVector = Icons.Default.Groups,
-                                        contentDescription = "Group task",
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                                Text(
-                                    text = badgeText,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                            }
-                        }
 
                         // Priority Badge
                         PriorityBadge(priority = task.priority)
@@ -319,6 +267,61 @@ fun TaskCard(
                                 )
                             }
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Course badge on its own line so the whole course name can be read.
+                // It wraps onto a second line instead of being cut off.
+                val badgeText = remember(course, groupEntry) {
+                    if (course == null) {
+                        "General"
+                    } else if (groupEntry != null) {
+                        val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
+                        if (hasSpecificCourse) {
+                            if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                "${groupEntry.groupName} • ${course.code} • ${course.name}"
+                            } else {
+                                "${groupEntry.groupName} • ${course.code}"
+                            }
+                        } else {
+                            groupEntry.groupName
+                        }
+                    } else {
+                        if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                            "${course.code} • ${course.name}"
+                        } else {
+                            course.code
+                        }
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = courseColor.copy(alpha = 0.15f),
+                    contentColor = courseColor
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (groupEntry != null) {
+                            Icon(
+                                imageVector = Icons.Default.Groups,
+                                contentDescription = "Group task",
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                     }
                 }
 

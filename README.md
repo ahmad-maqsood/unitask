@@ -64,6 +64,7 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 - **Configurable deadline alerts:** Use supported intervals such as at the deadline, 1 or 2 hours before, and 1 or 2 days before, depending on the task reminder options.
 - **Custom notification sound:** Choose UniTask's custom sound or the Android system default.
+- **Notification sound:** Pick one of the built-in sounds, your phone's default, or any sound from your phone, and preview it before choosing.
 - **Daily summary reminders:** Enable or disable a daily overview and choose when it should arrive.
 - **Reliable scheduling:** Local Android alarms are used for deadline, class, and daily summary reminders.
 - **Restart recovery:** Scheduled reminders are restored after device restarts or app updates, with improved reminder-state persistence.

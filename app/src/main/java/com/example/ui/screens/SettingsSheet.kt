@@ -1,9 +1,19 @@
 package com.example.ui.screens
 
+import android.app.Activity
 import android.content.Intent
+import android.media.Ringtone
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -91,7 +101,8 @@ fun SettingsButton(
     var showSheet by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var isChecking by remember { mutableStateOf(false) }
-    var useSystemSound by remember { mutableStateOf(NotificationSound.useSystem(context)) }
+    var soundLabel by remember { mutableStateOf(NotificationSound.label(context)) }
+    var showSoundDialog by remember { mutableStateOf(false) }
     var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     var classStartEnabled by remember { mutableStateOf(ClassReminderScheduler.isEnabled(context)) }
@@ -135,6 +146,13 @@ fun SettingsButton(
         BadgedBox(badge = { if (available != null) Badge() }) {
             Icon(Icons.Default.Settings, contentDescription = "Settings")
         }
+    }
+
+    if (showSoundDialog) {
+        SoundPickerDialog(
+            onChanged = { soundLabel = NotificationSound.label(context) },
+            onDismiss = { showSoundDialog = false }
+        )
     }
 
     if (showBackgroundSetupDialog) {
@@ -212,22 +230,10 @@ fun SettingsButton(
                 SettingsSectionLabel("Notifications")
                 SettingsRow(
                     icon = Icons.Default.NotificationsActive,
-                    title = "Use system notification sound",
-                    subtitle = if (useSystemSound) "Using your phone's default sound" else "Using the UniTask sound",
-                    onClick = {
-                        useSystemSound = !useSystemSound
-                        NotificationSound.setUseSystem(context, useSystemSound)
-                    },
-                    trailing = {
-                        Switch(
-                            checked = useSystemSound,
-                            onCheckedChange = {
-                                useSystemSound = it
-                                NotificationSound.setUseSystem(context, it)
-                            }
-                        )
-                    },
-                    testTag = "settings_system_sound_row"
+                    title = "Notification sound",
+                    subtitle = soundLabel,
+                    onClick = { showSoundDialog = true },
+                    testTag = "settings_sound_row"
                 )
                 SettingsRow(
                     icon = Icons.Default.BatteryChargingFull,
@@ -407,5 +413,120 @@ private fun SettingsRow(
             )
         }
         if (trailing != null) trailing()
+    }
+}
+
+@Composable
+private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var selected by remember { mutableStateOf(NotificationSound.choice(context)) }
+    val player = remember { arrayOfNulls<Ringtone>(1) }
+    DisposableEffect(Unit) { onDispose { try { player[0]?.stop() } catch (_: Exception) {} } }
+
+    fun preview(uri: Uri?) {
+        try {
+            player[0]?.stop()
+            val target = uri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            player[0] = RingtoneManager.getRingtone(context, target)?.also { it.play() }
+        } catch (_: Exception) {}
+    }
+
+    val pickLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val picked: Uri? = if (Build.VERSION.SDK_INT >= 33) {
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            }
+            if (picked != null) {
+                NotificationSound.setPhoneSound(context, picked)
+                selected = NotificationSound.choice(context)
+                onChanged()
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Notification sound") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                NotificationSound.availableBuiltIn(context).forEach { sound ->
+                    SoundOptionRow(
+                        label = sound.label,
+                        selected = selected == sound.key,
+                        onSelect = {
+                            NotificationSound.setChoice(context, sound.key)
+                            selected = sound.key
+                            onChanged()
+                        },
+                        onPlay = {
+                            val id = context.resources.getIdentifier(sound.rawName, "raw", context.packageName)
+                            preview(if (id == 0) null else Uri.parse("android.resource://${context.packageName}/$id"))
+                        },
+                        testTag = "sound_option_${sound.key}"
+                    )
+                }
+                SoundOptionRow(
+                    label = "Phone default",
+                    selected = selected == NotificationSound.CHOICE_SYSTEM,
+                    onSelect = {
+                        NotificationSound.setChoice(context, NotificationSound.CHOICE_SYSTEM)
+                        selected = NotificationSound.CHOICE_SYSTEM
+                        onChanged()
+                    },
+                    onPlay = { preview(null) },
+                    testTag = "sound_option_system"
+                )
+                SoundOptionRow(
+                    label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else "Choose from phone…",
+                    selected = selected == NotificationSound.CHOICE_PHONE,
+                    onSelect = {
+                        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Notification sound")
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                            NotificationSound.phoneUri(context)?.let {
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, it)
+                            }
+                        }
+                        try { pickLauncher.launch(intent) } catch (_: Exception) {}
+                    },
+                    onPlay = if (selected == NotificationSound.CHOICE_PHONE) {
+                        { preview(NotificationSound.phoneUri(context)) }
+                    } else null,
+                    testTag = "sound_option_phone"
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+    )
+}
+
+@Composable
+private fun SoundOptionRow(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onPlay: (() -> Unit)?,
+    testTag: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 2.dp)
+            .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = onSelect)
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        if (onPlay != null) {
+            IconButton(onClick = onPlay) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Play $label")
+            }
+        }
     }
 }

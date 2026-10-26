@@ -109,7 +109,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
         notificationManager.deleteNotificationChannel("unitask_assignment_reminders")
-        notificationManager.deleteNotificationChannel(NotificationSound.otherChannelId(context, CHANNEL_ID))
+        NotificationSound.deleteOtherChannels(context, notificationManager, CHANNEL_ID)
         if (notificationManager.getNotificationChannel(targetId) == null) {
             val channel = NotificationChannel(
                 targetId,

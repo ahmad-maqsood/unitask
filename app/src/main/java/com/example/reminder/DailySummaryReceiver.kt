@@ -145,7 +145,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
-        manager.deleteNotificationChannel(NotificationSound.otherChannelId(context, CHANNEL_ID))
+        NotificationSound.deleteOtherChannels(context, manager, CHANNEL_ID)
         if (manager.getNotificationChannel(targetId) == null) {
             val channel = NotificationChannel(targetId, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
                 description = "One alert each day with your classes and deadlines"

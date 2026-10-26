@@ -462,4 +462,42 @@ class ExampleRobolectricTest {
         assertEquals(1, courses.size)
         assertEquals("CS101", courses[0].code)
     }
+
+    @Test
+    fun `test NotificationSound choices and channels`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val prefs = context.getSharedPreferences("unitask_settings", Context.MODE_PRIVATE)
+        prefs.edit().clear().commit()
+
+        // With no saved choice and use_system_sound unset, NotificationSound.choice(context) is "default" and channelId(context, "x") is "x"
+        assertEquals("default", com.example.util.NotificationSound.choice(context))
+        assertEquals("x", com.example.util.NotificationSound.channelId(context, "x"))
+
+        // With use_system_sound = true and no saved choice, choice is "system" and channelId is "x_system"
+        prefs.edit().putBoolean("use_system_sound", true).commit()
+        assertEquals("system", com.example.util.NotificationSound.choice(context))
+        assertEquals("x_system", com.example.util.NotificationSound.channelId(context, "x"))
+
+        // Reset prefs
+        prefs.edit().clear().commit()
+
+        // After setChoice(context, "s2") with no sound_2 file in res/raw, choice falls back to "default"
+        val contextWithoutSound2 = object : android.content.ContextWrapper(context) {
+            override fun getResources(): android.content.res.Resources {
+                return object : android.content.res.Resources(context.resources.assets, context.resources.displayMetrics, context.resources.configuration) {
+                    override fun getIdentifier(name: String?, defType: String?, defPackage: String?): Int {
+                        if (name == "sound_2" && defType == "raw") return 0
+                        return super.getIdentifier(name, defType, defPackage)
+                    }
+                }
+            }
+        }
+        com.example.util.NotificationSound.setChoice(contextWithoutSound2, "s2")
+        assertEquals("default", com.example.util.NotificationSound.choice(contextWithoutSound2))
+
+        // After setPhoneSound(context, Uri.parse("content://media/internal/audio/media/1")), choice is "phone" and channelId starts with "x_phone_"
+        com.example.util.NotificationSound.setPhoneSound(context, android.net.Uri.parse("content://media/internal/audio/media/1"))
+        assertEquals("phone", com.example.util.NotificationSound.choice(context))
+        assertTrue(com.example.util.NotificationSound.channelId(context, "x").startsWith("x_phone_"))
+    }
 }

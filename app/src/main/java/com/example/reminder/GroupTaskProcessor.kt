@@ -263,7 +263,7 @@ class GroupTaskProcessor(context: Context) {
             }
             val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             manager?.deleteNotificationChannel("unitask_group_updates")
-            manager?.deleteNotificationChannel(NotificationSound.otherChannelId(appContext, CHANNEL_ID))
+            manager?.let { NotificationSound.deleteOtherChannels(appContext, it, CHANNEL_ID) }
             manager?.createNotificationChannel(channel)
         }
     }

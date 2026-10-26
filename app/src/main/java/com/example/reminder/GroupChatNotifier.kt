@@ -177,7 +177,7 @@ class GroupChatNotifier(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
             val targetChannelId = NotificationSound.channelId(appContext, CHANNEL_BASE_ID)
-            manager.deleteNotificationChannel(NotificationSound.otherChannelId(appContext, CHANNEL_BASE_ID))
+            NotificationSound.deleteOtherChannels(appContext, manager, CHANNEL_BASE_ID)
             if (manager.getNotificationChannel(targetChannelId) == null) {
                 val channel = NotificationChannel(
                     targetChannelId,

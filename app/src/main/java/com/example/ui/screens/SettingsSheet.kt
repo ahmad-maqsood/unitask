@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -69,6 +71,8 @@ import androidx.compose.material.icons.filled.WbSunny
 import com.example.reminder.DailySummaryScheduler
 import com.example.util.TimeFormatter
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
+private const val REPORT_FORM_URL =
+    "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
 
 /**
  * The gear button in the top bar. It opens a Settings sheet with:
@@ -295,6 +299,29 @@ fun SettingsButton(
                         )
                     },
                     testTag = "settings_source_code_row"
+                )
+                SettingsRow(
+                    icon = Icons.Default.BugReport,
+                    title = "Report a problem",
+                    subtitle = "Opens a short form. No GitHub account needed",
+                    onClick = {
+                        try {
+                            val info = "UniTask ${UpdateChecker.currentVersion(context)} | " +
+                                "Android ${Build.VERSION.RELEASE} | " +
+                                "${Build.MANUFACTURER} ${Build.MODEL}"
+                            val url = REPORT_FORM_URL + Uri.encode(info)
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        } catch (_: Exception) {}
+                    },
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    testTag = "settings_report_problem_row"
                 )
                 val currentVersion = UpdateChecker.currentVersion(context)
                 val statusText = when (val r = updateResult) {

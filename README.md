@@ -118,6 +118,15 @@ You can reopen the background setup guidance from the app's Settings to review t
 
 ---
 
+## 🐞 Report a Problem
+
+No GitHub account needed. In the app, open **Settings → Report a problem**, or use the form directly:
+[UniTask: Report a problem](https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform)
+
+The app fills in only its version, your Android version and your phone model. It never sends your name, email, tasks or group data.
+
+---
+
 ## 🔒 Privacy & Permissions
 
 - **Offline-first:** Core personal tasks, courses, and timetable data are stored locally and can be used without signing in.
@@ -127,6 +136,7 @@ You can reopen the background setup guidance from the app's Settings to review t
 - **Exact alarms:** `SCHEDULE_EXACT_ALARM` supports precise reminder scheduling where required by Android.
 - **Restart recovery:** `RECEIVE_BOOT_COMPLETED` allows scheduled reminders to be restored after a reboot.
 - **Network access:** Used for update checks and optional Firebase-backed features.
+- **Problem reports:** Tapping "Report a problem" opens a Google Form in your browser. Only the app version, Android version and phone model are prefilled, and you choose what else to submit.
 
 ---
 

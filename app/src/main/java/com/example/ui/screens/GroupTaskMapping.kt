@@ -23,6 +23,12 @@ fun groupTaskItemId(groupId: String, taskId: String): Long = negativeId("task|$g
 
 fun isGroupTaskItem(task: TaskItem): Boolean = task.id < 0
 
+/**
+ * Turns a course code into a comparable key: "CS-503", "cs 503" and "CS503" all become "CS503".
+ * Used wherever a group task's course label is compared with a course code.
+ */
+fun normalizeCourseKey(value: String): String =
+    value.filter { it.isLetterOrDigit() }.uppercase()
 fun GroupTaskEntry.toTaskWithCourse(): TaskWithCourse {
     val t = task
     val item = TaskItem(
@@ -41,11 +47,9 @@ fun GroupTaskEntry.toTaskWithCourse(): TaskWithCourse {
     )
     val cleanLabel = t.courseLabel?.trim()
     val matchedCourse = if (!cleanLabel.isNullOrBlank()) {
-        groupCourses.find {
-            it.code.equals(cleanLabel, ignoreCase = true) ||
-            cleanLabel.equals("${it.code}: ${it.name}", ignoreCase = true) ||
-            cleanLabel.startsWith(it.code, ignoreCase = true)
-        }
+        val labelKey = normalizeCourseKey(cleanLabel)
+        groupCourses.find { labelKey.isNotEmpty() && normalizeCourseKey(it.code) == labelKey }
+            ?: groupCourses.find { it.name.trim().equals(cleanLabel, ignoreCase = true) }
     } else null
 
     val courseCode = matchedCourse?.code ?: cleanLabel?.ifBlank { null } ?: groupName

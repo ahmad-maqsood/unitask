@@ -1016,9 +1016,13 @@ private fun GroupCoursesSection(
             }
         } else {
             items(courses, key = { it.id }) { course ->
-                val taskCount = tasks.count {
-                    it.courseLabel?.equals(course.code, ignoreCase = true) == true ||
-                    it.courseLabel?.startsWith(course.code, ignoreCase = true) == true
+                val courseKey = normalizeCourseKey(course.code)
+                val taskCount = tasks.count { t ->
+                    val label = t.courseLabel?.trim().orEmpty()
+                    label.isNotEmpty() && (
+                        (courseKey.isNotEmpty() && normalizeCourseKey(label) == courseKey) ||
+                        label.equals(course.name.trim(), ignoreCase = true)
+                    )
                 }
                 val canManage = isStaff || course.createdBy == currentUid
 

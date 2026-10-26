@@ -911,6 +911,15 @@ class GroupRepository(private val context: Context) {
                 batch.commit().await()
             }
 
+            // Group courses go too, so nothing is left behind in the database.
+            val courseDocs = db.collection("groups").document(groupId).collection("courses").get().await().documents
+            for (chunk in courseDocs.chunked(400)) {
+                val batch = db.batch()
+                for (doc in chunk) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().await()
+            }
 
             // 2. Delete all members except own in batches <= 400
             val membersSnapshot = db.collection("groups").document(groupId).collection("members").get().await()

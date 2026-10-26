@@ -468,7 +468,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // Course filter: matches personal tasks as well as group tasks belonging to the same course
         if (courseId != null) {
-            val normSelectedCode = selectedCourse?.code?.let { com.example.sync.FirestoreSyncManager.normalizeCode(it) }
+            val normSelectedCode = selectedCourse?.code?.let { normalizeCourseKey(it) }?.takeIf { it.isNotEmpty() }
             val normSelectedName = selectedCourse?.name?.trim()?.lowercase()
 
             list = list.filter { twc ->
@@ -477,7 +477,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Match by normalized course code (e.g. CS-503 vs CS503)
                 if (normSelectedCode != null) {
-                    val taskCourseCode = twc.course?.code?.let { com.example.sync.FirestoreSyncManager.normalizeCode(it) }
+                    val taskCourseCode = twc.course?.code?.let { normalizeCourseKey(it) }
                     if (taskCourseCode == normSelectedCode) return@filter true
                 }
 

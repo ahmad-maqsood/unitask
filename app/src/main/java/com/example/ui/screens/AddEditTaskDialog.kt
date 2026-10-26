@@ -189,6 +189,12 @@ fun AddEditTaskDialog(
                 val savedInfo = AttachmentManager.copyUriToInternalStorage(context, selectedUri)
                 if (savedInfo != null) {
                     newAttachments = newAttachments + savedInfo
+                } else {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Couldn't attach that file. The limit is 25 MB.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
                 }
                 isAttachingFile = false
             }

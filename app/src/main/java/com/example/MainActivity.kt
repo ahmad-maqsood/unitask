@@ -8,6 +8,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -60,6 +62,14 @@ class MainActivity : ComponentActivity() {
         setTheme(R.style.Theme_MyApplication)
         super.onCreate(savedInstanceState)
         ThemePreference.load(applicationContext)
+
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val db = com.example.data.local.AppDatabase.getDatabase(applicationContext)
+                val known = db.taskAttachmentDao().getAllRelativePaths().toSet()
+                com.example.util.AttachmentManager.deleteOrphanedFiles(applicationContext, known)
+            } catch (_: Exception) {}
+        }
 
         if (savedInstanceState == null) {
             handleNotificationIntent(intent)

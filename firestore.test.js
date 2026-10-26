@@ -5,7 +5,8 @@ const {
 } = require("@firebase/rules-unit-testing");
 const { test, before, after, beforeEach } = require("node:test");
 const fs = require("node:fs");
-
+const firebaseCompat = require("firebase/compat/app");
+const firebase = firebaseCompat.default || firebaseCompat;
 let testEnv;
 const PROJECT_ID = process.env.GCP_PROJECT || "demo-no-project";
 const ALICE_UID = "alice_123";
@@ -103,6 +104,222 @@ test("Validation: Alice cannot write task with invalid priority or missing title
       dueDateEpochMillis: 1729500000000,
       priority: "URGENT", // Not allowed
       status: "PENDING"
+    })
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Group tasks tests
+// ---------------------------------------------------------------------------
+
+const GROUP_ID = "group_test_1";
+const CHARLIE_UID = "charlie_789";
+
+function getServerTimestamp() {
+  return firebase.firestore.FieldValue.serverTimestamp;
+}
+
+async function setupTestGroup({ adminUid, memberUid, otherMemberUid }) {
+  const serverTimestamp = getServerTimestamp();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await db.collection("groups").doc(GROUP_ID).set({
+      ownerId: "owner_user",
+      name: "Test Group",
+      username: "test_group",
+      joinCode: "12345678",
+      createdAt: serverTimestamp(),
+    });
+    if (adminUid) {
+      await db.collection("groups").doc(GROUP_ID).collection("members").doc(adminUid).set({
+        uid: adminUid,
+        displayName: "Admin User",
+        role: "admin",
+        joinedAt: serverTimestamp(),
+      });
+    }
+    if (memberUid) {
+      await db.collection("groups").doc(GROUP_ID).collection("members").doc(memberUid).set({
+        uid: memberUid,
+        displayName: "Member User",
+        role: "member",
+        joinedAt: serverTimestamp(),
+      });
+    }
+    if (otherMemberUid) {
+      await db.collection("groups").doc(GROUP_ID).collection("members").doc(otherMemberUid).set({
+        uid: otherMemberUid,
+        displayName: "Other Member",
+        role: "member",
+        joinedAt: serverTimestamp(),
+      });
+    }
+  });
+}
+
+test("Group tasks: A member can create a group task with a valid assignedTo list", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertSucceeds(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").set({
+      title: "Group Task 1",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "HIGH",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      assignedTo: [ALICE_UID]
+    })
+  );
+});
+
+test("Group tasks: A member cannot create a group task with an empty assignedTo list", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertFails(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task_empty_assign").set({
+      title: "Group Task Empty Assign",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "HIGH",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      assignedTo: []
+    })
+  );
+});
+
+test("Group tasks: A member cannot create a group task with a disallowed field", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertFails(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task_disallowed_field").set({
+      title: "Group Task Disallowed",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "MEDIUM",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      assignedTo: [ALICE_UID],
+      foo: 1
+    })
+  );
+});
+
+test("Group tasks: A member cannot create a group task whose createdBy is someone else", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID, otherMemberUid: BOB_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertFails(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task_fake_creator").set({
+      title: "Group Task Fake Creator",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "MEDIUM",
+      createdBy: BOB_UID,
+      createdByName: "Bob",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      assignedTo: [ALICE_UID]
+    })
+  );
+});
+
+test("Group tasks: Non-member cannot read or create group tasks", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").set({
+      title: "Existing Task",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 10,
+      dueTimeMinute: 0,
+      priority: "LOW",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  });
+
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+  await assertFails(
+    bobDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").get()
+  );
+  await assertFails(
+    bobDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task_bob").set({
+      title: "Bob Task",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "MEDIUM",
+      createdBy: BOB_UID,
+      createdByName: "Bob",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      assignedTo: [BOB_UID]
+    })
+  );
+});
+
+test("Group tasks: Non-creator non-admin member cannot delete task, but admin can", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID, otherMemberUid: BOB_UID, adminUid: CHARLIE_UID });
+  const serverTimestamp = getServerTimestamp();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").set({
+      title: "Alice Task",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 10,
+      dueTimeMinute: 0,
+      priority: "LOW",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  });
+
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+  await assertFails(
+    bobDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").delete()
+  );
+
+  const charlieDb = testEnv.authenticatedContext(CHARLIE_UID).firestore();
+  await assertSucceeds(
+    charlieDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task1").delete()
+  );
+});
+
+
+test("Group tasks: A member cannot create a group task with a fixed date in createdAt", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertFails(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("tasks").doc("task_fixed_date").set({
+      title: "Group Task Fixed Date",
+      dueDateEpochMillis: 1729500000000,
+      dueTimeHour: 14,
+      dueTimeMinute: 0,
+      priority: "MEDIUM",
+      createdBy: ALICE_UID,
+      createdByName: "Alice",
+      createdAt: new Date(),
+      updatedAt: serverTimestamp(),
+      assignedTo: [ALICE_UID]
     })
   );
 });

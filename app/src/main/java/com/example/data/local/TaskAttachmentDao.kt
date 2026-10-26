@@ -32,4 +32,7 @@ interface TaskAttachmentDao {
 
     @Query("DELETE FROM task_attachments WHERE taskId = :taskId")
     suspend fun deleteAttachmentsForTask(taskId: Long)
+
+    @Query("SELECT relativePath FROM task_attachments")
+    suspend fun getAllRelativePaths(): List<String>
 }

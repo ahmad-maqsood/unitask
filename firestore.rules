@@ -151,7 +151,7 @@ service cloud.firestore {
     function isValidGroupTask(data) {
       return data.keys().hasOnly(['title', 'description', 'courseLabel', 'dueDateEpochMillis',
                                   'dueTimeHour', 'dueTimeMinute', 'priority',
-                                  'createdBy', 'createdByName', 'createdAt', 'updatedAt', 'reminderOptions'])
+                                  'createdBy', 'createdByName', 'createdAt', 'updatedAt', 'reminderOptions', 'assignedTo'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.dueDateEpochMillis is number
         && data.dueTimeHour is number && data.dueTimeHour >= 0 && data.dueTimeHour <= 23
@@ -162,6 +162,7 @@ service cloud.firestore {
         && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
         && (!('courseLabel' in data) || (data.courseLabel is string && data.courseLabel.size() <= 60))
         && (!('reminderOptions' in data) || (data.reminderOptions is string && data.reminderOptions.size() <= 100))
+        && (!('assignedTo' in data) || (data.assignedTo is list && data.assignedTo.size() > 0 && data.assignedTo.size() <= 200))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }

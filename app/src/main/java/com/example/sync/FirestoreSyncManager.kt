@@ -203,18 +203,18 @@ object FirestoreSyncManager {
             val canonicalDocId = getCourseDocId(normCode, course.cloudId)
 
             // 1. Delete course document(s)
-            try { coursesRef.document(canonicalDocId).delete().await() } catch (_: Exception) {}
+            try { coursesRef.document(canonicalDocId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
             if (course.cloudId.isNotBlank() && course.cloudId != canonicalDocId) {
-                try { coursesRef.document(course.cloudId).delete().await() } catch (_: Exception) {}
+                try { coursesRef.document(course.cloudId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
             }
-            try { coursesRef.document(course.id.toString()).delete().await() } catch (_: Exception) {}
+            try { coursesRef.document(course.id.toString()).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
 
             // Delete any course matching normalized code
             val coursesSnapshot = coursesRef.get().await()
             for (doc in coursesSnapshot.documents) {
                 val c = normalizeCode(doc.getString("code") ?: "")
                 if (c == normCode) {
-                    try { doc.reference.delete().await() } catch (_: Exception) {}
+                    try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 }
             }
 
@@ -223,12 +223,12 @@ object FirestoreSyncManager {
             for (doc in allTasksSnapshot.documents) {
                 val taskCourseCode = normalizeCode(doc.getString("courseCode") ?: "")
                 if (taskCourseCode == normCode) {
-                    try { doc.reference.delete().await() } catch (_: Exception) {}
+                    try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 }
             }
             for (task in associatedTasks) {
                 if (task.cloudId.isNotBlank()) {
-                    try { tasksRef.document(task.cloudId).delete().await() } catch (_: Exception) {}
+                    try { tasksRef.document(task.cloudId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 }
             }
 
@@ -237,12 +237,12 @@ object FirestoreSyncManager {
             for (doc in allSlotsSnapshot.documents) {
                 val slotCourseCode = normalizeCode(doc.getString("courseCode") ?: "")
                 if (slotCourseCode == normCode) {
-                    try { doc.reference.delete().await() } catch (_: Exception) {}
+                    try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 }
             }
             for (slot in associatedSlots) {
                 if (slot.cloudId.isNotBlank()) {
-                    try { slotsRef.document(slot.cloudId).delete().await() } catch (_: Exception) {}
+                    try { slotsRef.document(slot.cloudId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 }
             }
 
@@ -271,7 +271,7 @@ object FirestoreSyncManager {
             val tasksRef = db.collection("users").document(user.uid).collection("tasks")
 
             if (task.cloudId.isNotBlank()) {
-                try { tasksRef.document(task.cloudId).delete().await() } catch (_: Exception) {}
+                try { tasksRef.document(task.cloudId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
             }
      
 
@@ -300,10 +300,10 @@ object FirestoreSyncManager {
             val slotsRef = db.collection("users").document(user.uid).collection("slots")
 
             if (slot.cloudId.isNotBlank()) {
-                try { slotsRef.document(slot.cloudId).delete().await() } catch (_: Exception) {}
+                try { slotsRef.document(slot.cloudId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
             }
             val docId = getSlotDocId(slot, courseCode ?: "")
-            try { slotsRef.document(docId).delete().await() } catch (_: Exception) {}
+            try { slotsRef.document(docId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
 
             Log.d(TAG, "Successfully deleted timetable slot from Cloud Firestore")
             true
@@ -420,7 +420,7 @@ object FirestoreSyncManager {
                     // this course's tasks and slots must be re-pushed so they carry the new code.
                     val oldDocId = course.cloudId
                     if (oldDocId.isNotBlank() && oldDocId != canonicalDocId) {
-                        try { cloudCoursesRef.document(oldDocId).delete().await() } catch (_: Exception) {}
+                        try { cloudCoursesRef.document(oldDocId).delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         taskDao.markTasksUnsyncedForCourse(course.id)
                         slotDao.markSlotsUnsyncedForCourse(course.id)
                     }
@@ -493,14 +493,14 @@ object FirestoreSyncManager {
                     val canonicalDocId = getCourseDocId(normCode)
 
                     if (isCourseDeletionPending(normCode, doc.id) || courseDao.isCourseDeletedByCode(normCode)) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
 
                     // Duplicate document in Firestore for same course: purge it!
                     if (seenCourseCodes.contains(normCode)) {
                         Log.d(TAG, "Purging duplicate cloud course document: ${doc.id}")
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
                     seenCourseCodes.add(normCode)
@@ -511,7 +511,7 @@ object FirestoreSyncManager {
                             val dataToCopy = doc.data ?: emptyMap<String, Any>()
                             cloudCoursesRef.document(canonicalDocId).set(dataToCopy, SetOptions.merge()).await()
                             doc.reference.delete().await()
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) { Log.w(TAG, "Cloud migration failed: ${e.message}") }
                     }
 
                     val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getCourseByCloudId(doc.id) ?: courseDao.getCourseByCloudId(canonicalDocId)
@@ -528,7 +528,7 @@ object FirestoreSyncManager {
                         )
                         courseDao.insertCourse(newCourse)
                     } else if (existing.isDeleted) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                     } else if (!existing.isSynced) {
                         // Local edit not uploaded yet: keep it. The next sync pushes it.
                     } else {
@@ -562,19 +562,19 @@ object FirestoreSyncManager {
                     val courseCode = normalizeCode(doc.getString("courseCode") ?: "")
 
                     if (courseCode.isNotBlank() && (isCourseDeletionPending(courseCode) || courseDao.isCourseDeletedByCode(courseCode))) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
 
                     if (isTaskDeletionPending(doc.id)) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
 
                     val course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
                     if (course == null) {
                         // Orphaned task in cloud: delete it
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
                     val courseId = course.id
@@ -608,7 +608,7 @@ object FirestoreSyncManager {
                         )
                         taskDao.insertTask(newTask)
                     } else if (existing.isDeleted) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                     } else if (!existing.isSynced) {
                         // Local edit not uploaded yet: keep it. The next sync pushes it.
                     } else {
@@ -634,18 +634,18 @@ object FirestoreSyncManager {
                 for (doc in cloudSlotsSnapshot.documents) {
                     val courseCode = normalizeCode(doc.getString("courseCode") ?: "")
                     if (courseCode.isNotBlank() && (isCourseDeletionPending(courseCode) || courseDao.isCourseDeletedByCode(courseCode))) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
 
                     if (isSlotDeletionPending(doc.id)) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
 
                     val course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
                     if (course == null) {
-                        try { doc.reference.delete().await() } catch (_: Exception) {}
+                        try { doc.reference.delete().await() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                         continue
                     }
                     val courseId = course.id
@@ -775,7 +775,7 @@ object FirestoreSyncManager {
                             val canonicalDocId = getCourseDocId(normCode)
 
                             if (isCourseDeletionPending(normCode, doc.id) || courseDao.isCourseDeletedByCode(normCode)) {
-                                try { doc.reference.delete() } catch (_: Exception) {}
+                                try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 continue
                             }
 
@@ -795,7 +795,7 @@ object FirestoreSyncManager {
                                         )
                                         courseDao.insertCourse(newCourse)
                                     } else if (existing.isDeleted) {
-                                        try { doc.reference.delete() } catch (_: Exception) {}
+                                        try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                     } else if (!existing.isSynced) {
                                         // Local edit not uploaded yet: keep it. The next sync pushes it.
                                     } else {
@@ -834,11 +834,11 @@ object FirestoreSyncManager {
                             val courseCode = normalizeCode(doc.getString("courseCode") ?: "")
 
                             if (courseCode.isNotBlank() && (isCourseDeletionPending(courseCode) || courseDao.isCourseDeletedByCode(courseCode))) {
-                                try { doc.reference.delete() } catch (_: Exception) {}
+                                try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 continue
                             }
                             if (isTaskDeletionPending(doc.id)) {
-                                try { doc.reference.delete() } catch (_: Exception) {}
+                                try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 continue
                             }
 
@@ -888,7 +888,7 @@ object FirestoreSyncManager {
                                         }
 
                                     } else if (existing.isDeleted) {
-                                        try { doc.reference.delete() } catch (_: Exception) {}
+                                        try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                     } else if (!existing.isSynced) {
                                         // Local edit not uploaded yet: keep it. The next sync pushes it.
                                     } else {
@@ -939,11 +939,11 @@ object FirestoreSyncManager {
                             val courseCode = normalizeCode(doc.getString("courseCode") ?: "")
 
                             if (courseCode.isNotBlank() && (isCourseDeletionPending(courseCode) || courseDao.isCourseDeletedByCode(courseCode))) {
-                                try { doc.reference.delete() } catch (_: Exception) {}
+                                try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 continue
                             }
                             if (isSlotDeletionPending(doc.id)) {
-                                try { doc.reference.delete() } catch (_: Exception) {}
+                                try { doc.reference.delete() } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 continue
                             }
 

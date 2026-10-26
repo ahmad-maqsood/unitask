@@ -23,6 +23,39 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 ---
 
+## 🆕 Latest Release Highlights
+
+### UniTask v1.3.0
+
+#### New Features
+- **Daily summary notifications:** Schedule a daily notification showing today's classes and task deadlines, and choose the delivery time.
+- **Group task change alerts:** Receive notifications when a shared task's deadline changes or the task is deleted. Your own edits do not trigger these alerts.
+- **Custom notification sounds:** Choose from built-in UniTask sounds, your Android system default, or a sound selected from your device. Preview sounds before choosing.
+- **In-app problem reporting:** Open the problem-report form from Settings. The form is prefilled with the app version, Android version, and device model.
+- **Review background setup:** Reopen autostart and battery-optimization guidance from Settings.
+
+#### Improvements
+- Improved responsiveness on narrow screens and handling of long text to reduce clipping and overflow.
+- Improved reminder persistence and recovery after app launches, device reboots, app updates, and system time changes.
+- Clarified background activity, autostart, and battery-optimization guidance.
+- Improved notification sound preference handling and notification channel cleanup.
+- Improved attachment cleanup and cloud-deletion error reporting.
+- Expanded group-task assignment validation and Firestore security-rule tests.
+
+#### Bug Fixes & Reliability
+- Prevented group-task change notifications from triggering for your own edits.
+- Improved restoration and rescheduling of reminders.
+- Improved attachment handling by enforcing a 25 MB attachment limit and cleaning up stale orphaned files.
+- Improved validation of assigned group tasks and related Firestore security rules.
+
+#### Repository
+- Added the MIT License.
+- Updated and clarified the README, including problem-reporting and privacy information.
+
+**Full changelog:** [Compare v1.2.0 with v1.3.0](https://github.com/ahmad-maqsood/unitask/compare/v1.2.0...v1.3.0)
+
+---
+
 ## ✨ Features
 
 ### 📅 Deadlines & Assignments
@@ -63,8 +96,7 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 ### 🔔 Notifications & Alarms
 
 - **Configurable deadline alerts:** Use supported intervals such as at the deadline, 1 or 2 hours before, and 1 or 2 days before, depending on the task reminder options.
-- **Custom notification sound:** Choose UniTask's custom sound or the Android system default.
-- **Notification sound:** Pick one of the built-in sounds, your phone's default, or any sound from your phone, and preview it before choosing.
+- **Custom notification sounds:** Choose from built-in UniTask sounds, your phone's default, or a sound selected from your device; preview it before choosing.
 - **Daily summary reminders:** Enable or disable a daily overview and choose when it should arrive.
 - **Reliable scheduling:** Local Android alarms are used for deadline, class, and daily summary reminders.
 - **Restart recovery:** Scheduled reminders are restored after device restarts or app updates, with improved reminder-state persistence.

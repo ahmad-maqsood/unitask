@@ -170,6 +170,29 @@ fun TaskCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Course Badge
+                        val badgeText = remember(course, groupEntry) {
+                            if (course == null) {
+                                "General"
+                            } else if (groupEntry != null) {
+                                val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
+                                if (hasSpecificCourse) {
+                                    if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                        "${groupEntry.groupName} • ${course.code} • ${course.name}"
+                                    } else {
+                                        "${groupEntry.groupName} • ${course.code}"
+                                    }
+                                } else {
+                                    groupEntry.groupName
+                                }
+                            } else {
+                                if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                    "${course.code} • ${course.name}"
+                                } else {
+                                    course.code
+                                }
+                            }
+                        }
+
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = courseColor.copy(alpha = 0.15f),
@@ -188,12 +211,12 @@ fun TaskCard(
                                     )
                                 }
                                 Text(
-                                    text = course?.code ?: "General",
+                                    text = badgeText,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 130.dp)
+                                    modifier = Modifier.widthIn(max = 240.dp)
                                 )
                             }
                         }

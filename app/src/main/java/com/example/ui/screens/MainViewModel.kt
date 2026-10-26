@@ -53,6 +53,8 @@ import java.util.Calendar
 import com.example.data.local.deadlineMillis
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
+import com.example.sync.FirestoreSyncManager
+
 enum class MainTab {
     DEADLINES,
     TIMETABLE,
@@ -318,7 +320,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val groupEntries: StateFlow<List<GroupTaskEntry>> = groupsState.map { state ->
         state?.loaded.orEmpty().flatMap { snapshot ->
-            snapshot.tasks.map { GroupTaskEntry(it, snapshot.groupName, it.id in snapshot.done) }
+            snapshot.tasks.map { GroupTaskEntry(it, snapshot.groupName, it.id in snapshot.done, snapshot.courses) }
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -445,6 +447,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _courseFilter,
         _sortOption
     ) { tasks, query, status, courseId, sort ->
+        val selectedCourse = courseId?.let { cid -> allCourses.value.find { it.id == cid } }
         var list = tasks
 
         // Search query filter
@@ -463,9 +466,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             list = list.filter { it.task.status == status }
         }
 
-        // Course filter
+        // Course filter: matches personal tasks as well as group tasks belonging to the same course
         if (courseId != null) {
-            list = list.filter { it.task.courseId == courseId }
+            val normSelectedCode = selectedCourse?.code?.let { com.example.sync.FirestoreSyncManager.normalizeCode(it) }
+            val normSelectedName = selectedCourse?.name?.trim()?.lowercase()
+
+            list = list.filter { twc ->
+                // Direct match on personal task course id
+                if (twc.task.courseId == courseId) return@filter true
+
+                // Match by normalized course code (e.g. CS-503 vs CS503)
+                if (normSelectedCode != null) {
+                    val taskCourseCode = twc.course?.code?.let { com.example.sync.FirestoreSyncManager.normalizeCode(it) }
+                    if (taskCourseCode == normSelectedCode) return@filter true
+                }
+
+                // Match by course name if available
+                if (!normSelectedName.isNullOrBlank()) {
+                    val taskCourseName = twc.course?.name?.trim()?.lowercase()
+                    if (taskCourseName == normSelectedName) return@filter true
+                }
+
+                false
+            }
         }
 
         // Sorting

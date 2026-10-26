@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import com.example.data.groups.GroupMember
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,6 +64,7 @@ fun GroupTaskDialog(
     members: List<GroupMember>,
     currentUid: String,
     onDismiss: () -> Unit,
+    groupCourses: List<GroupCourse> = emptyList(),
     onSave: (
         title: String,
         description: String?,
@@ -176,17 +178,60 @@ fun GroupTaskDialog(
                         .testTag("group_task_title_input")
                 )
 
-                // Course Label (Optional free text)
-                OutlinedTextField(
-                    value = courseLabel,
-                    onValueChange = { courseLabel = it.take(60) },
-                    label = { Text("Course / Subject (optional)") },
-                    placeholder = { Text("e.g. CS 301, Physics Lab") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("group_task_course_label_input")
-                )
+                // Course / Subject Selection & Custom Label
+                Column {
+                    Text(
+                        text = "Course / Subject (optional)",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (groupCourses.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            groupCourses.forEach { c ->
+                                val isSelected = courseLabel.equals(c.code, ignoreCase = true)
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        courseLabel = if (isSelected) "" else c.code
+                                    },
+                                    leadingIcon = if (isSelected) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                    } else null,
+                                    label = {
+                                        Text(
+                                            text = "${c.code} (${c.name})",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("group_task_course_chip_${c.code}")
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = courseLabel,
+                        onValueChange = { courseLabel = it.take(60) },
+                        label = { Text("Course Code / Name") },
+                        placeholder = { Text("e.g. CS 301, Physics Lab") },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("group_task_course_label_input")
+                    )
+                }
 
                 // Description
                 OutlinedTextField(

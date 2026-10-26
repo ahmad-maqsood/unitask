@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMessage
@@ -51,6 +52,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _taskToEdit = MutableStateFlow<GroupTask?>(null)
     val taskToEdit: StateFlow<GroupTask?> = _taskToEdit.asStateFlow()
+
+    private val _isAddEditCourseDialogOpen = MutableStateFlow(false)
+    val isAddEditCourseDialogOpen: StateFlow<Boolean> = _isAddEditCourseDialogOpen.asStateFlow()
+
+    private val _courseToEdit = MutableStateFlow<GroupCourse?>(null)
+    val courseToEdit: StateFlow<GroupCourse?> = _courseToEdit.asStateFlow()
 
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
@@ -107,6 +114,15 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     val selectedGroupTasks: StateFlow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
         if (!groupId.isNullOrBlank()) {
             repository.observeGroupTasks(groupId)
+        } else {
+            flowOf(emptyList())
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val selectedGroupCourses: StateFlow<List<GroupCourse>> = _selectedGroupId.flatMapLatest { groupId ->
+        if (!groupId.isNullOrBlank()) {
+            repository.observeGroupCourses(groupId)
         } else {
             flowOf(emptyList())
         }
@@ -188,6 +204,67 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     fun closeAddEditTaskDialog() {
         _isAddEditTaskDialogOpen.value = false
         _taskToEdit.value = null
+    }
+
+    fun openAddCourseDialog() {
+        _courseToEdit.value = null
+        _isAddEditCourseDialogOpen.value = true
+    }
+
+    fun openEditCourseDialog(course: GroupCourse) {
+        _courseToEdit.value = course
+        _isAddEditCourseDialogOpen.value = true
+    }
+
+    fun closeAddEditCourseDialog() {
+        _isAddEditCourseDialogOpen.value = false
+        _courseToEdit.value = null
+    }
+
+    fun saveCourse(code: String, name: String, instructor: String, colorHex: String) {
+        val groupId = _selectedGroupId.value ?: return
+        val user = _currentUser.value ?: return
+        val existingCourse = _courseToEdit.value
+
+        closeAddEditCourseDialog()
+
+        if (existingCourse == null) {
+            repository.createGroupCourse(
+                groupId = groupId,
+                code = code,
+                name = name,
+                instructor = instructor,
+                colorHex = colorHex,
+                uid = user.uid,
+                onFailure = { e ->
+                    viewModelScope.launch {
+                        _snackbarMessage.emit("Failed to create course: ${e.message}")
+                    }
+                }
+            )
+        } else {
+            repository.updateGroupCourse(
+                groupId = groupId,
+                courseId = existingCourse.id,
+                code = code,
+                name = name,
+                instructor = instructor,
+                colorHex = colorHex,
+                onFailure = { e ->
+                    viewModelScope.launch {
+                        _snackbarMessage.emit("Failed to update course: ${e.message}")
+                    }
+                }
+            )
+        }
+    }
+
+    fun deleteCourse(course: GroupCourse) {
+        repository.deleteGroupCourse(course.groupId, course.id) { e ->
+            viewModelScope.launch {
+                _snackbarMessage.emit("Failed to delete course: ${e.message}")
+            }
+        }
     }
 
     fun createGroup(name: String, username: String, onComplete: (Boolean, String?) -> Unit) {

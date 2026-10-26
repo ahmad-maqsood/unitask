@@ -39,13 +39,25 @@ fun GroupTaskEntry.toTaskWithCourse(): TaskWithCourse {
         isSynced = true,
         createdAt = t.createdAt?.toDate()?.time ?: 0L
     )
-    // The "course" is the group, so the existing badge and search by name work unchanged.
+    val cleanLabel = t.courseLabel?.trim()
+    val matchedCourse = if (!cleanLabel.isNullOrBlank()) {
+        groupCourses.find {
+            it.code.equals(cleanLabel, ignoreCase = true) ||
+            cleanLabel.equals("${it.code}: ${it.name}", ignoreCase = true) ||
+            cleanLabel.startsWith(it.code, ignoreCase = true)
+        }
+    } else null
+
+    val courseCode = matchedCourse?.code ?: cleanLabel?.ifBlank { null } ?: groupName
+    val courseName = matchedCourse?.name ?: cleanLabel?.ifBlank { null } ?: groupName
+    val courseColor = matchedCourse?.colorHex ?: GROUP_TASK_COLOR_HEX
+
     val course = Course(
         id = item.courseId,
-        name = groupName,
-        code = groupName,
-        instructor = "",
-        colorHex = GROUP_TASK_COLOR_HEX,
+        name = courseName,
+        code = courseCode,
+        instructor = matchedCourse?.instructor.orEmpty(),
+        colorHex = courseColor,
         isSynced = true
     )
     return TaskWithCourse(task = item, course = course, attachments = emptyList())

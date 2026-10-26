@@ -1,6 +1,7 @@
 package com.example.data.groups
 
 import android.content.Context
+import android.util.Log
 import com.example.R
 import com.example.data.local.computeDeadlineMillis
 import com.example.reminder.GroupTaskProcessor
@@ -25,6 +26,8 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import java.security.SecureRandom
 import java.util.Date
+
+private const val TAG = "GroupRepository"
 
 data class GroupMembership(
     val groupId: String = "",
@@ -84,6 +87,17 @@ data class GroupMessage(
 
 data class ChatTail(val messages: List<GroupMessage>, val fromServer: Boolean)
 
+data class GroupCourse(
+    val id: String = "",
+    val groupId: String = "",
+    val code: String = "",
+    val name: String = "",
+    val instructor: String = "",
+    val colorHex: String = "#4F46E5",
+    val createdBy: String = "",
+    val createdAt: Timestamp? = null
+)
+
 /** One group as seen by this user: its tasks and which of them this user marked done. */
 data class GroupSnapshot(
     val groupId: String,
@@ -92,7 +106,8 @@ data class GroupSnapshot(
     val done: Set<String>,
     // Every task of the group, including ones that do not tag you. Used only for the
     // "new task" notification; Deadlines and alarms use [tasks].
-    val allTasks: List<GroupTask> = tasks
+    val allTasks: List<GroupTask> = tasks,
+    val courses: List<GroupCourse> = emptyList()
 )
 
 /**
@@ -108,7 +123,8 @@ data class GroupsState(
 data class GroupTaskEntry(
     val task: GroupTask,
     val groupName: String,
-    val isDone: Boolean
+    val isDone: Boolean,
+    val groupCourses: List<GroupCourse> = emptyList()
 )
 
 class GroupRepository(private val context: Context) {
@@ -245,6 +261,42 @@ class GroupRepository(private val context: Context) {
             }
             if (snapshot != null) {
                 val list = snapshot.documents.mapNotNull { doc -> parseGroupTask(groupId, doc) }
+                trySend(list)
+            }
+        }
+        awaitClose { registration.remove() }
+    }
+
+    /**
+     * Observes courses for a group.
+     */
+    fun observeGroupCourses(groupId: String): Flow<List<GroupCourse>> = callbackFlow {
+        if (groupId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        val ref = db.collection("groups").document(groupId).collection("courses")
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                val list = snapshot.documents.mapNotNull { doc ->
+                    val code = doc.getString("code") ?: return@mapNotNull null
+                    val name = doc.getString("name") ?: return@mapNotNull null
+                    GroupCourse(
+                        id = doc.id,
+                        groupId = groupId,
+                        code = code,
+                        name = name,
+                        instructor = doc.getString("instructor") ?: "",
+                        colorHex = doc.getString("colorHex") ?: "#4F46E5",
+                        createdBy = doc.getString("createdBy") ?: "",
+                        createdAt = doc.getTimestamp("createdAt")
+                    )
+                }.sortedBy { it.code.lowercase() }
                 trySend(list)
             }
         }
@@ -447,15 +499,17 @@ class GroupRepository(private val context: Context) {
     private fun observeGroupSnapshot(uid: String, m: GroupMembership): Flow<GroupSnapshot?> =
         combine(
             observeGroupTasksForApp(uid, m.groupId).startWithNull(),
-            observeGroupDoneTasks(uid, m.groupId).startWithNull()
-        ) { tasks, done ->
+            observeGroupDoneTasks(uid, m.groupId).startWithNull(),
+            observeGroupCourses(m.groupId).startWithNull()
+        ) { tasks, done, courses ->
             if (tasks == null || done == null) null
             else GroupSnapshot(
                 groupId = m.groupId,
                 groupName = m.name.ifBlank { m.username }.ifBlank { "Group" },
                 tasks = tasks.filter { it.isForUser(uid) },
                 allTasks = tasks,
-                done = done
+                done = done,
+                courses = courses.orEmpty()
             )
         }
 
@@ -1045,6 +1099,73 @@ class GroupRepository(private val context: Context) {
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Create a group course.
+     */
+    fun createGroupCourse(
+        groupId: String,
+        code: String,
+        name: String,
+        instructor: String,
+        colorHex: String,
+        uid: String,
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        val ref = db.collection("groups").document(groupId).collection("courses").document()
+        val data = hashMapOf<String, Any>(
+            "code" to code.trim().take(30).uppercase(),
+            "name" to name.trim().take(100),
+            "instructor" to instructor.trim().take(60),
+            "colorHex" to colorHex,
+            "createdBy" to uid,
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+        ref.set(data).addOnFailureListener { e ->
+            Log.w(TAG, "Create group course failed: ${e.message}")
+            onFailure(e)
+        }
+    }
+
+    /**
+     * Update a group course.
+     */
+    fun updateGroupCourse(
+        groupId: String,
+        courseId: String,
+        code: String,
+        name: String,
+        instructor: String,
+        colorHex: String,
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        val ref = db.collection("groups").document(groupId).collection("courses").document(courseId)
+        val updates = hashMapOf<String, Any>(
+            "code" to code.trim().take(30).uppercase(),
+            "name" to name.trim().take(100),
+            "instructor" to instructor.trim().take(60),
+            "colorHex" to colorHex
+        )
+        ref.update(updates).addOnFailureListener { e ->
+            Log.w(TAG, "Update group course failed: ${e.message}")
+            onFailure(e)
+        }
+    }
+
+    /**
+     * Delete a group course.
+     */
+    fun deleteGroupCourse(
+        groupId: String,
+        courseId: String,
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        val ref = db.collection("groups").document(groupId).collection("courses").document(courseId)
+        ref.delete().addOnFailureListener { e ->
+            Log.w(TAG, "Delete group course failed: ${e.message}")
+            onFailure(e)
         }
     }
 }

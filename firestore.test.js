@@ -5,8 +5,6 @@ const {
 } = require("@firebase/rules-unit-testing");
 const { test, before, after, beforeEach } = require("node:test");
 const fs = require("node:fs");
-const firebaseCompat = require("firebase/compat/app");
-const firebase = firebaseCompat.default || firebaseCompat;
 let testEnv;
 const PROJECT_ID = process.env.GCP_PROJECT || "demo-no-project";
 const ALICE_UID = "alice_123";
@@ -116,7 +114,8 @@ const GROUP_ID = "group_test_1";
 const CHARLIE_UID = "charlie_789";
 
 function getServerTimestamp() {
-  return firebase.firestore.FieldValue.serverTimestamp;
+  const fbKey = Object.keys(require.cache).find((k) => k.includes("compat/app"));
+  return require.cache[fbKey].exports.default.firestore.FieldValue.serverTimestamp;
 }
 
 async function setupTestGroup({ adminUid, memberUid, otherMemberUid }) {
@@ -320,6 +319,52 @@ test("Group tasks: A member cannot create a group task with a fixed date in crea
       createdAt: new Date(),
       updatedAt: serverTimestamp(),
       assignedTo: [ALICE_UID]
+    })
+  );
+});
+
+test("Group courses: A member can create a group course", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  await assertSucceeds(
+    aliceDb.collection("groups").doc(GROUP_ID).collection("courses").doc("course1").set({
+      code: "CS-503",
+      name: "Theory of Automata",
+      instructor: "Dr. Turing",
+      colorHex: "#4F46E5",
+      createdBy: ALICE_UID,
+      createdAt: serverTimestamp()
+    })
+  );
+});
+
+test("Group courses: Non-member cannot read or create group courses", async () => {
+  await setupTestGroup({ memberUid: ALICE_UID });
+  const serverTimestamp = getServerTimestamp();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("groups").doc(GROUP_ID).collection("courses").doc("course1").set({
+      code: "CS-503",
+      name: "Theory of Automata",
+      instructor: "Dr. Turing",
+      colorHex: "#4F46E5",
+      createdBy: ALICE_UID,
+      createdAt: serverTimestamp()
+    });
+  });
+
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+  await assertFails(
+    bobDb.collection("groups").doc(GROUP_ID).collection("courses").doc("course1").get()
+  );
+  await assertFails(
+    bobDb.collection("groups").doc(GROUP_ID).collection("courses").doc("course2").set({
+      code: "CS-507",
+      name: "Software Engineering",
+      instructor: "Prof. Brooks",
+      colorHex: "#0D9488",
+      createdBy: BOB_UID,
+      createdAt: serverTimestamp()
     })
   );
 });

@@ -80,6 +80,7 @@ fun GroupsTab(
     val selectedGroupDetail by viewModel.selectedGroupDetail.collectAsStateWithLifecycle()
     val selectedGroupMembers by viewModel.selectedGroupMembers.collectAsStateWithLifecycle()
     val selectedGroupTasks by viewModel.selectedGroupTasks.collectAsStateWithLifecycle()
+    val selectedGroupCourses by viewModel.selectedGroupCourses.collectAsStateWithLifecycle()
     val selectedGroupMessages by viewModel.selectedGroupMessages.collectAsStateWithLifecycle()
     val myDoneTaskIds by viewModel.myDoneTaskIds.collectAsStateWithLifecycle()
     val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
@@ -88,6 +89,8 @@ fun GroupsTab(
     val isJoinDialogOpen by viewModel.isJoinDialogOpen.collectAsStateWithLifecycle()
     val isAddEditTaskDialogOpen by viewModel.isAddEditTaskDialogOpen.collectAsStateWithLifecycle()
     val taskToEdit by viewModel.taskToEdit.collectAsStateWithLifecycle()
+    val isAddEditCourseDialogOpen by viewModel.isAddEditCourseDialogOpen.collectAsStateWithLifecycle()
+    val courseToEdit by viewModel.courseToEdit.collectAsStateWithLifecycle()
 
     var createdGroupSuccessInfo by remember { mutableStateOf<Triple<String, String, String>?>(null) }
     var activeOpenChatGroupId by remember { mutableStateOf<String?>(null) }
@@ -136,6 +139,7 @@ fun GroupsTab(
                     fallbackName = activeMembership?.name ?: "",
                     fallbackRole = activeMembership?.role ?: "member",
                     tasks = selectedGroupTasks,
+                    courses = selectedGroupCourses,
                     members = selectedGroupMembers,
                     doneTaskIds = myDoneTaskIds,
                     chatMessages = selectedGroupMessages,
@@ -150,6 +154,9 @@ fun GroupsTab(
                     onEditTaskClick = { task -> viewModel.openEditTaskDialog(task) },
                     onDeleteTaskClick = { task -> viewModel.deleteTask(task) },
                     onToggleTaskDone = { task -> viewModel.toggleTaskDone(task) },
+                    onAddCourseClick = { viewModel.openAddCourseDialog() },
+                    onEditCourseClick = { course -> viewModel.openEditCourseDialog(course) },
+                    onDeleteCourseClick = { course -> viewModel.deleteCourse(course) },
                     onSetMemberRole = { member, makeAdmin -> viewModel.setMemberRole(member, makeAdmin) },
                     onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
@@ -229,8 +236,19 @@ fun GroupsTab(
                     members = selectedGroupMembers,
                     currentUid = currentUser?.uid ?: "",
                     onDismiss = { viewModel.closeAddEditTaskDialog() },
+                    groupCourses = selectedGroupCourses,
                     onSave = { title, desc, course, dueMillis, hour, minute, priority, reminders, assignedTo ->
                         viewModel.saveTask(title, desc, course, dueMillis, hour, minute, priority, reminders, assignedTo)
+                    }
+                )
+            }
+
+            if (isAddEditCourseDialogOpen) {
+                AddEditGroupCourseDialog(
+                    courseToEdit = courseToEdit,
+                    onDismiss = { viewModel.closeAddEditCourseDialog() },
+                    onSave = { code, name, instructor, colorHex ->
+                        viewModel.saveCourse(code, name, instructor, colorHex)
                     }
                 )
             }

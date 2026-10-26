@@ -234,7 +234,30 @@ service cloud.firestore {
           || (isGroupAdmin(groupId) && resource.data.role == 'member')
         );
       }
- 
+
+      match /courses/{courseId} {
+        allow read: if isGroupMember(groupId);
+        allow create: if isGroupMember(groupId)
+          && request.resource.data.keys().hasOnly(['code', 'name', 'instructor', 'colorHex', 'createdBy', 'createdAt'])
+          && request.resource.data.code is string && request.resource.data.code.size() > 0 && request.resource.data.code.size() <= 30
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.instructor is string && request.resource.data.instructor.size() <= 60
+          && request.resource.data.colorHex is string
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+        allow update: if isGroupMember(groupId)
+          && (resource.data.createdBy == request.auth.uid || isGroupStaff(groupId))
+          && request.resource.data.keys().hasOnly(['code', 'name', 'instructor', 'colorHex', 'createdBy', 'createdAt'])
+          && request.resource.data.code is string && request.resource.data.code.size() > 0 && request.resource.data.code.size() <= 30
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.instructor is string && request.resource.data.instructor.size() <= 60
+          && request.resource.data.colorHex is string
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isGroupMember(groupId)
+          && (resource.data.createdBy == request.auth.uid || isGroupStaff(groupId));
+      }
+
       match /tasks/{taskId} {
         allow read: if isGroupMember(groupId);
         allow create: if isGroupMember(groupId)

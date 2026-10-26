@@ -742,7 +742,14 @@ class GroupRepository(private val context: Context) {
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
             Result.failure(Exception("Could not reach the server. Check your connection and try again."))
         } catch (e: Exception) {
-            Result.failure(Exception("That username may have just been taken, or connection failed."))
+            val denied = (e as? FirebaseFirestoreException)?.code ==
+                FirebaseFirestoreException.Code.PERMISSION_DENIED
+            Result.failure(
+                Exception(
+                    if (denied) "Permission denied. Make sure the latest Firestore rules are published."
+                    else "That username may have just been taken, or connection failed."
+                )
+            )
         }
     }
 
@@ -911,14 +918,18 @@ class GroupRepository(private val context: Context) {
                 batch.commit().await()
             }
 
-            // Group courses go too, so nothing is left behind in the database.
-            val courseDocs = db.collection("groups").document(groupId).collection("courses").get().await().documents
-            for (chunk in courseDocs.chunked(400)) {
-                val batch = db.batch()
-                for (doc in chunk) {
-                    batch.delete(doc.reference)
+            // Group courses go too. A failure here (for example old rules) must never block deleting the group.
+            try {
+                val courseDocs = db.collection("groups").document(groupId).collection("courses").get().await().documents
+                for (chunk in courseDocs.chunked(400)) {
+                    val batch = db.batch()
+                    for (doc in chunk) {
+                        batch.delete(doc.reference)
+                    }
+                    batch.commit().await()
                 }
-                batch.commit().await()
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not delete group courses: ${e.message}")
             }
 
             // 2. Delete all members except own in batches <= 400

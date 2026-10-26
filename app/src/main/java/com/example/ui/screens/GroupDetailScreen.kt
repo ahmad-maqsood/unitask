@@ -59,6 +59,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -254,7 +255,8 @@ fun GroupDetailScreen(
 
 
             // Tab bar for Tasks, Courses, Members, Chat
-            TabRow(
+            ScrollableTabRow(
+                edgePadding = 8.dp,
                 selectedTabIndex = selectedSectionTab,
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary

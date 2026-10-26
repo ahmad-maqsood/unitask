@@ -194,6 +194,7 @@ fun TaskCard(
                         }
 
                         Surface(
+                            modifier = Modifier.weight(1f, fill = false),
                             shape = RoundedCornerShape(6.dp),
                             color = courseColor.copy(alpha = 0.15f),
                             contentColor = courseColor
@@ -216,7 +217,7 @@ fun TaskCard(
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 240.dp)
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
                         }
@@ -473,6 +474,8 @@ fun PriorityBadge(priority: Priority) {
             text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }

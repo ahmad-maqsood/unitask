@@ -126,8 +126,8 @@ class GroupTaskProcessor(context: Context) {
         scheduler.cancelGroupsNotIn(emptySet())
         seenPrefs.edit().clear().apply()
         stateStore.edit().clear().apply()
-    }
         summaryStore.edit().clear().apply()
+    }
     /**
      * Remembers the pending group tasks that show on this user's Deadlines tab (tagged to them and
      * not marked done), so the daily summary can list them even when the app is closed.

@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.RadioButton
@@ -85,7 +86,8 @@ import androidx.compose.material.icons.filled.Alarm
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
 private const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
-
+private const val FEATURE_FORM_URL =
+    "https://docs.google.com/forms/d/e/1FAIpQLSc1G4_iMtG3hcoowIswyG9VNq21P11Gqy5MKMRaXI0OXn6RZA/viewform?usp=pp_url&entry.335656724="
 /**
  * The gear button in the top bar. It opens a Settings sheet with:
  * account (sign in / cloud backup), appearance (system / light / dark) and check for updates.
@@ -353,6 +355,29 @@ fun SettingsButton(
                         )
                     },
                     testTag = "settings_report_problem_row"
+                )
+                SettingsRow(
+                    icon = Icons.Default.Lightbulb,
+                    title = "Request a feature",
+                    subtitle = "Tell us what you would like to see. Opens a short form",
+                    onClick = {
+                        try {
+                            val info = "UniTask ${UpdateChecker.currentVersion(context)} | " +
+                                "Android ${Build.VERSION.RELEASE} | " +
+                                "${Build.MANUFACTURER} ${Build.MODEL}"
+                            val url = FEATURE_FORM_URL + Uri.encode(info)
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        } catch (_: Exception) {}
+                    },
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    testTag = "settings_request_feature_row"
                 )
                 val currentVersion = UpdateChecker.currentVersion(context)
                 val statusText = when (val r = updateResult) {

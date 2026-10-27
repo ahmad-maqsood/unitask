@@ -380,7 +380,18 @@ fun GroupDetailScreen(
                         items(sortedTasks, key = { it.id }) { task ->
                             val isDone = doneTaskIds.contains(task.id)
                             val canModify = task.createdBy == currentUid || isStaff
-
+                            // "CS-509 • Theory of Automata" when the tag matches one of the group's courses.
+                            val courseText = run {
+                                val label = task.courseLabel?.trim().orEmpty()
+                                if (label.isEmpty()) {
+                                    null
+                                } else {
+                                    val key = normalizeCourseKey(label)
+                                    val matched = courses.find { key.isNotEmpty() && normalizeCourseKey(it.code) == key }
+                                        ?: courses.find { it.name.trim().equals(label, ignoreCase = true) }
+                                    if (matched != null) "${matched.code} • ${matched.name}" else label
+                                }
+                            }
                             GroupTaskRow(
                                 modifier = Modifier.animateItem(),
                                 task = task,
@@ -388,6 +399,7 @@ fun GroupDetailScreen(
                                 currentUid = currentUid,
                                 isDone = isDone,
                                 canModify = canModify,
+                                courseText = courseText,
                                 onToggleDone = { onToggleTaskDone(task) },
                                 onEdit = { onEditTaskClick(task) },
                                 onDelete = { onDeleteTaskClick(task) }
@@ -626,6 +638,7 @@ fun GroupTaskRow(
     currentUid: String,
     isDone: Boolean,
     canModify: Boolean,
+    courseText: String? = null,
     onToggleDone: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -707,7 +720,7 @@ fun GroupTaskRow(
                                     modifier = Modifier.weight(1f, fill = false)
                                 ) {
                                     Text(
-                                        text = task.courseLabel,
+                                        text = courseText ?: task.courseLabel,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 2,

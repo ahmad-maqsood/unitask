@@ -80,6 +80,8 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
 import com.example.reminder.DailySummaryScheduler
 import com.example.util.TimeFormatter
+import com.example.util.HighPriorityAlarm
+import androidx.compose.material.icons.filled.Alarm
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
 private const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
@@ -114,6 +116,12 @@ fun SettingsButton(
         summaryEnabled = enabled
         DailySummaryScheduler.setEnabled(context, enabled)
         DailySummaryScheduler(context).reschedule()
+    }
+    var highAlarmEnabled by remember { mutableStateOf(HighPriorityAlarm.isEnabled(context)) }
+    val setHighAlarmEnabled: (Boolean) -> Unit = { enabled ->
+        highAlarmEnabled = enabled
+        HighPriorityAlarm.setEnabled(context, enabled)
+        if (enabled) HighPriorityAlarm.ensureChannel(context)
     }
     val setClassStartEnabled: (Boolean) -> Unit = { enabled ->
         classStartEnabled = enabled
@@ -283,6 +291,23 @@ fun SettingsButton(
                         testTag = "settings_daily_summary_time_row"
                     )
                 }
+                SettingsRow(
+                    icon = Icons.Default.Alarm,
+                    title = "Alarm for high priority tasks",
+                    subtitle = if (highAlarmEnabled) {
+                        "High priority reminders ring like an alarm until you open or dismiss them (1 minute at most)"
+                    } else {
+                        "Off. High priority reminders use the normal notification sound"
+                    },
+                    onClick = { setHighAlarmEnabled(!highAlarmEnabled) },
+                    trailing = {
+                        Switch(
+                            checked = highAlarmEnabled,
+                            onCheckedChange = { setHighAlarmEnabled(it) }
+                        )
+                    },
+                    testTag = "settings_high_priority_alarm_row"
+                )
                 Spacer(Modifier.height(8.dp))
                 LocalBackupSection()
                 Spacer(Modifier.height(8.dp))

@@ -35,6 +35,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
         private const val MAX_LINES = 4
     }
 
+    /** One task due on some day, from your own tasks or from a group. */
+    private data class DueItem(val deadlineMillis: Long, val label: String, val title: String)
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != DailySummaryScheduler.ACTION) return
 
@@ -79,13 +81,23 @@ class DailySummaryReceiver : BroadcastReceiver() {
             add(Calendar.DAY_OF_YEAR, 1)
         }.timeInMillis
 
-        val pendingTasks = db.taskDao().getAllActiveTasksSync()
+        val personalTasks = db.taskDao().getAllActiveTasksSync()
             .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED }
-            .map { it to computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute) }
+            .map {
+                DueItem(
+                    computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute),
+                    courses[it.courseId]?.code.orEmpty(),
+                    it.title
+                )
+            }
+        // Group tasks that show on your Deadlines tab and that you have not marked done.
+        val groupTasks = GroupTaskProcessor.pendingSummaryTasks(context)
+            .map { DueItem(it.deadlineMillis, it.label.ifBlank { it.groupName }, it.title) }
+        val pendingTasks = personalTasks + groupTasks
         val dueToday = pendingTasks
-            .filter { it.second >= startOfToday && it.second < startOfTomorrow }
-            .sortedBy { it.second }
-        val overdue = pendingTasks.count { it.second < startOfToday }
+            .filter { it.deadlineMillis >= startOfToday && it.deadlineMillis < startOfTomorrow }
+            .sortedBy { it.deadlineMillis }
+        val overdue = pendingTasks.count { it.deadlineMillis < startOfToday }
 
         // Nothing planned today: stay quiet instead of sending an empty notification.
         if (classes.isEmpty() && dueToday.isEmpty()) return
@@ -104,9 +116,10 @@ class DailySummaryReceiver : BroadcastReceiver() {
             lines.add("${TimeFormatter.format12Hour(slot.startHour, slot.startMinute)} \u2022 $code")
         }
         if (classes.size > MAX_LINES) lines.add("+${classes.size - MAX_LINES} more classes")
-        for ((task, _) in dueToday.take(MAX_LINES)) {
-            val code = courses[task.courseId]?.code.orEmpty()
-            lines.add("Due ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)} \u2022 $code: ${task.title}")
+        for (item in dueToday.take(MAX_LINES)) {
+            val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
+            val time = TimeFormatter.format12Hour(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            lines.add("Due $time • ${item.label}: ${item.title}")
         }
         if (dueToday.size > MAX_LINES) lines.add("+${dueToday.size - MAX_LINES} more tasks")
 

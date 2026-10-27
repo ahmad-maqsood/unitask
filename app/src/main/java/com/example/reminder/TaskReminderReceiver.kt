@@ -14,7 +14,9 @@ import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
 import com.example.util.NotificationSound
-
+import android.app.Notification
+import android.media.AudioManager
+import com.example.util.HighPriorityAlarm
 class TaskReminderReceiver : BroadcastReceiver() {
 
     companion object {
@@ -26,6 +28,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_DUE_INFO = "extra_due_info"
         const val EXTRA_REMINDER_LABEL = "extra_reminder_label"
         const val EXTRA_REMINDER_OPTION = "extra_reminder_option"
+        const val EXTRA_PRIORITY = "extra_priority"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -40,7 +43,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: "Due soon"
         val reminderLabel = intent.getStringExtra(EXTRA_REMINDER_LABEL)
         val reminderOption = intent.getStringExtra(EXTRA_REMINDER_OPTION)
-
+        val priority = intent.getStringExtra(EXTRA_PRIORITY)
         createNotificationChannel(context)
 
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -73,7 +76,14 @@ class TaskReminderReceiver : BroadcastReceiver() {
             "[$courseCode] $dueInfo"
         }
 
-        val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
+        // High priority task and the Settings switch is on: ring like an alarm.
+        val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
+        if (isAlarm) HighPriorityAlarm.ensureChannel(context)
+
+        val builder = NotificationCompat.Builder(
+            context,
+            if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
+        )
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle(title)
             .setContentText(contentText)
@@ -82,14 +92,24 @@ class TaskReminderReceiver : BroadcastReceiver() {
                     .bigText("Assignment for $courseCode: $taskTitle\n$dueInfo${if (!reminderLabel.isNullOrBlank()) " ($reminderLabel)" else ""}")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setCategory(if (isAlarm) NotificationCompat.CATEGORY_ALARM else NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .apply {
-                val customSound = NotificationSound.uri(context)
-                if (customSound != null) setSound(customSound) else setDefaults(NotificationCompat.DEFAULT_SOUND)
-            }
-            .build()
+
+        if (isAlarm) {
+            // Android 8+ takes sound and vibration from the channel; older versions from here.
+            builder.setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)
+                .setVibrate(HighPriorityAlarm.VIBRATION_PATTERN)
+                // Stops by itself if you do not react.
+                .setTimeoutAfter(HighPriorityAlarm.RING_MILLIS)
+        } else {
+            val customSound = NotificationSound.uri(context)
+            if (customSound != null) builder.setSound(customSound) else builder.setDefaults(NotificationCompat.DEFAULT_SOUND)
+        }
+
+        val notification = builder.build()
+        // Keep repeating the sound until the notification is opened, swiped away or times out.
+        if (isAlarm) notification.flags = notification.flags or Notification.FLAG_INSISTENT
 
 
         val notificationId = if (!reminderOption.isNullOrBlank()) {

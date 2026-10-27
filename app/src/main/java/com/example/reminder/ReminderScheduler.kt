@@ -50,6 +50,7 @@ class ReminderScheduler(private val context: Context) {
                 putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
                 putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, option.label)
                 putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, option.name)
+                putExtra(TaskReminderReceiver.EXTRA_PRIORITY, task.priority.name)
                 putExtra(
                     TaskReminderReceiver.EXTRA_DUE_INFO,
                     "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"

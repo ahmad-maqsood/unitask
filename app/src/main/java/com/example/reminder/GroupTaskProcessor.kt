@@ -19,6 +19,13 @@ import com.example.data.groups.GroupsState
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 
+/** A pending group task as saved for the daily summary. */
+data class SummaryTask(
+    val deadlineMillis: Long,
+    val groupName: String,
+    val label: String,
+    val title: String
+)
 /**
  * Turns the latest state of the user's groups into phone behaviour:
  *  1. deadline alarms for every group task that is not done ([GroupReminderScheduler]);
@@ -34,12 +41,14 @@ class GroupTaskProcessor(context: Context) {
     private val scheduler = GroupReminderScheduler(appContext)
     private val seenPrefs = appContext.getSharedPreferences("group_seen_tasks", Context.MODE_PRIVATE)
     private val stateStore = appContext.getSharedPreferences(STATE_PREFS, Context.MODE_PRIVATE)
+    private val summaryStore = appContext.getSharedPreferences(SUMMARY_PREFS, Context.MODE_PRIVATE)
     companion object {
         const val CHANNEL_ID = "unitask_group_updates_v2"
         private const val CHANNEL_NAME = "Group updates"
         private const val BASELINE = "__baseline__"
         private const val MAX_INDIVIDUAL_NOTICES = 3
         private const val STATE_PREFS = "group_task_state"
+        private const val SUMMARY_PREFS = "group_summary_tasks"
         private const val SEP = "\u001F"
 
         // One lock for every instance: the app-level listener and the background worker can
@@ -75,6 +84,22 @@ class GroupTaskProcessor(context: Context) {
                 prefs.edit().putStringSet(groupId, updated).apply()
             }
         }
+
+        /** Pending group tasks saved by [process], for the daily summary. */
+        fun pendingSummaryTasks(context: Context): List<SummaryTask> {
+            val prefs = context.applicationContext.getSharedPreferences(SUMMARY_PREFS, Context.MODE_PRIVATE)
+            val result = ArrayList<SummaryTask>()
+            for (value in prefs.all.values) {
+                val entries = value as? Set<*> ?: continue
+                for (entry in entries) {
+                    val parts = (entry as? String)?.split(SEP, limit = 4) ?: continue
+                    if (parts.size != 4) continue
+                    val deadline = parts[0].toLongOrNull() ?: continue
+                    result.add(SummaryTask(deadline, parts[1], parts[2], parts[3]))
+                }
+            }
+            return result
+        }
     }
 
     fun process(myUid: String, state: GroupsState) = synchronized(LOCK) {
@@ -85,10 +110,14 @@ class GroupTaskProcessor(context: Context) {
         for (key in stateStore.all.keys.toList()) {
             if (key !in state.groupIds) stateStore.edit().remove(key).apply()
         }
+        for (key in summaryStore.all.keys.toList()) {
+            if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
+        }
         for (snapshot in state.loaded) {
             scheduler.sync(snapshot.groupId, snapshot.groupName, snapshot.tasks, snapshot.done)
             announceNewTasks(myUid, snapshot)
             announceChangedTasks(snapshot)
+            storeSummary(snapshot)
         }
     }
 
@@ -98,7 +127,25 @@ class GroupTaskProcessor(context: Context) {
         seenPrefs.edit().clear().apply()
         stateStore.edit().clear().apply()
     }
-
+        summaryStore.edit().clear().apply()
+    /**
+     * Remembers the pending group tasks that show on this user's Deadlines tab (tagged to them and
+     * not marked done), so the daily summary can list them even when the app is closed.
+     */
+    private fun storeSummary(snapshot: GroupSnapshot) {
+        val pending = snapshot.tasks
+            .filter { it.id !in snapshot.done }
+            .map { t ->
+                listOf(
+                    computeDeadlineMillis(t.dueDateEpochMillis, t.dueTimeHour, t.dueTimeMinute).toString(),
+                    snapshot.groupName,
+                    t.courseLabel.orEmpty().trim(),
+                    t.title
+                ).joinToString(SEP)
+            }
+            .toHashSet()
+        summaryStore.edit().putStringSet(snapshot.groupId, pending).apply()
+    }
     private fun announceNewTasks(myUid: String, snapshot: GroupSnapshot) {
         val currentIds = snapshot.allTasks.map { it.id }
         val seen = seenPrefs.getStringSet(snapshot.groupId, null)

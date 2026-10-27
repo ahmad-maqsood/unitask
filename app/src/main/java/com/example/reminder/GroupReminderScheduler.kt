@@ -76,13 +76,13 @@ class GroupReminderScheduler(private val context: Context) {
 
                 val key = keyOf(groupId, task.id, option)
                 wanted.add(key)
-                val value = listOf(trigger.toString(), task.title, groupLabel, dueInfo, option.label)
+                val value = listOf(trigger.toString(), task.title, groupLabel, dueInfo, option.label, task.priority)
                     .joinToString(SEP)
                 if (prefs.getString(key, null) != value) {
                     prefs.edit().putString(key, value).apply()
                 }
                 // Always (re)set: it is idempotent, and it repairs alarms the system dropped.
-                setAlarm(key, trigger, task.title, groupLabel, dueInfo, option.label)
+                setAlarm(key, trigger, task.title, groupLabel, dueInfo, option.label, task.priority)
             }
         }
 
@@ -121,7 +121,7 @@ class GroupReminderScheduler(private val context: Context) {
                 prefs.edit().remove(key).apply()
                 continue
             }
-            setAlarm(key, trigger, parts[1], parts[2], parts[3], parts[4])
+            setAlarm(key, trigger, parts[1], parts[2], parts[3], parts[4], parts.getOrNull(5).orEmpty())
         }
     }
 
@@ -137,7 +137,8 @@ class GroupReminderScheduler(private val context: Context) {
         title: String,
         label: String,
         dueInfo: String,
-        optionLabel: String
+        optionLabel: String,
+        priority: String = ""
     ) {
         val intent = intentFor(key).apply {
             putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, title)
@@ -146,6 +147,7 @@ class GroupReminderScheduler(private val context: Context) {
             putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, optionLabel)
             // The receiver derives its notification id from this, so every alarm gets its own.
             putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, "GROUP_$key")
+            putExtra(TaskReminderReceiver.EXTRA_PRIORITY, priority)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

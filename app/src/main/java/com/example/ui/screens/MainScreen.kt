@@ -194,6 +194,7 @@ fun MainScreen(
     val groupToOpen by viewModel.groupToOpen.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
+    val sourceFilter by viewModel.sourceFilter.collectAsStateWithLifecycle()
     val courseFilter by viewModel.courseFilter.collectAsStateWithLifecycle()
     val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
     val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
@@ -590,6 +591,8 @@ fun MainScreen(
                             onSearchChange = { viewModel.onSearchQueryChange(it) },
                             statusFilter = statusFilter,
                             onStatusFilterSelect = { viewModel.onStatusFilterSelect(it) },
+                            sourceFilter = sourceFilter,
+                            onSourceFilterSelect = { viewModel.onSourceFilterSelect(it) },
                             courseFilter = courseFilter,
                             onCourseFilterSelect = { viewModel.onCourseFilterSelect(it) },
                             sortOption = sortOption,

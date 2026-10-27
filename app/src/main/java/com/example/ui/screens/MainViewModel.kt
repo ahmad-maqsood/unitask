@@ -62,6 +62,8 @@ enum class MainTab {
     GROUPS
 }
 
+/** Deadlines filter: only group tasks, or only your own tasks. null = both. */
+enum class TaskSourceFilter { GROUP, PERSONAL }
 enum class TaskSortOption(val label: String) {
     DUE_DATE_ASC("Due Date (Earliest)"),
     DUE_DATE_DESC("Due Date (Latest)"),
@@ -227,6 +229,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _courseFilter = MutableStateFlow<Long?>(null)
     val courseFilter: StateFlow<Long?> = _courseFilter.asStateFlow()
 
+    private val _sourceFilter = MutableStateFlow<TaskSourceFilter?>(null)
+    val sourceFilter: StateFlow<TaskSourceFilter?> = _sourceFilter.asStateFlow()
     private val _sortOption = MutableStateFlow(TaskSortOption.DUE_DATE_ASC)
     val sortOption: StateFlow<TaskSortOption> = _sortOption.asStateFlow()
 
@@ -459,9 +463,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         allDeadlineTasks,
         _searchQuery.debounce { if (it.isEmpty()) 0L else 200L },
         _statusFilter,
-        _courseFilter,
+        _courseFilter.combine(_sourceFilter) { course, source -> Pair(course, source) },
         _sortOption
-    ) { tasks, query, status, courseId, sort ->
+    ) { tasks, query, status, courseAndSource, sort ->
+        val courseId = courseAndSource.first
+        val source = courseAndSource.second
         val selectedCourse = courseId?.let { cid -> allCourses.value.find { it.id == cid } }
         var list = tasks
 
@@ -481,6 +487,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             list = list.filter { it.task.status == status }
         }
 
+        // Source filter: only group tasks, or only personal tasks
+        when (source) {
+            TaskSourceFilter.GROUP -> list = list.filter { isGroupTaskItem(it.task) }
+            TaskSourceFilter.PERSONAL -> list = list.filter { !isGroupTaskItem(it.task) }
+            null -> {}
+        }
         // Course filter: matches personal tasks as well as group tasks belonging to the same course
         if (courseId != null) {
             val normSelectedCode = selectedCourse?.code?.let { normalizeCourseKey(it) }?.takeIf { it.isNotEmpty() }
@@ -546,6 +558,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _statusFilter.value = if (_statusFilter.value == status) null else status
     }
 
+    fun onSourceFilterSelect(source: TaskSourceFilter?) {
+        _sourceFilter.value = if (_sourceFilter.value == source) null else source
+    }
     fun onCourseFilterSelect(courseId: Long?) {
         _courseFilter.value = if (_courseFilter.value == courseId) null else courseId
     }

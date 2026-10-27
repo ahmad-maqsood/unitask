@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -70,6 +72,8 @@ fun DeadlinesTab(
     onSearchChange: (String) -> Unit,
     statusFilter: TaskStatus?,
     onStatusFilterSelect: (TaskStatus?) -> Unit,
+    sourceFilter: TaskSourceFilter?,
+    onSourceFilterSelect: (TaskSourceFilter?) -> Unit,
     courseFilter: Long?,
     onCourseFilterSelect: (Long?) -> Unit,
     sortOption: TaskSortOption,
@@ -298,6 +302,36 @@ fun DeadlinesTab(
                         modifier = Modifier.testTag("filter_status_completed")
                     )
                 }
+                item(key = "source_filter_group") {
+                    FilterChip(
+                        selected = sourceFilter == TaskSourceFilter.GROUP,
+                        onClick = { onSourceFilterSelect(TaskSourceFilter.GROUP) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Groups,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        label = { Text("Group") },
+                        modifier = Modifier.testTag("filter_source_group")
+                    )
+                }
+                item(key = "source_filter_personal") {
+                    FilterChip(
+                        selected = sourceFilter == TaskSourceFilter.PERSONAL,
+                        onClick = { onSourceFilterSelect(TaskSourceFilter.PERSONAL) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        label = { Text("Personal") },
+                        modifier = Modifier.testTag("filter_source_personal")
+                    )
+                }
             }
         }
 
@@ -432,7 +466,7 @@ fun DeadlinesTab(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null)
+                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null)
                                 "No assignments match your filters"
                             else
                                 "No assignments yet!",
@@ -444,7 +478,7 @@ fun DeadlinesTab(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null)
+                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null)
                                 "Try resetting search or filters to see more assignments."
                             else
                                 "Stay on top of your studies by adding your first assignment.",

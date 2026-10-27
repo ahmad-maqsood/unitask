@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Person
@@ -86,7 +87,8 @@ fun CurrentNextClassCard(
     }
 
     val pendingTasksCountLabel = remember(classInfo.pendingTasks.size) {
-        "${classInfo.pendingTasks.size} assignments pending for this course"
+        val n = classInfo.pendingTasks.size
+        "$n ${if (n == 1) "assignment" else "assignments"} pending for this course"
     }
 
     Card(
@@ -347,6 +349,16 @@ fun CurrentNextClassCard(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
+                                                if (isGroupTaskItem(taskWithCourse.task)) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Groups,
+                                                        contentDescription = "Group task",
+                                                        tint = courseColor,
+                                                        modifier = Modifier
+                                                            .size(22.dp)
+                                                            .padding(end = 6.dp)
+                                                    )
+                                                }
                                                 Text(
                                                     text = taskWithCourse.task.title,
                                                     style = MaterialTheme.typography.bodySmall,

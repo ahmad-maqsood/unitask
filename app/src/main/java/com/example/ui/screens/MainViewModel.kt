@@ -362,7 +362,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // shown. When nothing is left today, the full schedule of the next day with classes is shown.
     val highlightedClassInfo: StateFlow<List<HighlightedClassInfo>> = combine(
         repository.allLectureSlots,
-        repository.allTasksWithCourse,
+        allDeadlineTasks,
         _clockTick
     ) { slots, tasks, _ ->
         buildClassSchedule(slots, tasks)
@@ -390,8 +390,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         fun startOf(s: LectureSlotWithCourse) = s.slot.startHour * 60 + s.slot.startMinute
         fun endOf(s: LectureSlotWithCourse) = s.slot.endHour * 60 + s.slot.endMinute
-        fun pendingFor(s: LectureSlotWithCourse) =
-            tasks.filter { it.task.courseId == s.slot.courseId && it.task.status != TaskStatus.COMPLETED }
+        // Your own tasks of the course, plus pending group tasks tagged with the same course
+        // (matched by course code or exact course name).
+        fun pendingFor(s: LectureSlotWithCourse): List<TaskWithCourse> {
+            val slotCode = s.course?.code?.let { normalizeCourseKey(it) }.orEmpty()
+            val slotName = s.course?.name?.trim().orEmpty()
+            return tasks
+                .filter { twc ->
+                    if (twc.task.status == TaskStatus.COMPLETED) return@filter false
+                    if (twc.task.courseId == s.slot.courseId) return@filter true
+                    if (!isGroupTaskItem(twc.task)) return@filter false
+                    val taskCode = twc.course?.code?.let { normalizeCourseKey(it) }.orEmpty()
+                    val taskName = twc.course?.name?.trim().orEmpty()
+                    (slotCode.isNotEmpty() && taskCode == slotCode) ||
+                        (slotName.isNotEmpty() && taskName.equals(slotName, ignoreCase = true))
+                }
+                .sortedBy { it.task.deadlineMillis }
+        }
         fun slotsOn(day: Int) = slots.filter { it.slot.dayOfWeek == day }.sortedBy { startOf(it) }
         fun startTimeText(s: LectureSlotWithCourse) =
             com.example.util.TimeFormatter.format12Hour(s.slot.startHour, s.slot.startMinute)

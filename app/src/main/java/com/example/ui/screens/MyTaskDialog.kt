@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Repeat
@@ -29,6 +32,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -36,9 +40,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
@@ -47,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -85,17 +90,16 @@ fun MyTaskDialog(
     var description by rememberSaveable { mutableStateOf(taskToEdit?.description ?: "") }
 
     var selectedDueDateMillis by rememberSaveable {
-        mutableLongStateOf(
-            taskToEdit?.dueDateEpochMillis ?: run {
-                val cal = Calendar.getInstance()
-                cal.add(Calendar.DAY_OF_YEAR, 1)
-                cal.timeInMillis
-            }
-        )
+        mutableStateOf<Long?>(taskToEdit?.dueDateEpochMillis)
     }
 
-    var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
-    var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
+    var dueHour by rememberSaveable {
+        mutableStateOf<Int?>(taskToEdit?.dueTimeHour)
+    }
+    var dueMinute by rememberSaveable {
+        mutableStateOf<Int?>(taskToEdit?.dueTimeMinute)
+    }
+
     var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
 
     var reminderOptions by rememberSaveable(
@@ -113,11 +117,16 @@ fun MyTaskDialog(
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var repeatDropdownExpanded by remember { mutableStateOf(false) }
 
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     if (showTimePicker) {
         Material3TimePickerDialog(
             title = "Select Due Time",
-            initialHour = dueHour,
-            initialMinute = dueMinute,
+            initialHour = dueHour ?: 23,
+            initialMinute = dueMinute ?: 59,
             onDismiss = { showTimePicker = false },
             onConfirm = { hour, minute ->
                 dueHour = hour
@@ -159,6 +168,7 @@ fun MyTaskDialog(
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .focusRequester(focusRequester)
                         .testTag("my_task_title_input")
                 )
 
@@ -177,7 +187,7 @@ fun MyTaskDialog(
                 // Due Date & Time Section
                 Column {
                     Text(
-                        text = "Due Date & Time",
+                        text = "Due Date & Time *",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -189,13 +199,15 @@ fun MyTaskDialog(
                     ) {
                         // Date selector
                         val dateFormatter = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
-                        val formattedDate = dateFormatter.format(Date(selectedDueDateMillis))
+                        val isDateMissing = selectedDueDateMillis == null
 
                         OutlinedCard(
                             modifier = Modifier
                                 .weight(1.3f)
                                 .clickable {
-                                    val cal = Calendar.getInstance().apply { timeInMillis = selectedDueDateMillis }
+                                    val cal = Calendar.getInstance().apply {
+                                        selectedDueDateMillis?.let { timeInMillis = it }
+                                    }
                                     DatePickerDialog(
                                         context,
                                         { _, year, month, dayOfMonth ->
@@ -210,52 +222,139 @@ fun MyTaskDialog(
                                     ).show()
                                 }
                                 .testTag("my_task_due_date_button"),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            border = if (isDateMissing) {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                            } else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = formattedDate,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Row(
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = "Select due date",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isDateMissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    )
+                                    Column {
+                                        if (selectedDueDateMillis != null) {
+                                            Text(
+                                                text = dateFormatter.format(Date(selectedDueDateMillis!!)),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "Select date",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Text(
+                                                text = "Date required",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                                if (selectedDueDateMillis != null) {
+                                    IconButton(
+                                        onClick = { selectedDueDateMillis = null },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear date",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
                         }
 
                         // Time selector
-                        val timeStr = TimeFormatter.format12Hour(dueHour, dueMinute)
+                        val isTimeMissing = dueHour == null || dueMinute == null
+                        val timeStr = if (!isTimeMissing) {
+                            TimeFormatter.format12Hour(dueHour!!, dueMinute!!)
+                        } else null
+
                         OutlinedCard(
                             modifier = Modifier
                                 .weight(0.9f)
                                 .clickable { showTimePicker = true }
                                 .testTag("my_task_due_time_button"),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            border = if (isTimeMissing) {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                            } else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = timeStr,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Row(
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = "Select due time",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isTimeMissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    )
+                                    Column {
+                                        if (timeStr != null) {
+                                            Text(
+                                                text = timeStr,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "Select time",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Text(
+                                                text = "Time required",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                                if (!isTimeMissing) {
+                                    IconButton(
+                                        onClick = {
+                                            dueHour = null
+                                            dueMinute = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear time",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -281,6 +380,30 @@ fun MyTaskDialog(
                         QuickDateChip("Next Week") {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
+                        }
+                    }
+
+                    // Quick time chips
+                    Spacer(modifier = Modifier.height(4.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        QuickDateChip("11:59 PM") {
+                            dueHour = 23
+                            dueMinute = 59
+                        }
+                        QuickDateChip("9:00 AM") {
+                            dueHour = 9
+                            dueMinute = 0
+                        }
+                        QuickDateChip("1:00 PM") {
+                            dueHour = 13
+                            dueMinute = 0
+                        }
+                        QuickDateChip("5:00 PM") {
+                            dueHour = 17
+                            dueMinute = 0
                         }
                     }
                 }
@@ -473,24 +596,30 @@ fun MyTaskDialog(
             }
         },
         confirmButton = {
+            val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
+            val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
+
             Button(
                 onClick = {
                     if (title.isBlank()) {
                         titleError = true
-                    } else {
+                    } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
                         onSave(
                             title.trim(),
                             description.trim(),
-                            selectedDueDateMillis,
-                            dueHour,
-                            dueMinute,
+                            selectedDueDateMillis!!,
+                            dueHour!!,
+                            dueMinute!!,
                             priority,
                             reminderOptions,
                             repeatRule
                         )
                     }
                 },
-                modifier = Modifier.testTag("my_task_save_button")
+                enabled = isSaveEnabled,
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 48.dp)
+                    .testTag("my_task_save_button")
             ) {
                 Text(if (taskToEdit != null) "Save" else "Add Task")
             }
@@ -498,7 +627,9 @@ fun MyTaskDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag("my_task_cancel_button")
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 48.dp)
+                    .testTag("my_task_cancel_button")
             ) {
                 Text("Cancel")
             }
@@ -519,7 +650,7 @@ private fun QuickDateChip(label: String, onClick: () -> Unit) {
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }
 }

@@ -86,6 +86,8 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.layout.defaultMinSize
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TaskCard(
@@ -110,6 +112,17 @@ fun TaskCard(
                 Color(0xFF4F46E5)
             }
         } ?: Color(0xFF4F46E5)
+    }
+
+    val isMyTask = course?.isMyTasksCourse() == true
+    val leftStripColor = if (isMyTask) {
+        when (task.priority) {
+            Priority.LOW -> Color(0xFF16A34A) // green
+            Priority.MEDIUM -> Color(0xFFD97706) // amber
+            Priority.HIGH -> Color(0xFFDC2626) // red
+        }
+    } else {
+        courseColor
     }
 
     val isCompleted = task.status == TaskStatus.COMPLETED
@@ -154,7 +167,7 @@ fun TaskCard(
                 .fillMaxWidth()
                 // Left colour strip, as tall as the card whatever it contains.
                 .drawBehind {
-                    drawRect(color = courseColor, size = Size(6.dp.toPx(), size.height))
+                    drawRect(color = leftStripColor, size = Size(6.dp.toPx(), size.height))
                 }
         ) {
             Column(
@@ -179,6 +192,15 @@ fun TaskCard(
 
                         // Repeat Badge
                         if (task.repeat != RepeatRule.NONE) {
+                            val repeatShortLabel = when (task.repeat) {
+                                RepeatRule.DAILY -> "Daily"
+                                RepeatRule.WEEKDAYS -> "Weekdays"
+                                RepeatRule.WEEKLY -> "Weekly"
+                                RepeatRule.BIWEEKLY -> "Every 2 wks"
+                                RepeatRule.MONTHLY -> "Monthly"
+                                RepeatRule.YEARLY -> "Yearly"
+                                RepeatRule.NONE -> ""
+                            }
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
@@ -191,11 +213,11 @@ fun TaskCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Repeat,
-                                        contentDescription = "Repeats: ${task.repeat.label}",
+                                        contentDescription = "Repeats: $repeatShortLabel",
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
-                                        text = task.repeat.label,
+                                        text = repeatShortLabel,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -244,7 +266,7 @@ fun TaskCard(
                         IconButton(
                             onClick = { showMenu = true },
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(48.dp)
                                 .testTag("task_menu_${task.id}")
                         ) {
                             Icon(
@@ -523,6 +545,7 @@ fun StatusToggleChip(
     testTag: String
 ) {
     val dark = isDarkTheme()
+    val isDone = status == TaskStatus.COMPLETED
     val (bgColor, textColor, icon, label) = when (status) {
         TaskStatus.PENDING -> Quadruple(
             MaterialTheme.colorScheme.surfaceVariant,
@@ -538,6 +561,8 @@ fun StatusToggleChip(
         )
     }
 
+    val actionDescription = if (isDone) "Mark not done" else "Mark done"
+
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = bgColor,
@@ -545,17 +570,22 @@ fun StatusToggleChip(
         modifier = Modifier
             .testTag(testTag)
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable(
+                onClickLabel = actionDescription,
+                onClick = onClick
+            )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier
+                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp)
+                contentDescription = actionDescription,
+                modifier = Modifier.size(16.dp)
             )
             Text(
                 text = label,

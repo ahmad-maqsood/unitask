@@ -51,9 +51,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -111,6 +115,7 @@ fun MainScreen(
 
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val checkAndShowBackgroundSetup: () -> Unit = {
         if (!BackgroundAccess.isBackgroundSetupPrompted(context)) {
@@ -254,6 +259,7 @@ fun MainScreen(
     val hideMainChrome = imeVisible && currentTab == MainTab.GROUPS
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (!hideMainChrome) TopAppBar(
                 title = {
@@ -309,7 +315,8 @@ fun MainScreen(
         bottomBar = {
             if (!hideMainChrome) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    windowInsets = NavigationBarDefaults.windowInsets
                 ) {
                     MainNavBarItem(
                         selected = currentTab == MainTab.DEADLINES,
@@ -673,7 +680,23 @@ fun MainScreen(
                             onStatusCycle = { viewModel.cycleTaskStatus(it) },
                             onEditTask = { viewModel.openMyTaskDialog(it) },
                             onDeleteTask = { viewModel.deleteTask(it) },
-                            onAddTaskClick = { viewModel.openMyTaskDialog(null) }
+                            onUndoDeleteTask = { viewModel.undoDeleteTask(it) },
+                            onQuickAdd = { title ->
+                                val cal = java.util.Calendar.getInstance()
+                                viewModel.saveMyTask(
+                                    title = title,
+                                    description = "",
+                                    dueDateEpochMillis = cal.timeInMillis,
+                                    hour = 23,
+                                    minute = 59,
+                                    priority = com.example.data.local.Priority.MEDIUM,
+                                    reminders = setOf(com.example.data.local.ReminderOption.AT_DEADLINE),
+                                    repeat = com.example.data.local.RepeatRule.NONE,
+                                    existing = null
+                                )
+                            },
+                            onAddTaskClick = { viewModel.openMyTaskDialog(null) },
+                            snackbarHostState = snackbarHostState
                         )
                     }
                 }
@@ -824,6 +847,13 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
         selected = selected,
         onClick = onClick,
         modifier = Modifier.testTag(testTag),
+        colors = NavigationBarItemDefaults.colors(
+            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
         icon = {
             BadgedBox(
                 badge = {
@@ -849,7 +879,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 text = label,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
             )

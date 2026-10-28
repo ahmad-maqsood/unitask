@@ -793,6 +793,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun undoDeleteTask(task: TaskItem) {
+        if (isGroupTaskItem(task)) return
+        viewModelScope.launch {
+            repository.insertTask(task.copy(isDeleted = false, isSynced = false))
+        }
+    }
+
     fun deleteTaskAttachment(attachment: TaskAttachment) {
         viewModelScope.launch {
             repository.deleteAttachment(attachment)

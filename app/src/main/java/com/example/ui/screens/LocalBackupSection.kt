@@ -52,8 +52,10 @@ import java.util.Locale
 
 private const val MIN_PASSWORD_LENGTH = 6
 
-private fun describe(counts: BackupCounts): String =
-    "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
+private fun describe(counts: BackupCounts): String {
+    val base = "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
+    return if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
+}
 
 /**
  * Settings section: save everything to one .json file and restore it on any phone, no sign-in

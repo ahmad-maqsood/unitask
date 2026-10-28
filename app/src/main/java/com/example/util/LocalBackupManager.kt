@@ -7,11 +7,13 @@ import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
+import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.local.decodeReminderOptions
+import com.example.data.local.decodeRepeatRule
 import com.example.data.local.encodeReminderOptions
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
@@ -31,7 +33,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-data class BackupCounts(val courses: Int, val slots: Int, val tasks: Int)
+data class BackupCounts(val courses: Int, val slots: Int, val tasks: Int, val myTasks: Int = 0)
 
 sealed class BackupResult {
     data class Success(val counts: BackupCounts) : BackupResult()
@@ -130,6 +132,7 @@ object LocalBackupManager {
                             .put("status", t.status.name)
                             .put("reminderOptions", encodeReminderOptions(t.reminderOptions))
                             .put("createdAt", t.createdAt)
+                            .put("repeatRule", t.repeatRule)
                     )
                 }
                 val data = JSONObject()
@@ -154,7 +157,23 @@ object LocalBackupManager {
                     ?: return@withContext BackupResult.Failure("Could not write to the chosen location.")
                 stream.use { it.write(envelope.toString(2).toByteArray(Charsets.UTF_8)) }
 
-                BackupResult.Success(BackupCounts(courses.size, slots.size, tasks.size))
+                val exportedCoursesCount = courses.count {
+                    SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
+                }
+                val exportedMyTasksCount = tasks.count {
+                    val code = codeById[it.courseId] ?: ""
+                    SupabaseSyncManager.normalizeCode(code) == MY_TASKS_COURSE_CODE
+                }
+                val exportedTasksCount = tasks.size - exportedMyTasksCount
+
+                BackupResult.Success(
+                    BackupCounts(
+                        courses = exportedCoursesCount,
+                        slots = slots.size,
+                        tasks = exportedTasksCount,
+                        myTasks = exportedMyTasksCount
+                    )
+                )
             } catch (e: Exception) {
                 BackupResult.Failure(e.message ?: "The backup could not be saved.")
             }
@@ -211,6 +230,7 @@ object LocalBackupManager {
         var addedCourses = 0
         var addedSlots = 0
         var addedTasks = 0
+        var addedMyTasks = 0
 
         // One transaction: either everything is restored or nothing is changed.
         db.withTransaction {
@@ -233,6 +253,7 @@ object LocalBackupManager {
 
                 val existing = courseDao.getCourseByNormalizedCode(norm)
                     ?: courseDao.getAnyCourseByNormalizedCode(norm)
+                val isMyTasksCourse = norm == MY_TASKS_COURSE_CODE
                 if (existing == null) {
                     val id = courseDao.insertCourse(
                         Course(
@@ -245,7 +266,7 @@ object LocalBackupManager {
                         )
                     )
                     idByCode[norm] = id
-                    addedCourses++
+                    if (!isMyTasksCourse) addedCourses++
                 } else if (existing.isDeleted) {
                     courseDao.updateCourse(
                         existing.copy(
@@ -259,7 +280,7 @@ object LocalBackupManager {
                         )
                     )
                     idByCode[norm] = existing.id
-                    addedCourses++
+                    if (!isMyTasksCourse) addedCourses++
                 } else {
                     // Already on this phone: keep what is here.
                     idByCode[norm] = existing.id
@@ -345,11 +366,21 @@ object LocalBackupManager {
                 }
                 val reminders = decodeReminderOptions(o.optString("reminderOptions", "NONE"))
                 val description = o.optString("description")
+                val createdAt = o.optLong("createdAt", System.currentTimeMillis())
+
+                val rawRepeat = if (o.has("repeatRule")) o.optString("repeatRule") else "NONE"
+                val repeatRule = decodeRepeatRule(rawRepeat).name
+
+                val isMyTask = norm == MY_TASKS_COURSE_CODE
 
                 val known = knownByCourse.getOrPut(courseId) { taskDao.getAnyTasksForCourseSync(courseId) }
-                val match = known.firstOrNull {
-                    it.title.trim() == title &&
-                        computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute) == deadline
+                val match = if (repeatRule != "NONE") {
+                    known.firstOrNull { it.title.trim() == title && it.createdAt == createdAt }
+                } else {
+                    known.firstOrNull {
+                        it.title.trim() == title &&
+                            computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute) == deadline
+                    }
                 }
 
                 if (match == null) {
@@ -363,26 +394,29 @@ object LocalBackupManager {
                         priority = priority,
                         status = status,
                         reminderOptions = reminders,
+                        repeatRule = repeatRule,
                         isSynced = false,
-                        createdAt = o.optLong("createdAt", System.currentTimeMillis())
+                        createdAt = createdAt
                     )
                     val toInsert = base.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(base))
                     val newId = taskDao.insertTask(toInsert)
                     knownByCourse[courseId] = known + toInsert.copy(id = newId)
-                    addedTasks++
+                    if (isMyTask) addedMyTasks++ else addedTasks++
                 } else if (match.isDeleted) {
                     val revived = match.copy(
                         description = description,
                         priority = priority,
                         status = status,
                         reminderOptions = reminders,
+                        repeatRule = repeatRule,
                         isDeleted = false,
                         isSynced = false
                     )
                     taskDao.updateTask(
                         revived.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(revived))
                     )
-                    addedTasks++
+                    knownByCourse[courseId] = known.map { if (it.id == match.id) revived else it }
+                    if (isMyTask) addedMyTasks++ else addedTasks++
                 }
             }
         }
@@ -395,7 +429,12 @@ object LocalBackupManager {
         } catch (_: Exception) {
         }
 
-        return BackupCounts(addedCourses, addedSlots, addedTasks)
+        return BackupCounts(
+            courses = addedCourses,
+            slots = addedSlots,
+            tasks = addedTasks,
+            myTasks = addedMyTasks
+        )
     }
 
     // ------------------------------------------------------------------ file + crypto helpers

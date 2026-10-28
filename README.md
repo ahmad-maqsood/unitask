@@ -25,34 +25,46 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 ## 🆕 Latest Release Highlights
 
-### UniTask v1.3.0
+### UniTask v2.0.0 — Changes since v1.3.0
+
+> The Android project is currently configured as version **2.0.0**. These notes summarize changes in the repository since the v1.3.0 release.
 
 #### New Features
-- **Daily summary notifications:** Schedule a daily notification showing today's classes and task deadlines, and choose the delivery time.
-- **Group task change alerts:** Receive notifications when a shared task's deadline changes or the task is deleted. Your own edits do not trigger these alerts.
-- **Custom notification sounds:** Choose from built-in UniTask sounds, your Android system default, or a sound selected from your device. Preview sounds before choosing.
-- **In-app problem reporting:** Open the problem-report form from Settings. The form is prefilled with the app version, Android version, and device model.
-- **Review background setup:** Reopen autostart and battery-optimization guidance from Settings.
+- **My Tasks:** A dedicated area for personal to-dos and habits that are not tied to a university course. Create, edit, complete, and delete personal tasks.
+- **Recurring tasks:** Set repeat rules for personal tasks; completing a recurring task schedules its next occurrence.
+- **More reminder choices:** Added a 12-hours-before reminder option and an optional alarm-style alert for high-priority tasks.
+- **Feature guide:** Browse an in-app feature guide that can refresh from the cloud and still has cached/built-in content available offline.
+- **Announcements:** View dismissible in-app announcements; dismissed announcements are remembered on the device.
+- **Feature requests:** Open a prefilled feature-request form from Settings.
+- **Richer deadline filtering:** Filter tasks by source (personal or group), alongside the existing search, status, course, and sorting controls.
+- **Better class context:** Class highlights can show related pending group tasks, and group tasks can display matching course details.
 
-#### Improvements
-- Improved responsiveness on narrow screens and handling of long text to reduce clipping and overflow.
-- Improved reminder persistence and recovery after app launches, device reboots, app updates, and system time changes.
-- Clarified background activity, autostart, and battery-optimization guidance.
-- Improved notification sound preference handling and notification channel cleanup.
-- Improved attachment cleanup and cloud-deletion error reporting.
-- Expanded group-task assignment validation and Firestore security-rule tests.
+#### Cloud & Data Improvements
+- **Migrated cloud services to Supabase:** Authentication, personal data sync, group collaboration, and realtime updates now use Supabase instead of Firebase/Firestore.
+- **More dependable group sync:** Added cached group memberships for faster startup, refreshes after realtime subscriptions connect, and improved handling of pending changes.
+- **Safer task updates:** Improved optimistic updates, temporary-task handling, reminder scheduling, and creation of the special My Tasks course.
+- **Improved local backup compatibility:** Backups preserve recurring-task rules and report personal tasks separately; restore matching is improved to avoid duplicate recurring tasks.
+- **Security/configuration cleanup:** Removed Firebase/Firestore configuration and dependencies, added a Supabase keep-alive workflow, and ensured signing-key files are ignored by Git.
 
-#### Bug Fixes & Reliability
-- Prevented group-task change notifications from triggering for your own edits.
-- Improved restoration and rescheduling of reminders.
-- Improved attachment handling by enforcing a 25 MB attachment limit and cleaning up stale orphaned files.
-- Improved validation of assigned group tasks and related Firestore security rules.
+#### UI, Usability & Reliability
+- Improved the personal-task editor with quick entry, due-date grouping, swipe actions with undo, and clearer date/time validation.
+- Improved task-card accessibility and bottom navigation styling.
+- Completed tasks are kept after active tasks while preserving the selected sort order.
+- Improved group/task loading, authentication initialization, realtime refresh, and stale optimistic-state handling.
+- Added validation to prevent using the reserved My Tasks course code for a regular course.
+- My Tasks reminders use clearer task titles without an unnecessary course-code prefix.
 
-#### Repository
-- Added the MIT License.
-- Updated and clarified the README, including problem-reporting and privacy information.
+#### Previously released in v1.3.0
+- Daily summary notifications for today's classes and task deadlines, with a configurable delivery time.
+- Group-task notifications for deadline changes and deletions, excluding your own edits.
+- Custom notification sounds, including built-in sounds, the system default, and sounds selected from the device.
+- In-app problem reporting with app/device details prefilled.
+- Background setup guidance available again from Settings.
+- Responsive small-screen layouts, improved reminder persistence/recovery, a 25 MB attachment limit, attachment cleanup, improved cloud-deletion error reporting, stronger group-task validation/security tests, and the MIT License.
 
-**Full changelog:** [Compare v1.2.0 with v1.3.0](https://github.com/ahmad-maqsood/unitask/compare/v1.2.0...v1.3.0)
+**Full comparison:** [Compare v1.3.0 with the current main branch](https://github.com/ahmad-maqsood/unitask/compare/v1.3.0...main)
+
+**APK release description draft:** See [APK_RELEASE_NOTES.md](APK_RELEASE_NOTES.md).
 
 ---
 
@@ -60,7 +72,7 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 ### 📅 Deadlines & Assignments
 
-- **Task management:** Add a title, priority (`Low`, `Medium`, `High`), due date, and exact submission time.
+- **Task management:** Add a title, priority (`Low`, `Medium`, `High`), due date, and exact submission time.\n- **Personal tasks:** Keep to-dos and habits that are not tied to a course in the dedicated My Tasks area.\n- **Recurring tasks:** Set a repeat rule for personal tasks and automatically schedule the next occurrence when a repeating task is completed.
 - **Course linking:** Associate assignments with courses and identify them using course color indicators.
 - **Clear task status:** Track work as pending or done.
 - **Offline attachments:** Attach lecture PDFs, syllabi, and rubrics to tasks for local access.
@@ -95,7 +107,7 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 ### 🔔 Notifications & Alarms
 
-- **Configurable deadline alerts:** Use supported intervals such as at the deadline, 1 or 2 hours before, and 1 or 2 days before, depending on the task reminder options.
+- **Configurable deadline alerts:** Choose from supported intervals including at the deadline, 1 or 2 hours before, 12 hours before, and 1 or 2 days before, depending on the task reminder options.\n- **High-priority alarm mode:** Optionally make reminders for high-priority tasks ring like an alarm.
 - **Custom notification sounds:** Choose from built-in UniTask sounds, your phone's default, or a sound selected from your device; preview it before choosing.
 - **Daily summary reminders:** Enable or disable a daily overview and choose when it should arrive.
 - **Reliable scheduling:** Local Android alarms are used for deadline, class, and daily summary reminders.
@@ -107,7 +119,7 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 - **Encrypted local backup:** Export and import an encrypted local database backup using Android's system file picker.
 - **Light and dark themes:** Choose light mode, dark mode, or follow the system where supported.
-- **Update checker:** Check GitHub Releases from inside the app.
+- **Update checker:** Check GitHub Releases from inside the app.\n- **Announcements and feature guide:** See dismissible in-app announcements and browse a feature guide that can use cached content offline.\n- **Feature requests:** Open the feature-request form from Settings.
 
 ### 📱 Layout & Usability
 

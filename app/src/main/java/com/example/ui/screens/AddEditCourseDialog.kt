@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Course
+import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.ui.theme.CourseColors
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -59,6 +60,7 @@ fun AddEditCourseDialog(
     var location by rememberSaveable { mutableStateOf(courseToEdit?.location ?: "") }
     var selectedColor by rememberSaveable { mutableStateOf(courseToEdit?.colorHex ?: CourseColors.first()) }
     var codeError by rememberSaveable { mutableStateOf(false) }
+    var reservedCodeError by rememberSaveable { mutableStateOf(false) }
     var nameError by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
@@ -83,17 +85,19 @@ fun AddEditCourseDialog(
                      onValueChange = {
                         code = it.take(30)
                         if (it.isNotBlank()) codeError = false
+                        reservedCodeError = false
                         onClearDuplicateError()
                     },
 
                     label = { Text("Course Code *") },
                     placeholder = { Text("e.g. CS 301, MATH 240") },
-                    isError = codeError || duplicateError != null,
-                    supportingText = if (codeError) {
-                        { Text("Course code is required") }
-                    } else if (duplicateError != null) {
-                        { Text(duplicateError) }
-                    } else null,
+                    isError = codeError || reservedCodeError || duplicateError != null,
+                    supportingText = when {
+                        codeError -> { { Text("Course code is required") } }
+                        reservedCodeError -> { { Text("This code is reserved") } }
+                        duplicateError != null -> { { Text(duplicateError) } }
+                        else -> null
+                    },
 
                     singleLine = true,
                     modifier = Modifier
@@ -193,12 +197,15 @@ fun AddEditCourseDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val norm = code.replace(" ", "").trim().uppercase()
+                    val isReserved = norm == MY_TASKS_COURSE_CODE
                     val isCodeEmpty = code.isBlank()
                     val isNameEmpty = name.isBlank()
                     if (isCodeEmpty) codeError = true
+                    if (isReserved) reservedCodeError = true
                     if (isNameEmpty) nameError = true
 
-                    if (!isCodeEmpty && !isNameEmpty) {
+                    if (!isCodeEmpty && !isNameEmpty && !isReserved) {
                         onSave(name, code, instructor, selectedColor, location)
                     }
                 },

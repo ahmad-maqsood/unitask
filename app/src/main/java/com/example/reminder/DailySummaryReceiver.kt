@@ -17,6 +17,7 @@ import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
+import com.example.data.local.isMyTasksCourse
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 import kotlinx.coroutines.CoroutineScope
@@ -84,9 +85,11 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val personalTasks = db.taskDao().getAllActiveTasksSync()
             .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED }
             .map {
+                val course = courses[it.courseId]
+                val label = if (course?.isMyTasksCourse() == true) "My task" else course?.code.orEmpty()
                 DueItem(
                     computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute),
-                    courses[it.courseId]?.code.orEmpty(),
+                    label,
                     it.title
                 )
             }

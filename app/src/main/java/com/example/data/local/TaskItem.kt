@@ -78,7 +78,8 @@ data class TaskItem(
     val isSynced: Boolean = false,
     val cloudId: String = "",
     val isDeleted: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val repeatRule: String = "NONE"
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

@@ -13,6 +13,11 @@ import com.example.data.local.TaskDao
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
+import com.example.data.local.RepeatRule
+import com.example.data.local.deadlineMillis
+import com.example.data.local.isMyTasksCourse
+import com.example.data.local.nextOccurrenceMillis
+import com.example.data.local.repeat
 import android.util.Log
 import com.example.reminder.ReminderScheduler
 import com.example.data.local.AppDatabase
@@ -42,7 +47,7 @@ class AppRepository(
 
     val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
         .map { list ->
-            list.filter { !it.isDeleted }
+            list.filter { !it.isDeleted && !it.isMyTasksCourse() }
                 .distinctBy { it.code.trim().replace("\\s+".toRegex(), "").uppercase() }
         }
         .flowOn(Dispatchers.IO)
@@ -227,14 +232,34 @@ class AppRepository(
     }
 
     suspend fun updateTaskStatus(taskId: Long, newStatus: TaskStatus) = withContext(Dispatchers.IO) {
+        val task = taskDao.getTaskById(taskId)
+        if (task != null && task.status == TaskStatus.PENDING && newStatus == TaskStatus.COMPLETED && task.repeat != RepeatRule.NONE) {
+            val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis)
+            val updatedTask = task.copy(
+                dueDateEpochMillis = next,
+                dueTimeHour = task.dueTimeHour,
+                dueTimeMinute = task.dueTimeMinute,
+                status = TaskStatus.PENDING,
+                isSynced = false
+            )
+            val calculatedReminder = reminderScheduler.calculateReminderMillis(updatedTask)
+            val finalTask = updatedTask.copy(reminderEpochMillis = calculatedReminder)
+            taskDao.updateTask(finalTask)
+            val course = courseDao.getCourseByIdSync(finalTask.courseId)
+            val courseCode = course?.code ?: "Course"
+            reminderScheduler.scheduleReminder(finalTask, courseCode)
+            triggerSyncIfLoggedIn()
+            return@withContext
+        }
+
         taskDao.updateStatus(taskId, newStatus)
         if (newStatus == TaskStatus.COMPLETED) {
             reminderScheduler.cancelReminder(taskId)
         } else {
-            val task = taskDao.getTaskById(taskId)
-            if (task != null) {
-                val course = courseDao.getCourseByIdSync(task.courseId)
-                reminderScheduler.scheduleReminder(task, course?.code ?: "Course")
+            val updated = taskDao.getTaskById(taskId)
+            if (updated != null) {
+                val course = courseDao.getCourseByIdSync(updated.courseId)
+                reminderScheduler.scheduleReminder(updated, course?.code ?: "Course")
             }
         }
         triggerSyncIfLoggedIn()

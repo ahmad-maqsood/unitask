@@ -17,6 +17,10 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
+import com.example.data.local.RepeatRule
+import com.example.data.local.deadlineMillis
+import com.example.data.local.ensureMyTasksCourse
+import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupReminderScheduler
@@ -302,6 +306,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allTasksWithCourse: StateFlow<List<TaskWithCourse>> = repository.allTasksWithCourse
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val myTasks: StateFlow<List<TaskWithCourse>> = repository.allTasksWithCourse.map { list ->
+        list.filter { it.course?.isMyTasksCourse() == true }
+            .sortedBy { it.task.deadlineMillis }
+            .sortedBy { it.task.status == TaskStatus.COMPLETED }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val myTasksPendingCount: StateFlow<Int> = myTasks.map { list ->
+        list.count { it.task.status != TaskStatus.COMPLETED }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
         // False until Room has answered once, so the Deadlines tab does not flash its empty message.
     val tasksLoaded: StateFlow<Boolean> = repository.allTasksWithCourse
         .map { true }
@@ -357,7 +371,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.allTasksWithCourse,
         groupEntries
     ) { personal, groups ->
-        personal + groups.map { it.toTaskWithCourse() }
+        val filteredPersonal = personal.filter { it.course?.isMyTasksCourse() != true }
+        filteredPersonal + groups.map { it.toTaskWithCourse() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Set when a group task is tapped on the Deadlines tab; the Groups tab opens that group.
@@ -702,6 +717,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 repository.insertAttachment(attachmentEntity)
             }
 
+        }
+    }
+
+    fun saveMyTask(
+        title: String,
+        description: String,
+        dueDateEpochMillis: Long,
+        hour: Int,
+        minute: Int,
+        priority: Priority,
+        reminders: Set<ReminderOption>,
+        repeat: RepeatRule,
+        existing: TaskItem?
+    ) {
+        viewModelScope.launch {
+            val database = AppDatabase.getDatabase(getApplication())
+            val courseId = database.ensureMyTasksCourse()
+            if (existing != null) {
+                val updated = existing.copy(
+                    courseId = courseId,
+                    title = title.trim(),
+                    description = description.trim(),
+                    dueDateEpochMillis = dueDateEpochMillis,
+                    dueTimeHour = hour,
+                    dueTimeMinute = minute,
+                    priority = priority,
+                    reminderOptions = reminders,
+                    repeatRule = repeat.name,
+                    isSynced = false
+                )
+                repository.updateTask(updated)
+            } else {
+                val newTask = TaskItem(
+                    courseId = courseId,
+                    title = title.trim(),
+                    description = description.trim(),
+                    dueDateEpochMillis = dueDateEpochMillis,
+                    dueTimeHour = hour,
+                    dueTimeMinute = minute,
+                    priority = priority,
+                    status = TaskStatus.PENDING,
+                    reminderOptions = reminders,
+                    repeatRule = repeat.name,
+                    isSynced = false
+                )
+                repository.insertTask(newTask)
+            }
         }
     }
 

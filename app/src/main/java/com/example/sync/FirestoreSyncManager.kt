@@ -9,6 +9,7 @@ import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.decodeReminderOptions
+import com.example.data.local.decodeRepeatRule
 import com.example.data.local.encodeReminderOptions
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
@@ -61,7 +62,8 @@ private data class TaskRow(
     @SerialName("due_time_minute") val dueTimeMinute: Int = 59,
     @SerialName("priority") val priority: String? = "MEDIUM",
     @SerialName("status") val status: String? = "PENDING",
-    @SerialName("reminder_option") val reminderOption: String? = "NONE"
+    @SerialName("reminder_option") val reminderOption: String? = "NONE",
+    @SerialName("repeat_rule") val repeatRule: String? = "NONE"
 )
 
 @Serializable
@@ -542,7 +544,8 @@ object FirestoreSyncManager {
                             dueTimeMinute = task.dueTimeMinute,
                             priority = task.priority.name,
                             status = task.status.name,
-                            reminderOption = encodeReminderOptions(task.reminderOptions)
+                            reminderOption = encodeReminderOptions(task.reminderOptions),
+                            repeatRule = task.repeatRule
                         )
                         tasksToPush.add(task to taskRow)
                     }
@@ -827,6 +830,7 @@ object FirestoreSyncManager {
             val parsedPriority = try { Priority.valueOf(row.priority ?: "MEDIUM") } catch (_: Exception) { Priority.MEDIUM }
             val parsedStatus = try { TaskStatus.valueOf(row.status ?: "PENDING") } catch (_: Exception) { TaskStatus.PENDING }
             val reminderStr = row.reminderOption ?: "NONE"
+            val repeatStr = decodeRepeatRule(row.repeatRule).name
             val desc = row.description?.trim().orEmpty()
             val dueEpoch = if (row.dueDateEpochMillis > 0) row.dueDateEpochMillis else System.currentTimeMillis()
             val dueH = row.dueTimeHour
@@ -843,6 +847,7 @@ object FirestoreSyncManager {
                     priority = parsedPriority,
                     status = parsedStatus,
                     reminderOptions = decodeReminderOptions(reminderStr),
+                    repeatRule = repeatStr,
                     isSynced = true,
                     cloudId = row.docId,
                     isDeleted = false
@@ -873,6 +878,7 @@ object FirestoreSyncManager {
                     priority = parsedPriority,
                     status = parsedStatus,
                     reminderOptions = decodeReminderOptions(reminderStr),
+                    repeatRule = repeatStr,
                     isSynced = true,
                     cloudId = row.docId
                 )

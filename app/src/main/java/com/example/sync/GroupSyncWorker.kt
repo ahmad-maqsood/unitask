@@ -5,9 +5,11 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.data.groups.GroupRepository
+import com.example.util.currentSupabaseUid
+import io.github.jan.supabase.auth.auth
+import com.example.util.SupabaseProvider
 import com.example.reminder.GroupTaskProcessor
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.example.util.awaitAppUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -26,20 +28,18 @@ class GroupSyncWorker(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val user = try {
-            Firebase.auth.currentUser
-        } catch (_: Exception) {
-            null
-        } ?: return@withContext Result.success()
+        val user = awaitAppUser() ?: return@withContext Result.success()
 
         try {
             val repo = GroupRepository(applicationContext)
-            val state = repo.fetchGroupsStateOnce(user.uid)
+            try { SupabaseProvider.client.auth.awaitInitialization() } catch (_: Exception) { }
+            val sbUid = currentSupabaseUid()
+            val state = if (sbUid == null) null else repo.fetchGroupsStateOnce(sbUid)
             if (state == null) {
                 Log.w(TAG, "Could not read groups; keeping existing alarms")
                 return@withContext Result.retry()
             }
-            GroupTaskProcessor(applicationContext).process(user.uid, state)
+            GroupTaskProcessor(applicationContext).process(sbUid!!, state)
 
             val notifier = com.example.reminder.GroupChatNotifier(applicationContext)
             for (snapshot in state.loaded) {

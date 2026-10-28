@@ -57,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.groups.GroupChatInfo
 import com.example.data.groups.GroupMembership
 import com.example.data.groups.GroupMessage
+import com.example.util.currentSupabaseUid
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -133,7 +134,7 @@ fun GroupsTab(
                 val currentChatInfo = chatInfo[selectedGroupId]
                 val isChatTarget = selectedGroupId == openChatGroupId || selectedGroupId == activeOpenChatGroupId
                 GroupDetailScreen(
-                    currentUid = currentUser?.uid ?: "",
+                    currentUid = currentSupabaseUid() ?: "",
                     groupDetail = selectedGroupDetail,
                     fallbackUsername = activeMembership?.username ?: "",
                     fallbackName = activeMembership?.name ?: "",
@@ -186,7 +187,7 @@ fun GroupsTab(
                         viewModel.selectGroup(groupId)
                     },
                     chatInfo = chatInfo,
-                    currentUid = currentUser?.uid ?: ""
+                    currentUid = currentSupabaseUid() ?: ""
                 )
             }
 
@@ -234,7 +235,7 @@ fun GroupsTab(
                 GroupTaskDialog(
                     taskToEdit = taskToEdit,
                     members = selectedGroupMembers,
-                    currentUid = currentUser?.uid ?: "",
+                    currentUid = currentSupabaseUid() ?: "",
                     onDismiss = { viewModel.closeAddEditTaskDialog() },
                     groupCourses = selectedGroupCourses,
                     onSave = { title, desc, course, dueMillis, hour, minute, priority, reminders, assignedTo ->

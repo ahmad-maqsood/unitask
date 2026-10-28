@@ -5,8 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.data.local.AppDatabase
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.example.util.awaitAppUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -20,11 +19,7 @@ class SyncWorker(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val user = try {
-            Firebase.auth.currentUser
-        } catch (_: Exception) {
-            null
-        } ?: run {
+        val user = awaitAppUser() ?: run {
             Log.d(TAG, "No Google user logged in; skipping cloud sync")
             return@withContext Result.success()
         }

@@ -58,14 +58,15 @@ import com.example.sync.SyncScheduler
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.auth
+
+import com.example.util.SupabaseProvider
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.IDToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+import com.example.BuildConfig
+import com.example.util.AppUser
 import com.example.ui.theme.StatusDoneBgDark
 import com.example.ui.theme.StatusDoneBgLight
 import com.example.ui.theme.StatusDoneFgDark
@@ -75,7 +76,7 @@ import com.example.ui.theme.isDarkTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CloudBackupSheet(
-    currentUser: FirebaseUser?,
+    currentUser: AppUser?,
     onDismiss: () -> Unit,
     onAuthChanged: () -> Unit
 ) {
@@ -364,13 +365,7 @@ private fun signInWithGoogle(
     onCancelled: () -> Unit,
     scope: CoroutineScope
 ) {
-      // Looked up by name so the build doesn't depend on google-services.json generating it.
-    val clientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-    if (clientIdRes == 0) {
-        onError("Google Client configuration missing (default_web_client_id)")
-        return
-    }
-    val clientId = context.getString(clientIdRes)
+    val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
 
     val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
     val request = GetCredentialRequest.Builder()
@@ -383,8 +378,10 @@ private fun signInWithGoogle(
             val credential = result.credential
             if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
-                val authCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-                Firebase.auth.signInWithCredential(authCredential).await()
+                SupabaseProvider.client.auth.signInWith(IDToken) {
+                    idToken = googleIdToken
+                    provider = Google
+                }
                 onSuccess()
             } else {
                 onError("Unexpected credential type received")
@@ -405,9 +402,10 @@ private fun signOut(
     onSignOutComplete: () -> Unit,
     scope: CoroutineScope
 ) {
-    Firebase.auth.signOut()
+
     scope.launch {
         try {
+            try { SupabaseProvider.client.auth.signOut() } catch (e: Exception) { Log.e("Auth", "Supabase sign-out failed", e) }
             credentialManager.clearCredentialState(ClearCredentialStateRequest())
         } catch (e: Exception) {
             Log.e("Auth", "Failed to clear credential state", e)

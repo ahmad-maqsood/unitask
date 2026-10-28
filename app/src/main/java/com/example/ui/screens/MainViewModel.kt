@@ -23,11 +23,8 @@ import com.example.reminder.GroupReminderScheduler
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
 import com.example.reminder.ClassReminderScheduler
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.auth
-import com.example.util.safeAuth
+import com.example.util.AppUser
+import com.example.util.toAppUser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +36,13 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import com.example.util.SupabaseProvider
+import com.example.util.currentSupabaseUid
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
@@ -93,12 +97,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val _currentUser = MutableStateFlow<FirebaseUser?>(safeAuth()?.currentUser)
-    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
+    private val _currentUser = MutableStateFlow<AppUser?>(null)
+    val currentUser: StateFlow<AppUser?> = _currentUser.asStateFlow()
 
     private val _isCloudBackupSheetOpen = MutableStateFlow(false)
     val isCloudBackupSheetOpen: StateFlow<Boolean> = _isCloudBackupSheetOpen.asStateFlow()
-    private lateinit var authStateListener: FirebaseAuth.AuthStateListener
+
     init {
         val database = AppDatabase.getDatabase(application)
         val scheduler = ReminderScheduler(application)
@@ -135,35 +139,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Group deadline alarms and "new group task" notices while the app is closed
         com.example.sync.SyncScheduler.scheduleGroupSync(application)
 
-        // Listen for auth state changes and attach real-time guarded sync
-        authStateListener = FirebaseAuth.AuthStateListener { auth: FirebaseAuth ->
-            _currentUser.value = auth.currentUser
-            if (auth.currentUser != null) {
-                com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
-                viewModelScope.launch(Dispatchers.IO) {
-                    com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
-                }
-                com.example.sync.SyncScheduler.scheduleSync(application)
-            } else {
-                com.example.sync.FirestoreSyncManager.stopRealtimeSync()
-                                // Signed out: mark everything as not yet backed up, so the next account starts
-                // from a full upload instead of treating old cloud ids as deleted elsewhere.
-                viewModelScope.launch(Dispatchers.IO) {
-                    database.courseDao().markAllCoursesUnsynced()
-                    database.taskDao().markAllTasksUnsynced()
-                    database.lectureSlotDao().markAllSlotsUnsynced()
+        // Follow the Supabase session: signing in starts live sync, signing out stops it.
+        // "Initializing" (session still loading) and "RefreshFailure" (offline) are ignored on purpose,
+        // so a slow start never looks like a sign-out.
+        viewModelScope.launch {
+            var lastUserId: String? = "unset"
+            SupabaseProvider.client.auth.sessionStatus.collect { status ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        val user = status.session.user
+                        _currentUser.value = user?.toAppUser()
+                        // A token refresh sends this status again: only react to a new person.
+                        if (user?.id != lastUserId) {
+                            lastUserId = user?.id
+                            com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
+                            launch(Dispatchers.IO) {
+                                com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
+                            }
+                            com.example.sync.SyncScheduler.scheduleSync(application)
+                        }
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        _currentUser.value = null
+                        if (lastUserId != null) {
+                            lastUserId = null
+                            com.example.sync.FirestoreSyncManager.stopRealtimeSync()
+                            // Not signed in: mark everything as not backed up yet, so the next sign-in
+                            // starts with a full upload instead of treating old cloud ids as deleted elsewhere.
+                            launch(Dispatchers.IO) {
+                                database.courseDao().markAllCoursesUnsynced()
+                                database.taskDao().markAllTasksUnsynced()
+                                database.lectureSlotDao().markAllSlotsUnsynced()
+                            }
+                        }
+                    }
+                    else -> Unit
                 }
             }
         }
-        safeAuth()?.addAuthStateListener(authStateListener)
-
 
     }
 
     override fun onCleared() {
         super.onCleared()
         com.example.sync.FirestoreSyncManager.stopRealtimeSync()
-        safeAuth()?.removeAuthStateListener(authStateListener)
     }
 
     fun openCloudBackupSheet() {
@@ -182,7 +201,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isRefreshing.value = true
             _clockTick.value = System.currentTimeMillis()
-            if (safeAuth()?.currentUser != null) {
+            if (currentSupabaseUid() != null) {
                 val database = AppDatabase.getDatabase(getApplication())
                 viewModelScope.launch(Dispatchers.IO) {
                     com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
@@ -195,15 +214,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshAuth() {
-        _currentUser.value = safeAuth()?.currentUser
-        if (_currentUser.value != null) {
-            val database = AppDatabase.getDatabase(getApplication())
-            com.example.sync.FirestoreSyncManager.startRealtimeSync(getApplication(), database)
-            viewModelScope.launch(Dispatchers.IO) {
-                com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
-            }
-            com.example.sync.SyncScheduler.scheduleSync(getApplication())
-        }
+        // Nothing to do: the session collector in init reacts to sign-in and sign-out by itself.
     }
         /** Sets every personal and group reminder again, for example after exact alarms were allowed. */
     fun rescheduleAllReminders() {
@@ -306,16 +317,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val groupTaskProcessor = GroupTaskProcessor(application)
 
     // null until the first answer arrives, so "still loading" is never mistaken for "no groups".
+    // Driven by the Supabase session, and it waits until that session has been read from storage.
+    // Starting earlier made the group flows see "not signed in", finish at once, and never retry,
+    // which left the Deadlines tab without group tasks.
+    private val supabaseUidFlow: Flow<String?> = SupabaseProvider.client.auth.sessionStatus
+        .filter { it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated }
+        .map { status -> (status as? SessionStatus.Authenticated)?.session?.user?.id }
+        .distinctUntilChanged()
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val groupsState: StateFlow<GroupsState?> = _currentUser.flatMapLatest { user ->
-        if (user == null) flowOf(GroupsState(emptySet(), emptyList()))
-        else groupRepository.observeGroupsState(user.uid)
+    private val groupsState: StateFlow<GroupsState?> = supabaseUidFlow.flatMapLatest { sbUid ->
+        if (sbUid == null) flowOf(GroupsState(emptySet(), emptyList()))
+        else groupRepository.observeGroupsState(sbUid)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
             groupsState.filterNotNull().collect { state ->
-                val uid = _currentUser.value?.uid
+                val uid = currentSupabaseUid()
                 if (uid == null) groupTaskProcessor.clearAll()
                 else groupTaskProcessor.process(uid, state)
             }

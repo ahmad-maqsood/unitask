@@ -17,8 +17,6 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.sync.FirestoreSyncManager
 import com.example.sync.SyncScheduler
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -393,7 +391,7 @@ object LocalBackupManager {
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
         try {
-            if (Firebase.auth.currentUser != null) SyncScheduler.scheduleSync(context)
+            if (currentSupabaseUid() != null) SyncScheduler.scheduleSync(context)
         } catch (_: Exception) {
         }
 

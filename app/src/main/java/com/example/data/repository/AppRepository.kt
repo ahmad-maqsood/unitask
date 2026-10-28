@@ -20,8 +20,8 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.sync.FirestoreSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.example.util.currentSupabaseUid
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -185,7 +185,7 @@ class AppRepository(
 
     private fun isUserLoggedIn(): Boolean {
         return try {
-            Firebase.auth.currentUser != null
+            currentSupabaseUid() != null
         } catch (_: Exception) {
             false
         }

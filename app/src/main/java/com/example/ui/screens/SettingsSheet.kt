@@ -71,7 +71,7 @@ import com.example.util.BackgroundAccess
 import com.example.util.NotificationSound
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
-import com.google.firebase.auth.FirebaseUser
+import com.example.util.AppUser
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.School
 import com.example.data.local.AppDatabase
@@ -97,7 +97,7 @@ private const val FEATURE_FORM_URL =
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsButton(
-    currentUser: FirebaseUser?,
+    currentUser: AppUser?,
     onOpenCloudSheet: () -> Unit
 ) {
     val context = LocalContext.current

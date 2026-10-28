@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -53,6 +54,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Priority
+import com.example.data.local.RepeatRule
+import com.example.data.local.isMyTasksCourse
+import com.example.data.local.repeat
 import com.example.data.groups.GroupTaskEntry
 import com.example.util.AttachmentManager
 import com.example.data.local.TaskItem
@@ -173,6 +177,32 @@ fun TaskCard(
                         // Priority Badge
                         PriorityBadge(priority = task.priority)
 
+                        // Repeat Badge
+                        if (task.repeat != RepeatRule.NONE) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Repeat,
+                                        contentDescription = "Repeats: ${task.repeat.label}",
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = task.repeat.label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
                         // Reminder Icon indicator
                         if (task.reminderOptions.isNotEmpty()) {
                             Icon(
@@ -273,59 +303,61 @@ fun TaskCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Course badge on its own line so the whole course name can be read.
-                // It wraps onto a second line instead of being cut off.
-                val badgeText = remember(course, groupEntry) {
-                    if (course == null) {
-                        "General"
-                    } else if (groupEntry != null) {
-                        val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
-                        if (hasSpecificCourse) {
-                            if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                                "${groupEntry.groupName} • ${course.code} • ${course.name}"
+                // Hidden for My tasks since they belong to the special My tasks section.
+                if (course?.isMyTasksCourse() != true) {
+                    val badgeText = remember(course, groupEntry) {
+                        if (course == null) {
+                            "General"
+                        } else if (groupEntry != null) {
+                            val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
+                            if (hasSpecificCourse) {
+                                if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                    "${groupEntry.groupName} • ${course.code} • ${course.name}"
+                                } else {
+                                    "${groupEntry.groupName} • ${course.code}"
+                                }
                             } else {
-                                "${groupEntry.groupName} • ${course.code}"
+                                groupEntry.groupName
                             }
                         } else {
-                            groupEntry.groupName
-                        }
-                    } else {
-                        if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                            "${course.code} • ${course.name}"
-                        } else {
-                            course.code
+                            if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                "${course.code} • ${course.name}"
+                            } else {
+                                course.code
+                            }
                         }
                     }
-                }
 
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = courseColor.copy(alpha = 0.15f),
-                    contentColor = courseColor
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = courseColor.copy(alpha = 0.15f),
+                        contentColor = courseColor
                     ) {
-                        if (groupEntry != null) {
-                            Icon(
-                                imageVector = Icons.Default.Groups,
-                                contentDescription = "Group task",
-                                modifier = Modifier.size(14.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (groupEntry != null) {
+                                Icon(
+                                    imageVector = Icons.Default.Groups,
+                                    contentDescription = "Group task",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                         }
-                        Text(
-                            text = badgeText,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
 
                 // Task Title
                 Text(

@@ -67,7 +67,8 @@ enum class MainTab {
     DEADLINES,
     TIMETABLE,
     COURSES,
-    GROUPS
+    GROUPS,
+    MYTASKS
 }
 
 /** Deadlines filter: only group tasks, or only your own tasks. null = both. */
@@ -255,6 +256,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _taskToEdit = MutableStateFlow<TaskItem?>(null)
     val taskToEdit: StateFlow<TaskItem?> = _taskToEdit.asStateFlow()
+
+    private val _isMyTaskDialogOpen = MutableStateFlow(false)
+    val isMyTaskDialogOpen: StateFlow<Boolean> = _isMyTaskDialogOpen.asStateFlow()
+
+    private val _myTaskToEdit = MutableStateFlow<TaskItem?>(null)
+    val myTaskToEdit: StateFlow<TaskItem?> = _myTaskToEdit.asStateFlow()
 
     private val _taskAttachmentsToEdit = MutableStateFlow<List<TaskAttachment>>(emptyList())
     val taskAttachmentsToEdit: StateFlow<List<TaskAttachment>> = _taskAttachmentsToEdit.asStateFlow()
@@ -720,6 +727,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun openMyTaskDialog(existing: TaskItem? = null) {
+        _myTaskToEdit.value = existing
+        _isMyTaskDialogOpen.value = true
+    }
+
+    fun closeMyTaskDialog() {
+        _isMyTaskDialogOpen.value = false
+        _myTaskToEdit.value = null
+    }
+
     fun saveMyTask(
         title: String,
         description: String,
@@ -731,6 +748,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repeat: RepeatRule,
         existing: TaskItem?
     ) {
+        closeMyTaskDialog()
         viewModelScope.launch {
             val database = AppDatabase.getDatabase(getApplication())
             val courseId = database.ensureMyTasksCourse()

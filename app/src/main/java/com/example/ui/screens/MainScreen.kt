@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -49,13 +50,11 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -223,6 +222,10 @@ fun MainScreen(
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
     val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
+    val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
+    val myTasksPendingCount by viewModel.myTasksPendingCount.collectAsStateWithLifecycle()
+    val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
+    val myTaskToEdit by viewModel.myTaskToEdit.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
@@ -303,128 +306,193 @@ fun MainScreen(
                 )
             )
         },
+        bottomBar = {
+            if (!hideMainChrome) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    MainNavBarItem(
+                        selected = currentTab == MainTab.DEADLINES,
+                        onClick = { viewModel.setTab(MainTab.DEADLINES) },
+                        label = "Deadlines",
+                        icon = Icons.Default.AccessTime,
+                        count = pendingCount,
+                        testTag = "tab_deadlines"
+                    )
+                    MainNavBarItem(
+                        selected = currentTab == MainTab.TIMETABLE,
+                        onClick = { viewModel.setTab(MainTab.TIMETABLE) },
+                        label = "Timetable",
+                        icon = Icons.Default.Schedule,
+                        count = allLectureSlots.size,
+                        testTag = "tab_timetable"
+                    )
+                    MainNavBarItem(
+                        selected = currentTab == MainTab.COURSES,
+                        onClick = { viewModel.setTab(MainTab.COURSES) },
+                        label = "Courses",
+                        icon = Icons.Default.School,
+                        count = coursesWithCounts.size,
+                        testTag = "tab_courses"
+                    )
+                    MainNavBarItem(
+                        selected = currentTab == MainTab.GROUPS,
+                        onClick = { viewModel.setTab(MainTab.GROUPS) },
+                        label = "Groups",
+                        icon = Icons.Default.Groups,
+                        count = totalUnreadMessages,
+                        testTag = "tab_groups",
+                        badgeContainerColor = MaterialTheme.colorScheme.error,
+                        badgeContentColor = MaterialTheme.colorScheme.onError
+                    )
+                    MainNavBarItem(
+                        selected = currentTab == MainTab.MYTASKS,
+                        onClick = { viewModel.setTab(MainTab.MYTASKS) },
+                        label = "My tasks",
+                        icon = Icons.Default.TaskAlt,
+                        count = myTasksPendingCount,
+                        testTag = "tab_mytasks"
+                    )
+                }
+            }
+        },
         floatingActionButton = {
             if (currentTab != MainTab.GROUPS) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                AnimatedVisibility(
-                    visible = isFabMenuExpanded,
-                    enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
-                ) {
+                if (currentTab == MainTab.MYTASKS) {
+                    FloatingActionButton(
+                        onClick = { viewModel.openMyTaskDialog(null) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                        modifier = Modifier.testTag("main_fab_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add task"
+                        )
+                    }
+                } else {
                     Column(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        AnimatedVisibility(
+                            visible = isFabMenuExpanded,
+                            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+                            exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 3.dp
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Text(
-                                    text = "Add Course",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                            SmallFloatingActionButton(
-                                onClick = {
-                                    isFabMenuExpanded = false
-                                    viewModel.openAddCourseDialog()
-                                },
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.testTag("fab_add_course_option")
-                            ) {
-                                Icon(Icons.Default.School, contentDescription = "Add Course")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shadowElevation = 3.dp
+                                    ) {
+                                        Text(
+                                            text = "Add Course",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    SmallFloatingActionButton(
+                                        onClick = {
+                                            isFabMenuExpanded = false
+                                            viewModel.openAddCourseDialog()
+                                        },
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.testTag("fab_add_course_option")
+                                    ) {
+                                        Icon(Icons.Default.School, contentDescription = "Add Course")
+                                    }
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shadowElevation = 3.dp
+                                    ) {
+                                        Text(
+                                            text = "Add Class Slot",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    SmallFloatingActionButton(
+                                        onClick = {
+                                            isFabMenuExpanded = false
+                                            viewModel.openAddSlotDialog()
+                                        },
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.testTag("fab_add_slot_option")
+                                    ) {
+                                        Icon(Icons.Default.Schedule, contentDescription = "Add Class Slot")
+                                    }
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shadowElevation = 3.dp
+                                    ) {
+                                        Text(
+                                            text = "Add Assignment",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    SmallFloatingActionButton(
+                                        onClick = {
+                                            isFabMenuExpanded = false
+                                            viewModel.openAddTaskDialog()
+                                        },
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.testTag("fab_add_task_option")
+                                    ) {
+                                        Icon(Icons.Default.Assignment, contentDescription = "Add Assignment")
+                                    }
+                                }
                             }
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        FloatingActionButton(
+                            onClick = {
+                                isFabMenuExpanded = !isFabMenuExpanded
+                            },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                            modifier = Modifier.testTag("main_fab_button")
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 3.dp
-                            ) {
-                                Text(
-                                    text = "Add Class Slot",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                            SmallFloatingActionButton(
-                                onClick = {
-                                    isFabMenuExpanded = false
-                                    viewModel.openAddSlotDialog()
-                                },
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.testTag("fab_add_slot_option")
-                            ) {
-                                Icon(Icons.Default.Schedule, contentDescription = "Add Class Slot")
-                            }
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 3.dp
-                            ) {
-                                Text(
-                                    text = "Add Assignment",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                            SmallFloatingActionButton(
-                                onClick = {
-                                    isFabMenuExpanded = false
-                                    viewModel.openAddTaskDialog()
-                                },
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.testTag("fab_add_task_option")
-                            ) {
-                                Icon(Icons.Default.Assignment, contentDescription = "Add Assignment")
-                            }
+                            Icon(
+                                imageVector = if (isFabMenuExpanded) Icons.Default.Close else Icons.Default.Add,
+                                contentDescription = if (isFabMenuExpanded) "Close add menu" else "Add task or course"
+                            )
                         }
                     }
                 }
-
-                FloatingActionButton(
-                    onClick = {
-                        isFabMenuExpanded = !isFabMenuExpanded
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                    modifier = Modifier.testTag("main_fab_button")
-                ) {
-                    Icon(
-                        imageVector = if (isFabMenuExpanded) Icons.Default.Close else Icons.Default.Add,
-                        contentDescription = if (isFabMenuExpanded) "Close add menu" else "Add task or course"
-                    )
-                }
             }
-        }
-    },
-    modifier = modifier.fillMaxSize()
+        },
+        modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -522,53 +590,7 @@ fun MainScreen(
                 }
             }
 
-            if (!hideMainChrome) TabRow(
-                selectedTabIndex = currentTab.ordinal,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[currentTab.ordinal]),
-                        color = MaterialTheme.colorScheme.primary,
-                        height = 3.dp
-                    )
-                }
-            ) {
-                MainTabItem(
-                    selected = currentTab == MainTab.DEADLINES,
-                    onClick = { viewModel.setTab(MainTab.DEADLINES) },
-                    label = "Deadlines",
-                    icon = Icons.Default.AccessTime,
-                    count = pendingCount,
-                    testTag = "tab_deadlines"
-                )
-                MainTabItem(
-                    selected = currentTab == MainTab.TIMETABLE,
-                    onClick = { viewModel.setTab(MainTab.TIMETABLE) },
-                    label = "Timetable",
-                    icon = Icons.Default.Schedule,
-                    count = allLectureSlots.size,
-                    testTag = "tab_timetable"
-                )
-                MainTabItem(
-                    selected = currentTab == MainTab.COURSES,
-                    onClick = { viewModel.setTab(MainTab.COURSES) },
-                    label = "Courses",
-                    icon = Icons.Default.School,
-                    count = coursesWithCounts.size,
-                    testTag = "tab_courses"
-                )
-                MainTabItem(
-                    selected = currentTab == MainTab.GROUPS,
-                    onClick = { viewModel.setTab(MainTab.GROUPS) },
-                    label = "Groups",
-                    icon = Icons.Default.Groups,
-                    count = totalUnreadMessages,
-                    testTag = "tab_groups",
-                    badgeContainerColor = MaterialTheme.colorScheme.error,
-                    badgeContentColor = MaterialTheme.colorScheme.onError
-                )
-            }
+
 
             PullToRefreshBox(
                 modifier = Modifier.fillMaxSize(),
@@ -642,6 +664,16 @@ fun MainScreen(
                             chatInfo = groupChatInfo,
                             onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) },
                             openChatGroupId = groupChatToOpen
+                        )
+                    }
+
+                    MainTab.MYTASKS -> {
+                        MyTasksTab(
+                            tasks = myTasks,
+                            onStatusCycle = { viewModel.cycleTaskStatus(it) },
+                            onEditTask = { viewModel.openMyTaskDialog(it) },
+                            onDeleteTask = { viewModel.deleteTask(it) },
+                            onAddTaskClick = { viewModel.openMyTaskDialog(null) }
                         )
                     }
                 }
@@ -762,16 +794,23 @@ fun MainScreen(
             onAuthChanged = { viewModel.refreshAuth() }
         )
     }
+
+    if (isMyTaskDialogOpen) {
+        MyTaskDialog(
+            taskToEdit = myTaskToEdit,
+            onDismiss = { viewModel.closeMyTaskDialog() },
+            onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat ->
+                viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit)
+            }
+        )
+    }
 }
 
-
 /**
- * One tab of the main tab row. The icon sits above a single-line label and the count is a
- * badge on the icon, so the label keeps its space on narrow screens and with large system
- * font sizes instead of wrapping.
+ * One item of the main navigation bar at the bottom.
  */
 @Composable
-private fun MainTabItem(
+private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
     selected: Boolean,
     onClick: () -> Unit,
     label: String,
@@ -781,12 +820,10 @@ private fun MainTabItem(
     badgeContainerColor: Color = MaterialTheme.colorScheme.primary,
     badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
-    Tab(
+    NavigationBarItem(
         selected = selected,
         onClick = onClick,
         modifier = Modifier.testTag(testTag),
-        selectedContentColor = MaterialTheme.colorScheme.primary,
-        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         icon = {
             BadgedBox(
                 badge = {
@@ -802,18 +839,18 @@ private fun MainTabItem(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp)
+                    contentDescription = label,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         },
-        text = {
+        label = {
             Text(
                 text = label,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
             )
         }

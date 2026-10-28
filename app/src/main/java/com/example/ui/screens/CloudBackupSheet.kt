@@ -219,7 +219,7 @@ fun CloudBackupSheet(
                         errorMessage = null
                         coroutineScope.launch {
                             val db = com.example.data.local.AppDatabase.getDatabase(context)
-                            val success = com.example.sync.FirestoreSyncManager.syncAllDataNow(context, db)
+                            val success = com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
                             com.example.sync.SyncScheduler.scheduleSync(context)
                             isLoading = false
                             syncMessage = if (success) {
@@ -282,7 +282,7 @@ fun CloudBackupSheet(
                             onSuccess = {
                                 coroutineScope.launch {
                                     val db = com.example.data.local.AppDatabase.getDatabase(context)
-                                    com.example.sync.FirestoreSyncManager.syncAllDataNow(context, db)
+                                    com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
                                     com.example.sync.SyncScheduler.scheduleSync(context)
                                     isLoading = false
                                     onAuthChanged()

@@ -246,10 +246,10 @@ class ExampleRobolectricTest {
         // Guard query confirms code is marked deleted
         assertTrue(courseDao.isCourseDeletedByCode("CS 450"))
 
-        // Deletion guard in FirestoreSyncManager
-        com.example.sync.FirestoreSyncManager.recordPendingCourseDeletion(courseId, "CS 450", "cloud_cs450")
-        assertTrue(com.example.sync.FirestoreSyncManager.isCourseDeletionPending("CS 450"))
-        assertTrue(com.example.sync.FirestoreSyncManager.isCourseDeletionPending("cs 450"))
+        // Deletion guard in SupabaseSyncManager
+        com.example.sync.SupabaseSyncManager.recordPendingCourseDeletion(courseId, "CS 450", "cloud_cs450")
+        assertTrue(com.example.sync.SupabaseSyncManager.isCourseDeletionPending("CS 450"))
+        assertTrue(com.example.sync.SupabaseSyncManager.isCourseDeletionPending("cs 450"))
     }
 
     @Test

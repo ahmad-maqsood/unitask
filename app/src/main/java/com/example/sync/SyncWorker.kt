@@ -26,7 +26,7 @@ class SyncWorker(
 
         try {
             val localDb = AppDatabase.getDatabase(applicationContext)
-            val success = FirestoreSyncManager.syncAllDataNow(applicationContext, localDb)
+            val success = SupabaseSyncManager.syncAllDataNow(applicationContext, localDb)
             if (success) {
                 Log.d(TAG, "SyncWorker completed successfully for user ${user.uid}")
                 Result.success()

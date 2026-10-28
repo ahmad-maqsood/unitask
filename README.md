@@ -136,7 +136,7 @@ You can reopen the background setup guidance from the app's Settings to review t
 
 - **UI:** Kotlin, Jetpack Compose, and Material 3.
 - **Local storage:** Room database (SQLite) with schema migrations.
-- **Cloud services:** Firebase Authentication and Cloud Firestore for optional account features, group synchronization, and group chat.
+- **Cloud services:** Supabase Authentication (Google sign-in) and Supabase Postgres for cloud backup, group synchronization, and group chat.
 - **Scheduling:** Android `AlarmManager` for scheduled reminders and `WorkManager` for background synchronization and message checks.
 - **Platform:** Minimum SDK 24 (Android 7.0); target SDK 36 (Android 16).
 
@@ -168,7 +168,7 @@ The app fills in only its version, your Android version and your phone model. It
 - **Notifications:** `POST_NOTIFICATIONS` allows deadline, class, daily summary, and chat alerts.
 - **Exact alarms:** `SCHEDULE_EXACT_ALARM` supports precise reminder scheduling where required by Android.
 - **Restart recovery:** `RECEIVE_BOOT_COMPLETED` allows scheduled reminders to be restored after a reboot.
-- **Network access:** Used for update checks and optional Firebase-backed features.
+- **Network access:** Used for update checks and Supabase-backed cloud features.
 - **Problem reports:** Tapping "Report a problem" opens a Google Form in your browser. Only the app version, Android version and phone model are prefilled, and you choose what else to submit.
 
 ---
@@ -182,16 +182,15 @@ git clone https://github.com/ahmad-maqsood/unitask.git
 cd unitask
 ```
 
-1. Add your Firebase `google-services.json` file to the `app/` directory for Firebase-enabled builds.
-2. Publish the rules in `firestore.rules` to your Firestore database.
-3. Configure your release signing key using the project's expected Gradle properties/environment setup. Do not commit signing keys or Firebase secrets.
-4. Build the release APK:
+1. Create a Supabase project, add SUPABASE_URL and SUPABASE_ANON_KEY, and run the SQL setup scripts.
+2. Configure your release signing key using the project's expected Gradle properties/environment setup. Do not commit signing keys or secrets.
+3. Build the release APK:
 
    ```bash
    ./gradlew assembleRelease
    ```
 
-5. The APK is generated at `app/build/outputs/apk/release/unitask.apk`.
+4. The APK is generated at `app/build/outputs/apk/release/unitask.apk`.
 
 ### Publishing a release
 

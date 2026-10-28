@@ -22,7 +22,7 @@ import android.util.Log
 import com.example.reminder.ReminderScheduler
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
-import com.example.sync.FirestoreSyncManager
+import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.currentSupabaseUid
@@ -90,8 +90,8 @@ class AppRepository(
     }
 
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
-        val normCode = FirestoreSyncManager.normalizeCode(course.code)
-        FirestoreSyncManager.clearPendingDeletionForCourse(normCode)
+        val normCode = SupabaseSyncManager.normalizeCode(course.code)
+        SupabaseSyncManager.clearPendingDeletionForCourse(normCode)
 
         // Check if an existing course already matches this normalized code
         val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getAnyCourseByNormalizedCode(normCode)
@@ -118,7 +118,7 @@ class AppRepository(
 
         /** Another (not deleted) course with the same code, ignoring spaces and capitals. */
     suspend fun findActiveCourseByCode(code: String, excludeCourseId: Long = 0L): Course? = withContext(Dispatchers.IO) {
-        val normCode = FirestoreSyncManager.normalizeCode(code)
+        val normCode = SupabaseSyncManager.normalizeCode(code)
         courseDao.getAllCoursesMatchingNormalizedCode(normCode)
             .firstOrNull { !it.isDeleted && it.id != excludeCourseId }
     }
@@ -165,13 +165,13 @@ class AppRepository(
         }
 
         // 5. Record in pending deletion guards
-        FirestoreSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)
-        FirestoreSyncManager.recordPendingCourseDeletion(course.id, normCode, course.cloudId)
+        SupabaseSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)
+        SupabaseSyncManager.recordPendingCourseDeletion(course.id, normCode, course.cloudId)
         for (t in allTasks) {
-            FirestoreSyncManager.recordPendingTaskDeletion(t.id, t.cloudId)
+            SupabaseSyncManager.recordPendingTaskDeletion(t.id, t.cloudId)
         }
         for (s in allSlots) {
-            FirestoreSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
+            SupabaseSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
         }
 
         // 6. The cloud delete happens in the sync (step 0 of syncAllDataNow).
@@ -275,7 +275,7 @@ class AppRepository(
 
         // Soft-delete in Room first
         taskDao.softDeleteTask(task.id)
-        FirestoreSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
+        SupabaseSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
 
         if (!isUserLoggedIn() && !task.isSynced && task.cloudId.isBlank()) {
             taskDao.deleteTaskById(task.id)
@@ -305,8 +305,8 @@ class AppRepository(
         // Its cloud id is still in the "pending deletion" guard, which would make the next sync
         // delete the new slot from the cloud and then from this phone.
         val slotCourse = courseDao.getAnyCourseByIdSync(slot.courseId)
-        FirestoreSyncManager.clearPendingDeletionForSlot(
-            FirestoreSyncManager.getSlotDocId(slot, slotCourse?.code ?: "")
+        SupabaseSyncManager.clearPendingDeletionForSlot(
+            SupabaseSyncManager.getSlotDocId(slot, slotCourse?.code ?: "")
         )
         val id = lectureSlotDao.insertSlot(slot.copy(isSynced = false))
         refreshClassAlarms()
@@ -321,7 +321,7 @@ class AppRepository(
     }
 
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        FirestoreSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
+        SupabaseSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
         if (!isUserLoggedIn() && !slot.isSynced && slot.cloudId.isBlank()) {
             lectureSlotDao.deleteSlot(slot)
         } else {
@@ -339,7 +339,7 @@ class AppRepository(
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val db = com.example.data.local.AppDatabase.getDatabase(context)
-                    FirestoreSyncManager.syncAllDataNow(context, db)
+                    SupabaseSyncManager.syncAllDataNow(context, db)
                 } catch (e: Exception) {
                     Log.w("AppRepository", "Eager sync exception: ${e.message}")
                 }

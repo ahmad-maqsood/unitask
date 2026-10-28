@@ -61,7 +61,7 @@ import java.util.Calendar
 import com.example.data.local.deadlineMillis
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
-import com.example.sync.FirestoreSyncManager
+import com.example.sync.SupabaseSyncManager
 
 enum class MainTab {
     DEADLINES,
@@ -156,9 +156,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         // A token refresh sends this status again: only react to a new person.
                         if (user?.id != lastUserId) {
                             lastUserId = user?.id
-                            com.example.sync.FirestoreSyncManager.startRealtimeSync(application, database)
+                            com.example.sync.SupabaseSyncManager.startRealtimeSync(application, database)
                             launch(Dispatchers.IO) {
-                                com.example.sync.FirestoreSyncManager.syncAllDataNow(application, database)
+                                com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
                             }
                             com.example.sync.SyncScheduler.scheduleSync(application)
                         }
@@ -167,7 +167,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _currentUser.value = null
                         if (lastUserId != null) {
                             lastUserId = null
-                            com.example.sync.FirestoreSyncManager.stopRealtimeSync()
+                            com.example.sync.SupabaseSyncManager.stopRealtimeSync()
                             // Not signed in: mark everything as not backed up yet, so the next sign-in
                             // starts with a full upload instead of treating old cloud ids as deleted elsewhere.
                             launch(Dispatchers.IO) {
@@ -186,7 +186,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
-        com.example.sync.FirestoreSyncManager.stopRealtimeSync()
+        com.example.sync.SupabaseSyncManager.stopRealtimeSync()
     }
 
     fun openCloudBackupSheet() {
@@ -208,7 +208,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (currentSupabaseUid() != null) {
                 val database = AppDatabase.getDatabase(getApplication())
                 viewModelScope.launch(Dispatchers.IO) {
-                    com.example.sync.FirestoreSyncManager.syncAllDataNow(getApplication(), database)
+                    com.example.sync.SupabaseSyncManager.syncAllDataNow(getApplication(), database)
                 }
                 com.example.sync.SyncScheduler.scheduleSync(getApplication())
             }

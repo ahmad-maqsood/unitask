@@ -15,7 +15,7 @@ import com.example.data.local.decodeReminderOptions
 import com.example.data.local.encodeReminderOptions
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
-import com.example.sync.FirestoreSyncManager
+import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -222,10 +222,10 @@ object LocalBackupManager {
                 val o = courseArray.optJSONObject(i) ?: continue
                 val code = o.optString("code").trim().uppercase()
                 if (code.isBlank()) continue
-                val norm = FirestoreSyncManager.normalizeCode(code)
+                val norm = SupabaseSyncManager.normalizeCode(code)
                 if (idByCode.containsKey(norm)) continue
 
-                FirestoreSyncManager.clearPendingDeletionForCourse(norm)
+                SupabaseSyncManager.clearPendingDeletionForCourse(norm)
                 val name = o.optString("name").trim().ifBlank { code }
                 val instructor = o.optString("instructor").trim()
                 val colorHex = o.optString("colorHex").ifBlank { "#4F46E5" }
@@ -270,7 +270,7 @@ object LocalBackupManager {
             val slotArray = data.optJSONArray("slots") ?: JSONArray()
             for (i in 0 until slotArray.length()) {
                 val o = slotArray.optJSONObject(i) ?: continue
-                val norm = FirestoreSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val day = o.optInt("dayOfWeek", 0)
                 val startHour = o.optInt("startHour", -1)
@@ -296,14 +296,14 @@ object LocalBackupManager {
                         instructor = instructor,
                         isSynced = false
                     )
-                    FirestoreSyncManager.clearPendingDeletionForSlot(
-                        FirestoreSyncManager.getSlotDocId(newSlot, norm)
+                    SupabaseSyncManager.clearPendingDeletionForSlot(
+                        SupabaseSyncManager.getSlotDocId(newSlot, norm)
                     )
                     slotDao.insertSlot(newSlot)
                     addedSlots++
                 } else if (existing.isDeleted) {
-                    FirestoreSyncManager.clearPendingDeletionForSlot(
-                        FirestoreSyncManager.getSlotDocId(existing, norm)
+                    SupabaseSyncManager.clearPendingDeletionForSlot(
+                        SupabaseSyncManager.getSlotDocId(existing, norm)
                     )
                     slotDao.updateSlot(
                         existing.copy(
@@ -324,7 +324,7 @@ object LocalBackupManager {
             val taskArray = data.optJSONArray("tasks") ?: JSONArray()
             for (i in 0 until taskArray.length()) {
                 val o = taskArray.optJSONObject(i) ?: continue
-                val norm = FirestoreSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val title = o.optString("title").trim()
                 if (title.isBlank()) continue

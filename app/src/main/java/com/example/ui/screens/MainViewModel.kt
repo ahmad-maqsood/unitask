@@ -19,6 +19,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.RepeatRule
 import com.example.data.local.deadlineMillis
+import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.ensureMyTasksCourse
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
@@ -894,6 +895,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         location: String
     ) {
         viewModelScope.launch {
+            val normCode = SupabaseSyncManager.normalizeCode(code)
+            if (normCode == MY_TASKS_COURSE_CODE) {
+                _courseSaveError.value = "\"$MY_TASKS_COURSE_CODE\" is a reserved course code. Please choose a different code."
+                return@launch
+            }
             val currentCourse = _courseToEdit.value
             // Refuse a code that already belongs to another course (instead of overwriting it).
             val duplicate = repository.findActiveCourseByCode(code, currentCourse?.id ?: 0L)

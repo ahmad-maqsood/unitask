@@ -64,8 +64,6 @@ Download the latest stable APK from the [GitHub Releases page](https://github.co
 
 **Full comparison:** [Compare v1.3.0 with the current main branch](https://github.com/ahmad-maqsood/unitask/compare/v1.3.0...main)
 
-**APK release description draft:** See [APK_RELEASE_NOTES.md](APK_RELEASE_NOTES.md).
-
 ---
 
 ## ✨ Features
@@ -203,15 +201,6 @@ cd unitask
    ```
 
 4. The APK is generated at `app/build/outputs/apk/release/unitask.apk`.
-
-### Publishing a release
-
-1. Update `versionName` and `versionCode` in the app's Gradle configuration.
-2. Build and test the release APK on a device.
-3. Create a GitHub Release and attach the APK as `unitask.apk`.
-4. Add concise release notes covering features, improvements, and bug fixes.
-
----
 
 ## 📄 License
 

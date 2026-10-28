@@ -218,6 +218,7 @@ fun MainScreen(
 
     val selectedCourseDetailId by viewModel.selectedCourseDetailId.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+    AnnouncementHost(currentUserId = currentUser?.uid)
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()

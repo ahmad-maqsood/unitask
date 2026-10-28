@@ -26,7 +26,8 @@ enum class ReminderOption(val label: String, val offsetMinutes: Long) {
     TWO_HOURS_BEFORE("2 hours before", 120),
     ONE_DAY_BEFORE("1 day before", 1440),
     ONE_HOUR_BEFORE("1 hour before", 60),
-    TWO_DAYS_BEFORE("2 days before", 2880)
+    TWO_DAYS_BEFORE("2 days before", 2880),
+    TWELVE_HOURS_BEFORE("12 hours before", 720)
 }
 
 private const val NO_REMINDERS = "NONE"

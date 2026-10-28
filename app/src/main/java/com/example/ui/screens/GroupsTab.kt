@@ -76,6 +76,7 @@ fun GroupsTab(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+    val sessionReady by viewModel.sessionReady.collectAsStateWithLifecycle()
     val memberships by viewModel.myMemberships.collectAsStateWithLifecycle()
     val selectedGroupId by viewModel.selectedGroupId.collectAsStateWithLifecycle()
     val selectedGroupDetail by viewModel.selectedGroupDetail.collectAsStateWithLifecycle()
@@ -127,7 +128,16 @@ fun GroupsTab(
         ) {
             // If user is not signed in
             if (currentUser == null) {
-                NotSignedInState(onOpenCloudSheet = onOpenCloudSheet)
+                if (!sessionReady) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    NotSignedInState(onOpenCloudSheet = onOpenCloudSheet)
+                }
             } else if (selectedGroupId != null) {
                 // Detail screen for selected group
                 val activeMembership = memberships.find { it.groupId == selectedGroupId }

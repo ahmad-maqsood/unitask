@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.security.SecureRandom
@@ -77,6 +78,21 @@ private data class GroupMembershipRow(
     val role: String? = "member",
     @SerialName("joined_at") val joinedAt: String? = null,
     val groups: EmbeddedGroup? = null
+)
+
+@Serializable
+private data class CachedMembership(
+    val groupId: String,
+    val username: String,
+    val name: String,
+    val role: String,
+    val joinedAtEpochMillis: Long? = null
+)
+
+@Serializable
+private data class CachedMembershipsPayload(
+    val uid: String,
+    val memberships: List<CachedMembership>
 )
 
 @Serializable
@@ -365,13 +381,16 @@ class GroupRepository(private val context: Context) {
         /** Tasks added on this phone that the server has not confirmed yet. */
         private val pendingTasks = MutableStateFlow<List<GroupTask>>(emptyList())
 
-        /** Done ticks changed on this phone that the server has not confirmed yet (task id to done or not). */
-        private val pendingDone = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+        /** Done ticks changed on this phone that the server has not confirmed yet (task id to Pair(wanted isDone, timestamp)). */
+        private val pendingDone = MutableStateFlow<Map<String, Pair<Boolean, Long>>>(emptyMap())
+        private const val PENDING_DONE_MAX_AGE_MILLIS = 10_000L
 
         /** Messages sent on this phone that the server has not confirmed yet. */
         private val pendingMessages = MutableStateFlow<List<GroupMessage>>(emptyList())
 
         private const val PENDING_MAX_AGE_MILLIS = 60_000L
+        private val json = Json { ignoreUnknownKeys = true }
+
         fun generateJoinCode(): String {
             val random = SecureRandom()
             val sb = java.lang.StringBuilder(8)
@@ -379,6 +398,14 @@ class GroupRepository(private val context: Context) {
                 sb.append(JOIN_CODE_CHARS[random.nextInt(JOIN_CODE_CHARS.length)])
             }
             return sb.toString()
+        }
+
+        fun clearCache(context: Context) {
+            try {
+                context.getSharedPreferences("group_cache", Context.MODE_PRIVATE).edit().clear().apply()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to clear group_cache: ${e.message}")
+            }
         }
     }
 
@@ -396,10 +423,6 @@ class GroupRepository(private val context: Context) {
         val mine = pending.filter { it.groupId == groupId }
         val matched = mine.filter { p ->
             server.any { s -> s.createdBy == p.createdBy && s.title == p.title && s.dueDateEpochMillis == p.dueDateEpochMillis }
-        }
-        if (matched.isNotEmpty()) {
-            val matchedIds = matched.map { it.id }.toSet()
-            pendingTasks.update { list -> list.filterNot { it.id in matchedIds } }
         }
         val extra = mine.filter { p ->
             p !in matched && now - (p.createdAt?.toDate()?.time ?: 0L) < PENDING_MAX_AGE_MILLIS
@@ -421,10 +444,6 @@ class GroupRepository(private val context: Context) {
                 s.text == p.text &&
                 s.createdAtMillis >= p.createdAtMillis - 120_000L
             }
-        }
-        if (matched.isNotEmpty()) {
-            val matchedIds = matched.map { it.id }.toSet()
-            pendingMessages.update { list -> list.filterNot { it.id in matchedIds } }
         }
         val extra = mine.filter { p ->
             p !in matched && (now - p.createdAtMillis < PENDING_MAX_AGE_MILLIS)
@@ -463,6 +482,25 @@ class GroupRepository(private val context: Context) {
                     )
                 }
                 trySend(list)
+                try {
+                    val cachedList = list.map { m ->
+                        CachedMembership(
+                            groupId = m.groupId,
+                            username = m.username,
+                            name = m.name,
+                            role = m.role,
+                            joinedAtEpochMillis = m.joinedAt?.toDate()?.time
+                        )
+                    }
+                    val payload = CachedMembershipsPayload(uid = myUid, memberships = cachedList)
+                    val jsonStr = json.encodeToString(CachedMembershipsPayload.serializer(), payload)
+                    context.getSharedPreferences("group_cache", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("memberships", jsonStr)
+                        .apply()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to cache memberships: ${e.message}")
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "observeMyGroupMemberships select failed: ${e.message}")
             }
@@ -479,10 +517,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -506,6 +548,35 @@ class GroupRepository(private val context: Context) {
                 }
             }
         }
+    }
+
+    /**
+     * Reads cached memberships from SharedPreferences for [uid] immediately.
+     */
+    fun cachedMemberships(uid: String): List<GroupMembership> {
+        if (uid.isBlank()) return emptyList()
+        return try {
+            val prefs = context.getSharedPreferences("group_cache", Context.MODE_PRIVATE)
+            val jsonStr = prefs.getString("memberships", null) ?: return emptyList()
+            val payload = json.decodeFromString(CachedMembershipsPayload.serializer(), jsonStr)
+            if (payload.uid != uid) return emptyList()
+            payload.memberships.map { c ->
+                GroupMembership(
+                    groupId = c.groupId,
+                    username = c.username,
+                    name = c.name,
+                    role = c.role,
+                    joinedAt = c.joinedAtEpochMillis?.let { Timestamp(Date(it)) }
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read cached memberships: ${e.message}")
+            emptyList()
+        }
+    }
+
+    fun clearCachedMemberships() {
+        clearCache(context)
     }
 
     /**
@@ -553,10 +624,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -626,10 +701,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -695,10 +774,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -760,10 +843,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -830,10 +917,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed for messages: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed for messages: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -895,10 +986,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed for chat tail: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed for chat tail: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -1083,10 +1178,14 @@ class GroupRepository(private val context: Context) {
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -1245,9 +1344,12 @@ class GroupRepository(private val context: Context) {
      * Observes personal done marks for tasks in this group using Supabase.
      */
     fun observeGroupDoneTasks(uid: String, groupId: String): Flow<Set<String>> =
-combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet()) }, pendingDone) { server, pending ->
+        combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet()) }, pendingDone) { server, pending ->
+            val now = System.currentTimeMillis()
+            val active = pending.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS }
             var result = server
-            for ((taskId, wantDone) in pending) {
+            for ((taskId, pair) in active) {
+                val wantDone = pair.first
                 result = if (wantDone) result + taskId else result - taskId
             }
             result
@@ -1273,7 +1375,8 @@ combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet())
                     }.decodeList<GroupDoneRow>()
                 val serverSet = rows.map { it.taskId }.toSet()
                 trySend(serverSet)
-                pendingDone.update { p -> p.filter { (id, want) -> (id in serverSet) != want } }
+                val now = System.currentTimeMillis()
+                pendingDone.update { p -> p.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS } }
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupDoneTasks select failed for $groupId: ${e.message}")
             }
@@ -1289,10 +1392,14 @@ combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet())
         }
 
         val job = launch {
-            try {
-                channel.subscribe()
-            } catch (e: Exception) {
-                Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+            launch {
+                try {
+                    channel.subscribe()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
+                }
+                // Anything that changed while connecting was missed: read once more.
+                queryAndEmit()
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
@@ -1328,7 +1435,7 @@ combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet())
         if (taskId.startsWith("local-")) return
 
         // Tick (or untick) on screen at once; the server catches up a moment later.
-        pendingDone.update { it + (taskId to isDone) }
+        pendingDone.update { it + (taskId to (isDone to System.currentTimeMillis())) }
 
         CoroutineScope(Dispatchers.IO).launch {
             try {

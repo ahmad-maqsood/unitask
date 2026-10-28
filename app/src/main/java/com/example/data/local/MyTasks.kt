@@ -1,6 +1,8 @@
 package com.example.data.local
 
 import java.util.Calendar
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 const val MY_TASKS_COURSE_CODE = "MYTASKS"
 
@@ -63,7 +65,9 @@ fun nextOccurrenceMillis(
     return cal.timeInMillis
 }
 
-suspend fun AppDatabase.ensureMyTasksCourse(): Long {
+private val ensureMyTasksCourseMutex = Mutex()
+
+suspend fun AppDatabase.ensureMyTasksCourse(): Long = ensureMyTasksCourseMutex.withLock {
     val existing = courseDao().getAnyCourseByNormalizedCode(MY_TASKS_COURSE_CODE)
     if (existing != null) {
         if (existing.isDeleted) {

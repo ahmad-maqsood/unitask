@@ -113,7 +113,13 @@ class GroupTaskProcessor(context: Context) {
         for (key in summaryStore.all.keys.toList()) {
             if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
         }
-        for (snapshot in state.loaded) {
+        for (raw in state.loaded) {
+            // Tasks still being saved have a temporary id starting with "local-". Never set alarms
+            // or send notices for them: the real row arrives a moment later under a new id.
+            val snapshot = raw.copy(
+                tasks = raw.tasks.filterNot { it.id.startsWith("local-") },
+                allTasks = raw.allTasks.filterNot { it.id.startsWith("local-") }
+            )
             scheduler.sync(snapshot.groupId, snapshot.groupName, snapshot.tasks, snapshot.done)
             announceNewTasks(myUid, snapshot)
             announceChangedTasks(snapshot)

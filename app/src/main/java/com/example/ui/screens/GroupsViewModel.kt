@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -36,6 +38,10 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     private val repository = GroupRepository(application)
     private val _currentUser = MutableStateFlow<AppUser?>(currentAppUser())
     val currentUser: StateFlow<AppUser?> = _currentUser.asStateFlow()
+
+    val sessionReady: StateFlow<Boolean> = SupabaseProvider.client.auth.sessionStatus
+        .map { it !is SessionStatus.Initializing }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _selectedGroupId = MutableStateFlow<String?>(null)
     val selectedGroupId: StateFlow<String?> = _selectedGroupId.asStateFlow()
@@ -69,7 +75,15 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             SupabaseProvider.client.auth.sessionStatus.collect { status ->
                 when (status) {
                     is SessionStatus.Authenticated -> _currentUser.value = status.session.user?.toAppUser()
-                    is SessionStatus.NotAuthenticated -> _currentUser.value = null
+                    is SessionStatus.NotAuthenticated -> {
+                        _currentUser.value = null
+                        repository.clearCachedMemberships()
+                    }
+                    is SessionStatus.RefreshFailure -> {
+                        if (_currentUser.value == null) {
+                            _currentUser.value = currentAppUser()
+                        }
+                    }
                     else -> Unit
                 }
             }
@@ -80,10 +94,15 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     val myMemberships: StateFlow<List<GroupMembership>> = _currentUser.flatMapLatest { user ->
         if (user != null) {
             repository.observeMyGroupMemberships(user.uid)
+                .onStart { emit(repository.cachedMemberships(user.uid)) }
         } else {
             flowOf(emptyList())
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        currentAppUser()?.let { repository.cachedMemberships(it.uid) } ?: emptyList()
+    )
 
     
     private val reminderScheduler = GroupReminderScheduler(application)

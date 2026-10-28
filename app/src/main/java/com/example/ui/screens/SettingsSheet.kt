@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -103,6 +104,7 @@ fun SettingsButton(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showSheet by remember { mutableStateOf(false) }
+    var showFeatureGuide by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var isChecking by remember { mutableStateOf(false) }
     var soundLabel by remember { mutableStateOf(NotificationSound.label(context)) }
@@ -314,6 +316,14 @@ fun SettingsButton(
                 LocalBackupSection()
                 Spacer(Modifier.height(8.dp))
                 SettingsSectionLabel("About")
+                SettingsRow(
+                    icon = Icons.Default.Info,
+                    title = "App features",
+                    subtitle = "See everything UniTask can do",
+                    onClick = { showFeatureGuide = true },
+                    testTag = "settings_features_row"
+                )
+                if (showFeatureGuide) FeatureGuideDialog(onDismiss = { showFeatureGuide = false })
                 SettingsRow(
                     icon = Icons.Default.Code,
                     title = "Source code",

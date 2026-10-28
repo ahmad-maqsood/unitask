@@ -540,7 +540,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Sorting
                 // Sort by the real deadline (date plus chosen time), worked out once per task.
         val withDeadline = list.map { it to it.task.deadlineMillis }
-        when (sort) {
+        val sorted = when (sort) {
             TaskSortOption.DUE_DATE_ASC -> withDeadline.sortedBy { it.second }.map { it.first }
             TaskSortOption.DUE_DATE_DESC -> withDeadline.sortedByDescending { it.second }.map { it.first }
             TaskSortOption.PRIORITY_HIGH_FIRST -> withDeadline
@@ -551,7 +551,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .map { it.first }
             TaskSortOption.TITLE_ASC -> list.sortedBy { it.task.title.lowercase() }
         }
-
+        // Done tasks go to the end; the chosen sort order is kept inside each group.
+        sorted.sortedBy { it.task.status == TaskStatus.COMPLETED }
        }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

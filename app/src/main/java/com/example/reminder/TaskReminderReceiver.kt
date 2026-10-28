@@ -70,16 +70,22 @@ class TaskReminderReceiver : BroadcastReceiver() {
             "⏰ Reminder: $taskTitle"
         }
 
-        val contentText = if (!reminderLabel.isNullOrBlank()) {
-            "[$courseCode] $reminderLabel • $dueInfo"
+        val isMyTask = courseCode.trim().replace("\\s+".toRegex(), "").uppercase() == "MYTASKS"
+        val contentText = if (isMyTask) {
+            if (!reminderLabel.isNullOrBlank()) "$reminderLabel • $dueInfo" else dueInfo
         } else {
-            "[$courseCode] $dueInfo"
+            if (!reminderLabel.isNullOrBlank()) {
+                "[$courseCode] $reminderLabel • $dueInfo"
+            } else {
+                "[$courseCode] $dueInfo"
+            }
         }
 
         // High priority task and the Settings switch is on: ring like an alarm.
         val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
         if (isAlarm) HighPriorityAlarm.ensureChannel(context)
 
+        val bigSummary = if (isMyTask) taskTitle else "Assignment for $courseCode: $taskTitle"
         val builder = NotificationCompat.Builder(
             context,
             if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
@@ -89,7 +95,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             .setContentText(contentText)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Assignment for $courseCode: $taskTitle\n$dueInfo${if (!reminderLabel.isNullOrBlank()) " ($reminderLabel)" else ""}")
+                    .bigText("$bigSummary\n$dueInfo${if (!reminderLabel.isNullOrBlank()) " ($reminderLabel)" else ""}")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(if (isAlarm) NotificationCompat.CATEGORY_ALARM else NotificationCompat.CATEGORY_REMINDER)

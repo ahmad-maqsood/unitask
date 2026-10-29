@@ -1,5 +1,5 @@
-<div align="center">
 # UniTask
+<div align="center">
  
 **An offline-first Android task manager built for university life.**
 Assignments, timetable, reminders, personal tasks and study groups in one app.
@@ -14,7 +14,6 @@ Assignments, timetable, reminders, personal tasks and study groups in one app.
 [Download](#download) · [Features](#features) · [Architecture](#architecture) · [Build from source](#build-from-source) · [Report a problem](#support)
  
 </div>
----
  
 ## Overview
  

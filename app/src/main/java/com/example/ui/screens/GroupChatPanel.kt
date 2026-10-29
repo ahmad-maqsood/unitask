@@ -135,11 +135,24 @@ fun GroupChatPanel(
 
     // A new message scrolls the list down only if you sent it, or you were already at (or next to)
     // the bottom. If you are reading older messages, the list stays where it is.
+    // When new messages arrive the list keeps the message you were looking at in place, which pushes
+    // the new ones just below the screen. So we count how many arrived and allow for them when we
+    // check "were you at the bottom". scrollToItem is used instead of animateScrollToItem because
+    // it always lands on the newest message, even when the list thinks it is already at item 0.
+    var lastSeenNewestId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(messages.lastOrNull()?.id) {
         val newest = messages.lastOrNull() ?: return@LaunchedEffect
-        val nearBottom = listState.firstVisibleItemIndex <= 1
+        val previousNewestId = lastSeenNewestId
+        lastSeenNewestId = newest.id
+        val addedCount = if (previousNewestId == null) {
+            0
+        } else {
+            val previousPos = messages.indexOfLast { it.id == previousNewestId }
+            if (previousPos < 0) 0 else messages.size - 1 - previousPos
+        }
+        val nearBottom = listState.firstVisibleItemIndex <= addedCount + 1
         if (newest.senderId == currentUid || nearBottom) {
-            listState.animateScrollToItem(0)
+            listState.scrollToItem(0)
         }
     }
 

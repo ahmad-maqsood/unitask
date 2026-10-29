@@ -388,7 +388,8 @@ class GroupRepository(private val context: Context) {
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 20_000L
-
+        /** How often an open chat re-reads, as a safety net in case realtime misses an event. */
+        private const val CHAT_POLL_MILLIS = 4_000L
         /** Fires when THIS phone changes group data, so open screens re-read at once. */
         val localChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 16)
         /** Tasks added on this phone that the server has not confirmed yet. */
@@ -908,19 +909,32 @@ class GroupRepository(private val context: Context) {
             return@callbackFlow
         }
 
+        // Only one read runs at a time, so a slow old answer can never overwrite a newer one.
+        val queryLock = kotlinx.coroutines.sync.Mutex()
+
         suspend fun queryAndEmit() {
+            queryLock.lock()
             try {
-                val rows = SupabaseProvider.client.postgrest["group_messages"]
-                    .select {
-                        filter {
-                            eq("group_id", groupId)
-                        }
-                        order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
-                        limit(100)
-                    }.decodeList<GroupMessageRow>()
+                // The timeout makes sure one hung request can never freeze the chat for good.
+                val rows = withTimeout(TIMEOUT_MILLIS) {
+                    SupabaseProvider.client.postgrest["group_messages"]
+                        .select {
+                            filter {
+                                eq("group_id", groupId)
+                            }
+                            order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                            limit(100)
+                        }.decodeList<GroupMessageRow>()
+                }
                 trySend(rows.map { it.toGroupMessage() }.reversed())
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                Log.w(TAG, "observeGroupMessages select timed out for $groupId")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupMessages select failed for $groupId: ${e.message}")
+            } finally {
+                queryLock.unlock()
             }
         }
 
@@ -944,14 +958,27 @@ class GroupRepository(private val context: Context) {
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
-            try {
-                merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
-                    .collect { queryAndEmit() }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "Messages refresh loop stopped: ${e.message}")
+
+            // Fast path: realtime events and changes made on this phone.
+            launch {
+                try {
+                    merge(changeFlow.map { }, localChanges)
+                        .debounce(300L)
+                        .collect { queryAndEmit() }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Messages realtime loop stopped: ${e.message}")
+                }
+            }
+
+            // Safety net: its own loop, so nothing that goes wrong with realtime can stop it.
+            // It keeps running for as long as the chat is being watched.
+            launch {
+                while (true) {
+                    delay(CHAT_POLL_MILLIS)
+                    queryAndEmit()
+                }
             }
         }
 

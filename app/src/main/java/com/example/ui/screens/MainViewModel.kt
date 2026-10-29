@@ -786,6 +786,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun restoreTaskSnapshot(task: TaskItem) {
+        if (isGroupTaskItem(task)) return
+        viewModelScope.launch {
+            repository.updateTask(task)
+        }
+    }
+
     fun deleteTask(task: TaskItem) {
         if (isGroupTaskItem(task)) return
         viewModelScope.launch {
@@ -795,6 +802,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun undoDeleteTask(task: TaskItem) {
         if (isGroupTaskItem(task)) return
+        SupabaseSyncManager.clearPendingTaskDeletion(task.id, task.cloudId)
         viewModelScope.launch {
             repository.insertTask(task.copy(isDeleted = false, isSynced = false))
         }

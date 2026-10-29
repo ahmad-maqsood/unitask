@@ -77,6 +77,7 @@ import java.util.Calendar
 fun MyTasksTab(
     tasks: List<TaskWithCourse>,
     onStatusCycle: (TaskItem) -> Unit,
+    onUndoTick: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     onUndoDeleteTask: (TaskItem) -> Unit,
@@ -102,7 +103,7 @@ fun MyTasksTab(
                     )
                 }
                 if (result == SnackbarResult.ActionPerformed) {
-                    onStatusCycle(task)
+                    onUndoTick(task)
                 }
             } finally {
                 snackbarHostState.currentSnackbarData?.dismiss()

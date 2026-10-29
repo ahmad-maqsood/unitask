@@ -148,6 +148,15 @@ object SupabaseSyncManager {
         }
     }
 
+    fun clearPendingTaskDeletion(taskId: Long, cloudId: String) {
+        if (taskId > 0) {
+            pendingDeletedTaskIds.remove(taskId)
+        }
+        if (cloudId.isNotBlank()) {
+            pendingDeletedTaskDocIds.remove(cloudId)
+        }
+    }
+
     fun recordPendingSlotDeletion(slotId: Long, cloudId: String) {
         if (slotId > 0) {
             pendingDeletedSlotIds.add(slotId)

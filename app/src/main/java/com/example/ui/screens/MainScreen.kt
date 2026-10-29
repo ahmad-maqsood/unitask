@@ -678,6 +678,7 @@ fun MainScreen(
                         MyTasksTab(
                             tasks = myTasks,
                             onStatusCycle = { viewModel.cycleTaskStatus(it) },
+                            onUndoTick = { viewModel.restoreTaskSnapshot(it) },
                             onEditTask = { viewModel.openMyTaskDialog(it) },
                             onDeleteTask = { viewModel.deleteTask(it) },
                             onUndoDeleteTask = { viewModel.undoDeleteTask(it) },

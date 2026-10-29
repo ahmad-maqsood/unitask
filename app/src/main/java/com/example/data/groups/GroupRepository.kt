@@ -1344,7 +1344,7 @@ class GroupRepository(private val context: Context) {
      * Observes personal done marks for tasks in this group using Supabase.
      */
     fun observeGroupDoneTasks(uid: String, groupId: String): Flow<Set<String>> =
-        combine(observeGroupDoneTasksFromServer(uid, groupId).onStart { emit(emptySet()) }, pendingDone) { server, pending ->
+        combine(observeGroupDoneTasksFromServer(uid, groupId), pendingDone) { server, pending ->
             val now = System.currentTimeMillis()
             val active = pending.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS }
             var result = server
@@ -1364,6 +1364,7 @@ class GroupRepository(private val context: Context) {
             return@callbackFlow
         }
 
+        var retried = false
         suspend fun queryAndEmit() {
             try {
                 val rows = SupabaseProvider.client.postgrest["group_done"]
@@ -1379,6 +1380,13 @@ class GroupRepository(private val context: Context) {
                 pendingDone.update { p -> p.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS } }
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupDoneTasks select failed for $groupId: ${e.message}")
+                if (!retried) {
+                    retried = true
+                    launch {
+                        delay(3000L)
+                        queryAndEmit()
+                    }
+                }
             }
         }
 

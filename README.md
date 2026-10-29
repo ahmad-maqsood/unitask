@@ -206,4 +206,4 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 
 ## License
 
-Released under the [MIT License](LICENSE). Copyright (c) 2026 Ahmad Maqsood.
+Released under the [MIT License](LICENSE).

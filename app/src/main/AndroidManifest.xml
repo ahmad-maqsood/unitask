@@ -49,6 +49,9 @@
             android:name=".reminder.DailySummaryReceiver"
             android:exported="false" />
         <receiver
+            android:name=".reminder.RepeatRolloverReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".reminder.BootReceiver"
             android:exported="true">
             <intent-filter>

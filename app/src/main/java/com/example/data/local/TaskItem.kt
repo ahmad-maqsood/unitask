@@ -79,7 +79,10 @@ data class TaskItem(
     val cloudId: String = "",
     val isDeleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val repeatRule: String = "NONE"
+    val repeatRule: String = "NONE",
+    // When the task was ticked Done (0 = not done, or unknown). A repeating task uses this to
+    // stay Done until the end of that day and then move to its next date.
+    val completedAtMillis: Long = 0L
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

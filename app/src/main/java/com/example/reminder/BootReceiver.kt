@@ -26,6 +26,7 @@ class BootReceiver : BroadcastReceiver() {
                 ClassReminderScheduler(appContext).rescheduleAll(AppDatabase.getDatabase(appContext))
                 GroupReminderScheduler(appContext).rescheduleAll()
                 DailySummaryScheduler(appContext).reschedule()
+                RepeatRolloverReceiver.rolloverAndReschedule(appContext)
             } finally {
                 pending.finish()
             }

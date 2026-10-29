@@ -29,6 +29,14 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         AppVisibility.isForeground = true
+        // Moves repeating tasks that were ticked on an earlier day to their next date, and makes
+        // sure the midnight alarm is set. Covers a missed alarm.
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                com.example.reminder.RepeatRolloverReceiver.rolloverAndReschedule(applicationContext)
+            } catch (_: Exception) {
+            }
+        }
     }
 
     override fun onStop() {

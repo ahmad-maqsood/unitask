@@ -26,7 +26,7 @@ import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.currentSupabaseUid
-
+import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -218,7 +218,17 @@ class AppRepository(
 
     suspend fun updateTask(task: TaskItem) = withContext(Dispatchers.IO) {
         val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
-        val taskToUpdate = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false)
+        // Remember when a task was ticked, so a repeating one can reset after midnight.
+        val completedAt = when {
+            task.status != TaskStatus.COMPLETED -> 0L
+            task.completedAtMillis > 0L -> task.completedAtMillis
+            else -> System.currentTimeMillis()
+        }
+        val taskToUpdate = task.copy(
+            reminderEpochMillis = calculatedReminder,
+            completedAtMillis = completedAt,
+            isSynced = false
+        )
         taskDao.updateTask(taskToUpdate)
 
         if (taskToUpdate.status == TaskStatus.COMPLETED) {
@@ -232,27 +242,10 @@ class AppRepository(
     }
 
     suspend fun updateTaskStatus(taskId: Long, newStatus: TaskStatus) = withContext(Dispatchers.IO) {
-        val task = taskDao.getTaskById(taskId)
-        if (task != null && task.status == TaskStatus.PENDING && newStatus == TaskStatus.COMPLETED && task.repeat != RepeatRule.NONE) {
-            val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis)
-            val updatedTask = task.copy(
-                dueDateEpochMillis = next,
-                dueTimeHour = task.dueTimeHour,
-                dueTimeMinute = task.dueTimeMinute,
-                status = TaskStatus.PENDING,
-                isSynced = false
-            )
-            val calculatedReminder = reminderScheduler.calculateReminderMillis(updatedTask)
-            val finalTask = updatedTask.copy(reminderEpochMillis = calculatedReminder)
-            taskDao.updateTask(finalTask)
-            val course = courseDao.getCourseByIdSync(finalTask.courseId)
-            val courseCode = course?.code ?: "Course"
-            reminderScheduler.scheduleReminder(finalTask, courseCode)
-            triggerSyncIfLoggedIn()
-            return@withContext
-        }
-
-        taskDao.updateStatus(taskId, newStatus)
+        // A repeating task is NOT moved to its next date here. It stays Done for the rest of the
+        // day and rolloverCompletedRepeatingTasks() moves it after midnight.
+        val completedAt = if (newStatus == TaskStatus.COMPLETED) System.currentTimeMillis() else 0L
+        taskDao.updateStatusAndCompletedAt(taskId, newStatus, completedAt)
         if (newStatus == TaskStatus.COMPLETED) {
             reminderScheduler.cancelReminder(taskId)
         } else {
@@ -263,6 +256,49 @@ class AppRepository(
             }
         }
         triggerSyncIfLoggedIn()
+    }
+
+    /**
+     * A repeating task stays "Done" for the rest of the day it was ticked. From the next midnight
+     * this moves it to its next date and makes it Pending again. Safe to call as often as you like.
+     * Returns true when at least one task was moved.
+     */
+    suspend fun rolloverCompletedRepeatingTasks(): Boolean = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val startOfToday = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        var changed = false
+        for (task in taskDao.getAllActiveTasksSync()) {
+            if (task.status != TaskStatus.COMPLETED || task.repeat == RepeatRule.NONE) continue
+
+            if (task.completedAtMillis <= 0L) {
+                // Ticked on another device, or before this update: count the day from now.
+                taskDao.updateTask(task.copy(completedAtMillis = now))
+                continue
+            }
+            // Ticked today: leave it Done until the day is over.
+            if (task.completedAtMillis >= startOfToday) continue
+
+            val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis, now)
+            val moved = task.copy(
+                dueDateEpochMillis = next,
+                status = TaskStatus.PENDING,
+                completedAtMillis = 0L,
+                isSynced = false
+            )
+            val finalTask = moved.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(moved))
+            taskDao.updateTask(finalTask)
+            val course = courseDao.getCourseByIdSync(finalTask.courseId)
+            reminderScheduler.scheduleReminder(finalTask, course?.code ?: "Course")
+            changed = true
+        }
+        if (changed) triggerSyncIfLoggedIn()
+        changed
     }
 
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {

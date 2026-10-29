@@ -155,7 +155,7 @@ fun GroupsTab(
                     members = selectedGroupMembers,
                     doneTaskIds = myDoneTaskIds,
                     chatMessages = selectedGroupMessages,
-                    onSendMessage = { text -> viewModel.sendMessage(text) },
+                    onSendMessage = { text, replyTo -> viewModel.sendMessage(text, replyTo) },
                     onDeleteMessage = { message -> viewModel.deleteMessage(message) },
                     isLoading = isActionLoading,
                     onBack = {

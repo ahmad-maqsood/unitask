@@ -469,9 +469,9 @@ class ExampleRobolectricTest {
         val prefs = context.getSharedPreferences("unitask_settings", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
 
-        // With no saved choice and use_system_sound unset, NotificationSound.choice(context) is "default" and channelId(context, "x") is "x"
-        assertEquals("default", com.example.util.NotificationSound.choice(context))
-        assertEquals("x", com.example.util.NotificationSound.channelId(context, "x"))
+        // With no saved choice and use_system_sound unset, NotificationSound.choice(context) is "system" and channelId(context, "x") is "x_system"
+        assertEquals("system", com.example.util.NotificationSound.choice(context))
+        assertEquals("x_system", com.example.util.NotificationSound.channelId(context, "x"))
 
         // With use_system_sound = true and no saved choice, choice is "system" and channelId is "x_system"
         prefs.edit().putBoolean("use_system_sound", true).commit()
@@ -481,7 +481,7 @@ class ExampleRobolectricTest {
         // Reset prefs
         prefs.edit().clear().commit()
 
-        // After setChoice(context, "s2") with no sound_2 file in res/raw, choice falls back to "default"
+        // After setChoice(context, "s2") with no sound_2 file in res/raw, choice falls back to "system"
         val contextWithoutSound2 = object : android.content.ContextWrapper(context) {
             override fun getResources(): android.content.res.Resources {
                 return object : android.content.res.Resources(context.resources.assets, context.resources.displayMetrics, context.resources.configuration) {
@@ -493,7 +493,7 @@ class ExampleRobolectricTest {
             }
         }
         com.example.util.NotificationSound.setChoice(contextWithoutSound2, "s2")
-        assertEquals("default", com.example.util.NotificationSound.choice(contextWithoutSound2))
+        assertEquals("system", com.example.util.NotificationSound.choice(contextWithoutSound2))
 
         // After setPhoneSound(context, Uri.parse("content://media/internal/audio/media/1")), choice is "phone" and channelId starts with "x_phone_"
         com.example.util.NotificationSound.setPhoneSound(context, android.net.Uri.parse("content://media/internal/audio/media/1"))

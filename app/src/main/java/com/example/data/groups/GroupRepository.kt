@@ -238,7 +238,10 @@ private data class GroupMessageRow(
     @SerialName("sender_id") val senderId: String? = null,
     @SerialName("sender_name") val senderName: String? = null,
     val text: String = "",
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("reply_to_id") val replyToId: Long? = null,
+    @SerialName("reply_to_name") val replyToName: String? = null,
+    @SerialName("reply_to_text") val replyToText: String? = null
 )
 
 private fun GroupMessageRow.toGroupMessage(): GroupMessage {
@@ -257,7 +260,10 @@ private fun GroupMessageRow.toGroupMessage(): GroupMessage {
         text = text,
         senderId = senderId.orEmpty(),
         senderName = senderName?.ifBlank { "Student" } ?: "Student",
-        createdAtMillis = createdMillis
+        createdAtMillis = createdMillis,
+        replyToId = replyToId?.toString(),
+        replyToName = replyToName,
+        replyToText = replyToText
     )
 }
 
@@ -266,7 +272,10 @@ private data class CreateGroupMessagePayload(
     @SerialName("group_id") val groupId: String,
     @SerialName("sender_id") val senderId: String,
     @SerialName("sender_name") val senderName: String,
-    val text: String
+    val text: String,
+    @SerialName("reply_to_id") val replyToId: Long? = null,
+    @SerialName("reply_to_name") val replyToName: String? = null,
+    @SerialName("reply_to_text") val replyToText: String? = null
 )
 
 data class GroupMembership(
@@ -322,7 +331,10 @@ data class GroupMessage(
     val text: String = "",
     val senderId: String = "",
     val senderName: String = "Student",
-    val createdAtMillis: Long = 0L
+    val createdAtMillis: Long = 0L,
+    val replyToId: String? = null,
+    val replyToName: String? = null,
+    val replyToText: String? = null
 )
 
 data class ChatTail(val messages: List<GroupMessage>, val fromServer: Boolean)
@@ -1066,6 +1078,7 @@ class GroupRepository(private val context: Context) {
         uid: String,
         rawDisplayName: String,
         text: String,
+        replyTo: GroupMessage? = null,
         onFailure: (Exception) -> Unit
     ) {
         val myUid = currentSupabaseUid()
@@ -1077,13 +1090,20 @@ class GroupRepository(private val context: Context) {
         if (cleanText.isEmpty()) return
         val cleanName = rawDisplayName.trim().take(60).ifEmpty { "Student" }
 
+        val replyName = replyTo?.senderName
+        val replyText = replyTo?.text?.trim()?.take(120)
+        val replyId = replyTo?.id?.toLongOrNull()
+
         val localMessage = GroupMessage(
             id = "local-${System.nanoTime()}",
             groupId = groupId,
             text = cleanText,
             senderId = myUid,
             senderName = cleanName,
-            createdAtMillis = System.currentTimeMillis()
+            createdAtMillis = System.currentTimeMillis(),
+            replyToId = replyId?.toString(),
+            replyToName = replyName,
+            replyToText = replyText
         )
 
         pendingMessages.update { list ->
@@ -1094,7 +1114,10 @@ class GroupRepository(private val context: Context) {
             groupId = groupId,
             senderId = myUid,
             senderName = cleanName,
-            text = cleanText
+            text = cleanText,
+            replyToId = replyId,
+            replyToName = replyName,
+            replyToText = replyText
         )
 
         CoroutineScope(Dispatchers.IO).launch {

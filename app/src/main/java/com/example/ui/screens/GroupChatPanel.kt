@@ -1,7 +1,11 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,9 +16,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,7 +30,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,23 +49,35 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupMessage
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * The Chat tab of a group: the message list and the box to type in.
+ * Swipe a message to reply to it.
  * Long-press a message to delete it (your own, or any message if you are the owner or an admin).
  */
 @Composable
@@ -63,14 +85,16 @@ fun GroupChatPanel(
     messages: List<GroupMessage>,
     currentUid: String,
     canModerate: Boolean,
-    onSend: (String) -> Unit,
+    onSend: (String, GroupMessage?) -> Unit,
     onDelete: (GroupMessage) -> Unit,
     lastReadAtOpenMillis: Long? = null,
     onMarkRead: (Long) -> Unit = {}
 ) {
     var draft by rememberSaveable { mutableStateOf("") }
+    var replyingTo by remember { mutableStateOf<GroupMessage?>(null) }
     var messageToDelete by remember { mutableStateOf<GroupMessage?>(null) }
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     // Decide the divider once when messages is non-empty AND lastReadAtOpenMillis != null, then freeze it.
     var frozenDividerId by remember { mutableStateOf<String?>(null) }
@@ -180,7 +204,16 @@ fun GroupChatPanel(
                             message = message,
                             isMine = isMine,
                             canDelete = isMine || canModerate,
-                            onLongPress = { messageToDelete = message }
+                            onLongPress = { messageToDelete = message },
+                            onSwipeReply = { replyingTo = message },
+                            onQuoteClick = { targetId ->
+                                val targetIndex = newestFirst.indexOfFirst { it.id == targetId }
+                                if (targetIndex >= 0) {
+                                    coroutineScope.launch {
+                                        listState.animateScrollToItem(targetIndex)
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -188,43 +221,100 @@ fun GroupChatPanel(
         }
 
         Surface(tonalElevation = 3.dp) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { draft = it.take(500) },
-                    placeholder = { Text("Message") },
-                    maxLines = 4,
-                    shape = RoundedCornerShape(24.dp),
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (replyingTo != null) {
+                    val target = replyingTo!!
+                    val replyName = if (target.senderId == currentUid) "You" else target.senderName
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, top = 8.dp, end = 8.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(3.dp)
+                                    .height(32.dp)
+                                    .clip(RoundedCornerShape(1.5.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Replying to $replyName",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = target.text,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { replyingTo = null },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel reply",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .testTag("group_chat_input")
-                )
-                IconButton(
-                    onClick = {
-                        val text = draft.trim()
-                        if (text.isNotEmpty()) {
-                            onSend(text)
-                            draft = ""
-                        }
-                    },
-                    enabled = draft.isNotBlank(),
-                    modifier = Modifier.testTag("group_chat_send")
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Send",
-                        tint = if (draft.isNotBlank()) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it.take(500) },
+                        placeholder = { Text("Message") },
+                        maxLines = 4,
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("group_chat_input")
                     )
+                    IconButton(
+                        onClick = {
+                            val text = draft.trim()
+                            if (text.isNotEmpty()) {
+                                onSend(text, replyingTo)
+                                draft = ""
+                                replyingTo = null
+                            }
+                        },
+                        enabled = draft.isNotBlank(),
+                        modifier = Modifier.testTag("group_chat_send")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = if (draft.isNotBlank()) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -237,61 +327,184 @@ private fun ChatBubble(
     message: GroupMessage,
     isMine: Boolean,
     canDelete: Boolean,
-    onLongPress: () -> Unit
+    onLongPress: () -> Unit,
+    onSwipeReply: () -> Unit,
+    onQuoteClick: ((String) -> Unit)? = null
 ) {
+    val density = LocalDensity.current
+    val maxDragPx = with(density) { 72.dp.toPx() }
+    val triggerPx = with(density) { 56.dp.toPx() }
+    val offsetX = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+
     val timeText = remember(message.createdAtMillis) {
         SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(message.createdAtMillis))
     }
+
     // A bubble is at most 80% of the available width, so it fits small phones and tablets alike.
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-    val maxBubbleWidth = maxWidth * 0.8f
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
-    ) {
-        Surface(
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isMine) 16.dp else 4.dp,
-                bottomEnd = if (isMine) 4.dp else 16.dp
-            ),
-            color = if (isMine) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
-            modifier = Modifier
-                .widthIn(max = maxBubbleWidth)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = { if (canDelete) onLongPress() }
-                )
+        val maxBubbleWidth = maxWidth * 0.8f
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
         ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                if (!isMine) {
-                    Text(
-                        text = message.senderName,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+            Box(
+                contentAlignment = Alignment.CenterStart
+            ) {
+                // Reply arrow icon revealed when dragging to the right
+                val dragProgress = (offsetX.value / triggerPx).coerceIn(0f, 1f)
+                if (dragProgress > 0.05f) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 6.dp)
+                            .alpha(dragProgress)
+                            .scale(0.6f + 0.4f * dragProgress)
+                            .size(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Reply,
+                            contentDescription = "Reply",
+                            tint = if (offsetX.value >= triggerPx) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            },
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
-                Text(
-                    text = message.text,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = timeText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.End)
-                )
+
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (isMine) 16.dp else 4.dp,
+                        bottomEnd = if (isMine) 4.dp else 16.dp
+                    ),
+                    color = if (isMine) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    modifier = Modifier
+                        .widthIn(max = maxBubbleWidth)
+                        .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                        .pointerInput(message.id) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    if (offsetX.value >= triggerPx) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onSwipeReply()
+                                    }
+                                    coroutineScope.launch {
+                                        offsetX.animateTo(0f)
+                                    }
+                                },
+                                onDragCancel = {
+                                    coroutineScope.launch {
+                                        offsetX.animateTo(0f)
+                                    }
+                                },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    val newOffset = (offsetX.value + dragAmount).coerceIn(0f, maxDragPx)
+                                    if (dragAmount > 0 || offsetX.value > 0f) {
+                                        change.consume()
+                                        coroutineScope.launch {
+                                            offsetX.snapTo(newOffset)
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { if (canDelete) onLongPress() }
+                        )
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        if (!isMine) {
+                            Text(
+                                text = message.senderName,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        // Quote block inside bubble when replying to a message
+                        if (!message.replyToText.isNullOrBlank()) {
+                            val quoteBgColor = if (isMine) {
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.08f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
+                            }
+                            val quoteAuthor = if (message.replyToName.isNullOrBlank()) "Student" else message.replyToName
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = quoteBgColor,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 6.dp)
+                                    .then(
+                                        if (onQuoteClick != null && !message.replyToId.isNullOrBlank()) {
+                                            Modifier.clickable { onQuoteClick(message.replyToId) }
+                                        } else Modifier
+                                    )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(3.dp)
+                                            .height(32.dp)
+                                            .clip(RoundedCornerShape(1.5.dp))
+                                            .background(MaterialTheme.colorScheme.primary)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = quoteAuthor,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = message.replyToText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = message.text,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = timeText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                    }
+                }
             }
         }
-    }
     }
 }
 

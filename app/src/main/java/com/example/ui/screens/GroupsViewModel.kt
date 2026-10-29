@@ -440,10 +440,10 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
     }
-    fun sendMessage(text: String) {
+    fun sendMessage(text: String, replyTo: GroupMessage? = null) {
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
-        repository.sendMessage(groupId, user.uid, user.displayName ?: "Student", text) { e ->
+        repository.sendMessage(groupId, user.uid, user.displayName ?: "Student", text, replyTo) { e ->
             viewModelScope.launch {
                 _snackbarMessage.emit("Message not sent: ${e.message}")
             }

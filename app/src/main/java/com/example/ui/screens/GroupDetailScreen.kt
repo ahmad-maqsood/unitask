@@ -118,7 +118,7 @@ fun GroupDetailScreen(
     onLeaveGroupClick: () -> Unit,
     onDeleteGroupClick: () -> Unit,
     chatMessages: List<GroupMessage>,
-    onSendMessage: (String) -> Unit,
+    onSendMessage: (String, GroupMessage?) -> Unit,
     onDeleteMessage: (GroupMessage) -> Unit,
     chatUnreadCount: Int = 0,
     chatLastReadMillis: Long? = null,

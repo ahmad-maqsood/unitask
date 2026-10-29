@@ -211,6 +211,8 @@ CREATE TRIGGER t_courses_touch BEFORE UPDATE ON public.courses FOR EACH ROW EXEC
 CREATE TRIGGER t_tasks_touch   BEFORE UPDATE ON public.tasks   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER t_slots_touch   BEFORE UPDATE ON public.slots   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER t_gtasks_touch  BEFORE UPDATE ON public.group_tasks FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+CREATE TRIGGER t_gmsg_identity BEFORE INSERT ON public.group_messages FOR EACH ROW EXECUTE FUNCTION enforce_message_identity();
+CREATE TRIGGER t_gtasks_identity BEFORE INSERT OR UPDATE ON public.group_tasks FOR EACH ROW EXECUTE FUNCTION enforce_task_identity();
 -- (other triggers in the output belong to Supabase's storage and realtime schemas)
 
 

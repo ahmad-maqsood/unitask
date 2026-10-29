@@ -149,21 +149,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .build()
             val cb = object : ConnectivityManager.NetworkCallback() {
-                private var wasOffline = false
+                // Runs when the phone gets a connection. This also covers an app that was started
+                // with no internet and got connected later.
                 override fun onAvailable(network: Network) {
-                    if (wasOffline) {
-                        Log.d("MainViewModel", "Network restored: refreshing groups and cloud sync")
-                        GroupRepository.localChanges.tryEmit(Unit)
-                        if (currentSupabaseUid() != null) {
-                            viewModelScope.launch(Dispatchers.IO) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
+                        if (uid != null) {
+                            Log.d("MainViewModel", "Network available: sending offline ticks, refreshing groups")
+                            // Done ticks made offline go out first, then everything is read again.
+                            try { GroupRepository(application).flushPendingDone() } catch (_: Exception) { }
+                            GroupRepository.localChanges.tryEmit(Unit)
+                            if (currentSupabaseUid() != null) {
                                 com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
                             }
                         }
                     }
-                    wasOffline = false
-                }
-                override fun onLost(network: Network) {
-                    wasOffline = true
                 }
             }
             networkCallback = cb
@@ -450,38 +450,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.distinctUntilChanged()
 
+    // What the Deadlines tab shows is what is SAVED on the phone (Room). That works with no
+    // internet, it appears at once when the app opens, and it updates by itself whenever a sync
+    // or a done tick changes the saved data. The internet only fills this storage (see init below).
     @OptIn(ExperimentalCoroutinesApi::class)
     private val groupsState: StateFlow<GroupsState?> = supabaseUidFlow.flatMapLatest { sbUid ->
-        if (sbUid == null) {
-            flowOf(GroupsState(emptySet(), emptyList()))
-        } else {
-            channelFlow {
-                // 1. Immediately emit cached groups from Room so Deadlines shows them offline instantly
-                val cached = groupCacheRepository.getGroupsState(sbUid)
-                if (cached != null && cached.loaded.isNotEmpty()) {
-                    send(cached)
-                }
-
-                // 2. Stream live server updates from Supabase
-                groupRepository.observeGroupsState(sbUid).collect { liveState ->
-                    send(liveState)
-                }
-            }
-        }
+        if (sbUid == null) flowOf(GroupsState(emptySet(), emptyList()))
+        else groupCacheRepository.observeGroupsState(sbUid)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val serverGroups: Flow<Pair<String, GroupsState>?> =
+        supabaseUidFlow.flatMapLatest<String?, Pair<String, GroupsState>?> { sbUid ->
+            if (sbUid == null) flowOf(null)
+            else groupRepository.observeGroupsState(sbUid).map { live -> sbUid to live }
+        }
+
     init {
+        // 1) Alarms always follow the saved data, also after a done tick made offline.
         viewModelScope.launch(Dispatchers.IO) {
             groupsState.filterNotNull().collect { state ->
                 val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
-                if (uid == null) {
+                if (uid == null) groupTaskProcessor.clearAll()
+                else groupTaskProcessor.process(uid, state, isFromCache = true)
+            }
+        }
+
+        // 2) When the server answers: save it on the phone (deleted tasks vanish, new ones appear),
+        //    set alarms and announce changes. When there is no internet nothing arrives here and
+        //    the saved copy simply stays as it is.
+        viewModelScope.launch(Dispatchers.IO) {
+            serverGroups.collect { result ->
+                if (result == null) {
+                    // Signed out: forget everything about groups.
                     groupTaskProcessor.clearAll()
                     groupCacheRepository.clearCache()
+                    groupRepository.clearPendingDone()
                 } else {
-                    if (!state.isFromCache) {
-                        groupCacheRepository.saveGroupsState(uid, state)
-                    }
-                    groupTaskProcessor.process(uid, state, isFromCache = state.isFromCache)
+                    val (uid, live) = result
+                    groupCacheRepository.saveGroupsState(uid, live)
+                    groupTaskProcessor.process(uid, live)
+                }
+            }
+        }
+
+        // 3) Send done ticks that could not be sent earlier (made with no internet).
+        viewModelScope.launch(Dispatchers.IO) {
+            supabaseUidFlow.collect { uid ->
+                if (uid != null) {
+                    try { groupRepository.flushPendingDone() } catch (_: Exception) { }
                 }
             }
         }

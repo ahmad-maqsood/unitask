@@ -496,6 +496,17 @@ fun AddEditTaskDialog(
                             selectedDueDateMillis = c.timeInMillis
                         }
                     }
+                    // Quick time chips (same as the My tasks dialog)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        QuickDateChip("9:00 AM") { dueHour = 9; dueMinute = 0 }
+                        QuickDateChip("12:00 PM") { dueHour = 12; dueMinute = 0 }
+                        QuickDateChip("5:00 PM") { dueHour = 17; dueMinute = 0 }
+                        QuickDateChip("11:59 PM") { dueHour = 23; dueMinute = 59 }
+                    }
                 }
 
                 // Priority
@@ -597,34 +608,11 @@ fun AddEditTaskDialog(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ReminderOption.entries.sortedBy { it.offsetMinutes }.forEach { opt ->
-                            FilterChip(
-                                selected = opt in reminderOptions,
-                                onClick = {
-                                    reminderOptions = if (opt in reminderOptions) {
-                                        reminderOptions - opt
-                                    } else {
-                                        reminderOptions + opt
-                                    }
-                                },
-                                leadingIcon = if (opt in reminderOptions) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                } else null,
-                                label = { Text(opt.label, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.testTag("reminder_chip_${opt.name}")
-                            )
-                        }
-                    }
+                    ReminderChipGrid(
+                        selected = reminderOptions,
+                        onSelectedChange = { reminderOptions = it },
+                        testTagPrefix = "reminder_chip"   // use the prefix from the table for each file
+                    )
                 }
 
                 // Offline File Attachments Section
@@ -645,9 +633,10 @@ fun AddEditTaskDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "Offline Attachments",
+                                text = "Attachments",
                                 style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
                             )
                         }
 
@@ -666,6 +655,7 @@ fun AddEditTaskDialog(
                             },
                             enabled = !isAttachingFile,
                             shape = RoundedCornerShape(10.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.testTag("attach_file_button")
                         ) {
                             if (isAttachingFile) {
@@ -675,11 +665,16 @@ fun AddEditTaskDialog(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.size(6.dp))
-                                Text("Importing...", style = MaterialTheme.typography.labelSmall)
+                                Text("Importing...", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
                             } else {
                                 Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.size(4.dp))
-                                Text("Attach File", style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    "Attach File",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
                             }
                         }
                     }

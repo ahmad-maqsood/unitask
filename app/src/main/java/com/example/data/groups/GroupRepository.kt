@@ -1439,8 +1439,63 @@ class GroupRepository(private val context: Context) {
         }
     }
 
+    // Done ticks the server has not accepted yet (made with no internet). Key: "userId|groupId|taskId".
+    private fun pendingDonePrefs() = context.getSharedPreferences("group_pending_done", Context.MODE_PRIVATE)
+
+    /** Sends one done tick or untick to Supabase. True when the server accepted it. */
+    private suspend fun pushDone(myUid: String, groupId: String, taskId: String, isDone: Boolean): Boolean {
+        return try {
+            if (isDone) {
+                SupabaseProvider.client.postgrest["group_done"].upsert(
+                    GroupDoneRow(userId = myUid, groupId = groupId, taskId = taskId)
+                ) {
+                    onConflict = "user_id,task_id"
+                }
+            } else {
+                SupabaseProvider.client.postgrest["group_done"].delete {
+                    filter {
+                        eq("user_id", myUid)
+                        eq("task_id", taskId)
+                    }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "pushDone failed (will retry when online): ${e.message}")
+            false
+        }
+    }
+
+    /** Forgets a pending tick, but only if nobody changed it again in the meantime. */
+    private fun clearPendingIfUnchanged(key: String, wanted: Boolean) {
+        val prefs = pendingDonePrefs()
+        if (prefs.contains(key) && prefs.getBoolean(key, !wanted) == wanted) {
+            prefs.edit().remove(key).apply()
+        }
+    }
+
+    /** Sends the done ticks that could not be sent earlier. Call it when the internet is back. */
+    suspend fun flushPendingDone() {
+        val prefs = pendingDonePrefs()
+        for ((key, value) in prefs.all.toMap()) {
+            val wanted = value as? Boolean ?: continue
+            val parts = key.split("|")
+            if (parts.size != 3) continue
+            if (pushDone(parts[0], parts[1], parts[2], wanted)) {
+                clearPendingIfUnchanged(key, wanted)
+            }
+        }
+        localChanges.tryEmit(Unit)
+    }
+
+    /** Signed out: unsent ticks of that account are dropped. */
+    fun clearPendingDone() {
+        pendingDonePrefs().edit().clear().apply()
+    }
+
     /**
-     * Set personal task done status in Supabase.
+     * Set personal task done status. The tick shows at once (it is saved on the phone first), then
+     * it is sent to Supabase. With no internet it is kept and sent later by [flushPendingDone].
      */
     fun setTaskDone(uid: String, groupId: String, taskId: String, isDone: Boolean) {
         val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
@@ -1451,38 +1506,23 @@ class GroupRepository(private val context: Context) {
         // Tick (or untick) on screen at once; the server catches up a moment later.
         pendingDone.update { it + (taskId to (isDone to System.currentTimeMillis())) }
 
-        // Update Room local cache immediately so tick survives offline app restarts
+        val pendingKey = "$myUid|$groupId|$taskId"
+        pendingDonePrefs().edit().putBoolean(pendingKey, isDone).apply()
+
         CoroutineScope(Dispatchers.IO).launch {
+            // 1) Save on the phone first, so the tick shows and survives a restart, also offline.
             try {
                 GroupCacheRepository(context).updateDone(myUid, groupId, taskId, isDone)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to update done in local cache: ${e.message}")
             }
-        }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                if (isDone) {
-                    SupabaseProvider.client.postgrest["group_done"].upsert(
-                        GroupDoneRow(userId = myUid, groupId = groupId, taskId = taskId)
-                    ) {
-                        onConflict = "user_id,task_id"
-                    }
-                } else {
-                    SupabaseProvider.client.postgrest["group_done"].delete {
-                        filter {
-                            eq("user_id", myUid)
-                            eq("task_id", taskId)
-                        }
-                    }
-                }
+            // 2) Send to the server. If that fails, the tick stays in the pending list.
+            if (pushDone(myUid, groupId, taskId, isDone)) {
+                clearPendingIfUnchanged(pendingKey, isDone)
                 localChanges.tryEmit(Unit)
-            } catch (e: Exception) {
-                Log.w(TAG, "setTaskDone cloud push failed (keeping offline mark): ${e.message}")
             }
         }
     }
-
     /**
      * Creates a new group via Supabase.
      * Returns Result containing Pair(groupId, joinCode) on success.

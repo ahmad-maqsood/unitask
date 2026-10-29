@@ -302,7 +302,7 @@ fun GroupTaskDialog(
                         }
 
                         // Time Selector
-                        val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", dueHour, dueMinute)
+                        val formattedTime = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
                         OutlinedCard(
                             modifier = Modifier
                                 .weight(0.9f)
@@ -375,34 +375,11 @@ fun GroupTaskDialog(
                         }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ReminderOption.entries.sortedBy { it.offsetMinutes }.forEach { opt ->
-                            FilterChip(
-                                selected = opt in reminderOptions,
-                                onClick = {
-                                    reminderOptions = if (opt in reminderOptions) {
-                                        reminderOptions - opt
-                                    } else {
-                                        reminderOptions + opt
-                                    }
-                                },
-                                leadingIcon = if (opt in reminderOptions) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                } else null,
-                                label = { Text(opt.label, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.testTag("group_reminder_chip_${opt.name}")
-                            )
-                        }
-                    }
+                    ReminderChipGrid(
+                        selected = reminderOptions,
+                        onSelectedChange = { reminderOptions = it },
+                        testTagPrefix = "group_reminder_chip"   // use the prefix from the table for each file
+                    )
                 }
 
                 // Tag members: only tagged members see this task on their Deadlines tab

@@ -102,16 +102,19 @@ class GroupTaskProcessor(context: Context) {
         }
     }
 
-    fun process(myUid: String, state: GroupsState) = synchronized(LOCK) {
-        scheduler.cancelGroupsNotIn(state.groupIds)
-        for (key in seenPrefs.all.keys.toList()) {
-            if (key !in state.groupIds) seenPrefs.edit().remove(key).apply()
-        }
-        for (key in stateStore.all.keys.toList()) {
-            if (key !in state.groupIds) stateStore.edit().remove(key).apply()
-        }
-        for (key in summaryStore.all.keys.toList()) {
-            if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
+    fun process(myUid: String, state: GroupsState, isFromCache: Boolean = false) = synchronized(LOCK) {
+        // When processing cache, only cancel alarms if groupIds is not empty (never treat offline empty as all deleted)
+        if (state.groupIds.isNotEmpty() || !isFromCache) {
+            scheduler.cancelGroupsNotIn(state.groupIds)
+            for (key in seenPrefs.all.keys.toList()) {
+                if (key !in state.groupIds) seenPrefs.edit().remove(key).apply()
+            }
+            for (key in stateStore.all.keys.toList()) {
+                if (key !in state.groupIds) stateStore.edit().remove(key).apply()
+            }
+            for (key in summaryStore.all.keys.toList()) {
+                if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
+            }
         }
         for (raw in state.loaded) {
             // Tasks still being saved have a temporary id starting with "local-". Never set alarms
@@ -121,9 +124,27 @@ class GroupTaskProcessor(context: Context) {
                 allTasks = raw.allTasks.filterNot { it.id.startsWith("local-") }
             )
             scheduler.sync(snapshot.groupId, snapshot.groupName, snapshot.tasks, snapshot.done)
-            announceNewTasks(myUid, snapshot)
-            announceChangedTasks(snapshot)
             storeSummary(snapshot)
+
+            if (isFromCache) {
+                // Initialize seen and state store silently as baseline without notifications
+                val currentIds = snapshot.allTasks.map { it.id }
+                val seen = seenPrefs.getStringSet(snapshot.groupId, null)
+                if (seen == null) {
+                    seenPrefs.edit()
+                        .putStringSet(snapshot.groupId, HashSet(currentIds).apply { add(BASELINE) })
+                        .apply()
+                }
+                val stored = stateStore.getStringSet(snapshot.groupId, null)
+                if (stored == null && snapshot.tasks.isNotEmpty()) {
+                    stateStore.edit()
+                        .putStringSet(snapshot.groupId, snapshot.tasks.map { encodeTask(it) }.toHashSet())
+                        .apply()
+                }
+            } else {
+                announceNewTasks(myUid, snapshot)
+                announceChangedTasks(snapshot)
+            }
         }
     }
 

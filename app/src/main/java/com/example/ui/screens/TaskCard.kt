@@ -173,7 +173,7 @@ fun TaskCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 20.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
+                    .padding(start = 20.dp, top = 10.dp, end = 14.dp, bottom = 12.dp)
             ) {
                 // Top row: Course tag badge & Priority & Menu
                 Row(
@@ -266,13 +266,14 @@ fun TaskCard(
                         IconButton(
                             onClick = { showMenu = true },
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(32.dp)
                                 .testTag("task_menu_${task.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "Task options",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
@@ -322,7 +323,7 @@ fun TaskCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 // Course badge on its own line so the whole course name can be read.
                 // Hidden for My tasks since they belong to the special My tasks section.
@@ -378,7 +379,7 @@ fun TaskCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 // Task Title
@@ -458,7 +459,7 @@ fun TaskCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Bottom row: Due date/time & Status toggle pill
                 Row(

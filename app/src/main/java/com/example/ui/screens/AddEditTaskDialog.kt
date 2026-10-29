@@ -129,8 +129,8 @@ fun AddEditTaskDialog(
         )
     }
 
-    var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 23) }
-    var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 59) }
+    var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 12) }
+    var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 0) }
     var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
     var status by rememberSaveable { mutableStateOf(taskToEdit?.status ?: TaskStatus.PENDING) }
     var reminderOptions by rememberSaveable(

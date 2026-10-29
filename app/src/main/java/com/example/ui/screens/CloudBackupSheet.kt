@@ -406,6 +406,7 @@ private fun signOut(
     scope.launch {
         try {
             try { SupabaseProvider.client.auth.signOut() } catch (e: Exception) { Log.e("Auth", "Supabase sign-out failed", e) }
+            com.example.util.AuthStorage.setLastUid(context, null)
             com.example.data.groups.GroupRepository.clearCache(context)
             credentialManager.clearCredentialState(ClearCredentialStateRequest())
         } catch (e: Exception) {

@@ -33,13 +33,14 @@ class GroupSyncWorker(
         try {
             val repo = GroupRepository(applicationContext)
             try { SupabaseProvider.client.auth.awaitInitialization() } catch (_: Exception) { }
-            val sbUid = currentSupabaseUid()
-            val state = if (sbUid == null) null else repo.fetchGroupsStateOnce(sbUid)
+            val sbUid = currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(applicationContext) ?: user.uid
+            val state = repo.fetchGroupsStateOnce(sbUid)
             if (state == null) {
                 Log.w(TAG, "Could not read groups; keeping existing alarms")
                 return@withContext Result.retry()
             }
-            GroupTaskProcessor(applicationContext).process(sbUid!!, state)
+            com.example.data.groups.GroupCacheRepository(applicationContext).saveGroupsState(sbUid, state)
+            GroupTaskProcessor(applicationContext).process(sbUid, state)
 
             val notifier = com.example.reminder.GroupChatNotifier(applicationContext)
             for (snapshot in state.loaded) {

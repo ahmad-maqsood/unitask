@@ -66,8 +66,8 @@ data class TaskItem(
     val title: String,
     val description: String = "",
     val dueDateEpochMillis: Long,
-    val dueTimeHour: Int = 23,
-    val dueTimeMinute: Int = 59,
+    val dueTimeHour: Int = 12,
+    val dueTimeMinute: Int = 0,
     val priority: Priority = Priority.MEDIUM,
     val status: TaskStatus = TaskStatus.PENDING,
     // Keeps the original column name and TEXT type so the Room schema is unchanged.

@@ -9,8 +9,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Course::class, TaskItem::class, TaskAttachment::class, LectureSlot::class],
-    version = 7,
+    entities = [Course::class, TaskItem::class, TaskAttachment::class, LectureSlot::class, GroupCacheEntity::class],
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -20,6 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun taskAttachmentDao(): TaskAttachmentDao
     abstract fun lectureSlotDao(): LectureSlotDao
+    abstract fun groupCacheDao(): GroupCacheDao
 
     companion object {
         @Volatile
@@ -64,6 +65,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `group_cache` (
+                        `userId` TEXT NOT NULL,
+                        `groupId` TEXT NOT NULL,
+                        `groupName` TEXT NOT NULL,
+                        `tasksJson` TEXT NOT NULL,
+                        `doneJson` TEXT NOT NULL,
+                        `coursesJson` TEXT NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`userId`, `groupId`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -71,7 +91,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "unitask_database"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()
                 INSTANCE = instance

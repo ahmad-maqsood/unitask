@@ -125,8 +125,8 @@ private data class GroupTaskRow(
     val description: String? = null,
     @SerialName("course_label") val courseLabel: String? = null,
     @SerialName("due_date_epoch_millis") val dueDateEpochMillis: Long = 0L,
-    @SerialName("due_time_hour") val dueTimeHour: Int? = 23,
-    @SerialName("due_time_minute") val dueTimeMinute: Int? = 59,
+    @SerialName("due_time_hour") val dueTimeHour: Int? = 12,
+    @SerialName("due_time_minute") val dueTimeMinute: Int? = 0,
     val priority: String? = "MEDIUM",
     @SerialName("reminder_options") val reminderOptions: String? = null,
     @SerialName("assigned_to") val assignedTo: List<String> = emptyList(),
@@ -143,8 +143,8 @@ private fun GroupTaskRow.toGroupTask(): GroupTask = GroupTask(
     description = description,
     courseLabel = courseLabel,
     dueDateEpochMillis = dueDateEpochMillis,
-    dueTimeHour = dueTimeHour ?: 23,
-    dueTimeMinute = dueTimeMinute ?: 59,
+    dueTimeHour = dueTimeHour ?: 12,
+    dueTimeMinute = dueTimeMinute ?: 0,
     priority = priority ?: "MEDIUM",
     createdBy = createdBy,
     createdByName = createdByName,
@@ -299,8 +299,8 @@ data class GroupTask(
     val description: String? = null,
     val courseLabel: String? = null,
     val dueDateEpochMillis: Long = 0L,
-    val dueTimeHour: Int = 23,
-    val dueTimeMinute: Int = 59,
+    val dueTimeHour: Int = 12,
+    val dueTimeMinute: Int = 0,
     val priority: String = "MEDIUM",
     val createdBy: String = "",
     val createdByName: String = "",
@@ -356,7 +356,8 @@ data class GroupSnapshot(
  */
 data class GroupsState(
     val groupIds: Set<String>,
-    val loaded: List<GroupSnapshot>
+    val loaded: List<GroupSnapshot>,
+    val isFromCache: Boolean = false
 )
 
 /** A group task together with what the Deadlines tab needs to show it as a personal task. */
@@ -456,11 +457,16 @@ class GroupRepository(private val context: Context) {
      */
     @OptIn(FlowPreview::class)
     fun observeMyGroupMemberships(uid: String): Flow<List<GroupMembership>> = callbackFlow {
-        val myUid = currentSupabaseUid()
+        val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
         if (myUid == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
+        }
+
+        val cached = cachedMemberships(myUid)
+        if (cached.isNotEmpty()) {
+            trySend(cached)
         }
 
         suspend fun queryAndEmit() {
@@ -1437,13 +1443,22 @@ class GroupRepository(private val context: Context) {
      * Set personal task done status in Supabase.
      */
     fun setTaskDone(uid: String, groupId: String, taskId: String, isDone: Boolean) {
-        val myUid = currentSupabaseUid()
+        val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
         if (myUid.isNullOrBlank() || groupId.isBlank() || taskId.isBlank()) return
         // A task that is still being saved has no server id yet.
         if (taskId.startsWith("local-")) return
 
         // Tick (or untick) on screen at once; the server catches up a moment later.
         pendingDone.update { it + (taskId to (isDone to System.currentTimeMillis())) }
+
+        // Update Room local cache immediately so tick survives offline app restarts
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                GroupCacheRepository(context).updateDone(myUid, groupId, taskId, isDone)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to update done in local cache: ${e.message}")
+            }
+        }
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -1463,8 +1478,7 @@ class GroupRepository(private val context: Context) {
                 }
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
-                Log.w(TAG, "setTaskDone failed: ${e.message}", e)
-                pendingDone.update { it - taskId } // the server refused: undo the tick on screen
+                Log.w(TAG, "setTaskDone cloud push failed (keeping offline mark): ${e.message}")
             }
         }
     }

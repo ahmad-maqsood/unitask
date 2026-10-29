@@ -125,8 +125,8 @@ fun MyTaskDialog(
     if (showTimePicker) {
         Material3TimePickerDialog(
             title = "Select Due Time",
-            initialHour = dueHour ?: 23,
-            initialMinute = dueMinute ?: 59,
+            initialHour = dueHour ?: 12,
+            initialMinute = dueMinute ?: 0,
             onDismiss = { showTimePicker = false },
             onConfirm = { hour, minute ->
                 dueHour = hour
@@ -389,6 +389,10 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        QuickDateChip("12:00 PM") {
+                            dueHour = 12
+                            dueMinute = 0
+                        }
                         QuickDateChip("11:59 PM") {
                             dueHour = 23
                             dueMinute = 59

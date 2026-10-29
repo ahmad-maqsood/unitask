@@ -23,6 +23,14 @@ import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.ensureMyTasksCourse
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
+import com.example.data.groups.GroupCacheRepository
+import com.example.util.AuthStorage
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.util.Log
 import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupReminderScheduler
 import com.example.reminder.GroupTaskProcessor
@@ -30,6 +38,7 @@ import com.example.reminder.ReminderScheduler
 import com.example.reminder.ClassReminderScheduler
 import com.example.util.AppUser
 import com.example.util.toAppUser
+import com.example.util.currentAppUser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -43,7 +52,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
 import com.example.util.SupabaseProvider
 import com.example.util.currentSupabaseUid
@@ -110,11 +121,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val _currentUser = MutableStateFlow<AppUser?>(null)
+    private val _currentUser = MutableStateFlow<AppUser?>(
+        currentAppUser() ?: AuthStorage.getLastUid(application)?.let { AppUser(uid = it, email = null, displayName = null) }
+    )
     val currentUser: StateFlow<AppUser?> = _currentUser.asStateFlow()
 
     private val _isCloudBackupSheetOpen = MutableStateFlow(false)
     val isCloudBackupSheetOpen: StateFlow<Boolean> = _isCloudBackupSheetOpen.asStateFlow()
+
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     init {
         val database = AppDatabase.getDatabase(application)
@@ -127,6 +142,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             lectureSlotDao = database.lectureSlotDao(),
             reminderScheduler = scheduler
         )
+
+        val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        if (cm != null) {
+            val req = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            val cb = object : ConnectivityManager.NetworkCallback() {
+                private var wasOffline = false
+                override fun onAvailable(network: Network) {
+                    if (wasOffline) {
+                        Log.d("MainViewModel", "Network restored: refreshing groups and cloud sync")
+                        GroupRepository.localChanges.tryEmit(Unit)
+                        if (currentSupabaseUid() != null) {
+                            viewModelScope.launch(Dispatchers.IO) {
+                                com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
+                            }
+                        }
+                    }
+                    wasOffline = false
+                }
+                override fun onLost(network: Network) {
+                    wasOffline = true
+                }
+            }
+            networkCallback = cb
+            try {
+                cm.registerNetworkCallback(req, cb)
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Failed to register network callback: ${e.message}")
+            }
+        }
+
         // Alarms can be lost (force stop, battery cleaners): set the class-start,
         // personal task, and group task alarms again every time the app opens.
         viewModelScope.launch(Dispatchers.IO) {
@@ -153,14 +200,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         com.example.sync.SyncScheduler.scheduleGroupSync(application)
 
         // Follow the Supabase session: signing in starts live sync, signing out stops it.
-        // "Initializing" (session still loading) and "RefreshFailure" (offline) are ignored on purpose,
-        // so a slow start never looks like a sign-out.
+        // "Initializing" (session still loading) and "RefreshFailure" (offline) are preserved,
+        // so an offline app start never looks like a sign-out.
         viewModelScope.launch {
             var lastUserId: String? = "unset"
             SupabaseProvider.client.auth.sessionStatus.collect { status ->
                 when (status) {
                     is SessionStatus.Authenticated -> {
                         val user = status.session.user
+                        AuthStorage.setLastUid(application, user?.id)
                         _currentUser.value = user?.toAppUser()
                         // A token refresh sends this status again: only react to a new person.
                         if (user?.id != lastUserId) {
@@ -172,13 +220,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             com.example.sync.SyncScheduler.scheduleSync(application)
                         }
                     }
+                    is SessionStatus.RefreshFailure -> {
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid != null && _currentUser.value == null) {
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
+                        }
+                    }
                     is SessionStatus.NotAuthenticated -> {
+                        AuthStorage.setLastUid(application, null)
                         _currentUser.value = null
                         if (lastUserId != null) {
                             lastUserId = null
                             com.example.sync.SupabaseSyncManager.stopRealtimeSync()
-                            // Not signed in: mark everything as not backed up yet, so the next sign-in
-                            // starts with a full upload instead of treating old cloud ids as deleted elsewhere.
                             launch(Dispatchers.IO) {
                                 database.courseDao().markAllCoursesUnsynced()
                                 database.taskDao().markAllTasksUnsynced()
@@ -196,6 +249,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         com.example.sync.SupabaseSyncManager.stopRealtimeSync()
+        networkCallback?.let { cb ->
+            val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            try { cm?.unregisterNetworkCallback(cb) } catch (_: Exception) { }
+        }
     }
 
     fun openCloudBackupSheet() {
@@ -357,33 +414,75 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allLectureSlots: StateFlow<List<LectureSlotWithCourse>> = repository.allLectureSlots
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // ---- Group tasks shown as personal tasks on the Deadlines tab ----
-    // This lives here (not in GroupsViewModel) because MainViewModel starts with the app, so group
-    // alarms and notifications work without ever opening the Groups tab.
     private val groupRepository = GroupRepository(application)
     private val groupTaskProcessor = GroupTaskProcessor(application)
+    private val groupCacheRepository = GroupCacheRepository(application)
 
-    // null until the first answer arrives, so "still loading" is never mistaken for "no groups".
-    // Driven by the Supabase session, and it waits until that session has been read from storage.
-    // Starting earlier made the group flows see "not signed in", finish at once, and never retry,
-    // which left the Deadlines tab without group tasks.
-    private val supabaseUidFlow: Flow<String?> = SupabaseProvider.client.auth.sessionStatus
-        .filter { it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated }
-        .map { status -> (status as? SessionStatus.Authenticated)?.session?.user?.id }
-        .distinctUntilChanged()
+    // Emits the user ID immediately on app start from AuthStorage (if previously signed in),
+    // and keeps emitting on session changes. When offline and token refresh fails (RefreshFailure),
+    // it preserves the user ID so the offline cache is loaded.
+    private val supabaseUidFlow: Flow<String?> = flow {
+        val initialUid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
+        if (!initialUid.isNullOrBlank()) {
+            emit(initialUid)
+        }
+        SupabaseProvider.client.auth.sessionStatus.collect { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> {
+                    val uid = status.session.user?.id
+                    if (!uid.isNullOrBlank()) {
+                        AuthStorage.setLastUid(application, uid)
+                        emit(uid)
+                    }
+                }
+                is SessionStatus.RefreshFailure -> {
+                    val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
+                    if (!uid.isNullOrBlank()) {
+                        emit(uid)
+                    }
+                }
+                is SessionStatus.NotAuthenticated -> {
+                    AuthStorage.setLastUid(application, null)
+                    emit(null)
+                }
+                else -> Unit
+            }
+        }
+    }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val groupsState: StateFlow<GroupsState?> = supabaseUidFlow.flatMapLatest { sbUid ->
-        if (sbUid == null) flowOf(GroupsState(emptySet(), emptyList()))
-        else groupRepository.observeGroupsState(sbUid)
+        if (sbUid == null) {
+            flowOf(GroupsState(emptySet(), emptyList()))
+        } else {
+            channelFlow {
+                // 1. Immediately emit cached groups from Room so Deadlines shows them offline instantly
+                val cached = groupCacheRepository.getGroupsState(sbUid)
+                if (cached != null && cached.loaded.isNotEmpty()) {
+                    send(cached)
+                }
+
+                // 2. Stream live server updates from Supabase
+                groupRepository.observeGroupsState(sbUid).collect { liveState ->
+                    send(liveState)
+                }
+            }
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
             groupsState.filterNotNull().collect { state ->
-                val uid = currentSupabaseUid()
-                if (uid == null) groupTaskProcessor.clearAll()
-                else groupTaskProcessor.process(uid, state)
+                val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
+                if (uid == null) {
+                    groupTaskProcessor.clearAll()
+                    groupCacheRepository.clearCache()
+                } else {
+                    if (!state.isFromCache) {
+                        groupCacheRepository.saveGroupsState(uid, state)
+                    }
+                    groupTaskProcessor.process(uid, state, isFromCache = state.isFromCache)
+                }
             }
         }
     }
@@ -641,7 +740,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (isGroupTaskItem(task)) {
             // Group tasks: "done" is your own mark in the cloud, other members are not affected.
             val entry = groupEntryByItemId.value[task.id] ?: return
-            val uid = _currentUser.value?.uid ?: return
+            val uid = _currentUser.value?.uid ?: currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(getApplication()) ?: return
             groupRepository.setTaskDone(uid, entry.task.groupId, entry.task.id, !entry.isDone)
             return
         }
@@ -657,7 +756,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setTaskStatus(task: TaskItem, newStatus: TaskStatus) {
         if (isGroupTaskItem(task)) {
             val entry = groupEntryByItemId.value[task.id] ?: return
-            val uid = _currentUser.value?.uid ?: return
+            val uid = _currentUser.value?.uid ?: currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(getApplication()) ?: return
             groupRepository.setTaskDone(uid, entry.task.groupId, entry.task.id, newStatus == TaskStatus.COMPLETED)
             return
         }

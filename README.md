@@ -21,15 +21,19 @@ UniTask helps students keep track of what is due, when classes start and what th
  
 It is a personal project with no ads and no tracking, built to solve everyday planning problems for me and my classmates.
  
-<!--
-Add screenshots here once you have them, for example:
+## Screenshots
+
 <p align="center">
-  <img src="docs/screenshots/deadlines.png" width="22%" />
-  <img src="docs/screenshots/timetable.png" width="22%" />
-  <img src="docs/screenshots/groups.png" width="22%" />
-  <img src="docs/screenshots/my-tasks.png" width="22%" />
+  <img src="docs/screenshots/deadlines.png" width="30%" alt="Deadlines" />
+  <img src="docs/screenshots/my-tasks.png" width="30%" alt="My tasks" />
+  <img src="docs/screenshots/timetable.png" width="30%" alt="Timetable" />
 </p>
--->
+<p align="center">
+  <img src="docs/screenshots/courses.png" width="30%" alt="Courses" />
+  <img src="docs/screenshots/group-chat.png" width="30%" alt="Group chat" />
+  <img src="docs/screenshots/settings.png" width="30%" alt="Settings" />
+</p>
+<p align="center"><sub>Deadlines · My tasks · Timetable · Courses · Group chat · Settings</sub></p>
  
 ## Download
  

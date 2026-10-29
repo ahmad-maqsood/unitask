@@ -1,17 +1,11 @@
 -- =====================================================================
--- UniTask Supabase setup, captured from the live project on 2026-10-29
--- Save as: supabase/schema.sql
+-- UniTask Supabase setup, captured from the live project.
 -- =====================================================================
--- Everything in PART A is copied from the real project (queries 1 to 7).
+-- Everything in PART A is copied from the real project.
 -- Columns are shown as comments because the query output has no keys or
 -- identity settings. Policies are written as CREATE POLICY statements
 -- built from the pg_policies output. This file is documentation: do not
 -- run it on the live project.
---
--- NOT captured yet (run query 8 in PART B and paste it under A6):
---   foreign keys, check constraints, identity columns, grants.
--- Ask for a change here only after changing the live project, so this
--- file keeps matching what is really running.
 -- =====================================================================
 
 
@@ -249,11 +243,60 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- courses, tasks, slots, group_members, group_tasks, group_courses, group_messages, group_done
 
 -- =====================================================================
--- PART A8: scheduled jobs (pg_cron)
+-- PART A8: Foreign keys and check constraints 
+-- =====================================================================
+| table_name     | conname                       | definition                                                                                                  |
+| -------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| courses        | courses_code_check            | CHECK (((char_length(code) >= 1) AND (char_length(code) <= 30)))                                            |
+| courses        | courses_name_check            | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 100)))                                           |
+| courses        | courses_pkey                  | PRIMARY KEY (user_id, doc_id)                                                                               |
+| courses        | courses_user_id_fkey          | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+| tasks          | tasks_due_time_hour_check     | CHECK (((due_time_hour >= 0) AND (due_time_hour <= 23)))                                                    |
+| tasks          | tasks_due_time_minute_check   | CHECK (((due_time_minute >= 0) AND (due_time_minute <= 59)))                                                |
+| tasks          | tasks_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
+| tasks          | tasks_priority_check          | CHECK ((priority = ANY (ARRAY['LOW'::text, 'MEDIUM'::text, 'HIGH'::text])))                                 |
+| tasks          | tasks_status_check            | CHECK ((status = ANY (ARRAY['PENDING'::text, 'COMPLETED'::text])))                                          |
+| tasks          | tasks_title_check             | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
+| tasks          | tasks_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+| slots          | slots_course_code_check       | CHECK (((char_length(course_code) >= 1) AND (char_length(course_code) <= 30)))                              |
+| slots          | slots_day_of_week_check       | CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))                                                         |
+| slots          | slots_end_hour_check          | CHECK (((end_hour >= 0) AND (end_hour <= 23)))                                                              |
+| slots          | slots_end_minute_check        | CHECK (((end_minute >= 0) AND (end_minute <= 59)))                                                          |
+| slots          | slots_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
+| slots          | slots_start_hour_check        | CHECK (((start_hour >= 0) AND (start_hour <= 23)))                                                          |
+| slots          | slots_start_minute_check      | CHECK (((start_minute >= 0) AND (start_minute <= 59)))                                                      |
+| slots          | slots_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+| groups         | groups_name_check             | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 60)))                                            |
+| groups         | groups_owner_id_fkey          | FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE                                          |
+| groups         | groups_pkey                   | PRIMARY KEY (id)                                                                                            |
+| groups         | groups_username_check         | CHECK (((username = lower(username)) AND ((char_length(username) >= 3) AND (char_length(username) <= 30)))) |
+| groups         | groups_username_key           | UNIQUE (username)                                                                                           |
+| group_members  | group_members_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+| group_members  | group_members_pkey            | PRIMARY KEY (group_id, user_id)                                                                             |
+| group_members  | group_members_role_check      | CHECK ((role = ANY (ARRAY['owner'::text, 'admin'::text, 'member'::text])))                                  |
+| group_members  | group_members_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+| group_tasks    | group_tasks_created_by_fkey   | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
+| group_tasks    | group_tasks_group_id_fkey     | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+| group_tasks    | group_tasks_pkey              | PRIMARY KEY (id)                                                                                            |
+| group_tasks    | group_tasks_title_check       | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
+| group_courses  | group_courses_created_by_fkey | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
+| group_courses  | group_courses_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+| group_courses  | group_courses_pkey            | PRIMARY KEY (id)                                                                                            |
+| group_messages | group_messages_group_id_fkey  | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+| group_messages | group_messages_pkey           | PRIMARY KEY (id)                                                                                            |
+| group_messages | group_messages_sender_id_fkey | FOREIGN KEY (sender_id) REFERENCES auth.users(id)                                                           |
+| group_messages | group_messages_text_check     | CHECK (((char_length(text) >= 1) AND (char_length(text) <= 500)))                                           |
+| group_done     | group_done_group_id_fkey      | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+| group_done     | group_done_pkey               | PRIMARY KEY (user_id, task_id)                                                                              |
+| group_done     | group_done_task_id_fkey       | FOREIGN KEY (task_id) REFERENCES group_tasks(id) ON DELETE CASCADE                                          |
+| group_done     | group_done_user_id_fkey       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+| app_features   | app_features_pkey             | PRIMARY KEY (id)                                                                                            |
+| announcements  | announcements_pkey            | PRIMARY KEY (id)                                                                                            |
+
+-- =====================================================================
+-- PART A9: scheduled messages' deletion job (pg_cron)
 -- =====================================================================
 -- delete-old-chat, daily at 03:00: delete from group_messages older than 30 days
--- select cron.schedule('delete-old-chat', '0 3 * * *',
---  $$delete from public.group_messages where created_at < now() - interval '30 days'$$);
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)
@@ -295,8 +338,13 @@ select indexdef from pg_indexes where schemaname = 'public' order by tablename;
 -- 7) Tables sent live to the app (realtime)
 select tablename from pg_publication_tables where pubname = 'supabase_realtime';
 
--- 8) Foreign keys and check constraints (not captured yet)
+-- 8) Foreign keys and check constraints 
 select conrelid::regclass as table_name, conname, pg_get_constraintdef(oid) as definition
 from pg_constraint
 where connamespace = 'public'::regnamespace
 order by 1, 2;
+
+-- 9) scheduled job(automatic 30 days old messages' deletion) (pg_cron)
+-- Go to Database -> Extensions -> Search pg_cron -> Enable it and run:-
+ select cron.schedule('delete-old-chat', '0 3 * * *',
+  $$delete from public.group_messages where created_at < now() - interval '30 days'$$);

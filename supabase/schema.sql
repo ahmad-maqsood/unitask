@@ -252,6 +252,8 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- PART A8: scheduled jobs (pg_cron)
 -- =====================================================================
 -- delete-old-chat, daily at 03:00: delete from group_messages older than 30 days
+-- select cron.schedule('delete-old-chat', '0 3 * * *',
+--  $$delete from public.group_messages where created_at < now() - interval '30 days'$$);
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)

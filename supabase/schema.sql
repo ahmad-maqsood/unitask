@@ -47,6 +47,7 @@
 -- group_done:     user_id uuid auth.uid() | group_id uuid | task_id uuid | done_at timestamptz now()
 -- group_messages: id bigint | group_id uuid | sender_id uuid auth.uid() | sender_name text 'Student'
 --                 text text | created_at timestamptz now()
+--                 reply_to_id bigint NULL | reply_to_name text NULL | reply_to_text text NULL
 
 
 -- =====================================================================
@@ -247,6 +248,10 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- =====================================================================
 -- courses, tasks, slots, group_members, group_tasks, group_courses, group_messages, group_done
 
+-- =====================================================================
+-- PART A8: scheduled jobs (pg_cron)
+-- =====================================================================
+-- delete-old-chat, daily at 03:00: delete from group_messages older than 30 days
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)

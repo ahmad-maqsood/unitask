@@ -25,12 +25,11 @@ It is a personal project with no ads and no tracking, built to solve everyday pl
 
 <p align="center">
   <img src="docs/screenshots/deadlines.png" width="30%" alt="Deadlines" />
-  <img src="docs/screenshots/my-tasks.png" width="30%" alt="My tasks" />
-  <img src="docs/screenshots/timetable.png" width="30%" alt="Timetable" />
+  <img src="docs/screenshots/my-task.png" width="30%" alt="My tasks" />
+  <img src="docs/screenshots/group-chat.png" width="30%" alt="Group chat" />
 </p>
 <p align="center">
   <img src="docs/screenshots/courses.png" width="30%" alt="Courses" />
-  <img src="docs/screenshots/group-chat.png" width="30%" alt="Group chat" />
   <img src="docs/screenshots/settings.png" width="30%" alt="Settings" />
 </p>
 <p align="center"><sub>Deadlines · My tasks · Timetable · Courses · Group chat · Settings</sub></p>

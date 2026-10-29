@@ -43,6 +43,8 @@ import com.example.ui.theme.CourseColors
 @Composable
 fun AddEditGroupCourseDialog(
     courseToEdit: GroupCourse?,
+    courseSaveError: String? = null,
+    onClearError: () -> Unit = {},
     onDismiss: () -> Unit,
     onSave: (code: String, name: String, instructor: String, colorHex: String) -> Unit
 ) {
@@ -75,13 +77,20 @@ fun AddEditGroupCourseDialog(
                     onValueChange = {
                         code = it.take(30)
                         if (it.isNotBlank()) codeError = false
+                        onClearError()
                     },
                     label = { Text("Course Code *") },
                     placeholder = { Text("e.g. CS-503, MATH-240") },
-                    isError = codeError,
-                    supportingText = if (codeError) {
-                        { Text("Course code is required") }
-                    } else null,
+                    isError = codeError || courseSaveError != null,
+                    supportingText = when {
+                        courseSaveError != null -> {
+                            { Text(courseSaveError, color = MaterialTheme.colorScheme.error) }
+                        }
+                        codeError -> {
+                            { Text("Course code is required") }
+                        }
+                        else -> null
+                    },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,6 +103,7 @@ fun AddEditGroupCourseDialog(
                     onValueChange = {
                         name = it.take(100)
                         if (it.isNotBlank()) nameError = false
+                        onClearError()
                     },
                     label = { Text("Course Name *") },
                     placeholder = { Text("e.g. Theory of Automata") },

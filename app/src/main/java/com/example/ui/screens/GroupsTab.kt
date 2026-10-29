@@ -93,6 +93,7 @@ fun GroupsTab(
     val taskToEdit by viewModel.taskToEdit.collectAsStateWithLifecycle()
     val isAddEditCourseDialogOpen by viewModel.isAddEditCourseDialogOpen.collectAsStateWithLifecycle()
     val courseToEdit by viewModel.courseToEdit.collectAsStateWithLifecycle()
+    val courseSaveError by viewModel.courseSaveError.collectAsStateWithLifecycle()
 
     var createdGroupSuccessInfo by remember { mutableStateOf<Triple<String, String, String>?>(null) }
     var activeOpenChatGroupId by remember { mutableStateOf<String?>(null) }
@@ -257,6 +258,8 @@ fun GroupsTab(
             if (isAddEditCourseDialogOpen) {
                 AddEditGroupCourseDialog(
                     courseToEdit = courseToEdit,
+                    courseSaveError = courseSaveError,
+                    onClearError = { viewModel.clearCourseSaveError() },
                     onDismiss = { viewModel.closeAddEditCourseDialog() },
                     onSave = { code, name, instructor, colorHex ->
                         viewModel.saveCourse(code, name, instructor, colorHex)

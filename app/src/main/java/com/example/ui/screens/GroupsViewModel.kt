@@ -64,6 +64,13 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     private val _courseToEdit = MutableStateFlow<GroupCourse?>(null)
     val courseToEdit: StateFlow<GroupCourse?> = _courseToEdit.asStateFlow()
 
+    private val _courseSaveError = MutableStateFlow<String?>(null)
+    val courseSaveError: StateFlow<String?> = _courseSaveError.asStateFlow()
+
+    fun clearCourseSaveError() {
+        _courseSaveError.value = null
+    }
+
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
 
@@ -222,16 +229,19 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun openAddCourseDialog() {
+        _courseSaveError.value = null
         _courseToEdit.value = null
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun openEditCourseDialog(course: GroupCourse) {
+        _courseSaveError.value = null
         _courseToEdit.value = course
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun closeAddEditCourseDialog() {
+        _courseSaveError.value = null
         _isAddEditCourseDialogOpen.value = false
         _courseToEdit.value = null
     }
@@ -241,6 +251,28 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val user = _currentUser.value ?: return
         val existingCourse = _courseToEdit.value
 
+        val currentCourses = selectedGroupCourses.value
+        val otherCourses = if (existingCourse != null) {
+            currentCourses.filter { it.id != existingCourse.id }
+        } else {
+            currentCourses
+        }
+
+        val targetKey = normalizeCourseKey(code)
+        val duplicateByCode = otherCourses.firstOrNull { normalizeCourseKey(it.code) == targetKey }
+        if (duplicateByCode != null) {
+            _courseSaveError.value = "This group already has a course with the code ${duplicateByCode.code} (${duplicateByCode.name})."
+            return
+        }
+
+        val targetTrimmedName = name.trim()
+        val duplicateByName = otherCourses.firstOrNull { it.name.trim().equals(targetTrimmedName, ignoreCase = true) }
+        if (duplicateByName != null) {
+            _courseSaveError.value = "This group already has a course named ${duplicateByName.name}."
+            return
+        }
+
+        _courseSaveError.value = null
         closeAddEditCourseDialog()
 
         if (existingCourse == null) {
@@ -253,7 +285,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 uid = user.uid,
                 onFailure = { e ->
                     viewModelScope.launch {
-                        _snackbarMessage.emit("Failed to create course: ${e.message}")
+                        val msg = if (e.message?.contains("This group already has a course with that code.") == true) {
+                            "This group already has a course with that code."
+                        } else {
+                            "Failed to create course: ${e.message}"
+                        }
+                        _snackbarMessage.emit(msg)
                     }
                 }
             )
@@ -267,7 +304,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 colorHex = colorHex,
                 onFailure = { e ->
                     viewModelScope.launch {
-                        _snackbarMessage.emit("Failed to update course: ${e.message}")
+                        val msg = if (e.message?.contains("This group already has a course with that code.") == true) {
+                            "This group already has a course with that code."
+                        } else {
+                            "Failed to update course: ${e.message}"
+                        }
+                        _snackbarMessage.emit(msg)
                     }
                 }
             )

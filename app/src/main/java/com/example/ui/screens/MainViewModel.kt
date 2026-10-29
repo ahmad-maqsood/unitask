@@ -32,6 +32,10 @@ import com.example.util.AppUser
 import com.example.util.toAppUser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,6 +97,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _refreshMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val refreshMessage: SharedFlow<String> = _refreshMessage.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -204,18 +211,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * and, when signed in, starts a cloud sync.
      */
     fun refreshData() {
+        if (_isRefreshing.value) return
+        _clockTick.value = System.currentTimeMillis()
+
+        if (currentSupabaseUid() == null) {
+            _isRefreshing.value = false
+            _refreshMessage.tryEmit("Sign in to back up and sync your data.")
+            return
+        }
+
         viewModelScope.launch {
             _isRefreshing.value = true
-            _clockTick.value = System.currentTimeMillis()
-            if (currentSupabaseUid() != null) {
+            try {
                 val database = AppDatabase.getDatabase(getApplication())
-                viewModelScope.launch(Dispatchers.IO) {
+                val success = withTimeoutOrNull(20_000L) {
                     com.example.sync.SupabaseSyncManager.syncAllDataNow(getApplication(), database)
+                } ?: false
+
+                GroupRepository.localChanges.tryEmit(Unit)
+                rescheduleAllReminders()
+
+                if (success) {
+                    _refreshMessage.emit("Up to date")
+                } else {
+                    _refreshMessage.emit("Could not sync. Check your connection.")
                 }
-                com.example.sync.SyncScheduler.scheduleSync(getApplication())
+            } catch (e: Exception) {
+                _refreshMessage.emit("Could not sync. Check your connection.")
+            } finally {
+                _isRefreshing.value = false
             }
-            delay(500L)
-            _isRefreshing.value = false
         }
     }
 

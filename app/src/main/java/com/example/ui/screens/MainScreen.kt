@@ -117,6 +117,12 @@ fun MainScreen(
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(viewModel) {
+        viewModel.refreshMessage.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
     val checkAndShowBackgroundSetup: () -> Unit = {
         if (!BackgroundAccess.isBackgroundSetupPrompted(context)) {
             val needsBattery = !BackgroundAccess.isIgnoringBatteryOptimizations(context)

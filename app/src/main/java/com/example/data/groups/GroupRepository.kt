@@ -1887,7 +1887,10 @@ class GroupRepository(private val context: Context) {
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
                 Log.w(TAG, "Create group course failed: ${e.message}", e)
-                onFailure(e)
+                val msg = e.message.orEmpty().lowercase()
+                val isDuplicate = msg.contains("duplicate key") || msg.contains("23505") || msg.contains("unique")
+                val err = if (isDuplicate) Exception("This group already has a course with that code.") else e
+                onFailure(err)
             }
         }
     }
@@ -1926,7 +1929,10 @@ class GroupRepository(private val context: Context) {
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
                 Log.w(TAG, "Update group course failed: ${e.message}", e)
-                onFailure(e)
+                val msg = e.message.orEmpty().lowercase()
+                val isDuplicate = msg.contains("duplicate key") || msg.contains("23505") || msg.contains("unique")
+                val err = if (isDuplicate) Exception("This group already has a course with that code.") else e
+                onFailure(err)
             }
         }
     }

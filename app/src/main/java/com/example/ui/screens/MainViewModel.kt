@@ -53,6 +53,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
@@ -463,7 +465,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val serverGroups: Flow<Pair<String, GroupsState>?> =
         supabaseUidFlow.flatMapLatest<String?, Pair<String, GroupsState>?> { sbUid ->
             if (sbUid == null) flowOf(null)
-            else groupRepository.observeGroupsState(sbUid).map { live -> sbUid to live }
+            else flow<Pair<String, GroupsState>?> {
+                // Do not ask the server until the login session is really ready. Before that,
+                // Supabase answers "no groups" and that would erase the saved copy.
+                SupabaseProvider.client.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+                emitAll(groupRepository.observeGroupsState(sbUid).map { live -> sbUid to live })
+            }
         }
 
     init {

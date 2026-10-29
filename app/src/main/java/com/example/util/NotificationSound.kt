@@ -51,11 +51,11 @@ object NotificationSound {
     fun choice(context: Context): String {
         val p = prefs(context)
         val saved = p.getString(KEY_CHOICE, null)
-        val choice = saved ?: if (p.getBoolean(KEY_USE_SYSTEM, false)) CHOICE_SYSTEM else CHOICE_DEFAULT
+        val choice = saved ?: if (p.getBoolean(KEY_USE_SYSTEM, false)) CHOICE_SYSTEM else CHOICE_SYSTEM
         if (choice == CHOICE_PHONE && phoneUri(context) == null) return CHOICE_SYSTEM
         if (BUILT_IN.any { it.key == choice } && choice != CHOICE_DEFAULT &&
             availableBuiltIn(context).none { it.key == choice }
-        ) return CHOICE_DEFAULT
+        ) return CHOICE_SYSTEM
         return choice
     }
 

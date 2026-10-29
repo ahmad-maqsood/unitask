@@ -131,7 +131,7 @@ fun GroupChatPanel(
 
     // The list is drawn upside down (newest message at index 0, at the bottom). This keeps the newest
     // messages visible when the keyboard opens and the list gets shorter.
-    val newestFirst = remember(messages) { messages.reversed() }
+    val newestFirst = remember(messages) { messages.distinctBy { it.id }.reversed() }
 
     // A new message scrolls the list down only if you sent it, or you were already at (or next to)
     // the bottom. If you are reading older messages, the list stays where it is.

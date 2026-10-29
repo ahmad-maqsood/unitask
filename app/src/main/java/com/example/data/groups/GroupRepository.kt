@@ -54,7 +54,7 @@ private const val TAG = "GroupRepository"
 private fun parseSupabaseTimestamp(s: String?): Timestamp? {
     if (s.isNullOrBlank()) return null
     return try {
-        Timestamp(Date.from(java.time.Instant.parse(s)))
+        Timestamp(Date.from(java.time.OffsetDateTime.parse(s).toInstant()))
     } catch (_: Exception) {
         null
     }
@@ -247,7 +247,7 @@ private data class GroupMessageRow(
 private fun GroupMessageRow.toGroupMessage(): GroupMessage {
     val createdMillis = try {
         if (!createdAt.isNullOrBlank()) {
-            java.time.Instant.parse(createdAt).toEpochMilli()
+            java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli()
         } else {
             System.currentTimeMillis()
         }
@@ -451,16 +451,17 @@ class GroupRepository(private val context: Context) {
         pending: List<GroupMessage>
     ): List<GroupMessage> {
         val now = System.currentTimeMillis()
-        val mine = pending.filter { it.groupId == groupId }
-        val matched = mine.filter { p ->
-            server.any { s ->
-                s.senderId == p.senderId &&
-                s.text == p.text &&
-                s.createdAtMillis >= p.createdAtMillis - 120_000L
-            }
-        }
-        val extra = mine.filter { p ->
-            p !in matched && (now - p.createdAtMillis < PENDING_MAX_AGE_MILLIS)
+        val serverIds = server.map { it.id }.toSet()
+        val extra = pending.filter { p ->
+            p.groupId == groupId &&
+                now - p.createdAtMillis < PENDING_MAX_AGE_MILLIS &&
+                p.id !in serverIds &&
+                // Only a message still in flight (no server id yet) falls back to the text match.
+                !(p.id.startsWith("local-") && server.any { s ->
+                    s.senderId == p.senderId &&
+                    s.text == p.text &&
+                    s.createdAtMillis >= p.createdAtMillis - 120_000L
+                })
         }
         return (server + extra).sortedBy { it.createdAtMillis }
     }
@@ -1149,7 +1150,14 @@ class GroupRepository(private val context: Context) {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                SupabaseProvider.client.postgrest["group_messages"].insert(payload)
+                val result = SupabaseProvider.client.postgrest["group_messages"]
+                    .insert(payload) { select() }
+                val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
+                if (savedId != null) {
+                    pendingMessages.update { list ->
+                        list.map { if (it.id == localMessage.id) it.copy(id = savedId) else it }
+                    }
+                }
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
                 Log.w(TAG, "sendMessage failed: ${e.message}", e)
@@ -1172,6 +1180,7 @@ class GroupRepository(private val context: Context) {
             return
         }
         val idLong = messageId.toLong()
+        pendingMessages.update { list -> list.filter { it.id != messageId } }
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 SupabaseProvider.client.postgrest["group_messages"].delete {

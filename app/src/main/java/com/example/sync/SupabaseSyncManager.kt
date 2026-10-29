@@ -261,7 +261,7 @@ object SupabaseSyncManager {
                         eq("doc_id", canonicalDocId)
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             if (course.cloudId.isNotBlank() && course.cloudId != canonicalDocId) {
                 try {
@@ -271,7 +271,7 @@ object SupabaseSyncManager {
                             eq("doc_id", course.cloudId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
             }
 
             try {
@@ -281,7 +281,7 @@ object SupabaseSyncManager {
                         eq("doc_id", course.id.toString())
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             // Delete any course matching normalized code
             try {
@@ -291,7 +291,7 @@ object SupabaseSyncManager {
                         eq("code", normCode)
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             // 2. Delete ALL tasks associated with this course in Supabase
             try {
@@ -301,7 +301,7 @@ object SupabaseSyncManager {
                         eq("course_code", normCode)
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             for (task in associatedTasks) {
                 if (task.cloudId.isNotBlank()) {
@@ -312,7 +312,7 @@ object SupabaseSyncManager {
                                 eq("doc_id", task.cloudId)
                             }
                         }
-                    } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                    } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
                 }
             }
 
@@ -324,7 +324,7 @@ object SupabaseSyncManager {
                         eq("course_code", normCode)
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             for (slot in associatedSlots) {
                 if (slot.cloudId.isNotBlank()) {
@@ -335,7 +335,7 @@ object SupabaseSyncManager {
                                 eq("doc_id", slot.cloudId)
                             }
                         }
-                    } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                    } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
                 }
             }
 
@@ -367,7 +367,7 @@ object SupabaseSyncManager {
                             eq("doc_id", task.cloudId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
             }
 
             Log.d(TAG, "Successfully deleted task ${task.title} from Supabase")
@@ -398,7 +398,7 @@ object SupabaseSyncManager {
                             eq("doc_id", slot.cloudId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
             }
             val docId = getSlotDocId(slot, courseCode ?: "")
             try {
@@ -408,7 +408,7 @@ object SupabaseSyncManager {
                         eq("doc_id", docId)
                     }
                 }
-            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+            } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}"); throw e }
 
             Log.d(TAG, "Successfully deleted timetable slot from Supabase")
             true

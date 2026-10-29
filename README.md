@@ -32,7 +32,7 @@ It is a personal project with no ads and no tracking, built to solve everyday pl
   <img src="docs/screenshots/courses.jpeg" width="20%" alt="Courses" />
   <img src="docs/screenshots/settings.jpeg" width="20%" alt="Settings" />
 </p>
-<p align="center"><sub>Deadlines · My tasks · Timetable · Courses · Group chat · Settings</sub></p>
+<p align="center"><sub>Deadlines · My tasks · Group chat · Courses · Settings</sub></p>
  
 ## Download
  

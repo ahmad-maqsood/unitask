@@ -50,11 +50,27 @@ Requires Android 7.0 (API 24) or newer.
 | **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next date. |
 | **Timetable** | Weekly class schedule with rooms and instructors, a live "current and next class" card, class-start alerts and a 10-minute early reminder. |
 | **Courses** | Course details, progress, instructors and pending workload at a glance. |
-| **Study groups** | Create or join a group with a unique handle and join code. Shared tasks with member tagging (or `@all`), shared courses, personal done-ticks, group chat with unread badges, and owner/admin roles. Duplicate course codes are blocked inside a group. |
+| **Study groups** | Create or join a group with a unique handle and join code. Shared tasks with member tagging (or `@all`), shared courses, personal done-ticks, group chat with unread badges and swipe to reply, and owner/admin roles. Duplicate course codes are blocked inside a group. |
 | **Reminders** | Alerts at the deadline, 1 hour, 2 hours, 12 hours, 1 day or 2 days before. High-priority tasks can ring like an alarm. Custom notification sounds and an optional daily summary. Reminders are restored after a reboot. |
 | **Backup** | Cloud backup through Supabase when signed in. Local backup files you can protect with a password, which also restore older backups. |
 | **In-app updates** | Update check against GitHub Releases, plus a feature guide and announcements that can be changed from the backend without releasing a new version. |
  
+<details open>
+<summary><b>What's new in 2.1.1</b></summary>
+
+- **Group chat no longer shows repeated messages** when a new message arrives. A message you send now keeps one identity from the moment you tap send until the server confirms it.
+- **Correct message and task times on Android 8 to 12.** Server timestamps are now read in a way every Android version accepts.
+- **Deletes that fail are retried.** Deleting a task, course or class while offline no longer leaves a hidden copy in the cloud.
+- **Names in group chat and group tasks are verified by the server**, so nobody can post under another member's name.
+- **Reply to a message** by swiping it right in group chat, with a quote that jumps back to the original.
+- **Completed repeating tasks roll over to their next date** automatically every day.
+- **Group tasks are cached** for offline viewing, and groups stay visible while sign-in is still loading.
+- **Join codes are 8 characters** (new groups only; existing codes keep working).
+
+All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
+
+</details>
+
 <details>
 <summary><b>What's new in 2.0.0</b></summary>
 <br>
@@ -95,10 +111,11 @@ flowchart LR
  
 **Sync notes**
  
-- Personal data is stored in Room first and pushed when signed in. Deletions are tracked so removed items do not come back.
+- Personal data is stored in Room first and pushed when signed in. Deletions are tracked so removed items do not come back, and a delete that fails (for example while offline) is kept and retried on the next sync.
 - Group screens use Supabase Realtime for instant updates, with a short polling safety net in case an event is missed.
 - Actions in groups (adding a task, ticking it done, sending a message) appear on screen immediately and are confirmed by the server a moment later.
 - Row Level Security on every table decides who can read and write what. The anon key in the app is public by design and carries no extra access.
+- Database triggers set the sender name and reply quote of chat messages, and the author name of group tasks, on the server, so a member cannot post under someone else's name.
 <details>
 <summary><b>Project layout</b></summary>
 ```text
@@ -130,6 +147,7 @@ cd unitask
 - Enable the Google provider under Authentication.
 - Create the tables the app uses: `courses`, `tasks`, `slots`, `groups`, `group_members`, `group_tasks`, `group_courses`, `group_done`, `group_messages`, `app_features` and `announcements`, plus the `create_group` and `join_group` functions. Turn on Row Level Security for every table and add policies that limit each user to their own rows or groups.
 - Enable Realtime for the group tables.
+- [`supabase/schema.sql`](supabase/schema.sql) documents the live setup: tables, Row Level Security policies, functions, triggers, indexes and the 30-day chat cleanup job. Use it as a reference to recreate the backend. It is documentation, so read it before running anything from it.
 **2. App configuration**
  
 Set these values in `app/build.gradle.kts`, inside `defaultConfig`:
@@ -181,7 +199,7 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 ## Known limitations
  
 - Chat notifications come from a background check, so Android battery limits can delay them. There is no push service.
-- Group chat is text only, messages cannot be edited, and only the newest 100 are shown.
+- Group chat is text only, messages cannot be edited, only the newest 100 are shown, and messages older than 30 days are deleted automatically.
 - Reminders depend on notification permission and the phone's alarm and background settings.
 - Cloud features need internet. Personal tasks and the timetable work offline.
 - A monthly repeating task set on the 29th, 30th or 31st moves to an earlier day after a short month.

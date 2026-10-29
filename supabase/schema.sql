@@ -171,7 +171,7 @@ CREATE OR REPLACE FUNCTION public.create_group(p_username text, p_name text, p_d
 AS $function$
 declare
   gid uuid := gen_random_uuid();
-  code text := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+  code text := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8));
   uname text := lower(trim(p_username));
 begin
   if auth.uid() is null then raise exception 'not signed in'; end if;

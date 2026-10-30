@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -97,7 +98,7 @@ fun MyTasksTab(
             try {
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
-                        message = "\"${task.title}\" marked as done",
+                        message = if (task.status == TaskStatus.COMPLETED) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
                         actionLabel = "Undo",
                         duration = SnackbarDuration.Indefinite
                     )
@@ -504,7 +505,7 @@ private fun SwipeableTaskItem(
             val direction = dismissState.dismissDirection
             val color by animateColorAsState(
                 targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF16A34A)
+                    SwipeToDismissBoxValue.StartToEnd -> if (task.status == TaskStatus.COMPLETED) Color(0xFFD97706) else Color(0xFF16A34A)
                     SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
                     SwipeToDismissBoxValue.Settled -> Color.Transparent
                 },
@@ -527,17 +528,18 @@ private fun SwipeableTaskItem(
             ) {
                 when (direction) {
                     SwipeToDismissBoxValue.StartToEnd -> {
+                        val isDone = task.status == TaskStatus.COMPLETED
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Mark done",
+                                imageVector = if (isDone) Icons.AutoMirrored.Filled.Undo else Icons.Default.Check,
+                                contentDescription = if (isDone) "Mark not done" else "Mark done",
                                 tint = Color.White
                             )
                             Text(
-                                text = "Done",
+                                text = if (isDone) "Not done" else "Done",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White

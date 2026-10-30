@@ -89,6 +89,12 @@ object NotificationSound {
     }
 
     fun setPhoneSound(context: Context, uri: Uri) {
+        try {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (_: Exception) {}
         prefs(context).edit()
             .putString(KEY_PHONE_URI, uri.toString())
             .putString(KEY_CHOICE, CHOICE_PHONE)
@@ -110,7 +116,15 @@ object NotificationSound {
     /** Sound for the notification itself. null means "use the phone's default". */
     fun uri(context: Context): Uri? = when (val c = choice(context)) {
         CHOICE_SYSTEM -> null
-        CHOICE_PHONE -> phoneUri(context)
+        CHOICE_PHONE -> {
+            try {
+                phoneUri(context)?.also {
+                    context.contentResolver.openInputStream(it)?.close()
+                }
+            } catch (_: Throwable) {
+                null
+            }
+        }
         else -> BUILT_IN.firstOrNull { it.key == c }?.let { rawUri(context, it.rawName) }
     }
 

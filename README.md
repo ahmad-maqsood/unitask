@@ -45,17 +45,40 @@ Requires Android 7.0 (API 24) or newer.
  
 | Area | What you get |
 | --- | --- |
-| **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. Multiple reminders per task. Done tasks sink to the bottom. Filter by status, course or source (personal or group), search, and sort. Offline file attachments up to 25 MB. |
-| **My tasks** | A separate to-do list for things that are not coursework. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. |
-| **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next date. |
-| **Timetable** | Weekly class schedule with rooms and instructors, a live "current and next class" card, class-start alerts and a 10-minute early reminder. |
-| **Courses** | Course details, progress, instructors and pending workload at a glance. |
-| **Study groups** | Create or join a group with a unique handle and join code. Shared tasks with member tagging (or `@all`), shared courses, personal done-ticks, group chat with unread badges and swipe to reply, and owner/admin roles. Duplicate course codes are blocked inside a group. |
-| **Reminders** | Alerts at the deadline, 1 hour, 2 hours, 12 hours, 1 day or 2 days before. High-priority tasks can ring like an alarm. Custom notification sounds and an optional daily summary. Reminders are restored after a reboot. |
-| **Backup** | Cloud backup through Supabase when signed in. Local backup files you can protect with a password, which also restore older backups. |
-| **In-app updates** | Update check against GitHub Releases, plus a feature guide and announcements that can be changed from the backend without releasing a new version. |
+| **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. Calendar view with month grid and deadline dots. Interactive subtasks and checklists (`- [ ]`). Batch multi-select mode for bulk completion and deletion. Urgency grouping (Overdue, Today, Tomorrow, Upcoming, Completed). Multiple reminders per task. Offline file attachments up to 25 MB. |
+| **My tasks** | A separate to-do list for non-coursework tasks. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later, and done. |
+| **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly, or yearly. Completing a repeating task automatically moves it to its next due date. |
+| **Timetable** | Weekly and bi-weekly (Week A & B) class schedules. Live "current and next class" indicator, automatic free time / break pills (`☕ 1h 30m free`), clash/conflict warnings, and one-tap `.ics` export to Google Calendar or Outlook. |
+| **Courses** | Course modules, credit hours, instructors, and custom colour tags inherited by timetable slots and assignments. |
+| **Study groups** | Create or join groups via QR code generation/scanning, universal links, or 8-character codes. Owner tools to edit name/handle, regenerate codes, and transfer ownership. Shared tasks with member tagging (`@all`), shared courses, and personal done ticks. |
+| **Group chat** | In-chat real-time search by keyword or sender, floating sticky date headers while scrolling, infinite scroll pagination to load earlier messages, swipe-to-reply, and a persistent offline outbox queue. |
+| **Reminders** | Alerts with interactive "Mark as Done" action buttons on lock screen and notification tray. High-priority alarm-style ringing, custom notification ringtones, and daily morning summaries. |
+| **Backup & Privacy** | Automatic Google Cloud sync with multi-account isolation. GDPR-compliant JSON Data Export and complete Account & Cloud Data purge. Password-encrypted offline backups. |
+| **In-app updates** | GitHub release updater, official university announcements bell, and a built-in interactive "Learn to use the app" feature guide. |
 
 <details open>
+<summary><b>What's new in 3.0.0 (Latest Release, currently in beta testing)</b></summary>
+
+- **Interactive Calendar View for Deadlines:** Toggle between standard list and a monthly calendar grid showing deadline dot indicators and day-specific assignment filtering.
+- **Subtasks & Checklists:** Add `- [ ]` checklist items to tasks with a dedicated "+ Add Checklist Item" button and live subtask progress chips on task cards.
+- **Batch Operations:** Multi-select mode with checkboxes to bulk complete or delete assignments in one tap.
+- **Bi-Weekly Timetable Support (Week A & B):** Schedule classes that alternate weekly and filter your timetable view between All, Week A, and Week B.
+- **Class Break & Free Time Indicators:** Visual pills highlight free gaps between consecutive lectures (e.g. `☕ 1h 30m free until next class`).
+- **Export Timetable to System Calendar (.ics):** Export your lecture schedule to Google Calendar, Outlook, or Apple Calendar with weekly recurring rules.
+- **Timetable Conflict Detection:** Automatic alerts before saving overlapping classes to prevent double booking.
+- **Group QR Codes & Invite Links:** Display high-contrast QR codes, share universal invite links, scan QR screenshots, or paste invite links from clipboard.
+- **Group Ownership Transfer & Owner Tools:** Hand over group ownership to another member, edit group name/handle, and regenerate 8-character join codes.
+- **In-Chat Message Search & Sticky Date Headers:** Filter group chat in real-time and track dates with floating headers while scrolling.
+- **Chat Pagination & Offline Outbox:** Scroll back through earlier messages in batches of 50, and send messages offline with automatic background queue flushing.
+- **Notification "Mark as Done" Action:** Complete tasks directly from reminder notifications without opening the app.
+- **GDPR Data Export & Account Deletion:** Export all personal data as JSON and permanently purge cloud/local data with one tap.
+- **Multi-Account Cache Isolation:** Prevents data blending when switching Google accounts, with zero data loss on logout.
+
+All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
+
+</details>
+
+<details>
 <summary><b>What's new in 2.3.0-beta</b></summary>
 
 - **Light, dark and system theme.** Pick your preferred appearance in Settings. The choice is saved on the device.
@@ -213,11 +236,11 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
  
 ## Known limitations
  
-- Chat notifications come from a background check, so Android battery limits can delay them. There is no push service.
-- Group chat is text only, messages cannot be edited, only the newest 100 are shown, and messages older than 30 days are deleted automatically.
-- Reminders depend on notification permission and the phone's alarm and background settings.
-- Cloud features need internet. Personal tasks and the timetable work offline.
-- A monthly repeating task set on the 29th, 30th or 31st moves to an earlier day after a short month.
+- Chat notifications come from a background check, so Android battery limits can delay them. There is no external push service.
+- Group chat is text only; messages cannot be edited after sending, and messages older than 30 days are purged automatically by database cron.
+- Reminders depend on notification permissions and your phone's battery optimization settings (see Background setup guide in Settings).
+- Cloud features require internet, while all personal tasks, timetable slots, and courses work 100% offline.
+- A monthly repeating task set on the 29th, 30th, or 31st moves to an earlier day after a short month.
 
 ## Support
  

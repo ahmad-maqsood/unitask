@@ -19,6 +19,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.DeleteForever
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Lock
@@ -86,6 +93,7 @@ fun CloudBackupSheet(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var syncMessage by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -207,6 +215,23 @@ fun CloudBackupSheet(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            val lastSynced = remember(syncMessage) {
+                                com.example.util.AuthStorage.getLastSyncedTimestamp(context)
+                            }
+                            if (lastSynced > 0L) {
+                                val relative = android.text.format.DateUtils.getRelativeTimeSpanString(
+                                    lastSynced,
+                                    System.currentTimeMillis(),
+                                    android.text.format.DateUtils.MINUTE_IN_MILLIS
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Last synced: $relative",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
@@ -249,6 +274,24 @@ fun CloudBackupSheet(
                     }
                 }
 
+                // Export Data Button
+                OutlinedButton(
+                    onClick = {
+                        isLoading = true
+                        exportUserData(context, coroutineScope) {
+                            isLoading = false
+                        }
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("backup_export_data_button")
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export My Data (JSON)")
+                }
+
                 // Sign Out Button
                 OutlinedButton(
                     onClick = {
@@ -269,6 +312,22 @@ fun CloudBackupSheet(
                         .testTag("backup_sign_out_button")
                 ) {
                     Text("Sign Out (Keep Offline)")
+                }
+
+                // Delete Account & Cloud Data Button (GDPR)
+                OutlinedButton(
+                    onClick = { showDeleteConfirmDialog = true },
+                    enabled = !isLoading,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("backup_delete_account_button")
+                ) {
+                    Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete Account & Cloud Data")
                 }
             } else {
                 // Not logged in: Show Google Sign-In Button labeled "Sign in to back up data"
@@ -355,6 +414,74 @@ fun CloudBackupSheet(
             }
         }
     }
+
+    if (showDeleteConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Delete Account & Cloud Data?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "This will permanently purge your tasks, courses, and timetable from the cloud, remove your group memberships, clear your local database, and sign you out. This action cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        isLoading = true
+                        coroutineScope.launch {
+                            try {
+                                val uid = SupabaseProvider.client.auth.currentUserOrNull()?.id
+                                if (uid != null) {
+                                    runCatching { SupabaseProvider.client.postgrest["tasks"].delete { filter { eq("user_id", uid) } } }
+                                    runCatching { SupabaseProvider.client.postgrest["courses"].delete { filter { eq("user_id", uid) } } }
+                                    runCatching { SupabaseProvider.client.postgrest["slots"].delete { filter { eq("user_id", uid) } } }
+                                    runCatching { SupabaseProvider.client.postgrest["group_members"].delete { filter { eq("user_id", uid) } } }
+                                }
+                                val db = com.example.data.local.AppDatabase.getDatabase(context)
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    db.clearAllTables()
+                                }
+                                signOut(context, credentialManager, onSignOutComplete = {
+                                    isLoading = false
+                                    onAuthChanged()
+                                    onDismiss()
+                                }, scope = coroutineScope)
+                            } catch (e: Exception) {
+                                isLoading = false
+                                errorMessage = "Delete failed: ${e.message}"
+                            }
+                        }
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete Everything", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 private fun signInWithGoogle(
@@ -413,6 +540,62 @@ private fun signOut(
             Log.e("Auth", "Failed to clear credential state", e)
         } finally {
             onSignOutComplete()
+        }
+    }
+}
+
+private fun exportUserData(context: Context, scope: CoroutineScope, onDone: () -> Unit) {
+    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val db = com.example.data.local.AppDatabase.getDatabase(context)
+            val courses = db.courseDao().getAllCoursesList()
+            val tasks = db.taskDao().getAllActiveTasksSync()
+            val slots = db.lectureSlotDao().getAllSlotsSync()
+
+            val jsonObj = buildJsonObject {
+                put("exportedAt", java.time.Instant.now().toString())
+                put("appVersion", BuildConfig.VERSION_NAME)
+                put("coursesCount", courses.size)
+                put("tasksCount", tasks.size)
+                put("timetableSlotsCount", slots.size)
+                put("courses", Json.encodeToJsonElement(courses.map { mapOf("code" to it.code, "name" to it.name, "colorHex" to it.colorHex) }))
+                put("tasks", Json.encodeToJsonElement(tasks.map { 
+                    mapOf(
+                        "title" to it.title,
+                        "description" to (it.description ?: ""),
+                        "priority" to it.priority.name,
+                        "status" to it.status.name,
+                        "dueDateEpochMillis" to it.dueDateEpochMillis.toString()
+                    )
+                }))
+                put("slots", Json.encodeToJsonElement(slots.map {
+                    mapOf(
+                        "dayOfWeek" to it.dayOfWeek.toString(),
+                        "startHour" to it.startHour.toString(),
+                        "startMinute" to it.startMinute.toString(),
+                        "endHour" to it.endHour.toString(),
+                        "endMinute" to it.endMinute.toString(),
+                        "classroom" to (it.classroom ?: "")
+                    )
+                }))
+            }
+
+            val jsonStr = jsonObj.toString()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                val sendIntent = android.content.Intent().apply {
+                    action = android.content.Intent.ACTION_SEND
+                    putExtra(android.content.Intent.EXTRA_TEXT, jsonStr)
+                    putExtra(android.content.Intent.EXTRA_TITLE, "UniTask_Data_Backup.json")
+                    type = "text/plain"
+                }
+                context.startActivity(android.content.Intent.createChooser(sendIntent, "Export UniTask Data"))
+                onDone()
+            }
+        } catch (e: Exception) {
+            Log.e("CloudBackupSheet", "Data export failed: ${e.message}", e)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                onDone()
+            }
         }
     }
 }

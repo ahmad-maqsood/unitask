@@ -406,16 +406,55 @@ fun TaskCard(
                     )
                 }
 
-                // Optional description snippet
+                // Optional description snippet & Subtasks
                 if (task.description.isNotBlank()) {
+                    val lines = remember(task.description) { task.description.lines() }
+                    val checklist = remember(lines) {
+                        lines.filter { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]") }
+                    }
+                    val doneCount = remember(checklist) {
+                        checklist.count { it.trimStart().startsWith("- [x]") }
+                    }
+
                     Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        text = task.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (checklist.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (doneCount == checklist.size) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = "☑ $doneCount/${checklist.size} subtasks",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (doneCount == checklist.size) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            val cleanText = lines.filterNot { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]") }.joinToString(" ").trim()
+                            if (cleanText.isNotBlank()) {
+                                Text(
+                                    text = cleanText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = task.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 // Render Offline Attachment Chips

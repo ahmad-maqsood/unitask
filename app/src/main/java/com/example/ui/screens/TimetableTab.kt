@@ -22,6 +22,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -80,10 +87,11 @@ fun TimetableTab(
     onTaskClick: (TaskWithCourse) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     // Current system day of week (1 = Mon ... 7 = Sun)
-    val todayDayOfWeek = remember {
+    fun currentDayOfWeek(): Int {
         val cal = Calendar.getInstance()
-        when (cal.get(Calendar.DAY_OF_WEEK)) {
+        return when (cal.get(Calendar.DAY_OF_WEEK)) {
             Calendar.MONDAY -> 1
             Calendar.TUESDAY -> 2
             Calendar.WEDNESDAY -> 3
@@ -95,14 +103,34 @@ fun TimetableTab(
         }
     }
 
+    var todayDayOfWeek by remember { mutableIntStateOf(currentDayOfWeek()) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000L)
+            val updated = currentDayOfWeek()
+            if (updated != todayDayOfWeek) {
+                todayDayOfWeek = updated
+            }
+        }
+    }
+
     var selectedDay by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(todayDayOfWeek) }
+    var selectedWeekFilter by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("All") }
     
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
 
-    // Slots for the selected day, sorted chronologically
-    val daySlots = remember(allSlots, selectedDay) {
+    // Slots for the selected day and week, sorted chronologically
+    val daySlots = remember(allSlots, selectedDay, selectedWeekFilter) {
         allSlots.filter { it.slot.dayOfWeek == selectedDay }
+            .filter { slotWithCourse ->
+                val room = slotWithCourse.slot.classroom
+                when (selectedWeekFilter) {
+                    "Week A" -> !room.contains("[Week B]")
+                    "Week B" -> !room.contains("[Week A]")
+                    else -> true
+                }
+            }
             .sortedWith(compareBy({ it.slot.startHour }, { it.slot.startMinute }))
     }
 
@@ -146,14 +174,30 @@ fun TimetableTab(
                         )
                     }
 
-                    OutlinedButton(
-                        onClick = onAddSlotClick,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("timetable_add_slot_button")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.size(4.dp))
-                        Text("Add Class", style = MaterialTheme.typography.labelMedium)
+                        IconButton(
+                            onClick = { exportTimetableToIcs(context, allSlots) },
+                            modifier = Modifier.testTag("timetable_export_ics_button")
+                        ) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Export schedule (.ics)",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = onAddSlotClick,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.testTag("timetable_add_slot_button")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Text("Add Class", style = MaterialTheme.typography.labelMedium)
+                        }
                     }
                 }
 
@@ -202,6 +246,22 @@ fun TimetableTab(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Bi-weekly schedule filter (All, Week A, Week B)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("All", "Week A", "Week B").forEach { w ->
+                        FilterChip(
+                            selected = selectedWeekFilter == w,
+                            onClick = { selectedWeekFilter = w },
+                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -268,20 +328,187 @@ fun TimetableTab(
                         }
                     }
                 }
+
+                // Bi-weekly schedule filter (All, Week A, Week B)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("All", "Week A", "Week B").forEach { w ->
+                        FilterChip(
+                            selected = selectedWeekFilter == w,
+                            onClick = { selectedWeekFilter = w },
+                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         } else {
-            items(daySlots, key = { it.slot.id }) { slotWithCourse ->
-                TimetableSlotCard(
-                    slotWithCourse = slotWithCourse,
-                    allTasks = allTasks,
-                    onEditClick = { onEditSlot(slotWithCourse.slot) },
-                    onDeleteClick = { onDeleteSlot(slotWithCourse.slot) },
-                                        onTaskClick = onTaskClick,
-                    modifier = Modifier.animateItem()
+            daySlots.forEachIndexed { index, slotWithCourse ->
+                item(key = "slot_${slotWithCourse.slot.id}") {
+                    TimetableSlotCard(
+                        slotWithCourse = slotWithCourse,
+                        allTasks = allTasks,
+                        onEditClick = { onEditSlot(slotWithCourse.slot) },
+                        onDeleteClick = { onDeleteSlot(slotWithCourse.slot) },
+                        onTaskClick = onTaskClick,
+                        modifier = Modifier.animateItem()
+                    )
+                }
+
+                if (index < daySlots.lastIndex) {
+                    val nextSlot = daySlots[index + 1].slot
+                    val currentEnd = slotWithCourse.slot.endHour * 60 + slotWithCourse.slot.endMinute
+                    val nextStart = nextSlot.startHour * 60 + nextSlot.startMinute
+                    val gap = nextStart - currentEnd
+                    if (gap >= 15) {
+                        item(key = "break_${slotWithCourse.slot.id}_${nextSlot.id}") {
+                            TimetableBreakIndicator(gapMinutes = gap)
+                        }
+                    }
+                }
+
+                // Bi-weekly schedule filter (All, Week A, Week B)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("All", "Week A", "Week B").forEach { w ->
+                        FilterChip(
+                            selected = selectedWeekFilter == w,
+                            onClick = { selectedWeekFilter = w },
+                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimetableBreakIndicator(gapMinutes: Int) {
+    val durationText = if (gapMinutes >= 60) {
+        val h = gapMinutes / 60
+        val m = gapMinutes % 60
+        if (m > 0) "${h}h ${m}m free" else "${h}h free"
+    } else {
+        "${gapMinutes}m free"
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(text = "☕", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = "$durationText until next class",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
     }
+}
+
+private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCourse>) {
+    if (slots.isEmpty()) {
+        Toast.makeText(context, "No classes to export", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val sb = StringBuilder()
+    sb.appendLine("BEGIN:VCALENDAR")
+    sb.appendLine("VERSION:2.0")
+    sb.appendLine("PRODID:-//UniTask//Timetable//EN")
+    sb.appendLine("CALSCALE:GREGORIAN")
+    sb.appendLine("METHOD:PUBLISH")
+
+    val dayCodes = mapOf(1 to "MO", 2 to "TU", 3 to "WE", 4 to "TH", 5 to "FR", 6 to "SA", 7 to "SU")
+
+    for (item in slots) {
+        val slot = item.slot
+        val course = item.course
+        val byDay = dayCodes[slot.dayOfWeek] ?: "MO"
+        val title = course?.name?.ifBlank { course.code } ?: course?.code ?: "Lecture"
+        val location = slot.classroom.ifBlank { course?.location.orEmpty() }
+        val instructor = slot.instructor.ifBlank { course?.instructor.orEmpty() }
+
+        sb.appendLine("BEGIN:VEVENT")
+        sb.appendLine("UID:unitask_slot_${slot.id}@unitask")
+        sb.appendLine("SUMMARY:${escapeIcs(title)}")
+        if (location.isNotBlank()) sb.appendLine("LOCATION:${escapeIcs(location)}")
+        if (instructor.isNotBlank()) sb.appendLine("DESCRIPTION:${escapeIcs("Instructor: $instructor")}")
+        sb.appendLine("RRULE:FREQ=WEEKLY;BYDAY=$byDay")
+
+        val sH = String.format(Locale.US, "%02d", slot.startHour)
+        val sM = String.format(Locale.US, "%02d", slot.startMinute)
+        val eH = String.format(Locale.US, "%02d", slot.endHour)
+        val eM = String.format(Locale.US, "%02d", slot.endMinute)
+
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_WEEK, when (slot.dayOfWeek) {
+                1 -> Calendar.MONDAY
+                2 -> Calendar.TUESDAY
+                3 -> Calendar.WEDNESDAY
+                4 -> Calendar.THURSDAY
+                5 -> Calendar.FRIDAY
+                6 -> Calendar.SATURDAY
+                7 -> Calendar.SUNDAY
+                else -> Calendar.MONDAY
+            })
+        }
+        val dateStr = SimpleDateFormat("yyyyMMdd", Locale.US).format(cal.time)
+        sb.appendLine("DTSTART:${dateStr}T${sH}${sM}00")
+        sb.appendLine("DTEND:${dateStr}T${eH}${eM}00")
+        sb.appendLine("END:VEVENT")
+    }
+    sb.appendLine("END:VCALENDAR")
+
+    try {
+        val file = java.io.File(context.cacheDir, "unitask_timetable.ics")
+        file.writeText(sb.toString())
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/calendar"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+    } catch (_: Exception) {
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, sb.toString())
+        }
+        context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+    }
+}
+
+private fun escapeIcs(str: String): String {
+    return str.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -294,6 +521,7 @@ fun TimetableSlotCard(
     onTaskClick: (TaskWithCourse) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val slot = slotWithCourse.slot
     val course = slotWithCourse.course
     var showMenu by remember { mutableStateOf(false) }
@@ -530,7 +758,26 @@ fun TimetableSlotCard(
                         }
                     }
                 }
-            }
-        }
+
+                // Bi-weekly schedule filter (All, Week A, Week B)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("All", "Week A", "Week B").forEach { w ->
+                        FilterChip(
+                            selected = selectedWeekFilter == w,
+                            onClick = { selectedWeekFilter = w },
+                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
     }
 }
+
+        }
+    }
+

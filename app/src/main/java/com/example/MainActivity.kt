@@ -55,13 +55,19 @@ class MainActivity : ComponentActivity() {
         val groupId = intent.getStringExtra("open_group_id")
         val openChat = intent.getBooleanExtra("open_group_chat", false)
         val openedTaskId = intent.getLongExtra("opened_task_id", -1L)
+        val isMyTask = intent.getBooleanExtra("extra_is_my_task", false)
         if (!groupId.isNullOrBlank()) {
             mainViewModel.openGroup(groupId, openChat = openChat)
             intent.removeExtra("open_group_id")
             intent.removeExtra("open_group_chat")
         } else if (openedTaskId > 0L || intent.hasExtra("opened_task_id")) {
-            mainViewModel.setTab(com.example.ui.screens.MainTab.DEADLINES)
+            if (isMyTask) {
+                mainViewModel.setTab(com.example.ui.screens.MainTab.MY_TASKS)
+            } else {
+                mainViewModel.setTab(com.example.ui.screens.MainTab.DEADLINES)
+            }
             intent.removeExtra("opened_task_id")
+            intent.removeExtra("extra_is_my_task")
         }
     }
 

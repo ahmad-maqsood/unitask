@@ -140,6 +140,9 @@ class GroupReminderScheduler(private val context: Context) {
         optionLabel: String,
         priority: String = ""
     ) {
+        val parts = key.split("|")
+        val groupId = parts.getOrNull(0).orEmpty()
+        val taskId = parts.getOrNull(1).orEmpty()
         val intent = intentFor(key).apply {
             putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, title)
             putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, label)
@@ -148,6 +151,8 @@ class GroupReminderScheduler(private val context: Context) {
             // The receiver derives its notification id from this, so every alarm gets its own.
             putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, "GROUP_$key")
             putExtra(TaskReminderReceiver.EXTRA_PRIORITY, priority)
+            if (groupId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_ID, groupId)
+            if (taskId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_TASK_ID, taskId)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

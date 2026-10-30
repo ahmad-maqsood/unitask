@@ -810,6 +810,7 @@ fun MainScreen(
         AddEditLectureSlotDialog(
             courses = allCourses,
             slotToEdit = slotToEdit,
+            existingSlots = allLectureSlots,
             preselectedCourseId = preselectedCourseIdForSlot,
             preselectedDay = preselectedDayForSlot,
             onDismiss = { viewModel.closeSlotDialog() },

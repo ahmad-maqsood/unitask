@@ -485,6 +485,24 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun transferOwnership(newOwnerUid: String) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            repository.transferOwnership(groupId, newOwnerUid)
+                .onSuccess {
+                    _snackbarMessage.emit("Ownership transferred successfully")
+                }
+                .onFailure { e ->
+                    _snackbarMessage.emit("Failed to transfer ownership: ${e.message}")
+                }
+        }
+    }
+
+    fun loadEarlierMessages() {
+        val groupId = _selectedGroupId.value ?: return
+        repository.loadEarlierMessages(groupId)
+    }
+
     fun removeMember(member: GroupMember) {
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
@@ -526,6 +544,36 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 onSuccess()
             }.onFailure { e ->
                 _snackbarMessage.emit("Failed to delete group: ${e.message}")
+            }
+        }
+    }
+
+    fun updateGroupProfile(newName: String, newUsername: String, onComplete: (Boolean, String?) -> Unit) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            _isActionLoading.value = true
+            val result = repository.updateGroupProfile(groupId, newName, newUsername)
+            _isActionLoading.value = false
+            result.onSuccess {
+                _snackbarMessage.emit("Group settings updated successfully")
+                onComplete(true, null)
+            }.onFailure { e ->
+                onComplete(false, e.message ?: "Failed to update group")
+            }
+        }
+    }
+
+    fun regenerateGroupCode(onComplete: (Boolean, String?) -> Unit) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            _isActionLoading.value = true
+            val result = repository.regenerateGroupCode(groupId)
+            _isActionLoading.value = false
+            result.onSuccess { newCode ->
+                _snackbarMessage.emit("New join code: $newCode")
+                onComplete(true, newCode)
+            }.onFailure { e ->
+                onComplete(false, e.message ?: "Failed to regenerate join code")
             }
         }
     }

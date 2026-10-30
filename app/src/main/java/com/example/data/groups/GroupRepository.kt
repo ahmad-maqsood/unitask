@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -54,8 +55,13 @@ private const val TAG = "GroupRepository"
 private fun parseSupabaseTimestamp(s: String?): Timestamp? {
     if (s.isNullOrBlank()) return null
     return try {
-        Timestamp(Date.from(java.time.OffsetDateTime.parse(s).toInstant()))
-    } catch (_: Exception) {
+        val millis = com.example.util.Announcements.parseTimestamp(s)
+        if (millis != null) {
+            Timestamp(Date(millis))
+        } else {
+            Timestamp(Date.from(java.time.OffsetDateTime.parse(s).toInstant()))
+        }
+    } catch (_: Throwable) {
         null
     }
 }
@@ -115,6 +121,17 @@ private data class GroupMemberRow(
 @Serializable
 private data class UpdateRolePayload(
     val role: String
+)
+
+@Serializable
+private data class UpdateGroupProfilePayload(
+    val name: String,
+    val username: String
+)
+
+@Serializable
+private data class UpdateGroupCodePayload(
+    @SerialName("join_code") val joinCode: String
 )
 
 @Serializable
@@ -247,11 +264,12 @@ private data class GroupMessageRow(
 private fun GroupMessageRow.toGroupMessage(): GroupMessage {
     val createdMillis = try {
         if (!createdAt.isNullOrBlank()) {
-            java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli()
+            com.example.util.Announcements.parseTimestamp(createdAt)
+                ?: java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli()
         } else {
             System.currentTimeMillis()
         }
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
         System.currentTimeMillis()
     }
     return GroupMessage(
@@ -380,7 +398,89 @@ data class GroupTaskEntry(
     val groupCourses: List<GroupCourse> = emptyList()
 )
 
+
+@Serializable
+data class PendingOutboxMessage(
+    val localId: String,
+    val groupId: String,
+    val uid: String,
+    val senderName: String,
+    val text: String,
+    val replyToId: Long? = null,
+    val replyToName: String? = null,
+    val replyToText: String? = null,
+    val createdAtMillis: Long = System.currentTimeMillis()
+)
+
 class GroupRepository(private val context: Context) {
+    private val outboxPrefs by lazy {
+        context.getSharedPreferences("chat_outbox_queue", Context.MODE_PRIVATE)
+    }
+
+    private val chatPageLimits = java.util.concurrent.ConcurrentHashMap<String, Int>()
+
+    fun loadEarlierMessages(groupId: String) {
+        val current = chatPageLimits[groupId] ?: 50
+        chatPageLimits[groupId] = current + 50
+        localChanges.tryEmit(Unit)
+    }
+
+    private fun getQueuedOutboxMessages(groupId: String): List<PendingOutboxMessage> {
+        return try {
+            val raw = outboxPrefs.getString("outbox_$groupId", null) ?: return emptyList()
+            json.decodeFromString<List<PendingOutboxMessage>>(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveQueuedOutboxMessages(groupId: String, list: List<PendingOutboxMessage>) {
+        try {
+            if (list.isEmpty()) {
+                outboxPrefs.edit().remove("outbox_$groupId").apply()
+            } else {
+                outboxPrefs.edit().putString("outbox_$groupId", json.encodeToString(list)).apply()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "saveQueuedOutboxMessages failed: ${e.message}")
+        }
+    }
+
+    fun flushChatOutbox(groupId: String) {
+        val queued = getQueuedOutboxMessages(groupId)
+        if (queued.isEmpty()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            val remaining = queued.toMutableList()
+            for (item in queued) {
+                try {
+                    val payload = CreateGroupMessagePayload(
+                        groupId = item.groupId,
+                        senderId = item.uid,
+                        senderName = item.senderName,
+                        text = item.text,
+                        replyToId = item.replyToId,
+                        replyToName = item.replyToName,
+                        replyToText = item.replyToText
+                    )
+                    val result = SupabaseProvider.client.postgrest["group_messages"]
+                        .insert(payload) { select() }
+                    val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
+                    remaining.remove(item)
+                    saveQueuedOutboxMessages(groupId, remaining)
+                    if (savedId != null) {
+                        pendingMessages.update { list ->
+                            list.map { if (it.id == item.localId) it.copy(id = savedId) else it }
+                        }
+                    }
+                    localChanges.tryEmit(Unit)
+                } catch (e: Exception) {
+                    Log.w(TAG, "flushChatOutbox message retry failed: ${e.message}")
+                    break
+                }
+            }
+        }
+    }
+
 
 
 
@@ -913,9 +1013,32 @@ class GroupRepository(private val context: Context) {
         // Only one read runs at a time, so a slow old answer can never overwrite a newer one.
         val queryLock = kotlinx.coroutines.sync.Mutex()
 
+        launch {
+            flushChatOutbox(groupId)
+            val queuedLocal = getQueuedOutboxMessages(groupId).map { item ->
+                GroupMessage(
+                    id = item.localId,
+                    groupId = item.groupId,
+                    text = item.text,
+                    senderId = item.uid,
+                    senderName = item.senderName,
+                    createdAtMillis = item.createdAtMillis,
+                    replyToId = item.replyToId?.toString(),
+                    replyToName = item.replyToName,
+                    replyToText = item.replyToText
+                )
+            }
+            if (queuedLocal.isNotEmpty()) {
+                pendingMessages.update { current ->
+                    (current + queuedLocal).distinctBy { it.id }
+                }
+            }
+        }
+
         suspend fun queryAndEmit() {
             queryLock.lock()
             try {
+                val pageLimit = chatPageLimits[groupId] ?: 50
                 // The timeout makes sure one hung request can never freeze the chat for good.
                 val rows = withTimeout(TIMEOUT_MILLIS) {
                     SupabaseProvider.client.postgrest["group_messages"]
@@ -924,7 +1047,7 @@ class GroupRepository(private val context: Context) {
                                 eq("group_id", groupId)
                             }
                             order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
-                            limit(100)
+                            limit(pageLimit.toLong())
                         }.decodeList<GroupMessageRow>()
                 }
                 trySend(rows.map { it.toGroupMessage() }.reversed())
@@ -1148,11 +1271,27 @@ class GroupRepository(private val context: Context) {
             replyToText = replyText
         )
 
+        val outboxItem = PendingOutboxMessage(
+            localId = localMessage.id,
+            groupId = groupId,
+            uid = myUid,
+            senderName = cleanName,
+            text = cleanText,
+            replyToId = replyId,
+            replyToName = replyName,
+            replyToText = replyText,
+            createdAtMillis = localMessage.createdAtMillis
+        )
+        val currentQueued = getQueuedOutboxMessages(groupId)
+        saveQueuedOutboxMessages(groupId, currentQueued + outboxItem)
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val result = SupabaseProvider.client.postgrest["group_messages"]
                     .insert(payload) { select() }
                 val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
+                val updatedQueued = getQueuedOutboxMessages(groupId).filter { it.localId != localMessage.id }
+                saveQueuedOutboxMessages(groupId, updatedQueued)
                 if (savedId != null) {
                     pendingMessages.update { list ->
                         list.map { if (it.id == localMessage.id) it.copy(id = savedId) else it }
@@ -1160,8 +1299,8 @@ class GroupRepository(private val context: Context) {
                 }
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
-                Log.w(TAG, "sendMessage failed: ${e.message}", e)
-                pendingMessages.update { list -> list.filter { it.id != localMessage.id } }
+                Log.w(TAG, "sendMessage failed (retained in outbox): ${e.message}", e)
+                // Message is kept in outbox queue and pendingMessages so user does not lose it
                 onFailure(e)
             }
         }
@@ -1170,6 +1309,8 @@ class GroupRepository(private val context: Context) {
     /** Deletes one chat message (your own, or any message if you are the owner or an admin). */
     fun deleteMessage(groupId: String, messageId: String, onFailure: (Exception) -> Unit) {
         if (messageId.startsWith("local-") || messageId.toLongOrNull() == null) {
+            val updated = getQueuedOutboxMessages(groupId).filter { it.localId != messageId }
+            saveQueuedOutboxMessages(groupId, updated)
             pendingMessages.update { list -> list.filter { it.id != messageId } }
             localChanges.tryEmit(Unit)
             return
@@ -1599,8 +1740,8 @@ class GroupRepository(private val context: Context) {
         if (cleanName.isBlank()) {
             return Result.failure(IllegalArgumentException("Group name cannot be blank"))
         }
-        if (cleanUsername.length !in 3..20) {
-            return Result.failure(IllegalArgumentException("Username must be 3-20 characters"))
+        if (cleanUsername.length !in 3..30) {
+            return Result.failure(IllegalArgumentException("Username must be 3-30 characters"))
         }
 
         val currentUid = currentSupabaseUid()
@@ -1647,7 +1788,7 @@ class GroupRepository(private val context: Context) {
         uid: String,
         rawDisplayName: String
     ): Result<String> {
-        val cleanUsername = username.trim().lowercase()
+        val cleanUsername = username.trim().lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
         val cleanCode = joinCode.trim().uppercase()
         val displayName = rawDisplayName.trim().take(60).ifEmpty { "Student" }
 
@@ -1740,6 +1881,84 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Edit group name and username (owner only).
+     */
+    suspend fun updateGroupProfile(groupId: String, name: String, username: String): Result<Unit> {
+        val cleanName = name.trim().take(60)
+        val cleanUsername = username.trim().lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
+        if (cleanName.isBlank()) return Result.failure(IllegalArgumentException("Group name cannot be blank"))
+        if (cleanUsername.length !in 3..30) return Result.failure(IllegalArgumentException("Username must be 3-30 characters"))
+        val currentUid = currentSupabaseUid() ?: return Result.failure(Exception("Not signed in"))
+
+        return try {
+            withTimeout(TIMEOUT_MILLIS) {
+                try {
+                    val params = buildJsonObject {
+                        put("p_group_id", groupId)
+                        put("p_name", cleanName)
+                        put("p_username", cleanUsername)
+                    }
+                    SupabaseProvider.client.postgrest.rpc("update_group_profile", params)
+                } catch (rpcEx: Exception) {
+                    val msg = rpcEx.message.orEmpty()
+                    if (msg.contains("username_taken", ignoreCase = true) || msg.contains("duplicate key", ignoreCase = true)) {
+                        throw Exception("That username is taken")
+                    }
+                    SupabaseProvider.client.postgrest["groups"].update(
+                        UpdateGroupProfilePayload(name = cleanName, username = cleanUsername)
+                    ) {
+                        filter {
+                            eq("id", groupId)
+                            eq("owner_id", currentUid)
+                        }
+                    }
+                }
+            }
+            localChanges.tryEmit(Unit)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            val msg = e.message.orEmpty()
+            val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("23505")) {
+                "That username is taken"
+            } else {
+                e.message ?: "Failed to update group"
+            }
+            Result.failure(Exception(friendly))
+        }
+    }
+
+    /**
+     * Regenerates a new 8-character join code (owner only).
+     */
+    suspend fun regenerateGroupCode(groupId: String): Result<String> {
+        val currentUid = currentSupabaseUid() ?: return Result.failure(Exception("Not signed in"))
+        return try {
+            val newCode = withTimeout(TIMEOUT_MILLIS) {
+                try {
+                    val params = buildJsonObject { put("p_group_id", groupId) }
+                    val res = SupabaseProvider.client.postgrest.rpc("regenerate_group_code", params)
+                    res.decodeAs<String>()
+                } catch (rpcEx: Exception) {
+                    val code = generateJoinCode()
+                    SupabaseProvider.client.postgrest["groups"].update(
+                        UpdateGroupCodePayload(joinCode = code)
+                    ) {
+                        filter {
+                            eq("id", groupId)
+                            eq("owner_id", currentUid)
+                        }
+                    }
+                    code
+                }
+            }
+            localChanges.tryEmit(Unit)
+            Result.success(newCode)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1936,6 +2155,57 @@ class GroupRepository(private val context: Context) {
                     filter {
                         eq("group_id", groupId)
                         eq("user_id", memberUid)
+                    }
+                }
+            }
+            localChanges.tryEmit(Unit)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Transfer group ownership to another member.
+     */
+    suspend fun transferOwnership(groupId: String, newOwnerUid: String): Result<Unit> {
+        val currentUid = currentSupabaseUid() ?: return Result.failure(Exception("Not signed in"))
+        if (groupId.isBlank() || newOwnerUid.isBlank() || newOwnerUid == currentUid) {
+            return Result.failure(IllegalArgumentException("Invalid parameters for ownership transfer"))
+        }
+
+        return try {
+            withTimeout(TIMEOUT_MILLIS) {
+                try {
+                    val params = buildJsonObject {
+                        put("p_group_id", groupId)
+                        put("p_new_owner_id", newOwnerUid)
+                    }
+                    SupabaseProvider.client.postgrest.rpc("transfer_group_ownership", params)
+                } catch (_: Exception) {
+                    // Fallback to direct table updates
+                    SupabaseProvider.client.postgrest["group_members"].update(
+                        UpdateRolePayload(role = "owner")
+                    ) {
+                        filter {
+                            eq("group_id", groupId)
+                            eq("user_id", newOwnerUid)
+                        }
+                    }
+                    SupabaseProvider.client.postgrest["group_members"].update(
+                        UpdateRolePayload(role = "admin")
+                    ) {
+                        filter {
+                            eq("group_id", groupId)
+                            eq("user_id", currentUid)
+                        }
+                    }
+                    SupabaseProvider.client.postgrest["groups"].update(
+                        buildJsonObject { put("owner_id", newOwnerUid) }
+                    ) {
+                        filter {
+                            eq("id", groupId)
+                        }
                     }
                 }
             }

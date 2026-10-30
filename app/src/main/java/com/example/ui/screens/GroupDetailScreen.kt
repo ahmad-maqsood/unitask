@@ -40,7 +40,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -123,7 +125,11 @@ fun GroupDetailScreen(
     chatUnreadCount: Int = 0,
     chatLastReadMillis: Long? = null,
     onChatRead: (Long) -> Unit = {},
-    startOnChat: Boolean = false
+    startOnChat: Boolean = false,
+    onUpdateGroupProfile: ((String, String) -> Unit)? = null,
+    onRegenerateGroupCode: (() -> Unit)? = null,
+    onTransferOwnership: ((String) -> Unit)? = null,
+    onLoadEarlierMessages: (() -> Unit)? = null
 ) {
     BackHandler { onBack() }
 
@@ -133,6 +139,9 @@ fun GroupDetailScreen(
     } // 0: Tasks, 1: Courses, 2: Members, 3: Chat
     var showLeaveConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showEditGroupDialog by remember { mutableStateOf(false) }
+    var showQrCodeDialog by remember { mutableStateOf(false) }
+    var memberToTransferOwnership by remember { mutableStateOf<GroupMember?>(null) }
 
     val effectiveName = groupDetail?.name?.ifBlank { null } ?: fallbackName.ifBlank { "Group" }
     val effectiveUsername = groupDetail?.username?.ifBlank { null } ?: fallbackUsername
@@ -154,6 +163,7 @@ fun GroupDetailScreen(
             }.thenBy { it.displayName.lowercase() }
         )
     }
+
     // Sort tasks: due date and time ascending
         val sortedTasks = remember(tasks) {
         tasks.map { it to computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute) }
@@ -196,7 +206,29 @@ fun GroupDetailScreen(
                     }
                 },
                 actions = {
+                    if (joinCode.isNotBlank()) {
+                        IconButton(
+                            onClick = { showQrCodeDialog = true },
+                            modifier = Modifier.testTag("group_qr_code_button")
+                        ) {
+                            Icon(
+                                Icons.Default.QrCode,
+                                contentDescription = "Show QR Code",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     if (isOwner) {
+                        IconButton(
+                            onClick = { showEditGroupDialog = true },
+                            modifier = Modifier.testTag("group_settings_button")
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = "Group Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         IconButton(
                             onClick = { showDeleteConfirmDialog = true },
                             modifier = Modifier.testTag("group_delete_button")
@@ -322,7 +354,8 @@ fun GroupDetailScreen(
                     onSend = onSendMessage,
                     onDelete = onDeleteMessage,
                     lastReadAtOpenMillis = chatLastReadMillis,
-                    onMarkRead = onChatRead
+                    onMarkRead = onChatRead,
+                    onLoadEarlier = onLoadEarlierMessages
                 )
             } else if (selectedSectionTab == 1) {
                 GroupCoursesSection(
@@ -531,6 +564,15 @@ fun GroupDetailScreen(
                                                         onSetMemberRole(member, member.role != "admin")
                                                     }
                                                 )
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text("Transfer Ownership")
+                                                    },
+                                                    onClick = {
+                                                        menuOpen = false
+                                                        memberToTransferOwnership = member
+                                                    }
+                                                )
                                             }
                                             DropdownMenuItem(
                                                 text = {
@@ -580,6 +622,7 @@ fun GroupDetailScreen(
         )
     }
 
+
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { if (!isLoading) showDeleteConfirmDialog = false },
@@ -604,6 +647,7 @@ fun GroupDetailScreen(
             }
         )
     }
+
     
     memberToRemove?.let { target ->
         AlertDialog(
@@ -621,6 +665,7 @@ fun GroupDetailScreen(
                 ) {
                     Text("Remove")
                 }
+
             },
             dismissButton = {
                 TextButton(onClick = { memberToRemove = null }) {
@@ -629,6 +674,60 @@ fun GroupDetailScreen(
             }
         )
     }
+
+
+    memberToTransferOwnership?.let { target ->
+        AlertDialog(
+            onDismissRequest = { memberToTransferOwnership = null },
+            title = { Text("Transfer Group Ownership?") },
+            text = { Text("Transfer ownership of \"$effectiveName\" to ${target.displayName}? You will remain in the group as an admin.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetUid = target.uid
+                        memberToTransferOwnership = null
+                        onTransferOwnership?.invoke(targetUid)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Transfer")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { memberToTransferOwnership = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showEditGroupDialog) {
+        EditGroupDialog(
+            initialName = effectiveName,
+            initialUsername = effectiveUsername,
+            currentJoinCode = joinCode,
+            isLoading = isLoading,
+            onDismiss = { showEditGroupDialog = false },
+            onSaveProfile = { newName, newUsername ->
+                onUpdateGroupProfile?.invoke(newName, newUsername)
+                showEditGroupDialog = false
+            },
+            onRegenerateCode = {
+                onRegenerateGroupCode?.invoke()
+            }
+        )
+    }
+
+
+    if (showQrCodeDialog && joinCode.isNotBlank()) {
+        GroupQrCodeDialog(
+            groupName = effectiveName,
+            username = effectiveUsername,
+            joinCode = joinCode,
+            onDismiss = { showQrCodeDialog = false }
+        )
+    }
+
 }
 
 @Composable
@@ -653,6 +752,7 @@ fun GroupTaskRow(
             onDismiss = { showDeleteConfirm = false }
         )
     }
+
     val dueDateStr = remember(task.dueDateEpochMillis) {
         SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(task.dueDateEpochMillis))
     }
@@ -929,6 +1029,7 @@ private fun GroupCoursesSection(
             onDismiss = { courseToDelete = null }
         )
     }
+
 
     LazyColumn(
         modifier = Modifier

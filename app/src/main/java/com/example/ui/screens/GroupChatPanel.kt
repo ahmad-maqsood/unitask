@@ -1,5 +1,11 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -33,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -88,9 +95,11 @@ fun GroupChatPanel(
     onSend: (String, GroupMessage?) -> Unit,
     onDelete: (GroupMessage) -> Unit,
     lastReadAtOpenMillis: Long? = null,
-    onMarkRead: (Long) -> Unit = {}
+    onMarkRead: (Long) -> Unit = {},
+    onLoadEarlier: (() -> Unit)? = null
 ) {
     var draft by rememberSaveable { mutableStateOf("") }
+    val context = androidx.compose.ui.platform.LocalContext.current
     var replyingTo by remember { mutableStateOf<GroupMessage?>(null) }
     var messageToDelete by remember { mutableStateOf<GroupMessage?>(null) }
     val listState = rememberLazyListState()
@@ -129,9 +138,34 @@ fun GroupChatPanel(
         }
     }
 
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var isSearchActive by rememberSaveable { mutableStateOf(false) }
+
+    val filteredMessages = remember(messages, searchQuery, isSearchActive) {
+        if (isSearchActive && searchQuery.isNotBlank()) {
+            messages.filter {
+                it.text.contains(searchQuery, ignoreCase = true) ||
+                it.senderName.contains(searchQuery, ignoreCase = true)
+            }
+        } else {
+            messages
+        }
+    }
+
     // The list is drawn upside down (newest message at index 0, at the bottom). This keeps the newest
     // messages visible when the keyboard opens and the list gets shorter.
-    val newestFirst = remember(messages) { messages.distinctBy { it.id }.reversed() }
+    val newestFirst = remember(filteredMessages) { filteredMessages.distinctBy { it.id }.reversed() }
+
+    val topVisibleDateText by remember {
+        derivedStateOf {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            if (visible.isEmpty()) null
+            else {
+                val topIndex = visible.lastOrNull()?.index ?: 0
+                newestFirst.getOrNull(topIndex)?.createdAtMillis?.let { formatDayLabel(it) }
+            }
+        }
+    }
 
     // A new message scrolls the list down only if you sent it, or you were already at (or next to)
     // the bottom. If you are reading older messages, the list stays where it is.
@@ -176,6 +210,61 @@ fun GroupChatPanel(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
     ) {
+        if (messages.size >= 5 || isSearchActive) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search messages",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            isSearchActive = it.isNotBlank()
+                        },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
+                        decorationBox = { innerTextField ->
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "Search messages...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                searchQuery = ""
+                                isSearchActive = false
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear search", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
         if (messages.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -192,41 +281,104 @@ fun GroupChatPanel(
                 )
             }
         } else {
-            LazyColumn(
-                state = listState,
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .testTag("group_chat_list"),
-                reverseLayout = true,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                itemsIndexed(newestFirst, key = { _, message -> message.id }) { index, message ->
-                    // The list is newest first, so the older neighbour is the next index.
-                    val older = newestFirst.getOrNull(index + 1)
-                    val isMine = message.senderId == currentUid
-                    Column {
-                        if (older == null || !isSameDay(older.createdAtMillis, message.createdAtMillis)) {
-                            ChatDayLabel(message.createdAtMillis)
-                        }
-                        if (message.id == frozenDividerId) {
-                            NewMessagesDivider()
-                        }
-                        ChatBubble(
-                            message = message,
-                            isMine = isMine,
-                            canDelete = isMine || canModerate,
-                            onLongPress = { messageToDelete = message },
-                            onSwipeReply = { replyingTo = message },
-                            onQuoteClick = { targetId ->
-                                val targetIndex = newestFirst.indexOfFirst { it.id == targetId }
-                                if (targetIndex >= 0) {
-                                    coroutineScope.launch {
-                                        listState.animateScrollToItem(targetIndex)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("group_chat_list"),
+                    reverseLayout = true,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    itemsIndexed(newestFirst, key = { _, message -> message.id }) { index, message ->
+                        // The list is newest first, so the older neighbour is the next index.
+                        val older = newestFirst.getOrNull(index + 1)
+                        val isMine = message.senderId == currentUid
+                        Column {
+                            if (older == null || !isSameDay(older.createdAtMillis, message.createdAtMillis)) {
+                                ChatDayLabel(message.createdAtMillis)
+                            }
+                            if (message.id == frozenDividerId) {
+                                NewMessagesDivider()
+                            }
+                            ChatBubble(
+                                message = message,
+                                isMine = isMine,
+                                canDelete = isMine || canModerate,
+                                onLongPress = { messageToDelete = message },
+                                onSwipeReply = { replyingTo = message },
+                                onQuoteClick = { targetId ->
+                                    val targetIndex = newestFirst.indexOfFirst { it.id == targetId }
+                                    if (targetIndex >= 0) {
+                                        coroutineScope.launch {
+                                            listState.animateScrollToItem(targetIndex)
+                                        }
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Original message is outside recent history",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
+                            )
+                        }
+                    }
+
+                    if (onLoadEarlier != null && newestFirst.size >= 50) {
+                        item(key = "load_earlier_messages_btn") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                TextButton(
+                                    onClick = onLoadEarlier,
+                                    modifier = Modifier.testTag("load_earlier_messages_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Load earlier messages",
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
                             }
+                        }
+                    }
+                }
+
+                // Sticky floating date header pill
+                AnimatedVisibility(
+                    visible = topVisibleDateText != null,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
+                        shadowElevation = 3.dp,
+                        tonalElevation = 3.dp
+                    ) {
+                        Text(
+                            text = topVisibleDateText ?: "",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                         )
                     }
                 }
@@ -300,6 +452,15 @@ fun GroupChatPanel(
                         value = draft,
                         onValueChange = { draft = it.take(500) },
                         placeholder = { Text("Message") },
+                        supportingText = if (draft.length >= 400) {
+                            {
+                                Text(
+                                    text = "${draft.length}/500",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (draft.length >= 490) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else null,
                         maxLines = 4,
                         shape = RoundedCornerShape(24.dp),
                         modifier = Modifier
@@ -537,6 +698,17 @@ private fun ChatDayLabel(millis: Long) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+private fun formatDayLabel(millis: Long): String {
+    val cal = Calendar.getInstance().apply { timeInMillis = millis }
+    val today = Calendar.getInstance()
+    return when {
+        isSameDay(millis, today.timeInMillis) -> "Today"
+        today.get(Calendar.DAY_OF_YEAR) - cal.get(Calendar.DAY_OF_YEAR) == 1 &&
+            today.get(Calendar.YEAR) == cal.get(Calendar.YEAR) -> "Yesterday"
+        else -> SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(millis))
     }
 }
 

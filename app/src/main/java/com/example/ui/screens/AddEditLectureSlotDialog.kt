@@ -63,6 +63,7 @@ fun AddEditLectureSlotDialog(
     slotToEdit: LectureSlot?,
     preselectedCourseId: Long?,
     preselectedDay: Int = 1,
+    existingSlots: List<com.example.data.local.LectureSlotWithCourse> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (
         courseId: Long,
@@ -76,6 +77,7 @@ fun AddEditLectureSlotDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    var conflictWarningMessage by remember { mutableStateOf<String?>(null) }
 
     var selectedCourseId by rememberSaveable {
         mutableLongStateOf(
@@ -291,6 +293,42 @@ fun AddEditLectureSlotDialog(
                     }
                 }
 
+                // Schedule Frequency (Weekly, Week A, Week B)
+                Column {
+                    Text(
+                        text = "Schedule Frequency",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf("Every Week", "Week A", "Week B").forEach { freq ->
+                            val tag = when (freq) {
+                                "Week A" -> "[Week A]"
+                                "Week B" -> "[Week B]"
+                                else -> ""
+                            }
+                            val isSelected = if (tag.isEmpty()) {
+                                !classroom.contains("[Week A]") && !classroom.contains("[Week B]")
+                            } else {
+                                classroom.contains(tag)
+                            }
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val clean = classroom.replace("[Week A]", "").replace("[Week B]", "").trim()
+                                    classroom = if (tag.isEmpty()) clean else if (clean.isEmpty()) tag else "$clean $tag"
+                                },
+                                label = { Text(freq, style = MaterialTheme.typography.labelSmall) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
                 // Classroom / Hall
                 OutlinedTextField(
                     value = classroom,
@@ -314,6 +352,21 @@ fun AddEditLectureSlotDialog(
                         .fillMaxWidth()
                         .testTag("slot_instructor_input")
                 )
+
+                if (conflictWarningMessage != null) {
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = conflictWarningMessage ?: "",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -327,24 +380,40 @@ fun AddEditLectureSlotDialog(
                             "End time must be after the start time",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
-                    } else if (selectedCourseId > 0) {
-                        onSave(
-                            selectedCourseId,
-                            dayOfWeek,
-                            startHour,
-                            startMinute,
-                            endHour,
-                            endMinute,
-                            classroom.trim(),
-                            instructor.trim()
-                        )
-                    } else {
+                        return@Button
+                    }
+                    if (selectedCourseId <= 0) {
                         android.widget.Toast.makeText(
                             context,
                             "Add a course first, then choose it for this class",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+                        return@Button
                     }
+                    val overlapping = existingSlots.firstOrNull { item ->
+                        val s = item.slot
+                        if (s.id == (slotToEdit?.id ?: -1L)) return@firstOrNull false
+                        if (s.dayOfWeek != dayOfWeek) return@firstOrNull false
+                        val otherStart = s.startHour * 60 + s.startMinute
+                        val otherEnd = s.endHour * 60 + s.endMinute
+                        maxOf(startTotal, otherStart) < minOf(endTotal, otherEnd)
+                    }
+                    if (overlapping != null && conflictWarningMessage == null) {
+                        val courseLabel = overlapping.course?.code ?: "Another class"
+                        val timeLabel = "${com.example.util.TimeFormatter.format12Hour(overlapping.slot.startHour, overlapping.slot.startMinute)} - ${com.example.util.TimeFormatter.format12Hour(overlapping.slot.endHour, overlapping.slot.endMinute)}"
+                        conflictWarningMessage = "Time conflict: overlaps with $courseLabel ($timeLabel). Click '${if (slotToEdit != null) "Update Slot" else "Save Slot"}' again to save anyway."
+                        return@Button
+                    }
+                    onSave(
+                        selectedCourseId,
+                        dayOfWeek,
+                        startHour,
+                        startMinute,
+                        endHour,
+                        endMinute,
+                        classroom.trim(),
+                        instructor.trim()
+                    )
                 },
                 modifier = Modifier.testTag("slot_save_button")
             ) {

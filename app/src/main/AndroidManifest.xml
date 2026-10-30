@@ -39,6 +39,8 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.example.ACTION_TASK_REMINDER" />
+                <action android:name="com.example.ACTION_MARK_TASK_DONE" />
+                <action android:name="com.example.ACTION_MARK_GROUP_TASK_DONE" />
             </intent-filter>
         </receiver>
         

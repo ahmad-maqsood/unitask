@@ -39,6 +39,7 @@ object UpdateChecker {
                 connectTimeout = 10_000
                 readTimeout = 10_000
                 setRequestProperty("Accept", "application/vnd.github+json")
+                setRequestProperty("User-Agent", "UniTask-Android/$current")
             }
             val code = connection.responseCode
             if (code == 200) {

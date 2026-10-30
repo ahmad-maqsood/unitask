@@ -379,11 +379,34 @@ fun AddEditTaskDialog(
                     onValueChange = { description = it },
                     label = { Text("Description & Notes (optional)") },
                     placeholder = { Text("e.g. 5 pages, cover chapters 1-4") },
-                    maxLines = 3,
+                    maxLines = 4,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("task_description_input")
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Subtasks / Checklists",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = {
+                            val prefix = if (description.isNotBlank() && !description.endsWith("\n")) "\n" else ""
+                            description += "${prefix}- [ ] "
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("+ Add Checklist Item", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
 
                 // Due Date & Time Section
                 Column {
@@ -678,6 +701,12 @@ fun AddEditTaskDialog(
                             }
                         }
                     }
+
+                    Text(
+                        text = "Files are saved locally on this device only.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     Spacer(modifier = Modifier.height(6.dp))
 

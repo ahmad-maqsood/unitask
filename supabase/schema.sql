@@ -204,6 +204,85 @@ begin
   return g.id;
 end $function$;
 
+CREATE OR REPLACE FUNCTION public.update_group_profile(p_group_id uuid, p_name text, p_username text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $
+declare
+  uname text := lower(trim(p_username));
+begin
+  if auth.uid() is null then raise exception 'not signed in'; end if;
+  if not is_group_owner(p_group_id) then raise exception 'only owner can update group profile'; end if;
+  if char_length(uname) < 3 or char_length(uname) > 30 then raise exception 'username must be between 3 and 30 characters'; end if;
+  if exists (select 1 from groups where username = uname and id <> p_group_id) then
+    raise exception 'username_taken';
+  end if;
+  update groups
+  set name = left(trim(p_name), 60),
+      username = uname
+  where id = p_group_id;
+end $;
+
+CREATE OR REPLACE FUNCTION public.regenerate_group_code(p_group_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $
+declare
+  new_code text := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8));
+begin
+  if auth.uid() is null then raise exception 'not signed in'; end if;
+  if not is_group_owner(p_group_id) then raise exception 'only owner can regenerate join code'; end if;
+  update groups
+  set join_code = new_code
+  where id = p_group_id;
+  return new_code;
+end $;
+
+CREATE OR REPLACE FUNCTION public.transfer_group_ownership(p_group_id uuid, p_new_owner_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $
+begin
+  if auth.uid() is null then raise exception 'not signed in'; end if;
+  if not is_group_owner(p_group_id) then raise exception 'only owner can transfer ownership'; end if;
+  if not exists (select 1 from group_members where group_id = p_group_id and user_id = p_new_owner_id) then
+    raise exception 'target user is not a member of the group';
+  end if;
+  update group_members set role = 'admin' where group_id = p_group_id and user_id = auth.uid();
+  update group_members set role = 'owner' where group_id = p_group_id and user_id = p_new_owner_id;
+  update groups set owner_id = p_new_owner_id where id = p_group_id;
+end $;
+
+CREATE OR REPLACE FUNCTION public.enforce_message_identity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $
+begin
+  new.sender_id = auth.uid();
+  return new;
+end $;
+
+CREATE OR REPLACE FUNCTION public.enforce_task_identity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $
+begin
+  if TG_OP = 'INSERT' then
+    new.created_by = auth.uid();
+  end if;
+  return new;
+end $;
+
 -- =====================================================================
 -- PART A5: triggers in the public schema (query 5)
 -- =====================================================================

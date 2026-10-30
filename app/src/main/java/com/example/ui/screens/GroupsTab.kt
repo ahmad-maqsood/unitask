@@ -182,6 +182,24 @@ fun GroupsTab(
                             Toast.makeText(context, "Group deleted", Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onUpdateGroupProfile = { newName, newUsername ->
+                        viewModel.updateGroupProfile(newName, newUsername) { success, error ->
+                            if (error != null) {
+                                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    onRegenerateGroupCode = {
+                        viewModel.regenerateGroupCode { success, codeOrError ->
+                            if (codeOrError != null) {
+                                Toast.makeText(context, if (success) "New code: $codeOrError" else codeOrError, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    onTransferOwnership = { newOwnerUid ->
+                        viewModel.transferOwnership(newOwnerUid)
+                    },
+                    onLoadEarlierMessages = { viewModel.loadEarlierMessages() },
                     chatUnreadCount = currentChatInfo?.unreadCount ?: 0,
                     chatLastReadMillis = currentChatInfo?.lastReadMillis,
                     onChatRead = { upToMillis -> onChatRead(selectedGroupId ?: "", upToMillis) },

@@ -211,16 +211,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 when (status) {
                     is SessionStatus.Authenticated -> {
                         val user = status.session.user
+                        val prevSyncedUid = AuthStorage.getLastSyncedUid(application)
                         AuthStorage.setLastUid(application, user?.id)
                         _currentUser.value = user?.toAppUser()
                         // A token refresh sends this status again: only react to a new person.
                         if (user?.id != lastUserId) {
                             lastUserId = user?.id
-                            com.example.sync.SupabaseSyncManager.startRealtimeSync(application, database)
                             launch(Dispatchers.IO) {
+                                if (prevSyncedUid != null && user != null && user.id != prevSyncedUid) {
+                                    Log.i("MainViewModel", "Switching user accounts ($prevSyncedUid -> ${user.id}). Resetting local data.")
+                                    try {
+                                        database.clearAllTables()
+                                        com.example.data.groups.GroupRepository.clearCache(application)
+                                    } catch (e: Exception) {
+                                        Log.w("MainViewModel", "Error resetting local tables: ${e.message}")
+                                    }
+                                }
+                                if (user != null) {
+                                    AuthStorage.setLastSyncedUid(application, user.id)
+                                }
+                                com.example.sync.SupabaseSyncManager.startRealtimeSync(application, database)
                                 com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
+                                com.example.sync.SyncScheduler.scheduleSync(application)
                             }
-                            com.example.sync.SyncScheduler.scheduleSync(application)
                         }
                     }
                     is SessionStatus.RefreshFailure -> {
@@ -235,11 +248,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         if (lastUserId != null) {
                             lastUserId = null
                             com.example.sync.SupabaseSyncManager.stopRealtimeSync()
-                            launch(Dispatchers.IO) {
-                                database.courseDao().markAllCoursesUnsynced()
-                                database.taskDao().markAllTasksUnsynced()
-                                database.lectureSlotDao().markAllSlotsUnsynced()
-                            }
                         }
                     }
                     else -> Unit

@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.unitask.zrvqk"
     minSdk = 24
     targetSdk = 36
-    versionCode = 9
-    versionName = "2.3.0-beta"
+    versionCode = 10
+    versionName = "3.0.0-beta"
     buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"532041682564-hm7328k6empdkip9ldoml916klqrdcjb.apps.googleusercontent.com\"")
     buildConfigField("String", "SUPABASE_URL", "\"https://hnkvduyzgueykvhlkzys.supabase.co\"")
     buildConfigField("String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhua3ZkdXl6Z3VleWt2aGxrenlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMTY4NTgsImV4cCI6MjEwODY5Mjg1OH0.Ue1xtCji8yKx8MmQVrB7OLxYOyqSLKzKAozgrNglM6o\"")
@@ -61,6 +61,7 @@ android {
     }
   }
   compileOptions {
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
@@ -87,6 +88,7 @@ secrets {
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  coreLibraryDesugaring(libs.desugar.jdk.libs)
   implementation(platform(libs.androidx.compose.bom))
 
   // implementation(libs.accompanist.permissions)
@@ -126,6 +128,7 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)
   implementation(libs.moshi.kotlin)
+  implementation(libs.zxing.core)
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)

@@ -216,8 +216,7 @@ object SupabaseSyncManager {
         return if (slot.cloudId.isNotBlank()) {
             slot.cloudId
         } else {
-            val sanitizedCourse = normalizeCode(courseCode).replace(Regex("[^A-Z0-9]"), "_")
-            "slot_${sanitizedCourse}_d${slot.dayOfWeek}_${slot.startHour}_${slot.startMinute}_${slot.endHour}_${slot.endMinute}"
+            "slot_" + java.util.UUID.randomUUID().toString()
         }
     }
 
@@ -442,6 +441,9 @@ object SupabaseSyncManager {
                 rerunRequested.set(false)
                 ok = runSyncPass(context, database)
             } while (ok && rerunRequested.get())
+            if (ok) {
+                com.example.util.AuthStorage.setLastSyncedTimestamp(context, System.currentTimeMillis())
+            }
             ok
         } finally {
             isSyncingNow.set(false)

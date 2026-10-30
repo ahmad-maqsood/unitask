@@ -305,6 +305,16 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- =====================================================================
 -- 2026-10-30: guide steps for "Learn to use the app" (app_features.how_to)
 alter table app_features add column how_to text not null default '';
+-- 2026-10-30: announcements bell + background check (NO new SQL needed, existing columns are used)
+--   The app reads announcements.created_at / expires_at / enabled / user_id through the existing
+--   "read my announcements" policy, which already hides disabled, expired and other people's rows.
+--   * expires_at = a time -> the announcement leaves the user's bell at that time.
+--   * expires_at = NULL   -> it stays in the bell until the user removes it, or you set enabled = false.
+--   * Every phone checks this table about every 15 minutes (WorkManager) and shows a notification
+--     for each announcement it has not shown before.
+--   Example (run in the SQL editor to add one that expires in 3 days):
+--     insert into announcements (title, body, expires_at)
+--     values ('Exam week tips', 'Remember to back up your tasks.', now() + interval '3 days');
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)

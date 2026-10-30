@@ -228,7 +228,8 @@ fun MainScreen(
 
     val selectedCourseDetailId by viewModel.selectedCourseDetailId.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
-    AnnouncementHost(currentUserId = currentUser?.uid)
+    val announcements = rememberAnnouncements(currentUser?.uid)
+    AnnouncementHost(announcements)
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
@@ -308,6 +309,7 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    AnnouncementBell(announcements)
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() }

@@ -15,7 +15,7 @@ object SyncScheduler {
     private const val UNIQUE_WORK_NAME = "unitask_cloud_sync_onetime"
     private const val PERIODIC_WORK_NAME = "unitask_cloud_sync_periodic"
     private const val GROUP_PERIODIC_WORK_NAME = "unitask_group_sync_periodic"
-
+    private const val ANNOUNCEMENT_PERIODIC_WORK_NAME = "unitask_announcement_check_periodic"
     fun scheduleSync(context: Context) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -51,6 +51,23 @@ object SyncScheduler {
             )
     }
 
+    /** Checks for new announcements every 15 minutes (the minimum WorkManager allows). */
+    fun scheduleAnnouncementSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = PeriodicWorkRequestBuilder<AnnouncementWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(context.applicationContext)
+            .enqueueUniquePeriodicWork(
+                ANNOUNCEMENT_PERIODIC_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
+    }
     fun schedulePeriodicSync(context: Context) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)

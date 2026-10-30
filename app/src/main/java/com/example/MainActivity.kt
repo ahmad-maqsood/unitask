@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
             intent.removeExtra("open_group_chat")
         } else if (openedTaskId > 0L || intent.hasExtra("opened_task_id")) {
             if (isMyTask) {
-                mainViewModel.setTab(com.example.ui.screens.MainTab.MY_TASKS)
+                mainViewModel.setTab(com.example.ui.screens.MainTab.MYTASKS)
             } else {
                 mainViewModel.setTab(com.example.ui.screens.MainTab.DEADLINES)
             }

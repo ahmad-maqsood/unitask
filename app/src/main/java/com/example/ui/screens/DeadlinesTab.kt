@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -79,6 +80,7 @@ import com.example.data.local.Course
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
+import com.example.data.local.deadlineMillis
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -650,7 +652,7 @@ fun DeadlinesTab(
                 }
             }
         } else if (sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()) {
-            val sections = remember(tasks) { groupDeadlines(tasks) }
+            val sections = groupDeadlines(tasks)
 
             if (sections.overdue.isNotEmpty()) {
                 item(key = "section_header_overdue") {

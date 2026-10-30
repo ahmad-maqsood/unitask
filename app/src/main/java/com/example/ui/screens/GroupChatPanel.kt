@@ -359,7 +359,7 @@ fun GroupChatPanel(
                 }
 
                 // Sticky floating date header pill
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = topVisibleDateText != null,
                     enter = fadeIn(),
                     exit = fadeOut(),

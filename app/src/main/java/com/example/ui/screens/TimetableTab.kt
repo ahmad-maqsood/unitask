@@ -329,21 +329,6 @@ fun TimetableTab(
                     }
                 }
 
-                // Bi-weekly schedule filter (All, Week A, Week B)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf("All", "Week A", "Week B").forEach { w ->
-                        FilterChip(
-                            selected = selectedWeekFilter == w,
-                            onClick = { selectedWeekFilter = w },
-                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
             }
         } else {
             daySlots.forEachIndexed { index, slotWithCourse ->
@@ -370,21 +355,6 @@ fun TimetableTab(
                     }
                 }
 
-                // Bi-weekly schedule filter (All, Week A, Week B)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf("All", "Week A", "Week B").forEach { w ->
-                        FilterChip(
-                            selected = selectedWeekFilter == w,
-                            onClick = { selectedWeekFilter = w },
-                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
             }
         }
     }
@@ -759,21 +729,6 @@ fun TimetableSlotCard(
                     }
                 }
 
-                // Bi-weekly schedule filter (All, Week A, Week B)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf("All", "Week A", "Week B").forEach { w ->
-                        FilterChip(
-                            selected = selectedWeekFilter == w,
-                            onClick = { selectedWeekFilter = w },
-                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
 
     }
 }

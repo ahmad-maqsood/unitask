@@ -37,7 +37,7 @@ It is a personal project with no ads and no tracking, built to solve everyday pl
 ## Download
  
 1. Open the [latest release](https://github.com/ahmad-maqsood/unitask/releases/latest).
-2. Download `unitask.apk` and open it on your phone. Allow installation from your browser or file manager if Android asks.
+2. Download the `.apk` file and open it on your phone. Allow installation from your browser or file manager if Android asks.
 3. Already installed? Open **Settings, Check for updates** inside the app. It compares your version with the newest GitHub release tag.
 Requires Android 7.0 (API 24) or newer.
  

@@ -209,7 +209,7 @@ CREATE OR REPLACE FUNCTION public.update_group_profile(p_group_id uuid, p_name t
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $function$
 declare
   uname text := lower(trim(p_username));
 begin
@@ -223,14 +223,14 @@ begin
   set name = left(trim(p_name), 60),
       username = uname
   where id = p_group_id;
-end $;
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.regenerate_group_code(p_group_id uuid)
  RETURNS text
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $function$
 declare
   new_code text := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8));
 begin
@@ -240,14 +240,14 @@ begin
   set join_code = new_code
   where id = p_group_id;
   return new_code;
-end $;
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.transfer_group_ownership(p_group_id uuid, p_new_owner_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $function$
 begin
   if auth.uid() is null then raise exception 'not signed in'; end if;
   if not is_group_owner(p_group_id) then raise exception 'only owner can transfer ownership'; end if;
@@ -257,31 +257,35 @@ begin
   update group_members set role = 'admin' where group_id = p_group_id and user_id = auth.uid();
   update group_members set role = 'owner' where group_id = p_group_id and user_id = p_new_owner_id;
   update groups set owner_id = p_new_owner_id where id = p_group_id;
-end $;
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.enforce_message_identity()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $function$
 begin
   new.sender_id = auth.uid();
   return new;
-end $;
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.enforce_task_identity()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $function$
 begin
   if TG_OP = 'INSERT' then
     new.created_by = auth.uid();
   end if;
   return new;
-end $;
+end $function$;
+
+GRANT EXECUTE ON FUNCTION public.update_group_profile(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.regenerate_group_code(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.transfer_group_ownership(uuid, uuid) TO authenticated;
 
 -- =====================================================================
 -- PART A5: triggers in the public schema (query 5)
@@ -326,53 +330,53 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- =====================================================================
 -- PART A8: Foreign keys and check constraints 
 -- =====================================================================
-| table_name     | conname                       | definition                                                                                                  |
-| -------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| courses        | courses_code_check            | CHECK (((char_length(code) >= 1) AND (char_length(code) <= 30)))                                            |
-| courses        | courses_name_check            | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 100)))                                           |
-| courses        | courses_pkey                  | PRIMARY KEY (user_id, doc_id)                                                                               |
-| courses        | courses_user_id_fkey          | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
-| tasks          | tasks_due_time_hour_check     | CHECK (((due_time_hour >= 0) AND (due_time_hour <= 23)))                                                    |
-| tasks          | tasks_due_time_minute_check   | CHECK (((due_time_minute >= 0) AND (due_time_minute <= 59)))                                                |
-| tasks          | tasks_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
-| tasks          | tasks_priority_check          | CHECK ((priority = ANY (ARRAY['LOW'::text, 'MEDIUM'::text, 'HIGH'::text])))                                 |
-| tasks          | tasks_status_check            | CHECK ((status = ANY (ARRAY['PENDING'::text, 'COMPLETED'::text])))                                          |
-| tasks          | tasks_title_check             | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
-| tasks          | tasks_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
-| slots          | slots_course_code_check       | CHECK (((char_length(course_code) >= 1) AND (char_length(course_code) <= 30)))                              |
-| slots          | slots_day_of_week_check       | CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))                                                         |
-| slots          | slots_end_hour_check          | CHECK (((end_hour >= 0) AND (end_hour <= 23)))                                                              |
-| slots          | slots_end_minute_check        | CHECK (((end_minute >= 0) AND (end_minute <= 59)))                                                          |
-| slots          | slots_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
-| slots          | slots_start_hour_check        | CHECK (((start_hour >= 0) AND (start_hour <= 23)))                                                          |
-| slots          | slots_start_minute_check      | CHECK (((start_minute >= 0) AND (start_minute <= 59)))                                                      |
-| slots          | slots_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
-| groups         | groups_name_check             | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 60)))                                            |
-| groups         | groups_owner_id_fkey          | FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE                                          |
-| groups         | groups_pkey                   | PRIMARY KEY (id)                                                                                            |
-| groups         | groups_username_check         | CHECK (((username = lower(username)) AND ((char_length(username) >= 3) AND (char_length(username) <= 30)))) |
-| groups         | groups_username_key           | UNIQUE (username)                                                                                           |
-| group_members  | group_members_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
-| group_members  | group_members_pkey            | PRIMARY KEY (group_id, user_id)                                                                             |
-| group_members  | group_members_role_check      | CHECK ((role = ANY (ARRAY['owner'::text, 'admin'::text, 'member'::text])))                                  |
-| group_members  | group_members_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
-| group_tasks    | group_tasks_created_by_fkey   | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
-| group_tasks    | group_tasks_group_id_fkey     | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
-| group_tasks    | group_tasks_pkey              | PRIMARY KEY (id)                                                                                            |
-| group_tasks    | group_tasks_title_check       | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
-| group_courses  | group_courses_created_by_fkey | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
-| group_courses  | group_courses_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
-| group_courses  | group_courses_pkey            | PRIMARY KEY (id)                                                                                            |
-| group_messages | group_messages_group_id_fkey  | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
-| group_messages | group_messages_pkey           | PRIMARY KEY (id)                                                                                            |
-| group_messages | group_messages_sender_id_fkey | FOREIGN KEY (sender_id) REFERENCES auth.users(id)                                                           |
-| group_messages | group_messages_text_check     | CHECK (((char_length(text) >= 1) AND (char_length(text) <= 500)))                                           |
-| group_done     | group_done_group_id_fkey      | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
-| group_done     | group_done_pkey               | PRIMARY KEY (user_id, task_id)                                                                              |
-| group_done     | group_done_task_id_fkey       | FOREIGN KEY (task_id) REFERENCES group_tasks(id) ON DELETE CASCADE                                          |
-| group_done     | group_done_user_id_fkey       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
-| app_features   | app_features_pkey             | PRIMARY KEY (id)                                                                                            |
-| announcements  | announcements_pkey            | PRIMARY KEY (id)                                                                                            |
+-- | table_name     | conname                       | definition                                                                                                  |
+-- | -------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+-- | courses        | courses_code_check            | CHECK (((char_length(code) >= 1) AND (char_length(code) <= 30)))                                            |
+-- | courses        | courses_name_check            | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 100)))                                           |
+-- | courses        | courses_pkey                  | PRIMARY KEY (user_id, doc_id)                                                                               |
+-- | courses        | courses_user_id_fkey          | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+-- | tasks          | tasks_due_time_hour_check     | CHECK (((due_time_hour >= 0) AND (due_time_hour <= 23)))                                                    |
+-- | tasks          | tasks_due_time_minute_check   | CHECK (((due_time_minute >= 0) AND (due_time_minute <= 59)))                                                |
+-- | tasks          | tasks_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
+-- | tasks          | tasks_priority_check          | CHECK ((priority = ANY (ARRAY['LOW'::text, 'MEDIUM'::text, 'HIGH'::text])))                                 |
+-- | tasks          | tasks_status_check            | CHECK ((status = ANY (ARRAY['PENDING'::text, 'COMPLETED'::text])))                                          |
+-- | tasks          | tasks_title_check             | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
+-- | tasks          | tasks_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+-- | slots          | slots_course_code_check       | CHECK (((char_length(course_code) >= 1) AND (char_length(course_code) <= 30)))                              |
+-- | slots          | slots_day_of_week_check       | CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))                                                         |
+-- | slots          | slots_end_hour_check          | CHECK (((end_hour >= 0) AND (end_hour <= 23)))                                                              |
+-- | slots          | slots_end_minute_check        | CHECK (((end_minute >= 0) AND (end_minute <= 59)))                                                          |
+-- | slots          | slots_pkey                    | PRIMARY KEY (user_id, doc_id)                                                                               |
+-- | slots          | slots_start_hour_check        | CHECK (((start_hour >= 0) AND (start_hour <= 23)))                                                          |
+-- | slots          | slots_start_minute_check      | CHECK (((start_minute >= 0) AND (start_minute <= 59)))                                                      |
+-- | slots          | slots_user_id_fkey            | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+-- | groups         | groups_name_check             | CHECK (((char_length(name) >= 1) AND (char_length(name) <= 60)))                                            |
+-- | groups         | groups_owner_id_fkey          | FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE                                          |
+-- | groups         | groups_pkey                   | PRIMARY KEY (id)                                                                                            |
+-- | groups         | groups_username_check         | CHECK (((username = lower(username)) AND ((char_length(username) >= 3) AND (char_length(username) <= 30)))) |
+-- | groups         | groups_username_key           | UNIQUE (username)                                                                                           |
+-- | group_members  | group_members_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+-- | group_members  | group_members_pkey            | PRIMARY KEY (group_id, user_id)                                                                             |
+-- | group_members  | group_members_role_check      | CHECK ((role = ANY (ARRAY['owner'::text, 'admin'::text, 'member'::text])))                                  |
+-- | group_members  | group_members_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+-- | group_tasks    | group_tasks_created_by_fkey   | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
+-- | group_tasks    | group_tasks_group_id_fkey     | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+-- | group_tasks    | group_tasks_pkey              | PRIMARY KEY (id)                                                                                            |
+-- | group_tasks    | group_tasks_title_check       | CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))                                         |
+-- | group_courses  | group_courses_created_by_fkey | FOREIGN KEY (created_by) REFERENCES auth.users(id)                                                          |
+-- | group_courses  | group_courses_group_id_fkey   | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+-- | group_courses  | group_courses_pkey            | PRIMARY KEY (id)                                                                                            |
+-- | group_messages | group_messages_group_id_fkey  | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+-- | group_messages | group_messages_pkey           | PRIMARY KEY (id)                                                                                            |
+-- | group_messages | group_messages_sender_id_fkey | FOREIGN KEY (sender_id) REFERENCES auth.users(id)                                                           |
+-- | group_messages | group_messages_text_check     | CHECK (((char_length(text) >= 1) AND (char_length(text) <= 500)))                                           |
+-- | group_done     | group_done_group_id_fkey      | FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE                                              |
+-- | group_done     | group_done_pkey               | PRIMARY KEY (user_id, task_id)                                                                              |
+-- | group_done     | group_done_task_id_fkey       | FOREIGN KEY (task_id) REFERENCES group_tasks(id) ON DELETE CASCADE                                          |
+-- | group_done     | group_done_user_id_fkey       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE                                           |
+-- | app_features   | app_features_pkey             | PRIMARY KEY (id)                                                                                            |
+-- | announcements  | announcements_pkey            | PRIMARY KEY (id)                                                                                            |
 
 -- =====================================================================
 -- PART A9: scheduled messages' deletion job (pg_cron)

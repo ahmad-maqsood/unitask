@@ -6,7 +6,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
-
+import java.io.File
 /**
  * Which sound UniTask alerts use.
  * Android fixes a channel's sound when the channel is created, so each sound has its own channel id.
@@ -47,11 +47,36 @@ object NotificationSound {
     fun phoneUri(context: Context): Uri? =
         prefs(context).getString(KEY_PHONE_URI, null)?.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
 
-    /** The saved choice. Old installs have no choice yet, so the old switch decides. */
+    /**
+     * Android can restore old settings from the Google backup when the app is reinstalled.
+     * That would bring back an old "Sound 1" choice on a fresh install. So on the first start of a
+     * genuinely fresh install (not an update) we clear any restored sound choice once.
+     * The marker file lives in noBackupFilesDir, which is never backed up or restored,
+     * so it is always missing on a fresh install.
+     */
+    private fun ensureFreshInstallDefaults(context: Context) {
+        try {
+            val marker = File(context.noBackupFilesDir, "sound_defaults_checked")
+            if (marker.exists()) return
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            val isFreshInstall = info.firstInstallTime == info.lastUpdateTime
+            if (isFreshInstall) {
+                prefs(context).edit()
+                    .remove(KEY_CHOICE)
+                    .remove(KEY_PHONE_URI)
+                    .remove(KEY_USE_SYSTEM)
+                    .commit()
+            }
+            marker.createNewFile()
+        } catch (_: Exception) {
+            // If this check fails we simply keep the saved value; nothing breaks.
+        }
+    }
+
+    /** The saved choice. If nothing is saved (fresh install), "Phone default" is used. */
     fun choice(context: Context): String {
-        val p = prefs(context)
-        val saved = p.getString(KEY_CHOICE, null)
-        val choice = saved ?: if (p.getBoolean(KEY_USE_SYSTEM, false)) CHOICE_SYSTEM else CHOICE_SYSTEM
+        ensureFreshInstallDefaults(context)
+        val choice = prefs(context).getString(KEY_CHOICE, null) ?: CHOICE_SYSTEM
         if (choice == CHOICE_PHONE && phoneUri(context) == null) return CHOICE_SYSTEM
         if (BUILT_IN.any { it.key == choice } && choice != CHOICE_DEFAULT &&
             availableBuiltIn(context).none { it.key == choice }

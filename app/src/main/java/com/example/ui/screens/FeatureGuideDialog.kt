@@ -18,6 +18,14 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +67,7 @@ private fun featureIcon(name: String): ImageVector? = when (name.trim().lowercas
 fun FeatureGuideDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     var features by remember { mutableStateOf(FeatureGuide.cachedOrDefault(context)) }
+    var expandedIndex by remember { mutableStateOf(-1) }
 
     // Show the saved list at once, then swap in the fresh one when it arrives.
     LaunchedEffect(Unit) {
@@ -67,32 +76,72 @@ fun FeatureGuideDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("What UniTask can do") },
+        title = { Text("Learn to use UniTask") },
         text = {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                items(features) { feature: AppFeature ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        val vector = featureIcon(feature.icon)
-                        if (vector != null) {
+            Column {
+                Text(
+                    text = "Tap a feature to see how to use it.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(features.size) { index ->
+                        val feature: AppFeature = features[index]
+                        val expanded = expandedIndex == index
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                                .clickable { expandedIndex = if (expanded) -1 else index }
+                                .animateContentSize()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            val vector = featureIcon(feature.icon)
+                            if (vector != null) {
+                                Icon(
+                                    vector,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            } else {
+                                Text(feature.icon.trim(), fontSize = 20.sp, modifier = Modifier.size(24.dp))
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(feature.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(
+                                    feature.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = if (expanded) Int.MAX_VALUE else 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (expanded && feature.howTo.isNotBlank()) {
+                                    Text(
+                                        "How to use",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(top = 10.dp)
+                                    )
+                                    Text(
+                                        feature.howTo,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
+                            }
                             Icon(
-                                vector,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        } else {
-                            Text(feature.icon.trim(), fontSize = 20.sp, modifier = Modifier.size(24.dp))
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(feature.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                            Text(
-                                feature.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (expanded) "Collapse" else "Expand",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

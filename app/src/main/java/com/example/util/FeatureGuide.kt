@@ -16,7 +16,8 @@ data class AppFeature(
     val title: String = "",
     val description: String = "",
     val icon: String = "star",
-    @SerialName("sort_order") val sortOrder: Int = 0
+    @SerialName("sort_order") val sortOrder: Int = 0,
+    @SerialName("how_to") val howTo: String = ""
 )
 
 /**
@@ -29,11 +30,26 @@ object FeatureGuide {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     private val builtIn = listOf(
-        AppFeature("Deadlines", "Track assignments and tasks with due dates, priorities and reminders.", "assignment", 10),
-        AppFeature("Timetable", "Your weekly class schedule.", "schedule", 20),
-        AppFeature("Courses", "Keep your courses and lecture slots in one place.", "school", 30),
-        AppFeature("Groups", "Share tasks and chat with your classmates.", "groups", 40),
-        AppFeature("Cloud backup", "Sign in with Google to back up your data.", "backup", 50)
+        AppFeature(
+            "Deadlines", "Track assignments and tasks with due dates, priorities and reminders.", "assignment", 10,
+            "1. Open the Deadlines tab.\n2. Tap + Add Assignment.\n3. Fill in the title, course, due date and time, priority and reminders.\n4. Tap the three dots on a card to edit or delete it."
+        ),
+        AppFeature(
+            "Timetable", "Your weekly class schedule.", "schedule", 20,
+            "1. Open the Timetable tab.\n2. Tap Add Class and fill in the course, day, time and room."
+        ),
+        AppFeature(
+            "Courses", "Keep your courses and lecture slots in one place.", "school", 30,
+            "1. Open the Courses tab.\n2. Tap Add Course and enter the code, name and instructor."
+        ),
+        AppFeature(
+            "Groups", "Share tasks and chat with your classmates.", "groups", 40,
+            "1. Sign in with Google.\n2. Open the Groups tab.\n3. Tap Create a group, or Join a group with a handle and join code."
+        ),
+        AppFeature(
+            "Cloud backup", "Sign in with Google to back up your data.", "backup", 50,
+            "1. Open Settings.\n2. Tap Sign in to back up data and sign in with Google."
+        )
     )
 
     /** What to show instantly: the saved copy if there is one, else the built-in list. */

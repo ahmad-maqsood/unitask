@@ -318,8 +318,8 @@ fun SettingsButton(
                 SettingsSectionLabel("About")
                 SettingsRow(
                     icon = Icons.Default.Info,
-                    title = "App features",
-                    subtitle = "See everything UniTask can do",
+                    title = "Learn to use the app",
+                    subtitle = "Step by step help for every feature",
                     onClick = { showFeatureGuide = true },
                     testTag = "settings_features_row"
                 )

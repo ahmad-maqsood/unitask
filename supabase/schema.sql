@@ -16,7 +16,7 @@
 --                 user_id uuid NULL (NULL = shown to everyone) | created_at timestamptz now()
 --                 expires_at timestamptz NULL | enabled boolean true
 -- app_features:   id bigint NOT NULL | sort_order int 0 | title text | description text
---                 icon text 'star' | enabled boolean true
+--                 icon text 'star' | enabled boolean true | how_to text ''
 -- courses:        user_id uuid auth.uid() | doc_id text | code text | name text
 --                 instructor text '' | color_hex text '' | location text '' | updated_at timestamptz now()
 -- tasks:          user_id uuid auth.uid() | doc_id text | course_code text '' | title text
@@ -299,6 +299,12 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- PART A9: scheduled messages' deletion job (pg_cron)
 -- =====================================================================
 -- delete-old-chat, daily at 03:00: delete from group_messages older than 30 days
+
+-- =====================================================================
+-- PART A10: changes made after the capture above
+-- =====================================================================
+-- 2026-10-30: guide steps for "Learn to use the app" (app_features.how_to)
+alter table app_features add column how_to text not null default '';
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)

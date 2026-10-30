@@ -54,8 +54,20 @@ Requires Android 7.0 (API 24) or newer.
 | **Reminders** | Alerts at the deadline, 1 hour, 2 hours, 12 hours, 1 day or 2 days before. High-priority tasks can ring like an alarm. Custom notification sounds and an optional daily summary. Reminders are restored after a reboot. |
 | **Backup** | Cloud backup through Supabase when signed in. Local backup files you can protect with a password, which also restore older backups. |
 | **In-app updates** | Update check against GitHub Releases, plus a feature guide and announcements that can be changed from the backend without releasing a new version. |
- 
+
 <details open>
+<summary><b>What's new in 2.3.0-beta</b></summary>
+
+- **Light, dark and system theme.** Pick your preferred appearance in Settings. The choice is saved on the device.
+- **Multiple notification sounds.** Choose from four built-in sounds, your phone's default, or any ringtone installed on your phone. Each sound has its own notification channel so Android remembers the volume you set.
+- **Announcement notifications.** New announcements are shown as phone notifications even when the app is closed, checked roughly every 15 minutes in the background. At most three are posted at once to avoid flooding your shade.
+- **High-priority alarm toggle.** Turn the alarm-style ringing on or off directly in Settings without digging through Android notification settings.
+
+All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
+
+</details>
+
+<details>
 <summary><b>What's new in 2.1.1</b></summary>
 
 - **Group chat no longer shows repeated messages** when a new message arrives. A message you send now keeps one identity from the moment you tap send until the server confirms it.
@@ -66,8 +78,6 @@ Requires Android 7.0 (API 24) or newer.
 - **Completed repeating tasks roll over to their next date** automatically every day.
 - **Group tasks are cached** for offline viewing, and groups stay visible while sign-in is still loading.
 - **Join codes are 8 characters** (new groups only; existing codes keep working).
-
-All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
 
 </details>
 
@@ -84,6 +94,7 @@ All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/release
 Full list: [v1.3.0 ... main](https://github.com/ahmad-maqsood/unitask/compare/v1.3.0...main)
  
 </details>
+
 ## Architecture
  
 UniTask is local-first. The screens read from a Room database, so the app stays fast and usable offline. Changes are pushed to Supabase in the background, and group data is read live.
@@ -102,12 +113,12 @@ flowchart LR
  
 | Layer | Technology |
 | --- | --- |
-| UI | Kotlin, Jetpack Compose, Material 3, Coil |
+| UI | Kotlin, Jetpack Compose, Material 3 |
 | Local data | Room 2.7 with explicit migrations |
-| Cloud | Supabase (`supabase-kt` 3.2): Auth with Google sign-in, PostgREST, Realtime |
-| Networking | Ktor |
-| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync and message checks |
-| Build | Gradle (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 |
+| Cloud | Supabase (`supabase-kt` 3.2.4): Auth with Google sign-in, PostgREST, Realtime |
+| Networking | Ktor 3.2.3 |
+| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
+| Build | Gradle 9.1.1 (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 |
  
 **Sync notes**
  
@@ -118,21 +129,23 @@ flowchart LR
 - Database triggers set the sender name and reply quote of chat messages, and the author name of group tasks, on the server, so a member cannot post under someone else's name.
 <details>
 <summary><b>Project layout</b></summary>
+
 ```text
 app/src/main/java/com/example/
   data/
     local/         Room entities, DAOs, migrations, repeat rules
     groups/        Group repository and models (Supabase realtime)
     repository/    AppRepository for personal data
-  sync/            SupabaseSyncManager, SyncWorker, GroupSyncWorker, scheduler
-  reminder/        Task, class, daily-summary and group alarms and receivers
+  sync/            SupabaseSyncManager, SyncWorker, GroupSyncWorker, AnnouncementWorker, scheduler
+  reminder/        Task, class, daily-summary, group and announcement alarms and receivers
   ui/
     screens/       Compose screens, dialogs and ViewModels
     theme/         Colours, typography, theme preference
-  util/            Supabase client, local backup, update checker, announcements
+  util/            Supabase client, local backup, update checker, announcements, attachment manager
 ```
  
 </details>
+
 ## Build from source
  
 **Prerequisites:** a recent Android Studio, JDK 17 or newer, and a free [Supabase](https://supabase.com/) project.
@@ -148,6 +161,7 @@ cd unitask
 - Create the tables the app uses: `courses`, `tasks`, `slots`, `groups`, `group_members`, `group_tasks`, `group_courses`, `group_done`, `group_messages`, `app_features` and `announcements`, plus the `create_group` and `join_group` functions. Turn on Row Level Security for every table and add policies that limit each user to their own rows or groups.
 - Enable Realtime for the group tables.
 - [`supabase/schema.sql`](supabase/schema.sql) documents the live setup: tables, Row Level Security policies, functions, triggers, indexes and the 30-day chat cleanup job. Use it as a reference to recreate the backend. It is documentation, so read it before running anything from it.
+
 **2. App configuration**
  
 Set these values in `app/build.gradle.kts`, inside `defaultConfig`:
@@ -187,14 +201,15 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 - Signing in is optional and only needed for cloud backup and groups.
 - Local backups can be password-protected (encrypted). Only restore backups you trust.
 - "Report a problem" opens a form with only the app version, Android version and phone model filled in.
+
 | Permission | Why |
 | --- | --- |
-| `POST_NOTIFICATIONS` | Deadline, class, daily summary and chat alerts |
+| `POST_NOTIFICATIONS` | Deadline, class, daily summary, chat and announcement alerts |
 | `SCHEDULE_EXACT_ALARM` | Reminders at the exact time |
 | `RECEIVE_BOOT_COMPLETED` | Restore reminders after a restart |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Offer the battery setting for reliable reminders |
 | `VIBRATE` | Alarm-style alerts |
-| `INTERNET` | Cloud backup, groups and update checks |
+| `INTERNET` | Cloud backup, groups, update checks and announcements |
  
 ## Known limitations
  
@@ -203,11 +218,13 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 - Reminders depend on notification permission and the phone's alarm and background settings.
 - Cloud features need internet. Personal tasks and the timetable work offline.
 - A monthly repeating task set on the 29th, 30th or 31st moves to an earlier day after a short month.
+
 ## Support
  
 - **Report a problem:** in the app, open **Settings, Report a problem**, or use the [form](https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform). No GitHub account needed.
 - **Request a feature:** **Settings, Request a feature** in the app.
 - **Bugs and ideas:** [open an issue](https://github.com/ahmad-maqsood/unitask/issues).
+
 ## License
  
 Released under the [MIT License](LICENSE).

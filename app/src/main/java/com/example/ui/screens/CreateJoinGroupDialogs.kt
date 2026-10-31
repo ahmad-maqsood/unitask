@@ -314,7 +314,7 @@ fun JoinGroupDialog(
                 OutlinedButton(
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+                        val clip = clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()
                         if (!clip.isNullOrBlank()) {
                             val parsed = com.example.util.QrCodeUtil.parseGroupInvite(clip)
                             if (parsed != null) {

@@ -130,5 +130,50 @@ class ChecklistMarkdownTest {
     fun testToggleChecklistLine_emptyDescription() {
         assertEquals("", toggleChecklistLine("", 0))
     }
+
+    @Test
+    fun testSplitNotesAndChecklist_separatesNotesFromItems() {
+        val desc = "5 pages\n- [ ] Read chapter 1\nExtra note\n- [x] Draft outline"
+        val (notes, items) = splitNotesAndChecklist(desc)
+        assertEquals("5 pages\nExtra note", notes)
+        assertEquals(2, items.size)
+        assertEquals("Read chapter 1", items[0].text)
+        assertFalse(items[0].checked)
+        assertEquals("Draft outline", items[1].text)
+        assertTrue(items[1].checked)
+    }
+
+    @Test
+    fun testSplitNotesAndChecklist_emptyDescription() {
+        val (notes, items) = splitNotesAndChecklist("")
+        assertEquals("", notes)
+        assertTrue(items.isEmpty())
+    }
+
+    @Test
+    fun testBuildDescriptionWithChecklist_dropsBlankItemsAndKeepsChecked() {
+        val items = listOf(
+            DraftChecklistItem(0, "Read chapter 1", true),
+            DraftChecklistItem(1, "   ", false),
+            DraftChecklistItem(2, "Write summary", false)
+        )
+        assertEquals(
+            "5 pages\n- [x] Read chapter 1\n- [ ] Write summary",
+            buildDescriptionWithChecklist("5 pages", items)
+        )
+    }
+
+    @Test
+    fun testBuildDescriptionWithChecklist_onlyItems_noLeadingBlankLine() {
+        val items = listOf(DraftChecklistItem(0, "Only item", false))
+        assertEquals("- [ ] Only item", buildDescriptionWithChecklist("", items))
+    }
+
+    @Test
+    fun testSplitThenBuild_roundTrip() {
+        val desc = "Notes here\n- [x] Done thing\n- [ ] Todo thing"
+        val (notes, items) = splitNotesAndChecklist(desc)
+        assertEquals(desc, buildDescriptionWithChecklist(notes, items))
+    }
 }
 

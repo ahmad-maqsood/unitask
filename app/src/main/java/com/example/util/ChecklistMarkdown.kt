@@ -45,3 +45,43 @@ fun toggleChecklistLine(description: String, lineIndex: Int): String {
     return updatedLines.joinToString(delimiter)
 }
 
+/**
+ * One row of the checklist editor in the Add/Edit task dialog.
+ * [id] only exists so Compose can tell rows apart; it is never saved.
+ */
+data class DraftChecklistItem(
+    val id: Long,
+    val text: String,
+    val checked: Boolean
+)
+
+/**
+ * Splits a saved description into (plain notes, checklist rows).
+ * Checklist lines ("- [ ] ..." / "- [x] ...") are removed from the notes.
+ */
+fun splitNotesAndChecklist(description: String): Pair<String, List<DraftChecklistItem>> {
+    if (description.isEmpty()) return "" to emptyList()
+    val items = parseChecklist(description)
+    val checklistLineIndexes = items.map { it.lineIndex }.toSet()
+    val notes = description.lines()
+        .filterIndexed { index, _ -> index !in checklistLineIndexes }
+        .joinToString("\n")
+        .trimEnd()
+    val drafts = items.mapIndexed { i, item ->
+        DraftChecklistItem(id = i.toLong(), text = item.text, checked = item.checked)
+    }
+    return notes to drafts
+}
+
+/**
+ * Joins the plain notes and the checklist rows back into one description string.
+ * Empty rows are dropped. The checklist goes after the notes.
+ */
+fun buildDescriptionWithChecklist(notes: String, items: List<DraftChecklistItem>): String {
+    val checklistText = items
+        .filter { it.text.isNotBlank() }
+        .joinToString("\n") { (if (it.checked) "- [x] " else "- [ ] ") + it.text.trim() }
+    return listOf(notes.trimEnd(), checklistText)
+        .filter { it.isNotBlank() }
+        .joinToString("\n")
+}

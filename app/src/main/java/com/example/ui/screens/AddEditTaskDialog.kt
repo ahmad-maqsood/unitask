@@ -83,6 +83,17 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import com.example.util.DraftChecklistItem
+import com.example.util.buildDescriptionWithChecklist
+import com.example.util.splitNotesAndChecklist
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -110,7 +121,20 @@ fun AddEditTaskDialog(
     val context = LocalContext.current
 
     var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
-    var description by rememberSaveable { mutableStateOf(taskToEdit?.description ?: "") }
+    // The saved description holds notes AND "- [ ] item" lines. In the dialog they are edited separately.
+    val initialSplit = remember { splitNotesAndChecklist(taskToEdit?.description ?: "") }
+    var description by rememberSaveable { mutableStateOf(initialSplit.first) }
+    var checklist by rememberSaveable(
+        stateSaver = listSaver<List<DraftChecklistItem>, String>(
+            save = { list -> list.flatMap { listOf(it.id.toString(), it.text, it.checked.toString()) } },
+            restore = { flat ->
+                flat.chunked(3).mapNotNull { c ->
+                    if (c.size == 3) DraftChecklistItem(c[0].toLongOrNull() ?: 0L, c[1], c[2].toBoolean()) else null
+                }
+            }
+        )
+    ) { mutableStateOf(initialSplit.second) }
+    var checklistFocusId by remember { mutableStateOf<Long?>(null) }
 
     var selectedCourseId by rememberSaveable {
         mutableLongStateOf(
@@ -387,26 +411,93 @@ fun AddEditTaskDialog(
                         .testTag("task_description_input")
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Subtasks / Checklists",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    TextButton(
-                        onClick = {
-                            val prefix = if (description.isNotBlank() && !description.endsWith("\n")) "\n" else ""
-                            description += "${prefix}- [ ] "
-                        },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("+ Add Checklist Item", style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            text = "Checklist",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        TextButton(
+                            onClick = {
+                                val newId = (checklist.maxOfOrNull { it.id } ?: -1L) + 1L
+                                checklist = checklist + DraftChecklistItem(newId, "", false)
+                                checklistFocusId = newId
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.testTag("task_add_checklist_item")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Add item", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+
+                    if (checklist.isEmpty()) {
+                        Text(
+                            text = "Break the assignment into small steps you can tick off.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    checklist.forEach { item ->
+                        key(item.id) {
+                            val focusRequester = remember { FocusRequester() }
+                            LaunchedEffect(checklistFocusId) {
+                                if (checklistFocusId == item.id) {
+                                    runCatching { focusRequester.requestFocus() }
+                                    checklistFocusId = null
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = item.checked,
+                                    onCheckedChange = { isChecked ->
+                                        checklist = checklist.map {
+                                            if (it.id == item.id) it.copy(checked = isChecked) else it
+                                        }
+                                    }
+                                )
+                                OutlinedTextField(
+                                    value = item.text,
+                                    onValueChange = { newText ->
+                                        val clean = newText.replace("\n", " ").take(200)
+                                        checklist = checklist.map {
+                                            if (it.id == item.id) it.copy(text = clean) else it
+                                        }
+                                    },
+                                    placeholder = { Text("Checklist item") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                    keyboardActions = KeyboardActions(
+                                        onNext = {
+                                            // Enter/Next on a filled item -> new empty item right below it
+                                            if (item.text.isNotBlank()) {
+                                                val newId = (checklist.maxOfOrNull { it.id } ?: -1L) + 1L
+                                                val position = checklist.indexOfFirst { it.id == item.id } + 1
+                                                checklist = checklist.toMutableList().apply {
+                                                    add(position, DraftChecklistItem(newId, "", false))
+                                                }
+                                                checklistFocusId = newId
+                                            }
+                                        }
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .focusRequester(focusRequester)
+                                )
+                                IconButton(
+                                    onClick = { checklist = checklist.filter { it.id != item.id } }
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "Remove item")
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -779,7 +870,7 @@ fun AddEditTaskDialog(
                     if (!isTitleEmpty && !isCourseEmpty) {
                         onSave(
                             title,
-                            description,
+                            buildDescriptionWithChecklist(description, checklist),
                             selectedCourseId,
                             selectedDueDateMillis,
                             dueHour,

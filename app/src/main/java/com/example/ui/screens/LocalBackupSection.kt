@@ -62,7 +62,7 @@ private fun describe(counts: BackupCounts): String {
  * needed. Files go through the system file picker, so no storage permission is required.
  */
 @Composable
-fun LocalBackupSection() {
+fun LocalBackupSection(showHeading: Boolean = true) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -157,12 +157,14 @@ fun LocalBackupSection() {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = "Offline backup",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        if (showHeading) {
+            Text(
+                text = "Offline backup",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         BackupRow(
             icon = Icons.Default.Backup,
             title = "Back up to a file",

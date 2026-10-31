@@ -47,7 +47,7 @@ Requires Android 7.0 (API 24) or newer.
  
 | Area | What you get |
 | --- | --- |
-| **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. Calendar view with month grid and deadline dots. Interactive subtasks and checklists (`- [ ]`). Batch multi-select mode for bulk completion and deletion. Urgency grouping (Overdue, Today, Tomorrow, Upcoming, Completed). Multiple reminders per task. Offline file attachments up to 25 MB. |
+| **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. Calendar view with month grid and deadline dots. Checklist editor for subtasks: tick items off on the task card and see live progress. Batch multi-select mode for bulk completion and deletion. Urgency grouping (Overdue, Today, Tomorrow, Upcoming, Completed). Multiple reminders per task. Offline file attachments up to 25 MB. |
 | **My tasks** | A separate to-do list for non-coursework tasks. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later, and done. |
 | **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly, or yearly. Completing a repeating task automatically moves it to its next due date. |
 | **Timetable** | Weekly and bi-weekly (Week A & B) class schedules. Tell UniTask which week it is in Settings and the reminders, daily summary and next class card follow it. Live "current and next class" indicator, automatic free time / break pills (`☕ 1h 30m free`), clash/conflict warnings, and one-tap `.ics` export to Google Calendar or Outlook. |
@@ -59,6 +59,14 @@ Requires Android 7.0 (API 24) or newer.
 | **In-app updates** | GitHub release updater, official university announcements bell, and a built-in interactive "Learn to use the app" feature guide. |
 
 <details open>
+<summary><b>What's new in 3.0.0</b></summary>
+
+- **A proper checklist editor.** When you add or edit an assignment, checklist items are now rows with a checkbox, a text box and a remove button. You no longer see or type `- [ ]` yourself. Press **Next** on the keyboard to add the following item. Empty rows are dropped when you save.
+- **Your existing checklists keep working.** Older tasks open with their checklist shown as rows, and task cards, backups and cloud sync look exactly as before.
+
+</details>
+
+<details>
 <summary><b>What's new in 3.0.0-beta-3</b></summary>
 
 - **Groups stay put when you lock and unlock the phone.** A short sign-in status change no longer clears your group list.

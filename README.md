@@ -22,7 +22,7 @@ UniTask helps students keep track of what is due, when classes start and what th
  
 It is a personal project with no ads and no tracking, built to solve everyday planning problems for me and my classmates.
  
-## Screenshots
+## Screenshots(v2.0.0)
 
 <p align="center">
   <img src="docs/screenshots/deadlines.jpeg" width="20%" alt="Deadlines" />

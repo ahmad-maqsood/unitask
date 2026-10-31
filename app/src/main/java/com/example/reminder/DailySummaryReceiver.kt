@@ -70,7 +70,12 @@ class DailySummaryReceiver : BroadcastReceiver() {
         // 1 = Monday ... 7 = Sunday, same as the timetable.
         val today = (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) + 5) % 7 + 1
         val classes = db.lectureSlotDao().getAllSlotsSync()
-            .filter { !it.isDeleted && it.courseId in courses && it.dayOfWeek == today }
+            .filter {
+                !it.isDeleted &&
+                    it.courseId in courses &&
+                    it.dayOfWeek == today &&
+                    com.example.util.isSlotActive(context, it, System.currentTimeMillis())
+            }
             .sortedBy { it.startHour * 60 + it.startMinute }
 
         val startOfToday = Calendar.getInstance().apply {

@@ -99,7 +99,8 @@ private const val FEATURE_FORM_URL =
 @Composable
 fun SettingsButton(
     currentUser: AppUser?,
-    onOpenCloudSheet: () -> Unit
+    onOpenCloudSheet: () -> Unit,
+    onRescheduleAllReminders: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -111,6 +112,8 @@ fun SettingsButton(
     var showSoundDialog by remember { mutableStateOf(false) }
     var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
+    var showWeekParityDialog by remember { mutableStateOf(false) }
+    var weekParityType by remember { mutableStateOf(com.example.util.WeekParity.currentWeekType(context)) }
     var classStartEnabled by remember { mutableStateOf(ClassReminderScheduler.isEnabled(context)) }
     var summaryEnabled by remember { mutableStateOf(DailySummaryScheduler.isEnabled(context)) }
     var summaryHour by remember { mutableStateOf(DailySummaryScheduler.hour(context)) }
@@ -256,6 +259,80 @@ fun SettingsButton(
                     },
                     testTag = "settings_background_row"
                 )
+                SettingsRow(
+                    icon = Icons.Default.Schedule,
+                    title = "This week is",
+                    subtitle = when (weekParityType) {
+                        com.example.util.WeekType.A -> "Week A"
+                        com.example.util.WeekType.B -> "Week B"
+                        null -> "Not set (Tap to choose Week A or Week B)"
+                    },
+                    onClick = { showWeekParityDialog = true },
+                    testTag = "settings_week_parity_row"
+                )
+                if (showWeekParityDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showWeekParityDialog = false },
+                        title = { Text("This week is") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "Choose which schedule week applies to the current week.",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                listOf(
+                                    Pair(com.example.util.WeekType.A, "Week A"),
+                                    Pair(com.example.util.WeekType.B, "Week B"),
+                                    Pair(null, "Not set (Show all classes every week)")
+                                ).forEach { (type, label) ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                com.example.util.WeekParity.setThisWeekType(context, type)
+                                                weekParityType = com.example.util.WeekParity.currentWeekType(context)
+                                                showWeekParityDialog = false
+                                                onRescheduleAllReminders()
+                                                scope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+                                                    } catch (_: Exception) {}
+                                                }
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = weekParityType == type,
+                                            onClick = {
+                                                com.example.util.WeekParity.setThisWeekType(context, type)
+                                                weekParityType = com.example.util.WeekParity.currentWeekType(context)
+                                                showWeekParityDialog = false
+                                                onRescheduleAllReminders()
+                                                scope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+                                                    } catch (_: Exception) {}
+                                                }
+                                            }
+                                        )
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showWeekParityDialog = false }) {
+                                Text("Close")
+                            }
+                        }
+                    )
+                }
                 SettingsRow(
                     icon = Icons.Default.School,
                     title = "Class start notifications",

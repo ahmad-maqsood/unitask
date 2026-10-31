@@ -396,7 +396,14 @@ fun AddEditLectureSlotDialog(
                         if (s.dayOfWeek != dayOfWeek) return@firstOrNull false
                         val otherStart = s.startHour * 60 + s.startMinute
                         val otherEnd = s.endHour * 60 + s.endMinute
-                        maxOf(startTotal, otherStart) < minOf(endTotal, otherEnd)
+                        val timeOverlaps = maxOf(startTotal, otherStart) < minOf(endTotal, otherEnd)
+                        if (!timeOverlaps) return@firstOrNull false
+
+                        val thisType = com.example.util.weekTypeOf(classroom)
+                        val otherType = com.example.util.weekTypeOf(s.classroom)
+                        thisType == com.example.util.WeekType.ALL ||
+                            otherType == com.example.util.WeekType.ALL ||
+                            thisType == otherType
                     }
                     if (overlapping != null && conflictWarningMessage == null) {
                         val courseLabel = overlapping.course?.code ?: "Another class"

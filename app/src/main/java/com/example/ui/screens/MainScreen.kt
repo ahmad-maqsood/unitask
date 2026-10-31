@@ -340,7 +340,8 @@ fun MainScreen(
                     AnnouncementBell(announcements)
                     SettingsButton(
                         currentUser = currentUser,
-                        onOpenCloudSheet = { viewModel.openCloudBackupSheet() }
+                        onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
+                        onRescheduleAllReminders = { viewModel.rescheduleAllReminders() }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -686,7 +687,8 @@ fun MainScreen(
                             onSelectedDayChange = { viewModel.setTimetableSelectedDay(it) },
                             onEditSlot = { viewModel.openEditSlotDialog(it) },
                             onDeleteSlot = { viewModel.deleteLectureSlot(it) },
-                            onTaskClick = { viewModel.openEditTaskDialog(it.task) }
+                            onTaskClick = { viewModel.openEditTaskDialog(it.task) },
+                            onRescheduleAllReminders = { viewModel.rescheduleAllReminders() }
                         )
                     }
 

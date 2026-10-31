@@ -92,6 +92,7 @@ class ClassStartReceiver : BroadcastReceiver() {
             scheduler.scheduleSoonAlarm(slot, maxOf(now, startMillis) + 1_000L)
             // For the early alert, startMillis is the moment the class starts.
             if (startMillis <= 0L || now >= startMillis) return // too late, the class has started
+            if (!com.example.util.isSlotActive(context, slot, startMillis)) return
             postSoonNotification(context, slot, course, startMillis, now)
             return
         }
@@ -101,6 +102,8 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val endMillis = classEndMillis(slot, startMillis)
         if (now >= endMillis) return // the phone was off or asleep and the class is already over
+        val occurrenceMillis = if (startMillis > 0L) startMillis else now
+        if (!com.example.util.isSlotActive(context, slot, occurrenceMillis)) return
 
         postNotification(context, slot, course, endMillis, now)
     }

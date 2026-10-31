@@ -42,8 +42,16 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
+import com.example.reminder.ClassReminderScheduler
+import com.example.util.WeekParity
+import com.example.util.WeekType
+import com.example.util.cleanClassroom
+import com.example.util.weekTypeOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -86,9 +94,11 @@ fun TimetableTab(
     onEditSlot: (LectureSlot) -> Unit,
     onDeleteSlot: (LectureSlot) -> Unit,
     onTaskClick: (TaskWithCourse) -> Unit,
+    onRescheduleAllReminders: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     // Current system day of week (1 = Mon ... 7 = Sun)
     fun currentDayOfWeek(): Int {
         val cal = Calendar.getInstance()
@@ -116,7 +126,19 @@ fun TimetableTab(
     }
 
     var selectedDay by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(todayDayOfWeek) }
-    var selectedWeekFilter by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("All") }
+    val currentParity = remember { WeekParity.currentWeekType(context) }
+    val defaultWeekFilter = when (currentParity) {
+        WeekType.A -> "Week A"
+        WeekType.B -> "Week B"
+        else -> "All"
+    }
+    var selectedWeekFilter by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(defaultWeekFilter) }
+
+    val hasAlternatingSlots = remember(allSlots) {
+        allSlots.any { weekTypeOf(it.slot) != WeekType.ALL }
+    }
+    var isCardDismissed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var currentAnchor by remember { mutableStateOf(WeekParity.getWeekAAnchor(context)) }
     
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
@@ -125,10 +147,10 @@ fun TimetableTab(
     val daySlots = remember(allSlots, selectedDay, selectedWeekFilter) {
         allSlots.filter { it.slot.dayOfWeek == selectedDay }
             .filter { slotWithCourse ->
-                val room = slotWithCourse.slot.classroom
+                val type = weekTypeOf(slotWithCourse.slot)
                 when (selectedWeekFilter) {
-                    "Week A" -> !room.contains("[Week B]")
-                    "Week B" -> !room.contains("[Week A]")
+                    "Week A" -> type == WeekType.ALL || type == WeekType.A
+                    "Week B" -> type == WeekType.ALL || type == WeekType.B
                     else -> true
                 }
             }
@@ -148,6 +170,93 @@ fun TimetableTab(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        if (hasAlternatingSlots && currentAnchor == null && !isCardDismissed) {
+            item(key = "week_parity_prompt_card") {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Which week is this week?",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            IconButton(
+                                onClick = { isCardDismissed = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Dismiss",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Set your schedule parity so bi-weekly classes and reminders appear on the right weeks.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    WeekParity.setThisWeekType(context, WeekType.A)
+                                    currentAnchor = WeekParity.getWeekAAnchor(context)
+                                    selectedWeekFilter = "Week A"
+                                    onRescheduleAllReminders()
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
+                                        } catch (_: Exception) {}
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Week A")
+                            }
+                            Button(
+                                onClick = {
+                                    WeekParity.setThisWeekType(context, WeekType.B)
+                                    currentAnchor = WeekParity.getWeekAAnchor(context)
+                                    selectedWeekFilter = "Week B"
+                                    onRescheduleAllReminders()
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
+                                        } catch (_: Exception) {}
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Week B")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Day of Week Selector Bar
         item(key = "day_selector_bar") {
             Column {

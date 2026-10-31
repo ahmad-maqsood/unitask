@@ -56,7 +56,7 @@ class ClassReminderScheduler(context: Context) {
         private fun soonRequestCodeFor(slotId: Long): Int = ("class_soon_alarm|" + slotId).hashCode()
 
         /** The next time after [afterMillis] that this weekly slot starts (1 = Monday ... 7 = Sunday). */
-        fun nextStartMillis(slot: LectureSlot, afterMillis: Long): Long {
+        fun nextStartMillis(context: Context?, slot: LectureSlot, afterMillis: Long): Long {
             val wantedDay = if (slot.dayOfWeek == 7) Calendar.SUNDAY else slot.dayOfWeek + 1
             val cal = Calendar.getInstance().apply {
                 timeInMillis = afterMillis
@@ -68,8 +68,18 @@ class ClassReminderScheduler(context: Context) {
             val daysAhead = (wantedDay - cal.get(Calendar.DAY_OF_WEEK) + 7) % 7
             cal.add(Calendar.DAY_OF_YEAR, daysAhead)
             if (cal.timeInMillis <= afterMillis) cal.add(Calendar.DAY_OF_YEAR, 7)
+
+            for (i in 0 until 3) {
+                if (context == null || com.example.util.isSlotActive(context, slot, cal.timeInMillis)) {
+                    return cal.timeInMillis
+                }
+                cal.add(Calendar.DAY_OF_YEAR, 7)
+            }
             return cal.timeInMillis
         }
+
+        fun nextStartMillis(slot: LectureSlot, afterMillis: Long): Long =
+            nextStartMillis(null, slot, afterMillis)
     }
 
     /** Makes the alarms match the current timetable (or removes them all when the setting is off). */
@@ -106,13 +116,13 @@ class ClassReminderScheduler(context: Context) {
 
     /** Sets only the "class started" alarm. */
     fun scheduleStartAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
-        val trigger = nextStartMillis(slot, afterMillis)
+        val trigger = nextStartMillis(appContext, slot, afterMillis)
         setAlarm(trigger, requestCodeFor(slot.id), intentFor(slot.id, trigger))
     }
 
     /** Sets only the "class starts in 10 minutes" alarm. */
     fun scheduleSoonAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
-        val classStart = nextStartMillis(slot, afterMillis + LEAD_MILLIS)
+        val classStart = nextStartMillis(appContext, slot, afterMillis + LEAD_MILLIS)
         setAlarm(
             classStart - LEAD_MILLIS,
             soonRequestCodeFor(slot.id),

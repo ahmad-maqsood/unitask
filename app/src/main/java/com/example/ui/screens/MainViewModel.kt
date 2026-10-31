@@ -330,6 +330,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
         /** Sets every personal and group reminder again, for example after exact alarms were allowed. */
     fun rescheduleAllReminders() {
+        _clockTick.value = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             ReminderScheduler(app).rescheduleAll(AppDatabase.getDatabase(app))
@@ -640,8 +641,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         fun startTimeText(s: LectureSlotWithCourse) =
             com.example.util.TimeFormatter.format12Hour(s.slot.startHour, s.slot.startMinute)
 
+        val nowMillis = cal.timeInMillis
         val visibleToday = slotsOn(todayDay).filter {
-            currentMinutes < endOf(it) && currentMinutes - startOf(it) <= STALE_CLASS_MINUTES
+            currentMinutes < endOf(it) &&
+                currentMinutes - startOf(it) <= STALE_CLASS_MINUTES &&
+                com.example.util.isSlotActive(getApplication(), it.slot, nowMillis)
         }
         if (visibleToday.isNotEmpty()) {
             return visibleToday.map { s ->
@@ -664,16 +668,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // Nothing left today: show the next day that has classes (offset 7 is the same weekday next week).
-        for (dayOffset in 1..7) {
-            val day = ((todayDay - 1 + dayOffset) % 7) + 1
-            val daySlots = slotsOn(day)
+        // Nothing left today: show the next day that has classes (may be in a later week).
+        for (dayOffset in 1..14) {
+            val targetCal = Calendar.getInstance().apply {
+                timeInMillis = cal.timeInMillis
+                add(Calendar.DAY_OF_YEAR, dayOffset)
+            }
+            val day = when (targetCal.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.MONDAY -> 1
+                Calendar.TUESDAY -> 2
+                Calendar.WEDNESDAY -> 3
+                Calendar.THURSDAY -> 4
+                Calendar.FRIDAY -> 5
+                Calendar.SATURDAY -> 6
+                Calendar.SUNDAY -> 7
+                else -> 1
+            }
+            val daySlots = slotsOn(day).filter {
+                com.example.util.isSlotActive(getApplication(), it.slot, targetCal.timeInMillis)
+            }
             if (daySlots.isNotEmpty()) {
+                val prefix = if (dayOffset > 7) "Next " else ""
                 return daySlots.map { s ->
                     HighlightedClassInfo(
                         slotWithCourse = s,
                         isActiveNow = false,
-                        timeLabel = "${dayNames[day - 1]} at ${startTimeText(s)}",
+                        timeLabel = "$prefix${dayNames[day - 1]} at ${startTimeText(s)}",
                         pendingTasks = pendingFor(s)
                     )
                 }

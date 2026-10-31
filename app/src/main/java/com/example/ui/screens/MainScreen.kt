@@ -674,7 +674,8 @@ fun MainScreen(
                             highlightedClassInfo = highlightedClassInfo,
                             onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) },
                             groupEntries = groupEntryByItemId,
-                            isLoading = !tasksLoaded
+                            isLoading = !tasksLoaded,
+                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
                         )
                     }
 
@@ -738,7 +739,8 @@ fun MainScreen(
                                 )
                             },
                             onAddTaskClick = { viewModel.openMyTaskDialog(null) },
-                            snackbarHostState = snackbarHostState
+                            snackbarHostState = snackbarHostState,
+                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
                         )
                     }
                 }
@@ -773,7 +775,8 @@ fun MainScreen(
                     onDeleteSlot = { viewModel.deleteLectureSlot(it) },
                     onStatusCycle = { viewModel.cycleTaskStatus(it) },
                     onEditTask = { viewModel.openEditTaskDialog(it) },
-                    onDeleteTask = { viewModel.deleteTask(it) }
+                    onDeleteTask = { viewModel.deleteTask(it) },
+                    onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
                 )
             }
         }

@@ -107,4 +107,7 @@ interface TaskDao {
     // Same as updateStatus, and also stores when the task was ticked (0 when it is not Done).
     @Query("UPDATE tasks SET status = :status, completedAtMillis = :completedAt, isSynced = 0 WHERE id = :taskId")
     suspend fun updateStatusAndCompletedAt(taskId: Long, status: TaskStatus, completedAt: Long)
+
+    @Query("UPDATE tasks SET description = :description, isSynced = 0 WHERE id = :taskId")
+    suspend fun updateDescription(taskId: Long, description: String)
 }

@@ -112,7 +112,8 @@ fun DeadlinesTab(
     // Tasks that come from groups, keyed by the (negative) id they have in [tasks].
     groupEntries: Map<Long, GroupTaskEntry> = emptyMap(),
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var isCalendarView by rememberSaveable { mutableStateOf(false) }
@@ -591,7 +592,8 @@ fun DeadlinesTab(
                     onStatusCycle = onStatusCycle,
                     onEditTask = onEditTask,
                     onDeleteTask = onDeleteTask,
-                    groupEntries = groupEntries
+                    groupEntries = groupEntries,
+                    onChecklistToggle = onChecklistToggle
                 )
             }
         } else if (tasks.isEmpty() && isLoading) {
@@ -684,7 +686,8 @@ fun DeadlinesTab(
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
                         modifier = Modifier.animateItem(),
-                        groupEntry = groupEntries[taskWithCourse.task.id]
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -709,7 +712,8 @@ fun DeadlinesTab(
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
                         modifier = Modifier.animateItem(),
-                        groupEntry = groupEntries[taskWithCourse.task.id]
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -734,7 +738,8 @@ fun DeadlinesTab(
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
                         modifier = Modifier.animateItem(),
-                        groupEntry = groupEntries[taskWithCourse.task.id]
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -759,7 +764,8 @@ fun DeadlinesTab(
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
                         modifier = Modifier.animateItem(),
-                        groupEntry = groupEntries[taskWithCourse.task.id]
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -784,7 +790,8 @@ fun DeadlinesTab(
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
                         modifier = Modifier.animateItem(),
-                        groupEntry = groupEntries[taskWithCourse.task.id]
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -802,7 +809,8 @@ fun DeadlinesTab(
                     onEditTask = onEditTask,
                     onDeleteTask = onDeleteTask,
                     modifier = Modifier.animateItem(),
-                    groupEntry = groupEntries[taskWithCourse.task.id]
+                    groupEntry = groupEntries[taskWithCourse.task.id],
+                    onChecklistToggle = onChecklistToggle
                 )
             }
         }
@@ -970,8 +978,10 @@ private fun SelectableTaskCard(
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     modifier: Modifier = Modifier,
-    groupEntry: GroupTaskEntry? = null
+    groupEntry: GroupTaskEntry? = null,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
+    val checklistToggle = if (groupEntry == null) onChecklistToggle else null
     if (isBatchMode) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -988,7 +998,8 @@ private fun SelectableTaskCard(
                     onStatusCycle = onStatusCycle,
                     onEditClick = onEditTask,
                     onDeleteClick = onDeleteTask,
-                    groupEntry = groupEntry
+                    groupEntry = groupEntry,
+                    onChecklistToggle = checklistToggle
                 )
             }
         }
@@ -999,7 +1010,8 @@ private fun SelectableTaskCard(
             onEditClick = onEditTask,
             onDeleteClick = onDeleteTask,
             modifier = modifier,
-            groupEntry = groupEntry
+            groupEntry = groupEntry,
+            onChecklistToggle = checklistToggle
         )
     }
 }
@@ -1010,7 +1022,8 @@ private fun DeadlinesCalendarView(
     onStatusCycle: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
-    groupEntries: Map<Long, GroupTaskEntry>
+    groupEntries: Map<Long, GroupTaskEntry>,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val cal = remember { Calendar.getInstance() }
     var currentYear by remember { mutableIntStateOf(cal.get(Calendar.YEAR)) }
@@ -1214,12 +1227,14 @@ private fun DeadlinesCalendarView(
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
             tasksOnSelectedDay.forEach { taskWithCourse ->
+                val entry = groupEntries[taskWithCourse.task.id]
                 TaskCard(
                     taskWithCourse = taskWithCourse,
                     onStatusCycle = onStatusCycle,
                     onEditClick = onEditTask,
                     onDeleteClick = onDeleteTask,
-                    groupEntry = groupEntries[taskWithCourse.task.id]
+                    groupEntry = entry,
+                    onChecklistToggle = if (entry == null) onChecklistToggle else null
                 )
             }
         }

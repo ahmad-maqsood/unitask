@@ -29,6 +29,9 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.util.parseChecklist
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -97,7 +100,8 @@ fun TaskCard(
     onDeleteClick: (TaskItem) -> Unit,
     modifier: Modifier = Modifier,
     // Set for tasks that come from a group: shows who added it and limits the menu.
-    groupEntry: GroupTaskEntry? = null
+    groupEntry: GroupTaskEntry? = null,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val task = taskWithCourse.task
     val course = taskWithCourse.course
@@ -408,34 +412,43 @@ fun TaskCard(
 
                 // Optional description snippet & Subtasks
                 if (task.description.isNotBlank()) {
+                    val checklistItems = remember(task.description) { parseChecklist(task.description) }
+                    val isInteractiveChecklist = onChecklistToggle != null && groupEntry == null && checklistItems.isNotEmpty()
+                    var isChecklistExpanded by rememberSaveable(task.id) { mutableStateOf(false) }
+
                     val lines = remember(task.description) { task.description.lines() }
-                    val checklist = remember(lines) {
-                        lines.filter { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]", ignoreCase = true) }
-                    }
-                    val doneCount = remember(checklist) {
-                        checklist.count { it.trimStart().startsWith("- [x]", ignoreCase = true) }
-                    }
+                    val doneCount = remember(checklistItems) { checklistItems.count { it.checked } }
 
                     Spacer(modifier = Modifier.height(3.dp))
-                    if (checklist.isNotEmpty()) {
+                    if (checklistItems.isNotEmpty()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
                         ) {
+                            val chipModifier = if (isInteractiveChecklist) {
+                                Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { isChecklistExpanded = !isChecklistExpanded }
+                            } else {
+                                Modifier
+                            }
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = if (doneCount == checklist.size) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                color = if (doneCount == checklistItems.size) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = chipModifier
                             ) {
                                 Text(
-                                    text = "☑ $doneCount/${checklist.size} subtasks",
+                                    text = "☑ $doneCount/${checklistItems.size} subtasks",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (doneCount == checklist.size) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (doneCount == checklistItems.size) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
-                            val cleanText = lines.filterNot { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]", ignoreCase = true) }.joinToString(" ").trim()
+                            val cleanText = remember(lines) {
+                                lines.filterNot { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]", ignoreCase = true) }.joinToString(" ").trim()
+                            }
                             if (cleanText.isNotBlank()) {
                                 Text(
                                     text = cleanText,
@@ -444,6 +457,60 @@ fun TaskCard(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                            }
+                        }
+
+                        if (isInteractiveChecklist && isChecklistExpanded) {
+                            val visibleItems = checklistItems.take(6)
+                            val overflowCount = checklistItems.size - visibleItems.size
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp, bottom = 2.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                visibleItems.forEach { item ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .defaultMinSize(minHeight = 40.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { onChecklistToggle(task, item.lineIndex) }
+                                            .padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = item.checked,
+                                            onCheckedChange = { onChecklistToggle(task, item.lineIndex) },
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = item.text,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
+                                            color = if (item.checked) {
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                    }
+                                }
+                                if (overflowCount > 0) {
+                                    Text(
+                                        text = "+$overflowCount more, open Edit",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .clickable { onEditClick(task) }
+                                            .padding(start = 8.dp, top = 2.dp, bottom = 2.dp)
+                                    )
+                                }
                             }
                         }
                     } else {

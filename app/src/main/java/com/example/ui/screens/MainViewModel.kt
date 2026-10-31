@@ -844,6 +844,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleChecklistItem(task: TaskItem, lineIndex: Int) {
+        viewModelScope.launch {
+            repository.toggleChecklistItem(task.id, lineIndex)
+        }
+    }
+
     fun openAddTaskDialog(courseId: Long? = null) {
         _taskToEdit.value = null
         _taskAttachmentsToEdit.value = emptyList()

@@ -77,7 +77,8 @@ fun CourseDetailSheet(
     onStatusCycle: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     BackHandler { onBack() }
 
@@ -491,7 +492,8 @@ fun CourseDetailSheet(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
                         onEditClick = onEditTask,
-                        onDeleteClick = onDeleteTask
+                        onDeleteClick = onDeleteTask,
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }

@@ -85,7 +85,8 @@ fun MyTasksTab(
     onQuickAdd: (String) -> Unit,
     onAddTaskClick: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     var isDoneExpanded by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -219,7 +220,8 @@ fun MyTasksTab(
                         onDeleteClick = onDeleteTask,
                         onSwipeTickDone = handleSwipeTickDone,
                         onSwipeDelete = handleSwipeDelete,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -240,7 +242,8 @@ fun MyTasksTab(
                         onDeleteClick = onDeleteTask,
                         onSwipeTickDone = handleSwipeTickDone,
                         onSwipeDelete = handleSwipeDelete,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -261,7 +264,8 @@ fun MyTasksTab(
                         onDeleteClick = onDeleteTask,
                         onSwipeTickDone = handleSwipeTickDone,
                         onSwipeDelete = handleSwipeDelete,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -282,7 +286,8 @@ fun MyTasksTab(
                         onDeleteClick = onDeleteTask,
                         onSwipeTickDone = handleSwipeTickDone,
                         onSwipeDelete = handleSwipeDelete,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
                     )
                 }
             }
@@ -307,7 +312,8 @@ fun MyTasksTab(
                             onDeleteClick = onDeleteTask,
                             onSwipeTickDone = handleSwipeTickDone,
                             onSwipeDelete = handleSwipeDelete,
-                            modifier = Modifier.animateItem()
+                            modifier = Modifier.animateItem(),
+                            onChecklistToggle = onChecklistToggle
                         )
                     }
                 }
@@ -479,7 +485,8 @@ private fun SwipeableTaskItem(
     onDeleteClick: (TaskItem) -> Unit,
     onSwipeTickDone: (TaskItem) -> Unit,
     onSwipeDelete: (TaskItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val task = taskWithCourse.task
     val dismissState = rememberSwipeToDismissBoxState(
@@ -573,7 +580,8 @@ private fun SwipeableTaskItem(
             taskWithCourse = taskWithCourse,
             onStatusCycle = onStatusCycle,
             onEditClick = onEditClick,
-            onDeleteClick = onDeleteClick
+            onDeleteClick = onDeleteClick,
+            onChecklistToggle = onChecklistToggle
         )
     }
 }

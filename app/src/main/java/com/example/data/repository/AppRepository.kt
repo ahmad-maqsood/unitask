@@ -26,6 +26,7 @@ import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.currentSupabaseUid
+import com.example.util.toggleChecklistLine
 import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -256,6 +257,15 @@ class AppRepository(
             }
         }
         triggerSyncIfLoggedIn()
+    }
+
+    suspend fun toggleChecklistItem(taskId: Long, lineIndex: Int) = withContext(Dispatchers.IO) {
+        val task = taskDao.getTaskById(taskId) ?: return@withContext
+        val newDescription = toggleChecklistLine(task.description, lineIndex)
+        if (newDescription != task.description) {
+            taskDao.updateDescription(taskId, newDescription)
+            triggerSyncIfLoggedIn()
+        }
     }
 
     /**

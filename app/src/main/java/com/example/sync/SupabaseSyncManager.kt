@@ -17,6 +17,7 @@ import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
@@ -84,6 +85,43 @@ private data class SlotRow(
 object SupabaseSyncManager {
 
     private const val TAG = "SupabaseSyncManager"
+    internal const val POSTGREST_PAGE_SIZE = 1000L
+
+    internal suspend fun <T> fetchAllRows(
+        table: String,
+        userId: String,
+        pageSize: Long = POSTGREST_PAGE_SIZE,
+        fetchPage: suspend (from: Long, to: Long) -> List<T>
+    ): List<T> {
+        val allRows = mutableListOf<T>()
+        var from = 0L
+        while (true) {
+            val to = from + pageSize - 1L
+            val page = fetchPage(from, to)
+            allRows.addAll(page)
+            if (page.size < pageSize) {
+                break
+            }
+            from += pageSize
+        }
+        return allRows
+    }
+
+    private suspend inline fun <reified T : Any> fetchAllRows(
+        table: String,
+        userId: String
+    ): List<T> {
+        return fetchAllRows(table, userId, POSTGREST_PAGE_SIZE) { from, to ->
+            SupabaseProvider.client.postgrest[table]
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                    order("doc_id", Order.ASCENDING)
+                    range(from, to)
+                }.decodeList<T>()
+        }
+    }
 
     private val isSyncingNow = AtomicBoolean(false)
     private val syncMutex = Mutex()
@@ -639,12 +677,7 @@ object SupabaseSyncManager {
         val slotDao = database.lectureSlotDao()
 
         val cloudCourses = try {
-            SupabaseProvider.client.postgrest["courses"]
-                .select {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                }.decodeList<CourseRow>()
+            fetchAllRows<CourseRow>("courses", userId)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch courses from Supabase: ${e.message}")
             return false
@@ -811,12 +844,7 @@ object SupabaseSyncManager {
         val reminderScheduler = ReminderScheduler(context.applicationContext)
 
         val cloudTasks = try {
-            SupabaseProvider.client.postgrest["tasks"]
-                .select {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                }.decodeList<TaskRow>()
+            fetchAllRows<TaskRow>("tasks", userId)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch tasks from Supabase: ${e.message}")
             return
@@ -955,12 +983,7 @@ object SupabaseSyncManager {
         val slotDao = database.lectureSlotDao()
 
         val cloudSlots = try {
-            SupabaseProvider.client.postgrest["slots"]
-                .select {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                }.decodeList<SlotRow>()
+            fetchAllRows<SlotRow>("slots", userId)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch slots from Supabase: ${e.message}")
             return

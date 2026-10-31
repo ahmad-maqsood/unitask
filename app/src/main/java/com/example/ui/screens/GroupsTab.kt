@@ -36,6 +36,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -77,6 +80,9 @@ fun GroupsTab(
 
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val sessionReady by viewModel.sessionReady.collectAsStateWithLifecycle()
+    val effectiveUser = currentUser ?: com.example.util.AuthStorage.getLastUid(context)?.let {
+        com.example.util.AppUser(uid = it, email = null, displayName = null)
+    }
     val memberships by viewModel.myMemberships.collectAsStateWithLifecycle()
     val selectedGroupId by viewModel.selectedGroupId.collectAsStateWithLifecycle()
     val selectedGroupDetail by viewModel.selectedGroupDetail.collectAsStateWithLifecycle()
@@ -104,8 +110,8 @@ fun GroupsTab(
         }
     }
 
-    LaunchedEffect(groupToOpen, currentUser) {
-        if (groupToOpen != null && currentUser != null) {
+    LaunchedEffect(groupToOpen, effectiveUser) {
+        if (groupToOpen != null && effectiveUser != null) {
             viewModel.selectGroup(groupToOpen)
             onGroupOpened()
         }
@@ -113,7 +119,15 @@ fun GroupsTab(
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collectLatest { msg ->
-            snackbarHostState.showSnackbar(msg)
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val job = launch {
+                snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
+            }
+            if (msg.contains("Up to date") || msg.contains("New join code") || msg.contains("copied") || msg.contains("Syncing")) {
+                delay(2000L)
+                job.cancel()
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
         }
     }
 
@@ -127,8 +141,8 @@ fun GroupsTab(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // If user is not signed in
-            if (currentUser == null) {
+            // If user is truly not signed in
+            if (effectiveUser == null) {
                 if (!sessionReady) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -145,7 +159,7 @@ fun GroupsTab(
                 val currentChatInfo = chatInfo[selectedGroupId]
                 val isChatTarget = selectedGroupId == openChatGroupId || selectedGroupId == activeOpenChatGroupId
                 GroupDetailScreen(
-                    currentUid = currentSupabaseUid() ?: "",
+                    currentUid = currentSupabaseUid() ?: effectiveUser.uid,
                     groupDetail = selectedGroupDetail,
                     fallbackUsername = activeMembership?.username ?: "",
                     fallbackName = activeMembership?.name ?: "",
@@ -206,18 +220,46 @@ fun GroupsTab(
                     startOnChat = isChatTarget
                 )
             } else {
-                // Group list screen
-                GroupsListScreen(
-                    memberships = memberships,
-                    onCreateGroupClick = { viewModel.openCreateDialog() },
-                    onJoinGroupClick = { viewModel.openJoinDialog() },
-                    onSelectGroup = { groupId ->
-                        activeOpenChatGroupId = null
-                        viewModel.selectGroup(groupId)
-                    },
-                    chatInfo = chatInfo,
-                    currentUid = currentSupabaseUid() ?: ""
-                )
+                // Group list screen with non-blocking reconnecting banner
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (!sessionReady) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(12.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Reconnecting...",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    GroupsListScreen(
+                        memberships = memberships,
+                        onCreateGroupClick = { viewModel.openCreateDialog() },
+                        onJoinGroupClick = { viewModel.openJoinDialog() },
+                        onSelectGroup = { groupId ->
+                            activeOpenChatGroupId = null
+                            viewModel.selectGroup(groupId)
+                        },
+                        chatInfo = chatInfo,
+                        currentUid = currentSupabaseUid() ?: effectiveUser.uid
+                    )
+                }
             }
 
             // Dialogs

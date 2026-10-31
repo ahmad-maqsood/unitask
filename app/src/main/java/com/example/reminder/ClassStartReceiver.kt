@@ -36,6 +36,9 @@ class ClassStartReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Class started"
         const val EXTRA_SLOT_ID = "extra_class_slot_id"
         const val EXTRA_START_MILLIS = "extra_class_start_millis"
+        const val GROUP_KEY_CLASSES = "com.example.CLASS_ALERTS"
+        private const val SUMMARY_ID = 9904
+        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -151,11 +154,13 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
             .setContentTitle("Class in progress: ${course.code}")
-            .setContentText("${course.name} \u2022 $timeRange")
+            .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setGroup(GROUP_KEY_CLASSES)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             // Shows a countdown to the end of the class and removes itself when the class is over.
@@ -172,6 +177,18 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, notification)
+
+        val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
+            .setGroup(GROUP_KEY_CLASSES)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        manager?.notify(SUMMARY_ID, summary)
+
         // The class has started, so the "starts soon" notification is no longer needed.
         manager?.cancel(ClassReminderScheduler.soonNotificationIdFor(slot.id))
     }
@@ -218,11 +235,13 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
             .setContentTitle("Class in $minutesLeft min: ${course.code}")
-            .setContentText("${course.name} • $timeRange")
+            .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setGroup(GROUP_KEY_CLASSES)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             // Counts down to the start of the class and removes itself when the class begins.
@@ -239,6 +258,17 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, notification)
+
+        val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
+            .setGroup(GROUP_KEY_CLASSES)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        manager?.notify(SUMMARY_ID, summary)
     }
 
     private fun ensureChannel(context: Context) {

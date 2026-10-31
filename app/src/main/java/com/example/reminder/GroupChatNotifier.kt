@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
@@ -29,6 +30,9 @@ class GroupChatNotifier(context: Context) {
         const val CHANNEL_BASE_ID = "unitask_group_chat_v1"
         private const val CHANNEL_NAME = "Group chat"
         private const val CHANNEL_DESCRIPTION = "Tells you when someone writes in one of your groups"
+        const val GROUP_KEY_CHAT = "com.example.CHAT_GROUP"
+        private const val SUMMARY_ID = 9901
+        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
         // Single shared lock across all instances
         private val LOCK = Any()
@@ -86,19 +90,28 @@ class GroupChatNotifier(context: Context) {
 
             if (candidates.isEmpty()) return
 
-            // 5. Remember what we notify about BEFORE posting, so a crash cannot cause repeats.
+            // 5. If notifications are not permitted, do NOT advance notified mark so messages are not swallowed!
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+
+            // 6. Remember what we notify about BEFORE posting, so a crash cannot cause repeats.
             val lastMillis = candidates.last().createdAtMillis
             notifiedPrefs.edit().putLong(groupId, lastMillis).apply()
 
-            // 6. In the foreground the in-app badges are enough.
+            // 7. In the foreground the in-app badges are enough.
             if (AppVisibility.isForeground) return
 
-            // 7. Post the notification.
-            postNotification(groupId, groupName, candidates)
+            // 8. Post the notification.
+            postNotification(myUid, groupId, groupName, candidates)
         }
     }
 
     private fun postNotification(
+        myUid: String,
         groupId: String,
         groupName: String,
         candidates: List<GroupMessage>
@@ -113,7 +126,8 @@ class GroupChatNotifier(context: Context) {
         ensureChannel()
 
         val notificationId = ("chat|" + groupId).hashCode()
-        val title = groupName.ifBlank { "Group" }
+        val title = groupName.ifBlank { "Group chat" }
+        val newestMillis = candidates.maxOfOrNull { it.createdAtMillis } ?: System.currentTimeMillis()
 
         val intent = Intent(appContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -129,31 +143,38 @@ class GroupChatNotifier(context: Context) {
         )
 
         val channelId = NotificationSound.channelId(appContext, CHANNEL_BASE_ID)
+
+        val userPerson = Person.Builder()
+            .setName("You")
+            .setKey(myUid)
+            .build()
+
+        val messagingStyle = NotificationCompat.MessagingStyle(userPerson)
+            .setConversationTitle(title)
+            .setGroupConversation(true)
+
+        val recentCandidates = if (candidates.size > 10) candidates.takeLast(10) else candidates
+        for (msg in recentCandidates) {
+            val senderPerson = Person.Builder()
+                .setName(msg.senderName.ifBlank { "Member" })
+                .setKey(msg.senderId)
+                .build()
+            messagingStyle.addMessage(msg.text, msg.createdAtMillis, senderPerson)
+        }
+
         val builder = NotificationCompat.Builder(appContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
             .setContentTitle(title)
+            .setStyle(messagingStyle)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-
-        if (candidates.size == 1) {
-            val msg = candidates.first()
-            val line = formatMessageLine(msg.senderName, msg.text)
-            builder.setContentText(line)
-            builder.setStyle(NotificationCompat.BigTextStyle().bigText(line))
-        } else {
-            val count = candidates.size
-            val collapsedText = "$count new messages"
-            builder.setContentText(collapsedText)
-
-            val inboxStyle = NotificationCompat.InboxStyle()
-            val linesToShow = if (count > 5) candidates.takeLast(5) else candidates
-            for (msg in linesToShow) {
-                inboxStyle.addLine(formatMessageLine(msg.senderName, msg.text))
-            }
-            builder.setStyle(inboxStyle)
-        }
+            .setOnlyAlertOnce(true)
+            .setWhen(newestMillis)
+            .setShowWhen(true)
+            .setGroup(GROUP_KEY_CHAT)
 
         val customSound = NotificationSound.uri(appContext)
         if (customSound != null) {
@@ -164,6 +185,17 @@ class GroupChatNotifier(context: Context) {
 
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, builder.build())
+
+        val summaryNotification = NotificationCompat.Builder(appContext, channelId)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Group chat"))
+            .setGroup(GROUP_KEY_CHAT)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        manager?.notify(SUMMARY_ID, summaryNotification)
     }
 
     private fun formatMessageLine(senderName: String, text: String): String {
@@ -204,6 +236,7 @@ class GroupChatNotifier(context: Context) {
         for (key in notifiedPrefs.all.keys) {
             manager?.cancel(("chat|" + key).hashCode())
         }
+        manager?.cancel(SUMMARY_ID)
         notifiedPrefs.edit().clear().apply()
     }
 }

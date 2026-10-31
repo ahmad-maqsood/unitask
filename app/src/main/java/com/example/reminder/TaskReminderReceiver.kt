@@ -45,6 +45,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_IS_MY_TASK = "extra_is_my_task"
         const val EXTRA_GROUP_ID = "extra_group_id"
         const val EXTRA_GROUP_TASK_ID = "extra_group_task_id"
+        const val GROUP_KEY_DEADLINES = "com.example.DEADLINE_REMINDERS"
+        private const val SUMMARY_ID = 9903
+        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -145,22 +148,20 @@ class TaskReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (!reminderLabel.isNullOrBlank()) {
-            "⏰ Reminder ($reminderLabel): $taskTitle"
-        } else {
-            "⏰ Reminder: $taskTitle"
+        val title = when {
+            reminderLabel.isNullOrBlank() -> "Due: $taskTitle"
+            reminderLabel.equals("At deadline", ignoreCase = true) -> "Due now: $taskTitle"
+            reminderLabel.lowercase().endsWith(" before") -> {
+                val span = reminderLabel.substring(0, reminderLabel.length - 7).trim()
+                "Due in $span: $taskTitle"
+            }
+            else -> "Due ($reminderLabel): $taskTitle"
         }
 
         val contentText = when {
-            isGroupTask -> {
-                if (!reminderLabel.isNullOrBlank()) "[$courseCode] $reminderLabel • $dueInfo" else "[$courseCode] $dueInfo"
-            }
-            isMyTask -> {
-                if (!reminderLabel.isNullOrBlank()) "$reminderLabel • $dueInfo" else dueInfo
-            }
-            else -> {
-                if (!reminderLabel.isNullOrBlank()) "[$courseCode] $reminderLabel • $dueInfo" else "[$courseCode] $dueInfo"
-            }
+            isMyTask -> dueInfo
+            courseCode.isNotBlank() -> "[$courseCode] $dueInfo"
+            else -> dueInfo
         }
 
         val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
@@ -178,14 +179,16 @@ class TaskReminderReceiver : BroadcastReceiver() {
             if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
         )
             .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
             .setContentTitle(title)
             .setContentText(contentText)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$bigSummary\n$dueInfo${if (!reminderLabel.isNullOrBlank()) " ($reminderLabel)" else ""}")
+                    .bigText("$bigSummary\n$dueInfo")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(if (isAlarm) NotificationCompat.CATEGORY_ALARM else NotificationCompat.CATEGORY_REMINDER)
+            .setGroup(GROUP_KEY_DEADLINES)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
@@ -233,6 +236,20 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(notificationId, notification)
+
+        val summaryNotification = NotificationCompat.Builder(
+            context,
+            if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
+        )
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Deadlines and reminders"))
+            .setGroup(GROUP_KEY_DEADLINES)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        notificationManager?.notify(SUMMARY_ID, summaryNotification)
     }
 
     private fun createNotificationChannel(context: Context) {

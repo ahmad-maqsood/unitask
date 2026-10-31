@@ -50,6 +50,9 @@ class GroupTaskProcessor(context: Context) {
         private const val STATE_PREFS = "group_task_state"
         private const val SUMMARY_PREFS = "group_summary_tasks"
         private const val SEP = "\u001F"
+        const val GROUP_KEY_UPDATES = "com.example.GROUP_TASKS"
+        private const val SUMMARY_ID = 9902
+        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
         // One lock for every instance: the app-level listener and the background worker can
         // run at the same moment, and must not both announce the same task.
@@ -154,6 +157,8 @@ class GroupTaskProcessor(context: Context) {
         seenPrefs.edit().clear().apply()
         stateStore.edit().clear().apply()
         summaryStore.edit().clear().apply()
+        val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        manager?.cancel(SUMMARY_ID)
     }
     /**
      * Remembers the pending group tasks that show on this user's Deadlines tab (tagged to them and
@@ -200,8 +205,8 @@ class GroupTaskProcessor(context: Context) {
         if (fresh.size > MAX_INDIVIDUAL_NOTICES) {
             postNotification(
                 id = ("summary|" + snapshot.groupId).hashCode(),
-                title = "${fresh.size} new tasks in ${snapshot.groupName}",
-                text = "Open the Deadlines tab to see them.",
+                title = "New tasks in ${snapshot.groupName}",
+                text = "${fresh.size} tasks added. Open the Deadlines tab to view.",
                 groupId = snapshot.groupId
             )
             return
@@ -209,10 +214,16 @@ class GroupTaskProcessor(context: Context) {
         for (task in fresh) {
             val who = task.createdByName.ifBlank { "A member" }
             val due = "Due at ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+            val course = task.courseLabel?.trim()?.takeIf { it.isNotBlank() }
+            val body = if (course != null) {
+                "[$course] $due • ${task.title} (by $who)"
+            } else {
+                "$due • ${task.title} (by $who)"
+            }
             postNotification(
                 id = ("new|" + snapshot.groupId + "|" + task.id).hashCode(),
                 title = "New task in ${snapshot.groupName}",
-                text = "$who added: ${task.title} • $due",
+                text = body,
                 groupId = snapshot.groupId
             )
         }
@@ -307,11 +318,13 @@ class GroupTaskProcessor(context: Context) {
         )
         val notification = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setGroup(GROUP_KEY_UPDATES)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .apply {
@@ -322,6 +335,17 @@ class GroupTaskProcessor(context: Context) {
 
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(id, notification)
+
+        val summary = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setColor(PRIMARY_COLOR)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Group updates"))
+            .setGroup(GROUP_KEY_UPDATES)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        manager?.notify(SUMMARY_ID, summary)
     }
 
     private fun ensureChannel() {

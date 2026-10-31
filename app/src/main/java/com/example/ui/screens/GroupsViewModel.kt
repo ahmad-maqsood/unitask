@@ -12,6 +12,7 @@ import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTask
 import com.example.reminder.GroupReminderScheduler
 import com.example.util.AppUser
+import com.example.util.AuthStorage
 import com.example.util.SupabaseProvider
 import com.example.util.currentAppUser
 import com.example.util.toAppUser
@@ -36,7 +37,9 @@ import kotlinx.coroutines.launch
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = GroupRepository(application)
-    private val _currentUser = MutableStateFlow<AppUser?>(currentAppUser())
+    private val _currentUser = MutableStateFlow<AppUser?>(
+        currentAppUser() ?: AuthStorage.getLastUid(application)?.let { AppUser(uid = it, email = null, displayName = null) }
+    )
     val currentUser: StateFlow<AppUser?> = _currentUser.asStateFlow()
 
     val sessionReady: StateFlow<Boolean> = SupabaseProvider.client.auth.sessionStatus
@@ -71,7 +74,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         _courseSaveError.value = null
     }
 
-    private val _snackbarMessage = MutableSharedFlow<String>()
+    private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
 
     private val _isActionLoading = MutableStateFlow(false)
@@ -81,17 +84,36 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             SupabaseProvider.client.auth.sessionStatus.collect { status ->
                 when (status) {
-                    is SessionStatus.Authenticated -> _currentUser.value = status.session.user?.toAppUser()
-                    is SessionStatus.NotAuthenticated -> {
-                        _currentUser.value = null
-                        repository.clearCachedMemberships()
-                    }
-                    is SessionStatus.RefreshFailure -> {
-                        if (_currentUser.value == null) {
-                            _currentUser.value = currentAppUser()
+                    is SessionStatus.Authenticated -> {
+                        val user = status.session.user
+                        if (user != null) {
+                            AuthStorage.setLastUid(application, user.id)
+                            _currentUser.value = user.toAppUser()
                         }
                     }
-                    else -> Unit
+                    is SessionStatus.NotAuthenticated -> {
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid == null) {
+                            // Real explicit sign-out
+                            _currentUser.value = null
+                            repository.clearCachedMemberships()
+                        } else if (_currentUser.value == null) {
+                            // Transient status on lock/unlock or network transition: preserve last known user
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
+                        }
+                    }
+                    is SessionStatus.RefreshFailure -> {
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid != null && _currentUser.value == null) {
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
+                        }
+                    }
+                    is SessionStatus.Initializing -> {
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid != null && _currentUser.value == null) {
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
+                        }
+                    }
                 }
             }
         }
@@ -99,16 +121,17 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val myMemberships: StateFlow<List<GroupMembership>> = _currentUser.flatMapLatest { user ->
-        if (user != null) {
-            repository.observeMyGroupMemberships(user.uid)
-                .onStart { emit(repository.cachedMemberships(user.uid)) }
+        val uid = user?.uid ?: AuthStorage.getLastUid(application)
+        if (uid != null) {
+            repository.observeMyGroupMemberships(uid)
+                .onStart { emit(repository.cachedMemberships(uid)) }
         } else {
             flowOf(emptyList())
         }
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        currentAppUser()?.let { repository.cachedMemberships(it.uid) } ?: emptyList()
+        (currentAppUser()?.uid ?: AuthStorage.getLastUid(application))?.let { repository.cachedMemberships(it) } ?: emptyList()
     )
 
     

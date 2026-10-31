@@ -39,6 +39,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        AppVisibility.isForeground = true
+        com.example.data.groups.GroupRepository.localChanges.tryEmit(Unit)
+    }
+
     override fun onStop() {
         super.onStop()
         AppVisibility.isForeground = false

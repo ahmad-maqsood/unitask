@@ -34,6 +34,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Daily summary"
         private const val NOTIFICATION_ID = 7702
         private const val MAX_LINES = 4
+        const val GROUP_KEY_DAILY = "com.example.DAILY_SUMMARY"
+        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
     }
 
     /** One task due on some day, from your own tasks or from a group. */
@@ -140,11 +142,13 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setContentTitle("Your day in UniTask")
+            .setColor(PRIMARY_COLOR)
+            .setContentTitle("Today in UniTask")
             .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(summary + "\n" + lines.joinToString("\n")))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setGroup(GROUP_KEY_DAILY)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             .apply {

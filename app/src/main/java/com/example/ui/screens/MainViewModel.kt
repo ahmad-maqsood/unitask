@@ -243,11 +243,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                     is SessionStatus.NotAuthenticated -> {
-                        AuthStorage.setLastUid(application, null)
-                        _currentUser.value = null
-                        if (lastUserId != null) {
-                            lastUserId = null
-                            com.example.sync.SupabaseSyncManager.stopRealtimeSync()
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid == null) {
+                            // Real explicit sign-out
+                            _currentUser.value = null
+                            if (lastUserId != null) {
+                                lastUserId = null
+                                com.example.sync.SupabaseSyncManager.stopRealtimeSync()
+                            }
+                        } else if (_currentUser.value == null) {
+                            // Transient status on lock/unlock or network transition: preserve last known user
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
+                        }
+                    }
+                    is SessionStatus.Initializing -> {
+                        val savedUid = AuthStorage.getLastUid(application)
+                        if (savedUid != null && _currentUser.value == null) {
+                            _currentUser.value = currentAppUser() ?: AppUser(uid = savedUid, email = null, displayName = null)
                         }
                     }
                     else -> Unit
@@ -290,9 +302,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             _isRefreshing.value = true
+            _refreshMessage.emit("Syncing...")
             try {
                 val database = AppDatabase.getDatabase(getApplication())
-                val success = withTimeoutOrNull(20_000L) {
+                val success = withTimeoutOrNull(8_000L) {
                     com.example.sync.SupabaseSyncManager.syncAllDataNow(getApplication(), database)
                 } ?: false
 

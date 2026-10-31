@@ -58,6 +58,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.delay
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -118,8 +121,16 @@ fun MainScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
-        viewModel.refreshMessage.collect { message ->
-            snackbarHostState.showSnackbar(message)
+        viewModel.refreshMessage.collectLatest { message ->
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val job = launch {
+                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+            }
+            if (message == "Up to date" || message == "Syncing...") {
+                delay(2000L)
+                job.cancel()
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
         }
     }
 
@@ -182,6 +193,8 @@ fun MainScreen(
     }
     var needsExactAlarmAccess by remember { mutableStateOf(false) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        // Immediate re-read of memberships and open group on resume
+        com.example.data.groups.GroupRepository.localChanges.tryEmit(Unit)
         val blocked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             alarmManager?.canScheduleExactAlarms() == false
         if (needsExactAlarmAccess && !blocked) {

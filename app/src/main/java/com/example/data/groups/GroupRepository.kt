@@ -1,6 +1,8 @@
 package com.example.data.groups
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.R
 import com.example.data.local.computeDeadlineMillis
@@ -413,6 +415,10 @@ data class PendingOutboxMessage(
 )
 
 class GroupRepository(private val context: Context) {
+
+    private fun effectiveUid(): String? =
+        currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(context)
+
     private val outboxPrefs by lazy {
         context.getSharedPreferences("chat_outbox_queue", Context.MODE_PRIVATE)
     }
@@ -487,9 +493,10 @@ class GroupRepository(private val context: Context) {
     companion object {
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
-        private const val POLL_MILLIS = 20_000L
+        private const val POLL_MILLIS = 30_000L
+        private const val FAST_POLL_MILLIS = 15_000L
         /** How often an open chat re-reads, as a safety net in case realtime misses an event. */
-        private const val CHAT_POLL_MILLIS = 4_000L
+        private const val CHAT_POLL_MILLIS = 6_000L
         /** Fires when THIS phone changes group data, so open screens re-read at once. */
         val localChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 16)
         /** Tasks added on this phone that the server has not confirmed yet. */
@@ -523,11 +530,36 @@ class GroupRepository(private val context: Context) {
         }
     }
 
-    /** Safety net: re-read every few seconds while a screen is watching, in case realtime misses an event. */
+    private fun isGoodConnection(): Boolean {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return true
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    private fun isUnmeteredConnection(): Boolean {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Safety net: re-read while screen is watching and app is foreground. Never poll in background. */
     private fun pollTicker(): Flow<Unit> = flow {
         while (true) {
-            delay(POLL_MILLIS)
-            emit(Unit)
+            val interval = if (isUnmeteredConnection()) FAST_POLL_MILLIS else POLL_MILLIS
+            delay(interval)
+            if (AppVisibility.isForeground && isGoodConnection()) {
+                emit(Unit)
+            }
         }
     }
 
@@ -623,6 +655,10 @@ class GroupRepository(private val context: Context) {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "observeMyGroupMemberships select failed: ${e.message}")
+                val fallback = cachedMemberships(myUid)
+                if (fallback.isNotEmpty()) {
+                    trySend(fallback)
+                }
             }
         }
 
@@ -648,7 +684,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -704,7 +740,7 @@ class GroupRepository(private val context: Context) {
      */
     @OptIn(FlowPreview::class)
     fun observeGroup(groupId: String): Flow<GroupDetail?> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(null)
             close()
             return@callbackFlow
@@ -755,7 +791,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -782,7 +818,7 @@ class GroupRepository(private val context: Context) {
      */
     @OptIn(FlowPreview::class)
     fun observeGroupMembers(groupId: String): Flow<List<GroupMember>> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
@@ -832,7 +868,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -864,7 +900,7 @@ class GroupRepository(private val context: Context) {
 
     @OptIn(FlowPreview::class)
     private fun observeGroupTasksFromServer(groupId: String): Flow<List<GroupTask>> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
@@ -905,7 +941,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -932,7 +968,7 @@ class GroupRepository(private val context: Context) {
      */
     @OptIn(FlowPreview::class)
     fun observeGroupCourses(groupId: String): Flow<List<GroupCourse>> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
@@ -974,7 +1010,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -1004,7 +1040,7 @@ class GroupRepository(private val context: Context) {
 
     @OptIn(FlowPreview::class)
     private fun observeGroupMessagesFromServer(groupId: String): Flow<List<GroupMessage>> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
@@ -1087,7 +1123,7 @@ class GroupRepository(private val context: Context) {
             launch {
                 try {
                     merge(changeFlow.map { }, localChanges)
-                        .debounce(300L)
+                        .debounce(100L)
                         .collect { queryAndEmit() }
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
@@ -1101,7 +1137,9 @@ class GroupRepository(private val context: Context) {
             launch {
                 while (true) {
                     delay(CHAT_POLL_MILLIS)
-                    queryAndEmit()
+                    if (AppVisibility.isForeground && isGoodConnection()) {
+                        queryAndEmit()
+                    }
                 }
             }
         }
@@ -1122,7 +1160,7 @@ class GroupRepository(private val context: Context) {
     /** Chat tail: the newest 50 messages of a group, oldest first, with cache vs server indicator. */
     @OptIn(FlowPreview::class)
     fun observeGroupChatTail(groupId: String): Flow<ChatTail> = callbackFlow {
-        if (groupId.isBlank() || currentSupabaseUid() == null) {
+        if (groupId.isBlank() || effectiveUid() == null) {
             trySend(ChatTail(emptyList(), fromServer = true))
             close()
             return@callbackFlow
@@ -1166,7 +1204,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -1353,7 +1391,7 @@ class GroupRepository(private val context: Context) {
 
     @OptIn(FlowPreview::class)
     private fun observeGroupTasksForAppFromServer(uid: String, groupId: String): Flow<List<GroupTask>> = callbackFlow {
-        val myUid = currentSupabaseUid()
+        val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
         if (groupId.isBlank() || myUid == null) {
             trySend(emptyList())
             close()
@@ -1395,7 +1433,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -1617,7 +1655,7 @@ class GroupRepository(private val context: Context) {
             }
             try {
                 merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(300L)
+                    .debounce(100L)
                     .collect { queryAndEmit() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e

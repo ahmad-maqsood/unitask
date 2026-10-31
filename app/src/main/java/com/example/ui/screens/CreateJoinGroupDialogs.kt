@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
@@ -63,6 +64,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun CreateGroupDialog(
@@ -668,39 +670,57 @@ fun EditGroupDialog(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                        SelectionContainer {
                             Text(
                                 text = currentJoinCode.ifBlank { "--------" },
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.Monospace,
+                                letterSpacing = 2.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                OutlinedButton(
-                                    onClick = {
-                                        if (currentJoinCode.isNotBlank()) {
-                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                            val clip = ClipData.newPlainText("Join Code", currentJoinCode)
-                                            clipboard.setPrimaryClip(clip)
-                                            Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
-                                        }
-                                    },
-                                    enabled = currentJoinCode.isNotBlank() && !isLoading
-                                ) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy code", modifier = Modifier.size(16.dp))
-                                }
-                                Button(
-                                    onClick = { showRegenConfirm = true },
-                                    enabled = !isLoading
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Regenerate code", modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("New Code")
-                                }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    if (currentJoinCode.isNotBlank()) {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clip = ClipData.newPlainText("Join Code", currentJoinCode)
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                enabled = currentJoinCode.isNotBlank() && !isLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy code", modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Copy",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Button(
+                                onClick = { showRegenConfirm = true },
+                                enabled = !isLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Regenerate code", modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "New code",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                         Text(

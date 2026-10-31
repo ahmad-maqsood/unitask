@@ -24,6 +24,9 @@ object AnnouncementNotifier {
 
     /** If many are waiting at once (for example on a fresh install), only the newest few are shown. */
     private const val MAX_AT_ONCE = 3
+    const val GROUP_KEY_ANNOUNCEMENTS = "com.example.ANNOUNCEMENTS"
+    private const val SUMMARY_ID = 9905
+    private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
     private fun notificationId(announcementId: Long): Int = ("announcement|" + announcementId).hashCode()
 
@@ -60,10 +63,12 @@ object AnnouncementNotifier {
 
                 val builder = NotificationCompat.Builder(appContext, channelId)
                     .setSmallIcon(R.drawable.ic_stat_unitask)
-                    .setContentTitle(item.title.ifBlank { "UniTask" })
+                    .setColor(PRIMARY_COLOR)
+                    .setContentTitle(item.title.ifBlank { "UniTask Announcement" })
                     .setContentText(item.body.replace('\n', ' ').trim())
                     .setStyle(NotificationCompat.BigTextStyle().bigText(item.body.trim()))
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    .setGroup(GROUP_KEY_ANNOUNCEMENTS)
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(pendingIntent)
@@ -79,6 +84,20 @@ object AnnouncementNotifier {
             } catch (_: Exception) {
             }
         }
+
+        try {
+            val summary = NotificationCompat.Builder(appContext, channelId)
+                .setSmallIcon(R.drawable.ic_stat_unitask)
+                .setColor(PRIMARY_COLOR)
+                .setStyle(NotificationCompat.InboxStyle().setSummaryText("Announcements"))
+                .setGroup(GROUP_KEY_ANNOUNCEMENTS)
+                .setGroupSummary(true)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build()
+            manager.notify(SUMMARY_ID, summary)
+        } catch (_: Exception) {
+        }
     }
 
     /** Removes the notifications of these announcements (used when the person has seen or removed them). */
@@ -90,6 +109,10 @@ object AnnouncementNotifier {
                 manager.cancel(notificationId(item.id))
             } catch (_: Exception) {
             }
+        }
+        try {
+            manager.cancel(SUMMARY_ID)
+        } catch (_: Exception) {
         }
     }
 

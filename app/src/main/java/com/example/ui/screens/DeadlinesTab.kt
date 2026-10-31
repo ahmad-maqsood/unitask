@@ -15,8 +15,11 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Checkbox
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -113,8 +116,18 @@ fun DeadlinesTab(
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var isCalendarView by rememberSaveable { mutableStateOf(false) }
-    var isBatchMode by remember { mutableStateOf(false) }
-    val selectedTaskIds = remember { mutableStateListOf<Long>() }
+    var isBatchMode by rememberSaveable { mutableStateOf(false) }
+    var showBatchDeleteConfirmDialog by rememberSaveable { mutableStateOf(false) }
+    val selectedTaskIds = rememberSaveable(
+        saver = listSaver(
+            save = { it.toList() },
+            restore = { mutableStateListOf<Long>().apply { addAll(it) } }
+        )
+    ) { mutableStateListOf<Long>() }
+
+    BackHandler(enabled = searchQuery.isNotEmpty()) {
+        onSearchChange("")
+    }
 
     val pendingCountStr by remember(pendingCount) { derivedStateOf { pendingCount.toString() } }
     val completedCountStr by remember(completedCount) { derivedStateOf { completedCount.toString() } }
@@ -542,11 +555,7 @@ fun DeadlinesTab(
 
                                 TextButton(
                                     onClick = {
-                                        tasks.filter { it.task.id in selectedTaskIds }.forEach {
-                                            onDeleteTask(it.task)
-                                        }
-                                        selectedTaskIds.clear()
-                                        isBatchMode = false
+                                        showBatchDeleteConfirmDialog = true
                                     },
                                     enabled = selectedTaskIds.isNotEmpty(),
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
@@ -798,6 +807,35 @@ fun DeadlinesTab(
                 )
             }
         }
+    }
+
+    if (showBatchDeleteConfirmDialog) {
+        val count = selectedTaskIds.size
+        AlertDialog(
+            onDismissRequest = { showBatchDeleteConfirmDialog = false },
+            title = {
+                Text(if (count == 1) "Delete 1 selected task?" else "Delete $count selected tasks?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        tasks.filter { it.task.id in selectedTaskIds }.forEach {
+                            onDeleteTask(it.task)
+                        }
+                        selectedTaskIds.clear()
+                        isBatchMode = false
+                        showBatchDeleteConfirmDialog = false
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

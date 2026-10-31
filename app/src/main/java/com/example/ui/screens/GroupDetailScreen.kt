@@ -131,12 +131,18 @@ fun GroupDetailScreen(
     onTransferOwnership: ((String) -> Unit)? = null,
     onLoadEarlierMessages: (() -> Unit)? = null
 ) {
-    BackHandler { onBack() }
-
     val context = LocalContext.current
     var selectedSectionTab by remember(groupDetail?.id ?: fallbackUsername, startOnChat) {
         mutableIntStateOf(if (startOnChat) 3 else 0)
     } // 0: Tasks, 1: Courses, 2: Members, 3: Chat
+
+    BackHandler {
+        if (selectedSectionTab != 0) {
+            selectedSectionTab = 0
+        } else {
+            onBack()
+        }
+    }
     var showLeaveConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showEditGroupDialog by remember { mutableStateOf(false) }

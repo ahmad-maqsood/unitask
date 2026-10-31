@@ -13,6 +13,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
@@ -28,7 +29,7 @@ fun Material3TimePickerDialog(
     val state = rememberTimePickerState(
         initialHour = initialHour,
         initialMinute = initialMinute,
-        is24Hour = false
+        is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
     )
 
     AlertDialog(

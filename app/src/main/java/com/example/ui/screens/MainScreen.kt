@@ -2,6 +2,9 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.app.Activity
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.mutableLongStateOf
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -119,7 +122,6 @@ fun MainScreen(
         )
     }
 
-    var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -259,13 +261,22 @@ fun MainScreen(
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     // FAB Speed-dial menu expanded state
     var isFabMenuExpanded by remember { mutableStateOf(false) }
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
-        // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
+    // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
     BackHandler {
         when {
             isFabMenuExpanded -> isFabMenuExpanded = false
             currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
-            else -> showExitConfirmDialog = true
+            else -> {
+                val now = System.currentTimeMillis()
+                if (now - lastBackPressTime < 2000L) {
+                    (context as? ComponentActivity)?.finish() ?: activity?.finish()
+                } else {
+                    lastBackPressTime = now
+                    Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -763,30 +774,7 @@ fun MainScreen(
         }
     }
     }
-    if (showExitConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitConfirmDialog = false },
-            title = { Text("Exit UniTask?") },
-            text = { Text("Are you sure you want to exit the app?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showExitConfirmDialog = false
-                        activity?.finishAffinity()
-                    }
-                ) {
-                    Text("Exit")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitConfirmDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    if (showBackgroundSetupDialog && !showExitConfirmDialog) {
+    if (showBackgroundSetupDialog) {
         BackgroundSetupDialog(
             onDismiss = { showBackgroundSetupDialog = false }
         )

@@ -47,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
@@ -140,6 +141,11 @@ fun GroupChatPanel(
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(enabled = isSearchActive || searchQuery.isNotEmpty()) {
+        searchQuery = ""
+        isSearchActive = false
+    }
 
     val filteredMessages = remember(messages, searchQuery, isSearchActive) {
         if (isSearchActive && searchQuery.isNotBlank()) {

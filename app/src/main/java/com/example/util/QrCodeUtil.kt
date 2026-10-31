@@ -3,6 +3,15 @@ package com.example.util
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.EncodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.NotFoundException
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
 object QrCodeUtil {
 
@@ -45,36 +54,30 @@ object QrCodeUtil {
     }
 
     /**
-     * Generates a QR Code Bitmap. Uses ZXing directly if present on classpath.
+     * Generates a QR Code Bitmap directly using ZXing QRCodeWriter.
      */
     fun generateQrBitmap(content: String, sizePx: Int = 512): Bitmap? {
+        if (content.isEmpty() || sizePx <= 0) return null
         return try {
-            val writerClass = Class.forName("com.google.zxing.qrcode.QRCodeWriter")
-            val formatClass = Class.forName("com.google.zxing.BarcodeFormat")
-            val qrCodeConstant = formatClass.getField("QR_CODE").get(null)
-            val writer = writerClass.getDeclaredConstructor().newInstance()
-
-            val encodeMethod = writerClass.getMethod(
-                "encode",
-                String::class.java,
-                formatClass,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType
+            val hints = mapOf(
+                EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
+                EncodeHintType.MARGIN to 1
             )
-            val bitMatrix = encodeMethod.invoke(writer, content, qrCodeConstant, sizePx, sizePx)
-            val bitMatrixClass = bitMatrix.javaClass
-            val getMethod = bitMatrixClass.getMethod("get", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType)
-
-            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-            for (x in 0 until sizePx) {
-                for (y in 0 until sizePx) {
-                    val isBlack = getMethod.invoke(bitMatrix, x, y) as Boolean
-                    bitmap.setPixel(x, y, if (isBlack) Color.BLACK else Color.WHITE)
+            val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx, hints)
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val pixels = IntArray(width * height)
+            for (y in 0 until height) {
+                val offset = y * width
+                for (x in 0 until width) {
+                    pixels[offset + x] = if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE
                 }
             }
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
             bitmap
         } catch (_: Throwable) {
-            generateFallbackMatrixBitmap(content, sizePx)
+            null
         }
     }
 
@@ -88,73 +91,17 @@ object QrCodeUtil {
             val pixels = IntArray(width * height)
             bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
-            val rgbSourceClass = Class.forName("com.google.zxing.RGBLuminanceSource")
-            val luminanceSource = rgbSourceClass.getConstructor(
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                IntArray::class.java
-            ).newInstance(width, height, pixels)
-
-            val binarizerClass = Class.forName("com.google.zxing.common.HybridBinarizer")
-            val luminanceSourceClass = Class.forName("com.google.zxing.LuminanceSource")
-            val binarizer = binarizerClass.getConstructor(luminanceSourceClass).newInstance(luminanceSource)
-
-            val binaryBitmapClass = Class.forName("com.google.zxing.BinaryBitmap")
-            val binarizerParamClass = Class.forName("com.google.zxing.Binarizer")
-            val binaryBitmap = binaryBitmapClass.getConstructor(binarizerParamClass).newInstance(binarizer)
-
-            val readerClass = Class.forName("com.google.zxing.MultiFormatReader")
-            val reader = readerClass.getDeclaredConstructor().newInstance()
-            val decodeMethod = readerClass.getMethod("decode", binaryBitmapClass)
-            val result = decodeMethod.invoke(reader, binaryBitmap)
-            val getTextMethod = result.javaClass.getMethod("getText")
-            getTextMethod.invoke(result) as? String
+            val source = RGBLuminanceSource(width, height, pixels)
+            val binarizer = HybridBinarizer(source)
+            val binaryBitmap = BinaryBitmap(binarizer)
+            val reader = MultiFormatReader()
+            val result = reader.decode(binaryBitmap)
+            result.text
+        } catch (_: NotFoundException) {
+            null
         } catch (_: Throwable) {
             null
         }
-    }
-
-    private fun generateFallbackMatrixBitmap(content: String, sizePx: Int): Bitmap {
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bitmap)
-        canvas.drawColor(Color.WHITE)
-        val paint = android.graphics.Paint().apply {
-            color = Color.BLACK
-            style = android.graphics.Paint.Style.FILL
-        }
-        val cellSize = sizePx / 25
-        val hash = content.hashCode()
-        for (i in 0 until 25) {
-            for (j in 0 until 25) {
-                // Fixed finder patterns at 3 corners
-                val isFinder1 = i < 7 && j < 7
-                val isFinder2 = i >= 18 && j < 7
-                val isFinder3 = i < 7 && j >= 18
-                if (isFinder1 || isFinder2 || isFinder3) {
-                    val li = if (i >= 18) i - 18 else i
-                    val lj = if (j >= 18) j - 18 else j
-                    val isBorder = li == 0 || li == 6 || lj == 0 || lj == 6 || (li in 2..4 && lj in 2..4)
-                    if (isBorder) {
-                        canvas.drawRect(
-                            (i * cellSize).toFloat(),
-                            (j * cellSize).toFloat(),
-                            ((i + 1) * cellSize).toFloat(),
-                            ((j + 1) * cellSize).toFloat(),
-                            paint
-                        )
-                    }
-                } else if (((hash xor (i * 31 + j * 17)) and 1) == 0) {
-                    canvas.drawRect(
-                        (i * cellSize).toFloat(),
-                        (j * cellSize).toFloat(),
-                        ((i + 1) * cellSize).toFloat(),
-                        ((j + 1) * cellSize).toFloat(),
-                        paint
-                    )
-                }
-            }
-        }
-        return bitmap
     }
 }
 

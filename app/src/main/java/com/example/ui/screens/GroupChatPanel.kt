@@ -336,7 +336,7 @@ fun GroupChatPanel(
                         }
                     }
 
-                    if (onLoadEarlier != null && newestFirst.size >= 50) {
+                    if (onLoadEarlier != null && messages.size >= 50) {
                         item(key = "load_earlier_messages_btn") {
                             Box(
                                 modifier = Modifier

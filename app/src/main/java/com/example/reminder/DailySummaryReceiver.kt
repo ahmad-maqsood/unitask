@@ -105,14 +105,20 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val overdue = pendingTasks.count { it.deadlineMillis < startOfToday }
 
         // Nothing planned today: stay quiet instead of sending an empty notification.
-        if (classes.isEmpty() && dueToday.isEmpty()) return
+        if (classes.isEmpty() && dueToday.isEmpty() && overdue == 0) return
 
         val parts = ArrayList<String>()
         if (classes.isNotEmpty()) parts.add(if (classes.size == 1) "1 class" else "${classes.size} classes")
         if (dueToday.isNotEmpty()) {
             parts.add(if (dueToday.size == 1) "1 task due today" else "${dueToday.size} tasks due today")
         }
-        if (overdue > 0) parts.add("$overdue overdue")
+        if (overdue > 0) {
+            if (classes.isEmpty() && dueToday.isEmpty()) {
+                parts.add(if (overdue == 1) "1 overdue task" else "$overdue overdue tasks")
+            } else {
+                parts.add("$overdue overdue")
+            }
+        }
         val summary = parts.joinToString(" \u2022 ")
 
         val lines = ArrayList<String>()
@@ -140,12 +146,14 @@ class DailySummaryReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val bigText = if (lines.isEmpty()) summary else (summary + "\n" + lines.joinToString("\n"))
+
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)
             .setContentTitle("Today in UniTask")
             .setContentText(summary)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(summary + "\n" + lines.joinToString("\n")))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setGroup(GROUP_KEY_DAILY)

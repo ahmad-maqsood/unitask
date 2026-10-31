@@ -113,6 +113,11 @@ class ClassStartReceiver : BroadcastReceiver() {
             set(Calendar.MINUTE, slot.endMinute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+            val startTotal = slot.startHour * 60 + slot.startMinute
+            val endTotal = slot.endHour * 60 + slot.endMinute
+            if (endTotal <= startTotal) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
         }.timeInMillis
     }
 

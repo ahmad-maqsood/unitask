@@ -1,6 +1,7 @@
 package com.example.reminder
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -33,6 +35,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val CHANNEL_NAME = "Assignment Deadlines & Reminders"
         const val ACTION_MARK_TASK_DONE = "com.example.ACTION_MARK_TASK_DONE"
         const val ACTION_MARK_GROUP_TASK_DONE = "com.example.ACTION_MARK_GROUP_TASK_DONE"
+        const val ACTION_SILENCE_ALARM = "com.example.ACTION_SILENCE_ALARM"
 
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_TASK_TITLE = "extra_task_title"
@@ -58,6 +61,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             if (notifId != 0) {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
+                cancelSilenceAlarm(context, notifId)
             }
             if (taskId > 0L) {
                 val pending = goAsync()
@@ -86,6 +90,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             if (notifId != 0) {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
+                cancelSilenceAlarm(context, notifId)
             }
             if (groupId.isNotBlank() && taskId.isNotBlank()) {
                 val pending = goAsync()
@@ -103,6 +108,17 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 }
             }
             return
+        }
+
+        if (intent.action == ACTION_SILENCE_ALARM) {
+            val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            val isStillActive = try {
+                nm?.activeNotifications?.any { it.id == notifId } == true
+            } catch (_: Exception) {
+                false
+            }
+            if (!isStillActive) return
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -165,14 +181,16 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
 
         val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
+        val isSilence = intent.action == ACTION_SILENCE_ALARM
         if (isAlarm) HighPriorityAlarm.ensureChannel(context)
 
         val bigSummary = if (isMyTask) taskTitle else "Assignment for $courseCode: $taskTitle"
-        val notificationId = if (!reminderOption.isNullOrBlank()) {
-            ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()
-        } else {
-            taskId.toInt()
-        }
+        val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0).takeIf { it != 0 }
+            ?: if (!reminderOption.isNullOrBlank()) {
+                ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()
+            } else {
+                taskId.toInt()
+            }
 
         val builder = NotificationCompat.Builder(
             context,
@@ -222,17 +240,26 @@ class TaskReminderReceiver : BroadcastReceiver() {
             builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
         }
 
-        if (isAlarm) {
+        if (isAlarm && !isSilence) {
             builder.setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)
                 .setVibrate(HighPriorityAlarm.VIBRATION_PATTERN)
-                .setTimeoutAfter(HighPriorityAlarm.RING_MILLIS)
+        } else if (isSilence) {
+            builder.setSound(null)
+                .setVibrate(null)
+                .setOnlyAlertOnce(true)
         } else {
             val customSound = NotificationSound.uri(context)
             if (customSound != null) builder.setSound(customSound) else builder.setDefaults(NotificationCompat.DEFAULT_SOUND)
         }
 
         val notification = builder.build()
-        if (isAlarm) notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        if (isAlarm && !isSilence) {
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        }
+
+        if (isAlarm && !isSilence) {
+            scheduleSilenceAlarm(context, notificationId, intent)
+        }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(notificationId, notification)
@@ -272,6 +299,56 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 }
             }
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun scheduleSilenceAlarm(context: Context, notificationId: Int, originalIntent: Intent) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val silenceIntent = Intent(context, TaskReminderReceiver::class.java).apply {
+            action = ACTION_SILENCE_ALARM
+            putExtras(originalIntent)
+            putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            data = Uri.parse("unitask://silence-alarm/$notificationId")
+        }
+        val silencePending = PendingIntent.getBroadcast(
+            context,
+            notificationId * 37 + 99,
+            silenceIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val triggerAt = System.currentTimeMillis() + HighPriorityAlarm.RING_MILLIS
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, silencePending)
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, silencePending)
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, silencePending)
+            } else {
+                am.setExact(AlarmManager.RTC_WAKEUP, triggerAt, silencePending)
+            }
+        } catch (_: SecurityException) {
+            am.set(AlarmManager.RTC_WAKEUP, triggerAt, silencePending)
+        }
+    }
+
+    private fun cancelSilenceAlarm(context: Context, notificationId: Int) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val silenceIntent = Intent(context, TaskReminderReceiver::class.java).apply {
+            action = ACTION_SILENCE_ALARM
+            data = Uri.parse("unitask://silence-alarm/$notificationId")
+        }
+        val pending = PendingIntent.getBroadcast(
+            context,
+            notificationId * 37 + 99,
+            silenceIntent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (pending != null) {
+            am.cancel(pending)
+            pending.cancel()
         }
     }
 }

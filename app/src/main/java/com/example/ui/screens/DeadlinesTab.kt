@@ -133,6 +133,7 @@ fun DeadlinesTab(
     val completedCountStr by remember(completedCount) { derivedStateOf { completedCount.toString() } }
     val coursesCountStr by remember(courses.size) { derivedStateOf { courses.size.toString() } }
     val allTasksLabel by remember(tasks.size) { derivedStateOf { "All (${tasks.size})" } }
+    val sections = remember(tasks) { groupDeadlines(tasks) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -662,8 +663,6 @@ fun DeadlinesTab(
                 }
             }
         } else if (sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()) {
-            val sections = groupDeadlines(tasks)
-
             if (sections.overdue.isNotEmpty()) {
                 item(key = "section_header_overdue") {
                     SectionHeader(
@@ -874,7 +873,7 @@ private fun SectionHeader(
     }
 }
 
-private data class DeadlineSections(
+internal data class DeadlineSections(
     val overdue: List<TaskWithCourse>,
     val today: List<TaskWithCourse>,
     val tomorrow: List<TaskWithCourse>,
@@ -882,55 +881,54 @@ private data class DeadlineSections(
     val done: List<TaskWithCourse>
 )
 
-private fun groupDeadlines(tasks: List<TaskWithCourse>, nowMillis: Long = System.currentTimeMillis()): DeadlineSections {
-    val calNow = Calendar.getInstance().apply { timeInMillis = nowMillis }
-    val currentYear = calNow.get(Calendar.YEAR)
-    val currentDayOfYear = calNow.get(Calendar.DAY_OF_YEAR)
+internal fun groupDeadlines(tasks: List<TaskWithCourse>, nowMillis: Long = System.currentTimeMillis()): DeadlineSections {
+    val cal = Calendar.getInstance().apply { timeInMillis = nowMillis }
+    val currentYear = cal.get(Calendar.YEAR)
+    val currentDayOfYear = cal.get(Calendar.DAY_OF_YEAR)
 
-    val calTomorrow = Calendar.getInstance().apply {
-        timeInMillis = nowMillis
-        add(Calendar.DAY_OF_YEAR, 1)
-    }
-    val tomorrowYear = calTomorrow.get(Calendar.YEAR)
-    val tomorrowDayOfYear = calTomorrow.get(Calendar.DAY_OF_YEAR)
+    cal.add(Calendar.DAY_OF_YEAR, 1)
+    val tomorrowYear = cal.get(Calendar.YEAR)
+    val tomorrowDayOfYear = cal.get(Calendar.DAY_OF_YEAR)
 
-    val overdue = mutableListOf<TaskWithCourse>()
-    val today = mutableListOf<TaskWithCourse>()
-    val tomorrow = mutableListOf<TaskWithCourse>()
-    val later = mutableListOf<TaskWithCourse>()
-    val done = mutableListOf<TaskWithCourse>()
+    val overdue = mutableListOf<Pair<TaskWithCourse, Long>>()
+    val today = mutableListOf<Pair<TaskWithCourse, Long>>()
+    val tomorrow = mutableListOf<Pair<TaskWithCourse, Long>>()
+    val later = mutableListOf<Pair<TaskWithCourse, Long>>()
+    val done = mutableListOf<Pair<TaskWithCourse, Long>>()
 
     for (item in tasks) {
         val task = item.task
+        val deadline = task.deadlineMillis
+        val paired = item to deadline
+
         if (task.status == TaskStatus.COMPLETED) {
-            done.add(item)
+            done.add(paired)
             continue
         }
 
-        val taskDeadline = task.deadlineMillis
-        if (taskDeadline < nowMillis) {
-            overdue.add(item)
+        if (deadline < nowMillis) {
+            overdue.add(paired)
         } else {
-            val taskCal = Calendar.getInstance().apply { timeInMillis = task.dueDateEpochMillis }
-            val taskYear = taskCal.get(Calendar.YEAR)
-            val taskDayOfYear = taskCal.get(Calendar.DAY_OF_YEAR)
+            cal.timeInMillis = task.dueDateEpochMillis
+            val taskYear = cal.get(Calendar.YEAR)
+            val taskDayOfYear = cal.get(Calendar.DAY_OF_YEAR)
 
             if (taskYear == currentYear && taskDayOfYear == currentDayOfYear) {
-                today.add(item)
+                today.add(paired)
             } else if (taskYear == tomorrowYear && taskDayOfYear == tomorrowDayOfYear) {
-                tomorrow.add(item)
+                tomorrow.add(paired)
             } else {
-                later.add(item)
+                later.add(paired)
             }
         }
     }
 
     return DeadlineSections(
-        overdue = overdue.sortedBy { it.task.deadlineMillis },
-        today = today.sortedBy { it.task.deadlineMillis },
-        tomorrow = tomorrow.sortedBy { it.task.deadlineMillis },
-        later = later.sortedBy { it.task.deadlineMillis },
-        done = done.sortedByDescending { it.task.deadlineMillis }
+        overdue = overdue.sortedBy { it.second }.map { it.first },
+        today = today.sortedBy { it.second }.map { it.first },
+        tomorrow = tomorrow.sortedBy { it.second }.map { it.first },
+        later = later.sortedBy { it.second }.map { it.first },
+        done = done.sortedByDescending { it.second }.map { it.first }
     )
 }
 

@@ -462,36 +462,36 @@ class GroupRepository(private val context: Context) {
             mutex.withLock {
                 val queued = getQueuedOutboxMessages(groupId)
                 if (queued.isEmpty()) return@withLock
-                val remaining = queued.toMutableList()
                 for (item in queued) {
-                try {
-                    val payload = CreateGroupMessagePayload(
-                        groupId = item.groupId,
-                        senderId = item.uid,
-                        senderName = item.senderName,
-                        text = item.text,
-                        replyToId = item.replyToId,
-                        replyToName = item.replyToName,
-                        replyToText = item.replyToText
-                    )
-                    val result = SupabaseProvider.client.postgrest["group_messages"]
-                        .insert(payload) { select() }
-                    val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
-                    remaining.remove(item)
-                    saveQueuedOutboxMessages(groupId, remaining)
-                    if (savedId != null) {
-                        pendingMessages.update { list ->
-                            list.map { if (it.id == item.localId) it.copy(id = savedId) else it }
+                    if (inFlightSends.contains(item.localId)) continue
+                    try {
+                        val payload = CreateGroupMessagePayload(
+                            groupId = item.groupId,
+                            senderId = item.uid,
+                            senderName = item.senderName,
+                            text = item.text,
+                            replyToId = item.replyToId,
+                            replyToName = item.replyToName,
+                            replyToText = item.replyToText
+                        )
+                        val result = SupabaseProvider.client.postgrest["group_messages"]
+                            .insert(payload) { select() }
+                        val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
+                        val updatedQueued = getQueuedOutboxMessages(groupId).filter { it.localId != item.localId }
+                        saveQueuedOutboxMessages(groupId, updatedQueued)
+                        if (savedId != null) {
+                            pendingMessages.update { list ->
+                                list.map { if (it.id == item.localId) it.copy(id = savedId) else it }
+                            }
                         }
+                        localChanges.tryEmit(Unit)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "flushChatOutbox message retry failed: ${e.message}")
+                        break
                     }
-                    localChanges.tryEmit(Unit)
-                } catch (e: Exception) {
-                    Log.w(TAG, "flushChatOutbox message retry failed: ${e.message}")
-                    break
                 }
             }
         }
-    }
     }
 
 
@@ -499,6 +499,7 @@ class GroupRepository(private val context: Context) {
 
     companion object {
         private val outboxMutexes = ConcurrentHashMap<String, Mutex>()
+        private val inFlightSends = ConcurrentHashMap.newKeySet<String>()
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 30_000L
@@ -1328,16 +1329,22 @@ class GroupRepository(private val context: Context) {
             replyToText = replyText,
             createdAtMillis = localMessage.createdAtMillis
         )
-        val currentQueued = getQueuedOutboxMessages(groupId)
-        saveQueuedOutboxMessages(groupId, currentQueued + outboxItem)
+        val mutex = outboxMutexes.computeIfAbsent(groupId) { Mutex() }
+        inFlightSends.add(localMessage.id)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                mutex.withLock {
+                    val currentQueued = getQueuedOutboxMessages(groupId)
+                    saveQueuedOutboxMessages(groupId, currentQueued + outboxItem)
+                }
                 val result = SupabaseProvider.client.postgrest["group_messages"]
                     .insert(payload) { select() }
                 val savedId = runCatching { result.decodeSingle<GroupMessageRow>().id?.toString() }.getOrNull()
-                val updatedQueued = getQueuedOutboxMessages(groupId).filter { it.localId != localMessage.id }
-                saveQueuedOutboxMessages(groupId, updatedQueued)
+                mutex.withLock {
+                    val updatedQueued = getQueuedOutboxMessages(groupId).filter { it.localId != localMessage.id }
+                    saveQueuedOutboxMessages(groupId, updatedQueued)
+                }
                 if (savedId != null) {
                     pendingMessages.update { list ->
                         list.map { if (it.id == localMessage.id) it.copy(id = savedId) else it }
@@ -1348,6 +1355,8 @@ class GroupRepository(private val context: Context) {
                 Log.w(TAG, "sendMessage failed (retained in outbox): ${e.message}", e)
                 // Message is kept in outbox queue and pendingMessages so user does not lose it
                 onFailure(e)
+            } finally {
+                inFlightSends.remove(localMessage.id)
             }
         }
     }

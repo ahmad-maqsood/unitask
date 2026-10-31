@@ -18,6 +18,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Image
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.barcode.common.Barcode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -179,12 +183,19 @@ fun CreateGroupDialog(
 fun JoinGroupDialog(
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onJoin: (username: String, joinCode: String) -> Unit
+    onJoin: (username: String, joinCode: String) -> Unit,
+    initialUsername: String = "",
+    initialJoinCode: String = ""
 ) {
     val context = LocalContext.current
-    var username by rememberSaveable { mutableStateOf("") }
-    var joinCode by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf(initialUsername) }
+    var joinCode by rememberSaveable { mutableStateOf(initialJoinCode) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    androidx.compose.runtime.LaunchedEffect(initialUsername, initialJoinCode) {
+        if (initialUsername.isNotBlank()) username = initialUsername
+        if (initialJoinCode.isNotBlank()) joinCode = initialJoinCode
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -239,39 +250,86 @@ fun JoinGroupDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        enabled = !isLoading,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Scan QR", style = MaterialTheme.typography.labelSmall)
-                    }
-
-                    OutlinedButton(
                         onClick = {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
-                            if (!clip.isNullOrBlank()) {
-                                val parsed = com.example.util.QrCodeUtil.parseGroupInvite(clip)
-                                if (parsed != null) {
-                                    username = parsed.first
-                                    joinCode = parsed.second
-                                    Toast.makeText(context, "Invite filled from clipboard!", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, "No valid group invite in clipboard", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                            try {
+                                val options = GmsBarcodeScannerOptions.Builder()
+                                    .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                                    .build()
+                                val scanner = GmsBarcodeScanning.getClient(context, options)
+                                scanner.startScan()
+                                    .addOnSuccessListener { barcode ->
+                                        val rawValue = barcode.rawValue
+                                        if (!rawValue.isNullOrBlank()) {
+                                            val parsed = com.example.util.QrCodeUtil.parseGroupInvite(rawValue)
+                                            if (parsed != null) {
+                                                username = parsed.first
+                                                joinCode = parsed.second
+                                                Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                errorMessage = "QR code found, but invalid invite format."
+                                            }
+                                        }
+                                    }
+                                    .addOnCanceledListener {
+                                        // Silent
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(
+                                            context,
+                                            "Camera scan is not available on this phone. Use From image.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                            } catch (_: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    "Camera scan is not available on this phone. Use From image.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         },
                         enabled = !isLoading,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Paste Link", style = MaterialTheme.typography.labelSmall)
+                        Text("Scan with camera", style = MaterialTheme.typography.labelSmall)
                     }
+
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        enabled = !isLoading,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("From image", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+                        if (!clip.isNullOrBlank()) {
+                            val parsed = com.example.util.QrCodeUtil.parseGroupInvite(clip)
+                            if (parsed != null) {
+                                username = parsed.first
+                                joinCode = parsed.second
+                                Toast.makeText(context, "Invite filled from clipboard!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "No valid group invite in clipboard", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Paste Link", style = MaterialTheme.typography.labelSmall)
                 }
 
                 OutlinedTextField(

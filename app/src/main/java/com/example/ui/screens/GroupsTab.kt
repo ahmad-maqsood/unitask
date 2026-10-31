@@ -73,6 +73,8 @@ fun GroupsTab(
     chatInfo: Map<String, GroupChatInfo> = emptyMap(),
     onChatRead: (groupId: String, upToMillis: Long) -> Unit = { _, _ -> },
     openChatGroupId: String? = null,
+    pendingInvite: Pair<String, String>? = null,
+    onInviteConsumed: () -> Unit = {},
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -107,6 +109,19 @@ fun GroupsTab(
     LaunchedEffect(openChatGroupId) {
         if (openChatGroupId != null) {
             activeOpenChatGroupId = openChatGroupId
+        }
+    }
+
+    LaunchedEffect(pendingInvite, effectiveUser, sessionReady) {
+        if (pendingInvite != null) {
+            if (effectiveUser != null) {
+                val (username, code) = pendingInvite
+                viewModel.openJoinDialog(username, code)
+                onInviteConsumed()
+            } else if (sessionReady) {
+                Toast.makeText(context, "Sign in to join this group", Toast.LENGTH_SHORT).show()
+                onInviteConsumed()
+            }
         }
     }
 
@@ -279,9 +294,12 @@ fun GroupsTab(
                 )
             }
 
+            val prefilledInvite by viewModel.prefilledJoinInvite.collectAsStateWithLifecycle()
             if (isJoinDialogOpen) {
                 JoinGroupDialog(
                     isLoading = isActionLoading,
+                    initialUsername = prefilledInvite?.first.orEmpty(),
+                    initialJoinCode = prefilledInvite?.second.orEmpty(),
                     onDismiss = { viewModel.closeJoinDialog() },
                     onJoin = { username, joinCode ->
                         viewModel.joinGroup(username, joinCode) { success, errorMessage ->

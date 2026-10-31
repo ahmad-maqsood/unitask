@@ -54,6 +54,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _isJoinDialogOpen = MutableStateFlow(false)
     val isJoinDialogOpen: StateFlow<Boolean> = _isJoinDialogOpen.asStateFlow()
+    private val _prefilledJoinInvite = MutableStateFlow<Pair<String, String>?>(null)
+    val prefilledJoinInvite: StateFlow<Pair<String, String>?> = _prefilledJoinInvite.asStateFlow()
 
     private val _isAddEditTaskDialogOpen = MutableStateFlow(false)
     val isAddEditTaskDialogOpen: StateFlow<Boolean> = _isAddEditTaskDialogOpen.asStateFlow()
@@ -228,12 +230,14 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         _isCreateDialogOpen.value = false
     }
 
-    fun openJoinDialog() {
+    fun openJoinDialog(username: String = "", joinCode: String = "") {
+        _prefilledJoinInvite.value = if (username.isNotBlank() && joinCode.isNotBlank()) username to joinCode else null
         _isJoinDialogOpen.value = true
     }
 
     fun closeJoinDialog() {
         _isJoinDialogOpen.value = false
+        _prefilledJoinInvite.value = null
     }
 
     fun openAddTaskDialog() {

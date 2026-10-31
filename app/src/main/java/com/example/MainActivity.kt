@@ -58,6 +58,14 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationIntent(intent: Intent?) {
         if (intent == null) return
+        val dataUri = intent.data
+        if (dataUri != null) {
+            val parsed = com.example.util.QrCodeUtil.parseGroupInvite(dataUri.toString())
+            if (parsed != null) {
+                mainViewModel.openJoinWithInvite(parsed.first, parsed.second)
+                intent.data = null
+            }
+        }
         val groupId = intent.getStringExtra("open_group_id")
         val openChat = intent.getBooleanExtra("open_group_chat", false)
         val openedTaskId = intent.getLongExtra("opened_task_id", -1L)

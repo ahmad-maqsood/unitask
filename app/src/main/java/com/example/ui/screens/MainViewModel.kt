@@ -553,6 +553,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         filteredPersonal + groups.map { it.toTaskWithCourse() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Set when an invite link (unitask://join) is opened; the Groups tab opens the Join dialog with prefilled fields.
+    private val _pendingGroupInvite = MutableStateFlow<Pair<String, String>?>(null)
+    val pendingGroupInvite: StateFlow<Pair<String, String>?> = _pendingGroupInvite.asStateFlow()
+
+    fun openJoinWithInvite(username: String, joinCode: String) {
+        _pendingGroupInvite.value = username to joinCode
+        _currentTab.value = MainTab.GROUPS
+    }
+
+    fun onGroupInviteConsumed() {
+        _pendingGroupInvite.value = null
+    }
+
     // Set when a group task is tapped on the Deadlines tab; the Groups tab opens that group.
     private val _groupToOpen = MutableStateFlow<String?>(null)
     val groupToOpen: StateFlow<String?> = _groupToOpen.asStateFlow()

@@ -45,6 +45,7 @@ supabase = "3.2.4"
 ktor = "3.2.3"
 desugarJdkLibs = "2.0.4"
 zxing = "3.5.3"
+playServicesCodeScanner = "16.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -101,6 +102,7 @@ ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playServicesCodeScanner" }
 
 
 [plugins]

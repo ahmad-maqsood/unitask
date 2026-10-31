@@ -252,6 +252,7 @@ fun MainScreen(
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
     val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
+    val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
     val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
     val myTasksPendingCount by viewModel.myTasksPendingCount.collectAsStateWithLifecycle()
     val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
@@ -706,7 +707,9 @@ fun MainScreen(
                             onGroupOpened = { viewModel.onGroupOpened() },
                             chatInfo = groupChatInfo,
                             onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) },
-                            openChatGroupId = groupChatToOpen
+                            openChatGroupId = groupChatToOpen,
+                            pendingInvite = pendingGroupInvite,
+                            onInviteConsumed = { viewModel.onGroupInviteConsumed() }
                         )
                     }
 

@@ -32,7 +32,7 @@ data class SummaryTask(
  *  2. a "new task" notification for tasks other members added since the last run.
  *
  * It is called from two places that share the same SharedPreferences, so a task is announced
- * only once: the app-level listener (instant while the app is running) and GroupSyncWorker
+ * only once: the app-level listener (instant while the app is running) and PeriodicSyncWorker
  * (periodic, works when the app is closed).
  */
 class GroupTaskProcessor(context: Context) {

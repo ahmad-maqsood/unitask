@@ -198,10 +198,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         // Schedule periodic sync
         com.example.sync.SyncScheduler.schedulePeriodicSync(application)
-        // Group deadline alarms and "new group task" notices while the app is closed
-        com.example.sync.SyncScheduler.scheduleGroupSync(application)
-        // New announcements: checked every 15 minutes, even when the app is closed
-        com.example.sync.SyncScheduler.scheduleAnnouncementSync(application)
+        // Periodic group and announcement sync while the app is closed (every 15 minutes)
+        com.example.sync.SyncScheduler.schedulePeriodicSyncWorker(application)
         // Follow the Supabase session: signing in starts live sync, signing out stops it.
         // "Initializing" (session still loading) and "RefreshFailure" (offline) are preserved,
         // so an offline app start never looks like a sign-out.

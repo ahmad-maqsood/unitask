@@ -729,7 +729,7 @@ fun MainScreen(
                                 viewModel.saveMyTask(
                                     title = title,
                                     description = "",
-                                    dueDateEpochMillis = cal.timeInMillis,
+                                    dueDateEpochMillis = com.example.data.local.startOfLocalDay(cal.timeInMillis),
                                     hour = 12,
                                     minute = 0,
                                     priority = com.example.data.local.Priority.MEDIUM,

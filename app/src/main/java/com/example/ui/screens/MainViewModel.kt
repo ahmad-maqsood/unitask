@@ -19,6 +19,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.RepeatRule
 import com.example.data.local.deadlineMillis
+import com.example.data.local.startOfLocalDay
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.ensureMyTasksCourse
 import com.example.data.local.isMyTasksCourse
@@ -896,7 +897,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     title = title.trim(),
                     description = description.trim(),
                     courseId = courseId,
-                    dueDateEpochMillis = dueDateMillis,
+                    dueDateEpochMillis = startOfLocalDay(dueDateMillis),
                     dueTimeHour = dueHour,
                     dueTimeMinute = dueMinute,
                     priority = priority,
@@ -910,7 +911,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     title = title.trim(),
                     description = description.trim(),
                     courseId = courseId,
-                    dueDateEpochMillis = dueDateMillis,
+                    dueDateEpochMillis = startOfLocalDay(dueDateMillis),
                     dueTimeHour = dueHour,
                     dueTimeMinute = dueMinute,
                     priority = priority,
@@ -965,7 +966,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     courseId = courseId,
                     title = title.trim(),
                     description = description.trim(),
-                    dueDateEpochMillis = dueDateEpochMillis,
+                    dueDateEpochMillis = startOfLocalDay(dueDateEpochMillis),
                     dueTimeHour = hour,
                     dueTimeMinute = minute,
                     priority = priority,
@@ -979,7 +980,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     courseId = courseId,
                     title = title.trim(),
                     description = description.trim(),
-                    dueDateEpochMillis = dueDateEpochMillis,
+                    dueDateEpochMillis = startOfLocalDay(dueDateEpochMillis),
                     dueTimeHour = hour,
                     dueTimeMinute = minute,
                     priority = priority,

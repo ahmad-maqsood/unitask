@@ -97,5 +97,14 @@ fun computeDeadlineMillis(dueDateEpochMillis: Long, hour: Int, minute: Int): Lon
         set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
 
+fun startOfLocalDay(millis: Long): Long =
+    java.util.Calendar.getInstance().apply {
+        timeInMillis = millis
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
 val TaskItem.deadlineMillis: Long
     get() = computeDeadlineMillis(dueDateEpochMillis, dueTimeHour, dueTimeMinute)

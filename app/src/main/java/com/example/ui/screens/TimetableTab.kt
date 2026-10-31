@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -48,6 +49,7 @@ import androidx.compose.material3.Button
 import com.example.reminder.ClassReminderScheduler
 import com.example.util.WeekParity
 import com.example.util.WeekType
+import com.example.util.buildTimetableIcs
 import com.example.util.cleanClassroom
 import com.example.util.weekTypeOf
 import kotlinx.coroutines.Dispatchers
@@ -513,83 +515,67 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
         return
     }
 
-    val sb = StringBuilder()
-    sb.appendLine("BEGIN:VCALENDAR")
-    sb.appendLine("VERSION:2.0")
-    sb.appendLine("PRODID:-//UniTask//Timetable//EN")
-    sb.appendLine("CALSCALE:GREGORIAN")
-    sb.appendLine("METHOD:PUBLISH")
-
-    val dayCodes = mapOf(1 to "MO", 2 to "TU", 3 to "WE", 4 to "TH", 5 to "FR", 6 to "SA", 7 to "SU")
-
-    for (item in slots) {
-        val slot = item.slot
-        val course = item.course
-        val byDay = dayCodes[slot.dayOfWeek] ?: "MO"
-        val title = course?.name?.ifBlank { course.code } ?: course?.code ?: "Lecture"
-        val location = slot.classroom.ifBlank { course?.location.orEmpty() }
-        val instructor = slot.instructor.ifBlank { course?.instructor.orEmpty() }
-
-        sb.appendLine("BEGIN:VEVENT")
-        sb.appendLine("UID:unitask_slot_${slot.id}@unitask")
-        sb.appendLine("SUMMARY:${escapeIcs(title)}")
-        if (location.isNotBlank()) sb.appendLine("LOCATION:${escapeIcs(location)}")
-        if (instructor.isNotBlank()) sb.appendLine("DESCRIPTION:${escapeIcs("Instructor: $instructor")}")
-        sb.appendLine("RRULE:FREQ=WEEKLY;BYDAY=$byDay")
-
-        val sH = String.format(Locale.US, "%02d", slot.startHour)
-        val sM = String.format(Locale.US, "%02d", slot.startMinute)
-        val eH = String.format(Locale.US, "%02d", slot.endHour)
-        val eM = String.format(Locale.US, "%02d", slot.endMinute)
-
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, when (slot.dayOfWeek) {
-                1 -> Calendar.MONDAY
-                2 -> Calendar.TUESDAY
-                3 -> Calendar.WEDNESDAY
-                4 -> Calendar.THURSDAY
-                5 -> Calendar.FRIDAY
-                6 -> Calendar.SATURDAY
-                7 -> Calendar.SUNDAY
-                else -> Calendar.MONDAY
-            })
-        }
-        val dateStr = SimpleDateFormat("yyyyMMdd", Locale.US).format(cal.time)
-        sb.appendLine("DTSTART:${dateStr}T${sH}${sM}00")
-        sb.appendLine("DTEND:${dateStr}T${eH}${eM}00")
-        sb.appendLine("END:VEVENT")
+    val anchorMillis = WeekParity.getWeekAAnchor(context)
+    val hasAlternating = slots.any { weekTypeOf(it.slot) != WeekType.ALL }
+    if (hasAlternating && anchorMillis == null) {
+        Toast.makeText(
+            context,
+            "Week A anchor is not set, so alternating classes may be offset by a week",
+            Toast.LENGTH_LONG
+        ).show()
     }
-    sb.appendLine("END:VCALENDAR")
 
-    try {
-        val file = java.io.File(context.cacheDir, "unitask_timetable.ics")
-        file.writeText(sb.toString())
-        val uri = androidx.core.content.FileProvider.getUriForFile(
+    val icsContent = buildTimetableIcs(slots, anchorMillis)
+
+    val file = java.io.File(context.cacheDir, "unitask_timetable.ics")
+    val uri = try {
+        file.writeText(icsContent, Charsets.UTF_8)
+        androidx.core.content.FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
             file
         )
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/calendar"
-            clipData = ClipData.newRawUri("", uri)
-            putExtra(Intent.EXTRA_STREAM, uri)
+    } catch (_: Exception) {
+        null
+    }
+
+    if (uri != null) {
+        // Primary action: Intent.ACTION_VIEW with setDataAndType(uri, "text/calendar")
+        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "text/calendar")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            context.startActivity(viewIntent)
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Fallback: ACTION_SEND chooser with type "text/calendar"
+            try {
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/calendar"
+                    clipData = ClipData.newRawUri("", uri)
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+                return
+            } catch (_: Exception) {
+                // Fall through to last fallback
+            }
+        }
+    }
+
+    // Last fallback: plain-text share with a Toast explaining that no calendar app could open the file.
+    Toast.makeText(context, "No calendar app could open the file", Toast.LENGTH_LONG).show()
+    try {
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, icsContent)
         }
         context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
     } catch (_: Exception) {
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, sb.toString())
-        }
-        context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+        // Nothing more we can do
     }
-}
-
-private fun escapeIcs(str: String): String {
-    return str.replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\n", "\\n")
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -40,6 +40,7 @@ It is a personal project with no ads and no tracking, built to solve everyday pl
 1. Open the [latest release](https://github.com/ahmad-maqsood/unitask/releases/latest).
 2. Download the `.apk` file and open it on your phone. Allow installation from your browser or file manager if Android asks.
 3. Already installed? Open **Settings, Check for updates** inside the app. It compares your version with the newest GitHub release tag.
+Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates**, so install them by hand.
 Requires Android 7.0 (API 24) or newer.
  
 ## Features
@@ -49,16 +50,35 @@ Requires Android 7.0 (API 24) or newer.
 | **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. Calendar view with month grid and deadline dots. Interactive subtasks and checklists (`- [ ]`). Batch multi-select mode for bulk completion and deletion. Urgency grouping (Overdue, Today, Tomorrow, Upcoming, Completed). Multiple reminders per task. Offline file attachments up to 25 MB. |
 | **My tasks** | A separate to-do list for non-coursework tasks. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later, and done. |
 | **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly, or yearly. Completing a repeating task automatically moves it to its next due date. |
-| **Timetable** | Weekly and bi-weekly (Week A & B) class schedules. Live "current and next class" indicator, automatic free time / break pills (`☕ 1h 30m free`), clash/conflict warnings, and one-tap `.ics` export to Google Calendar or Outlook. |
+| **Timetable** | Weekly and bi-weekly (Week A & B) class schedules. Tell UniTask which week it is in Settings and the reminders, daily summary and next class card follow it. Live "current and next class" indicator, automatic free time / break pills (`☕ 1h 30m free`), clash/conflict warnings, and one-tap `.ics` export to Google Calendar or Outlook. |
 | **Courses** | Course modules, credit hours, instructors, and custom colour tags inherited by timetable slots and assignments. |
-| **Study groups** | Create or join groups via QR code generation/scanning, universal links, or 8-character codes. Owner tools to edit name/handle, regenerate codes, and transfer ownership. Shared tasks with member tagging (`@all`), shared courses, and personal done ticks. |
+| **Study groups** | Create or join groups via QR code (scan it with the camera or from an image), invite links, or 8-character codes. Owner tools to edit name/handle, regenerate codes, and transfer ownership. Shared tasks with member tagging (`@all`), shared courses, and personal done ticks. |
 | **Group chat** | In-chat real-time search by keyword or sender, floating sticky date headers while scrolling, infinite scroll pagination to load earlier messages, swipe-to-reply, and a persistent offline outbox queue. |
-| **Reminders** | Alerts with interactive "Mark as Done" action buttons on lock screen and notification tray. High-priority alarm-style ringing, custom notification ringtones, and daily morning summaries. |
+| **Reminders** | Alerts with interactive "Mark as Done" action buttons on lock screen and notification tray. High-priority alarm-style ringing, custom notification ringtones, and daily morning summaries. Notifications are grouped by type so they do not flood the shade. |
 | **Backup & Privacy** | Automatic Google Cloud sync with multi-account isolation. GDPR-compliant JSON Data Export and complete Account & Cloud Data purge. Password-encrypted offline backups. |
 | **In-app updates** | GitHub release updater, official university announcements bell, and a built-in interactive "Learn to use the app" feature guide. |
 
 <details open>
-<summary><b>What's new in 3.0.0 (Latest Release, currently in beta testing)</b></summary>
+<summary><b>What's new in 3.0.0-beta-3</b></summary>
+
+- **Groups stay put when you lock and unlock the phone.** A short sign-in status change no longer clears your group list.
+- **Week A and Week B now really work.** Choose which week it is in Settings ("This week is") or from the Timetable tab. Class reminders, the daily summary and the current and next class card only count classes that meet this week, and a Week A class and a Week B class at the same time are no longer a clash.
+- **Join a group with the camera.** Tap **Scan with camera**, or use **From image** or **Paste Link**. Scanning only fills the form, it never joins by itself.
+- **Better notifications.** Group chat notifications read like a conversation, and reminders are grouped by type. The daily summary also mentions overdue tasks on days with no classes, and high-priority alarm notifications now stay in the shade until you dismiss them.
+- **Faster, calmer sync messages.** Status messages replace each other and disappear sooner, and the group refresh only runs while the app is open on a usable connection.
+- **Group settings:** the **New code** button now fits on one line.
+- **Undo keeps attachments.** Undoing a deleted task brings back its files too.
+- **No double chat messages** when you send as the chat opens or the connection comes back.
+- **Timetable export** now shares a real `.ics` calendar file, and **Export my data** shares a `.json` file instead of a long text.
+- **Update check:** beta users will be offered the final release of the same version.
+- **Batch mode:** **Done** always marks tasks as done, **Delete** asks you to confirm, and the selection survives rotating the phone.
+- **Smaller fixes:** Back inside a group goes to Tasks first, back on the home screen asks you to press it twice to exit, the time picker follows your 12 or 24 hour setting, `- [X]` counts as a ticked checklist item, classes that end after midnight are handled, and local backups keep the completion time of repeating tasks.
+- **Deleting your account** now also cancels reminders and removes attachments and cached group data from the phone.
+
+</details>
+
+<details>
+<summary><b>What's new in 3.0.0-beta</b></summary>
 
 - **Interactive Calendar View for Deadlines:** Toggle between standard list and a monthly calendar grid showing deadline dot indicators and day-specific assignment filtering.
 - **Subtasks & Checklists:** Add `- [ ]` checklist items to tasks with a dedicated "+ Add Checklist Item" button and live subtask progress chips on task cards.

@@ -265,7 +265,7 @@ fun SettingsButton(
                     subtitle = when (weekParityType) {
                         com.example.util.WeekType.A -> "Week A"
                         com.example.util.WeekType.B -> "Week B"
-                        null -> "Not set (Tap to choose Week A or Week B)"
+                        else -> "Not set (Tap to choose Week A or Week B)"
                     },
                     onClick = { showWeekParityDialog = true },
                     testTag = "settings_week_parity_row"

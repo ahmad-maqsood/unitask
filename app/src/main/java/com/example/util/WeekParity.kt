@@ -46,6 +46,9 @@ object WeekParity {
 
     fun isAnchorSet(context: Context?): Boolean = getWeekAAnchor(context) != null
 
+    fun currentWeekType(context: Context?, atMillis: Long = System.currentTimeMillis()): WeekType? =
+        com.example.util.currentWeekType(atMillis, getWeekAAnchor(context))
+        
     fun setThisWeekType(context: Context?, type: WeekType?, nowMillis: Long = System.currentTimeMillis()) {
         when (type) {
             WeekType.A -> setWeekAAnchor(context, nowMillis)

@@ -182,7 +182,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
         val isSilence = intent.action == ACTION_SILENCE_ALARM
-        if (isAlarm) HighPriorityAlarm.ensureChannel(context)
+        if (isAlarm || isSilence) HighPriorityAlarm.ensureChannel(context)
 
         val bigSummary = if (isMyTask) taskTitle else "Assignment for $courseCode: $taskTitle"
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0).takeIf { it != 0 }
@@ -192,10 +192,13 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 taskId.toInt()
             }
 
-        val builder = NotificationCompat.Builder(
-            context,
-            if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
-        )
+        val channelId = when {
+            isSilence -> HighPriorityAlarm.CHANNEL_ID_SILENCED
+            isAlarm -> HighPriorityAlarm.CHANNEL_ID
+            else -> NotificationSound.channelId(context, CHANNEL_ID)
+        }
+
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)
             .setContentTitle(title)
@@ -266,7 +269,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val summaryNotification = NotificationCompat.Builder(
             context,
-            if (isAlarm) HighPriorityAlarm.CHANNEL_ID else NotificationSound.channelId(context, CHANNEL_ID)
+            when {
+                isSilence -> HighPriorityAlarm.CHANNEL_ID_SILENCED
+                isAlarm -> HighPriorityAlarm.CHANNEL_ID
+                else -> NotificationSound.channelId(context, CHANNEL_ID)
+            }
         )
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)

@@ -20,6 +20,7 @@ object HighPriorityAlarm {
     // Do not start this with another channel's id: NotificationSound.deleteOtherChannels
     // removes channels whose id starts with "<baseId>_".
     const val CHANNEL_ID = "unitask_high_priority_alarm_v1"
+    const val CHANNEL_ID_SILENCED = "unitask_high_priority_alarm_silenced_v1"
 
     /** The alarm stops by itself after this long if you do not react. */
     const val RING_MILLIS = 60_000L
@@ -44,23 +45,36 @@ object HighPriorityAlarm {
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "High priority alarms",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Rings like an alarm for reminders of high priority tasks"
-            enableVibration(true)
-            vibrationPattern = VIBRATION_PATTERN
-            setSound(
-                soundUri(),
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "High priority alarms",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Rings like an alarm for reminders of high priority tasks"
+                enableVibration(true)
+                vibrationPattern = VIBRATION_PATTERN
+                setSound(
+                    soundUri(),
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+            }
+            manager.createNotificationChannel(channel)
         }
-        manager.createNotificationChannel(channel)
+        if (manager.getNotificationChannel(CHANNEL_ID_SILENCED) == null) {
+            val silencedChannel = NotificationChannel(
+                CHANNEL_ID_SILENCED,
+                "High priority alarms (silenced)",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps high priority alarm notifications visible after sound and vibration stop"
+                enableVibration(false)
+                setSound(null, null)
+            }
+            manager.createNotificationChannel(silencedChannel)
+        }
     }
 }

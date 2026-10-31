@@ -100,6 +100,7 @@ fun DeadlinesTab(
     pendingCount: Int,
     completedCount: Int,
     onStatusCycle: (TaskItem) -> Unit,
+    onSetStatus: (TaskItem, TaskStatus) -> Unit = { _, _ -> },
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     onAddTaskClick: () -> Unit,
@@ -528,7 +529,7 @@ fun DeadlinesTab(
                                 TextButton(
                                     onClick = {
                                         tasks.filter { it.task.id in selectedTaskIds }.forEach {
-                                            onStatusCycle(it.task)
+                                            onSetStatus(it.task, TaskStatus.COMPLETED)
                                         }
                                         selectedTaskIds.clear()
                                         isBatchMode = false

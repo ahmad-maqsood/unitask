@@ -88,6 +88,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.local.TaskItem
+import com.example.data.local.TaskStatus
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
@@ -652,6 +654,7 @@ fun MainScreen(
                             pendingCount = pendingCount,
                             completedCount = completedCount,
                             onStatusCycle = { viewModel.cycleTaskStatus(it) },
+                            onSetStatus = { task, status -> viewModel.setTaskStatus(task, status) },
                             onEditTask = { viewModel.openEditTaskDialog(it) },
                             onDeleteTask = { viewModel.deleteTask(it) },
                             onAddTaskClick = { viewModel.openAddTaskDialog() },

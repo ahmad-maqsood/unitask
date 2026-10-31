@@ -410,10 +410,10 @@ fun TaskCard(
                 if (task.description.isNotBlank()) {
                     val lines = remember(task.description) { task.description.lines() }
                     val checklist = remember(lines) {
-                        lines.filter { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]") }
+                        lines.filter { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]", ignoreCase = true) }
                     }
                     val doneCount = remember(checklist) {
-                        checklist.count { it.trimStart().startsWith("- [x]") }
+                        checklist.count { it.trimStart().startsWith("- [x]", ignoreCase = true) }
                     }
 
                     Spacer(modifier = Modifier.height(3.dp))
@@ -435,7 +435,7 @@ fun TaskCard(
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
-                            val cleanText = lines.filterNot { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]") }.joinToString(" ").trim()
+                            val cleanText = lines.filterNot { it.trimStart().startsWith("- [ ]") || it.trimStart().startsWith("- [x]", ignoreCase = true) }.joinToString(" ").trim()
                             if (cleanText.isNotBlank()) {
                                 Text(
                                     text = cleanText,

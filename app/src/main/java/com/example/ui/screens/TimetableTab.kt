@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -461,6 +462,7 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
         )
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/calendar"
+            clipData = ClipData.newRawUri("", uri)
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

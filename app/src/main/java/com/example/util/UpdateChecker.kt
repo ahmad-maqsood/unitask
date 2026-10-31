@@ -67,18 +67,88 @@ object UpdateChecker {
 
     /** "v1.2.0" is newer than "1.1"; missing parts count as 0. */
     fun isNewer(latestTag: String, current: String): Boolean {
-        val a = versionParts(latestTag)
-        val b = versionParts(current)
-        for (i in 0 until maxOf(a.size, b.size)) {
-            val x = a.getOrElse(i) { 0 }
-            val y = b.getOrElse(i) { 0 }
+        val aCore = versionParts(latestTag)
+        val bCore = versionParts(current)
+        val maxCoreLen = maxOf(aCore.size, bCore.size)
+        for (i in 0 until maxCoreLen) {
+            val x = aCore.getOrElse(i) { 0 }
+            val y = bCore.getOrElse(i) { 0 }
             if (x != y) return x > y
+        }
+
+        val aPre = preReleaseParts(latestTag)
+        val bPre = preReleaseParts(current)
+
+        if (aPre == null && bPre != null) {
+            return true
+        }
+        if (aPre != null && bPre == null) {
+            return false
+        }
+        if (aPre != null && bPre != null) {
+            for (i in 0 until minOf(aPre.size, bPre.size)) {
+                val tA = aPre[i]
+                val tB = bPre[i]
+                val numA = tA.toLongOrNull()
+                val numB = tB.toLongOrNull()
+                if (numA != null && numB != null) {
+                    if (numA != numB) return numA > numB
+                } else if (numA != null && numB == null) {
+                    return false
+                } else if (numA == null && numB != null) {
+                    return true
+                } else {
+                    val cmp = tA.compareTo(tB)
+                    if (cmp != 0) return cmp > 0
+                }
+            }
+            if (aPre.size != bPre.size) {
+                return aPre.size > bPre.size
+            }
         }
         return false
     }
 
-    private fun versionParts(version: String): List<Int> =
-        version.trim().removePrefix("v").removePrefix("V")
-            .split(".", "-", "+")
-            .map { part -> part.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
+    private fun versionParts(version: String): List<Int> {
+        val clean = version.trim().removePrefix("v").removePrefix("V")
+        val withoutBuild = clean.substringBefore('+')
+        val coreStr = withoutBuild.substringBefore('-')
+        return coreStr.split('.').map { part ->
+            part.filter { it.isDigit() }.toIntOrNull() ?: 0
+        }
+    }
+
+    private fun preReleaseParts(version: String): List<String>? {
+        val clean = version.trim().removePrefix("v").removePrefix("V")
+        val withoutBuild = clean.substringBefore('+')
+        if (!withoutBuild.contains('-')) return null
+        val preStr = withoutBuild.substringAfter('-')
+        val tokens = mutableListOf<String>()
+        val currentToken = StringBuilder()
+        for (ch in preStr) {
+            if (ch == '.' || ch == '-') {
+                if (currentToken.isNotEmpty()) {
+                    tokens.add(currentToken.toString())
+                    currentToken.clear()
+                }
+            } else {
+                if (currentToken.isNotEmpty()) {
+                    val lastCh = currentToken.last()
+                    val isLastDigit = lastCh.isDigit()
+                    val isCurrDigit = ch.isDigit()
+                    val isLastLetter = lastCh.isLetter()
+                    val isCurrLetter = ch.isLetter()
+                    if ((isLastDigit && isCurrLetter) || (isLastLetter && isCurrDigit)) {
+                        tokens.add(currentToken.toString())
+                        currentToken.clear()
+                    }
+                }
+                currentToken.append(ch)
+            }
+        }
+        if (currentToken.isNotEmpty()) {
+            tokens.add(currentToken.toString())
+        }
+        return tokens
+    }
 }

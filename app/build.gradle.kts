@@ -70,6 +70,9 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  sourceSets {
+    getByName("androidTest").assets.srcDir("$projectDir/schemas")
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
@@ -78,6 +81,10 @@ android {
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
 // to match the convention used in Web projects.
+ksp {
+  arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 secrets {
   propertiesFileName = ".env"
   defaultPropertiesFileName = ".env.example"
@@ -139,6 +146,7 @@ dependencies {
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.runner)
+  androidTestImplementation(libs.androidx.room.testing)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)

@@ -92,11 +92,11 @@ object FeatureGuide {
         ),
         AppFeature(
             "Cloud Backup & Multi-Account", "Sign in with Google to back up your data across devices.", "backup", 120,
-            "1. Open Settings -> Cloud Backup.\n2. Sign in with Google to sync courses, timetable, and tasks.\n3. Switching accounts cleanly isolates and clears stale local records."
+            "1. Open Settings and tap Cloud backup (or Sign in to back up data).\n2. Sign in with Google to sync courses, timetable, and tasks.\n3. Switching accounts cleanly isolates and clears stale local records."
         ),
         AppFeature(
             "Data Export & GDPR Purge", "Export JSON backup or permanently purge your cloud account.", "backup", 125,
-            "1. Open Settings -> Cloud Backup.\n2. Tap 'Export My Data (JSON)' to share a full backup.\n3. Tap 'Delete Account & Cloud Data' to permanently erase cloud records and reset."
+            "1. Open Settings and tap Cloud backup (or Sign in to back up data).\n2. Tap 'Export My Data (JSON)' to share a full backup.\n3. Tap 'Delete Account & Cloud Data' to permanently erase cloud records and reset."
         ),
         AppFeature(
             "Announcements Bell", "Official university updates and exam tips, fully offline-ready.", "notifications", 130,

@@ -10,6 +10,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CloudSync
@@ -36,12 +39,12 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -58,6 +61,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +77,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.data.local.AppDatabase
@@ -97,17 +102,17 @@ private const val FEATURE_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSc1G4_iMtG3hcoowIswyG9VNq21P11Gqy5MKMRaXI0OXn6RZA/viewform?usp=pp_url&entry.335656724="
 
 enum class SettingsPage {
-    Account,
-    Appearance,
+    General,
     Notifications,
-    Timetable,
+    Backup,
     About
 }
 
 /**
  * The gear button in the top bar. It opens a Settings sheet with:
- * account (sign in / cloud backup), appearance (system / light / dark) and check for updates.
- * It also checks GitHub once when the app opens and shows a dot on the gear if a newer
+ * Account row (sign in / cloud backup), and sections for General (theme, week parity),
+ * Notifications & reminders, Backup & data, and About & help.
+ * It also checks GitHub once when the app opens and shows a badge on the gear if a newer
  * release exists.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -119,6 +124,7 @@ fun SettingsButton(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
     var page by remember { mutableStateOf<SettingsPage?>(null) }
     var showFeatureGuide by remember { mutableStateOf(false) }
@@ -217,6 +223,7 @@ fun SettingsButton(
                 showSheet = false
                 page = null
             },
+            sheetState = sheetState,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             BackHandler(enabled = page != null) {
@@ -226,12 +233,14 @@ fun SettingsButton(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .animateContentSize()
                     .verticalScroll(rememberScrollState())
                     .padding(start = 20.dp, end = 20.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Crossfade(
                     targetState = page,
+                    animationSpec = tween(durationMillis = 150),
                     label = "settings_page_crossfade"
                 ) { currentPage ->
                     if (currentPage == null) {
@@ -242,37 +251,48 @@ fun SettingsButton(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
-                            SettingsSectionRow(
+                            SettingsRow(
                                 icon = Icons.Default.CloudSync,
-                                title = "Account & backup",
-                                summary = currentUser?.email ?: "Not signed in",
-                                onClick = { page = SettingsPage.Account },
-                                testTag = "settings_section_account"
+                                title = if (currentUser == null) "Sign in to back up data" else "Cloud backup",
+                                subtitle = currentUser?.email ?: "Not signed in",
+                                onClick = {
+                                    showSheet = false
+                                    page = null
+                                    onOpenCloudSheet()
+                                },
+                                testTag = "settings_account_row",
+                                subtitleMaxLines = 1
                             )
+                            val weekSummary = when (weekParityType) {
+                                com.example.util.WeekType.A -> "Week A"
+                                com.example.util.WeekType.B -> "Week B"
+                                else -> "Week not set"
+                            }
                             SettingsSectionRow(
-                                icon = Icons.Default.Palette,
-                                title = "Appearance",
-                                summary = ThemePreference.mode.label,
-                                onClick = { page = SettingsPage.Appearance },
-                                testTag = "settings_section_appearance"
+                                icon = Icons.Default.Tune,
+                                title = "General",
+                                summary = "${ThemePreference.mode.label}, $weekSummary",
+                                onClick = { page = SettingsPage.General },
+                                testTag = "settings_section_general"
                             )
+                            val notificationsSummary = buildString {
+                                append("Sound: $soundLabel")
+                                if (summaryEnabled) append(", Daily summary on")
+                                if (classStartEnabled) append(", Class alerts on")
+                            }
                             SettingsSectionRow(
                                 icon = Icons.Default.NotificationsActive,
-                                title = "Notifications",
-                                summary = "Sound: $soundLabel",
+                                title = "Notifications & reminders",
+                                summary = notificationsSummary,
                                 onClick = { page = SettingsPage.Notifications },
                                 testTag = "settings_section_notifications"
                             )
                             SettingsSectionRow(
-                                icon = Icons.Default.Schedule,
-                                title = "Timetable",
-                                summary = when (weekParityType) {
-                                    com.example.util.WeekType.A -> "Week A"
-                                    com.example.util.WeekType.B -> "Week B"
-                                    else -> "Not set"
-                                },
-                                onClick = { page = SettingsPage.Timetable },
-                                testTag = "settings_section_timetable"
+                                icon = Icons.Default.Backup,
+                                title = "Backup & data",
+                                summary = "Save or restore a backup file",
+                                onClick = { page = SettingsPage.Backup },
+                                testTag = "settings_section_backup"
                             )
                             SettingsSectionRow(
                                 icon = Icons.Default.Info,
@@ -302,10 +322,9 @@ fun SettingsButton(
                                 }
                                 Text(
                                     text = when (currentPage) {
-                                        SettingsPage.Account -> "Account & backup"
-                                        SettingsPage.Appearance -> "Appearance"
-                                        SettingsPage.Notifications -> "Notifications"
-                                        SettingsPage.Timetable -> "Timetable"
+                                        SettingsPage.General -> "General"
+                                        SettingsPage.Notifications -> "Notifications & reminders"
+                                        SettingsPage.Backup -> "Backup & data"
                                         SettingsPage.About -> "About & help"
                                     },
                                     style = MaterialTheme.typography.titleLarge,
@@ -315,22 +334,7 @@ fun SettingsButton(
                             }
 
                             when (currentPage) {
-                                SettingsPage.Account -> {
-                                    SettingsRow(
-                                        icon = Icons.Default.CloudSync,
-                                        title = if (currentUser == null) "Sign in to back up data" else "Cloud backup",
-                                        subtitle = currentUser?.email ?: "Not signed in",
-                                        onClick = {
-                                            showSheet = false
-                                            page = null
-                                            onOpenCloudSheet()
-                                        },
-                                        testTag = "settings_account_row"
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    LocalBackupSection(showHeading = false)
-                                }
-                                SettingsPage.Appearance -> {
+                                SettingsPage.General -> {
                                     FlowRow(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -344,80 +348,7 @@ fun SettingsButton(
                                             )
                                         }
                                     }
-                                }
-                                SettingsPage.Notifications -> {
-                                    SettingsRow(
-                                        icon = Icons.Default.NotificationsActive,
-                                        title = "Notification sound",
-                                        subtitle = soundLabel,
-                                        onClick = { showSoundDialog = true },
-                                        testTag = "settings_sound_row"
-                                    )
-                                    SettingsRow(
-                                        icon = Icons.Default.BatteryChargingFull,
-                                        title = "Background alerts",
-                                        subtitle = if (isBatteryIgnoring) "Battery restrictions are off. Tap to review." else "Tap to keep alerts reliable",
-                                        onClick = { showBackgroundSetupDialog = true },
-                                        testTag = "settings_background_row"
-                                    )
-                                    SettingsRow(
-                                        icon = Icons.Default.School,
-                                        title = "Class start notifications",
-                                        subtitle = if (classStartEnabled) "You get an alert 10 minutes before and when each class starts" else "Off",
-                                        onClick = { setClassStartEnabled(!classStartEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = classStartEnabled,
-                                                onCheckedChange = { setClassStartEnabled(it) }
-                                            )
-                                        },
-                                        testTag = "settings_class_start_row"
-                                    )
-                                    SettingsRow(
-                                        icon = Icons.Default.WbSunny,
-                                        title = "Daily summary",
-                                        subtitle = if (summaryEnabled) {
-                                            "Every day at ${TimeFormatter.format12Hour(summaryHour, summaryMinute)}"
-                                        } else {
-                                            "Off. Get one alert with today's classes and tasks"
-                                        },
-                                        onClick = { setSummaryEnabled(!summaryEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = summaryEnabled,
-                                                onCheckedChange = { setSummaryEnabled(it) }
-                                            )
-                                        },
-                                        testTag = "settings_daily_summary_row"
-                                    )
-                                    if (summaryEnabled) {
-                                        SettingsRow(
-                                            icon = Icons.Default.Schedule,
-                                            title = "Summary time",
-                                            subtitle = TimeFormatter.format12Hour(summaryHour, summaryMinute),
-                                            onClick = { showSummaryTimePicker = true },
-                                            testTag = "settings_daily_summary_time_row"
-                                        )
-                                    }
-                                    SettingsRow(
-                                        icon = Icons.Default.Alarm,
-                                        title = "Alarm for high priority tasks",
-                                        subtitle = if (highAlarmEnabled) {
-                                            "High priority reminders ring like an alarm until you open or dismiss them (1 minute at most)"
-                                        } else {
-                                            "Off. High priority reminders use the normal notification sound"
-                                        },
-                                        onClick = { setHighAlarmEnabled(!highAlarmEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = highAlarmEnabled,
-                                                onCheckedChange = { setHighAlarmEnabled(it) }
-                                            )
-                                        },
-                                        testTag = "settings_high_priority_alarm_row"
-                                    )
-                                }
-                                SettingsPage.Timetable -> {
+                                    Spacer(Modifier.height(4.dp))
                                     SettingsRow(
                                         icon = Icons.Default.Schedule,
                                         title = "This week is",
@@ -492,6 +423,81 @@ fun SettingsButton(
                                             }
                                         )
                                     }
+                                }
+                                SettingsPage.Notifications -> {
+                                    SettingsRow(
+                                        icon = Icons.Default.NotificationsActive,
+                                        title = "Notification sound",
+                                        subtitle = soundLabel,
+                                        onClick = { showSoundDialog = true },
+                                        testTag = "settings_sound_row"
+                                    )
+                                    SettingsRow(
+                                        icon = Icons.Default.BatteryChargingFull,
+                                        title = "Background alerts",
+                                        subtitle = if (isBatteryIgnoring) "Battery restrictions are off. Tap to review." else "Tap to keep alerts reliable",
+                                        onClick = { showBackgroundSetupDialog = true },
+                                        testTag = "settings_background_row"
+                                    )
+                                    SettingsRow(
+                                        icon = Icons.Default.School,
+                                        title = "Class start notifications",
+                                        subtitle = if (classStartEnabled) "You get an alert 10 minutes before and when each class starts" else "Off",
+                                        onClick = { setClassStartEnabled(!classStartEnabled) },
+                                        trailing = {
+                                            Switch(
+                                                checked = classStartEnabled,
+                                                onCheckedChange = { setClassStartEnabled(it) }
+                                            )
+                                        },
+                                        testTag = "settings_class_start_row"
+                                    )
+                                    SettingsRow(
+                                        icon = Icons.Default.WbSunny,
+                                        title = "Daily summary",
+                                        subtitle = if (summaryEnabled) {
+                                            "Every day at ${TimeFormatter.format12Hour(summaryHour, summaryMinute)}"
+                                        } else {
+                                            "Off. Get one alert with today's classes and tasks"
+                                        },
+                                        onClick = { setSummaryEnabled(!summaryEnabled) },
+                                        trailing = {
+                                            Switch(
+                                                checked = summaryEnabled,
+                                                onCheckedChange = { setSummaryEnabled(it) }
+                                            )
+                                        },
+                                        testTag = "settings_daily_summary_row"
+                                    )
+                                    if (summaryEnabled) {
+                                        SettingsRow(
+                                            icon = Icons.Default.Schedule,
+                                            title = "Summary time",
+                                            subtitle = TimeFormatter.format12Hour(summaryHour, summaryMinute),
+                                            onClick = { showSummaryTimePicker = true },
+                                            testTag = "settings_daily_summary_time_row"
+                                        )
+                                    }
+                                    SettingsRow(
+                                        icon = Icons.Default.Alarm,
+                                        title = "Alarm for high priority tasks",
+                                        subtitle = if (highAlarmEnabled) {
+                                            "High priority reminders ring like an alarm until you open or dismiss them (1 minute at most)"
+                                        } else {
+                                            "Off. High priority reminders use the normal notification sound"
+                                        },
+                                        onClick = { setHighAlarmEnabled(!highAlarmEnabled) },
+                                        trailing = {
+                                            Switch(
+                                                checked = highAlarmEnabled,
+                                                onCheckedChange = { setHighAlarmEnabled(it) }
+                                            )
+                                        },
+                                        testTag = "settings_high_priority_alarm_row"
+                                    )
+                                }
+                                SettingsPage.Backup -> {
+                                    LocalBackupSection(showHeading = false)
                                 }
                                 SettingsPage.About -> {
                                     SettingsRow(
@@ -616,16 +622,6 @@ fun SettingsButton(
 }
 
 @Composable
-private fun SettingsSectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary
-    )
-}
-
-@Composable
 private fun SettingsSectionRow(
     icon: ImageVector,
     title: String,
@@ -640,6 +636,7 @@ private fun SettingsSectionRow(
         subtitle = summary,
         onClick = onClick,
         testTag = testTag,
+        subtitleMaxLines = 1,
         trailing = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -665,7 +662,8 @@ private fun SettingsRow(
     subtitle: String,
     onClick: () -> Unit,
     testTag: String,
-    trailing: (@Composable () -> Unit)? = null
+    trailing: (@Composable () -> Unit)? = null,
+    subtitleMaxLines: Int = Int.MAX_VALUE
 ) {
     Row(
         modifier = Modifier
@@ -683,7 +681,9 @@ private fun SettingsRow(
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = subtitleMaxLines,
+                overflow = if (subtitleMaxLines != Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
             )
         }
         if (trailing != null) trailing()

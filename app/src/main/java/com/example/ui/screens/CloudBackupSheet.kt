@@ -75,6 +75,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 
 import com.example.util.SupabaseProvider
+import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
@@ -448,7 +449,7 @@ fun CloudBackupSheet(
             },
             text = {
                 Text(
-                    text = "This will permanently purge your tasks, courses, and timetable from the cloud, remove your group memberships, clear your local database, and sign you out. This action cannot be undone.",
+                    text = "This permanently deletes your cloud account and clears local data. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks, and group courses you created are removed for everyone in those groups. This action cannot be undone.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -459,16 +460,8 @@ fun CloudBackupSheet(
                         isLoading = true
                         coroutineScope.launch {
                             try {
-                                val uid = SupabaseProvider.client.auth.currentUserOrNull()?.id
+                                SupabaseProvider.client.postgrest.rpc("delete_my_account")
                                 val db = com.example.data.local.AppDatabase.getDatabase(context)
-
-                                if (uid != null) {
-                                    runCatching { SupabaseProvider.client.postgrest["tasks"].delete { filter { eq("user_id", uid) } } }
-                                    runCatching { SupabaseProvider.client.postgrest["courses"].delete { filter { eq("user_id", uid) } } }
-                                    runCatching { SupabaseProvider.client.postgrest["slots"].delete { filter { eq("user_id", uid) } } }
-                                    runCatching { SupabaseProvider.client.postgrest["group_members"].delete { filter { eq("user_id", uid) } } }
-                                    runCatching { SupabaseProvider.client.postgrest["group_done"].delete { filter { eq("user_id", uid) } } }
-                                }
 
                                 runCatching {
                                     val reminderScheduler = com.example.reminder.ReminderScheduler(context)
@@ -507,6 +500,7 @@ fun CloudBackupSheet(
                             }
                         }
                     },
+                    enabled = !isLoading,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
@@ -515,7 +509,10 @@ fun CloudBackupSheet(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                TextButton(
+                    onClick = { showDeleteConfirmDialog = false },
+                    enabled = !isLoading
+                ) {
                     Text("Cancel")
                 }
             }
@@ -582,7 +579,7 @@ private fun signOut(
 
     scope.launch {
         try {
-            try { SupabaseProvider.client.auth.signOut() } catch (e: Exception) { Log.e("Auth", "Supabase sign-out failed", e) }
+            try { SupabaseProvider.client.auth.signOut(SignOutScope.LOCAL) } catch (e: Exception) { Log.e("Auth", "Supabase sign-out failed", e) }
             com.example.util.AuthStorage.setLastUid(context, null)
             com.example.data.groups.GroupRepository.clearCache(context)
             credentialManager.clearCredentialState(ClearCredentialStateRequest())

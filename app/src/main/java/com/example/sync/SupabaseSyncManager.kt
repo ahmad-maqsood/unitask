@@ -64,7 +64,8 @@ private data class TaskRow(
     @SerialName("priority") val priority: String? = "MEDIUM",
     @SerialName("status") val status: String? = "PENDING",
     @SerialName("reminder_option") val reminderOption: String? = "NONE",
-    @SerialName("repeat_rule") val repeatRule: String? = "NONE"
+    @SerialName("repeat_rule") val repeatRule: String? = "NONE",
+    @SerialName("completed_at_millis") val completedAtMillis: Long = 0L
 )
 
 @Serializable
@@ -594,7 +595,8 @@ object SupabaseSyncManager {
                             priority = task.priority.name,
                             status = task.status.name,
                             reminderOption = encodeReminderOptions(task.reminderOptions),
-                            repeatRule = task.repeatRule
+                            repeatRule = task.repeatRule,
+                            completedAtMillis = if (task.status == TaskStatus.COMPLETED) task.completedAtMillis else 0L
                         )
                         tasksToPush.add(task to taskRow)
                     }
@@ -919,6 +921,7 @@ object SupabaseSyncManager {
                     status = parsedStatus,
                     reminderOptions = decodeReminderOptions(reminderStr),
                     repeatRule = repeatStr,
+                    completedAtMillis = if (parsedStatus == TaskStatus.COMPLETED) row.completedAtMillis else 0L,
                     isSynced = true,
                     cloudId = row.docId,
                     isDeleted = false
@@ -950,6 +953,11 @@ object SupabaseSyncManager {
                     status = parsedStatus,
                     reminderOptions = decodeReminderOptions(reminderStr),
                     repeatRule = repeatStr,
+                    completedAtMillis = if (parsedStatus == TaskStatus.COMPLETED) {
+                        row.completedAtMillis.takeIf { it > 0L } ?: existing.completedAtMillis
+                    } else {
+                        0L
+                    },
                     isSynced = true,
                     cloudId = row.docId
                 )

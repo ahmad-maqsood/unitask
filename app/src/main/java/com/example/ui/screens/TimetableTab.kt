@@ -642,7 +642,6 @@ fun TimetableSlotCard(
                 ) {
                     FlowRow(
                         modifier = Modifier.weight(1f, fill = false),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {

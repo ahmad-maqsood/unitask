@@ -22,8 +22,12 @@ class TaskDeadlineDstTest {
         TimeZone.setDefault(originalDefaultTimeZone)
     }
 
+    // -------------------------------------------------------------------------
+    // Timezone 1: America/New_York (UTC-5 EST / UTC-4 EDT)
+    // -------------------------------------------------------------------------
+
     @Test
-    fun testStartOfLocalDayOnStandardDay() {
+    fun testStartOfLocalDayOnStandardDayNewYork() {
         TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
 
         val cal = Calendar.getInstance().apply {
@@ -48,7 +52,7 @@ class TaskDeadlineDstTest {
     }
 
     @Test
-    fun testStartOfLocalDayAcrossSpringForwardDst() {
+    fun testStartOfLocalDayAcrossSpringForwardDstNewYork() {
         // America/New_York transitions to DST on March 8, 2026 at 2:00 AM -> 3:00 AM
         TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
 
@@ -91,7 +95,7 @@ class TaskDeadlineDstTest {
     }
 
     @Test
-    fun testStartOfLocalDayAcrossFallBackDst() {
+    fun testStartOfLocalDayAcrossFallBackDstNewYork() {
         // America/New_York transitions back from DST on November 1, 2026 at 2:00 AM -> 1:00 AM
         TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
 
@@ -123,7 +127,7 @@ class TaskDeadlineDstTest {
     }
 
     @Test
-    fun testComputeDeadlineMillisAcrossDstChange() {
+    fun testComputeDeadlineMillisAcrossDstChangeNewYork() {
         TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
 
         // Day before DST (March 7, 2026)
@@ -173,5 +177,77 @@ class TaskDeadlineDstTest {
         assertTrue(morningDeadline < afternoonDeadline)
         assertTrue(afternoonDeadline < eveningDeadline)
     }
-}
 
+    // -------------------------------------------------------------------------
+    // Timezone 2: Europe/London (UTC+0 GMT / UTC+1 BST)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testStartOfLocalDayAcrossSpringForwardDstLondon() {
+        // Europe/London transitions to BST on March 29, 2026 at 1:00 AM -> 2:00 AM
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"))
+
+        val earlyGmt = Calendar.getInstance().apply {
+            set(2026, Calendar.MARCH, 29, 0, 30, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        val afternoonBst = Calendar.getInstance().apply {
+            set(2026, Calendar.MARCH, 29, 15, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        val start1 = startOfLocalDay(earlyGmt)
+        val start2 = startOfLocalDay(afternoonBst)
+
+        assertEquals(start1, start2)
+
+        val resultCal = Calendar.getInstance().apply {
+            timeInMillis = start1
+        }
+        assertEquals(2026, resultCal.get(Calendar.YEAR))
+        assertEquals(Calendar.MARCH, resultCal.get(Calendar.MONTH))
+        assertEquals(29, resultCal.get(Calendar.DAY_OF_MONTH))
+        assertEquals(0, resultCal.get(Calendar.HOUR_OF_DAY))
+        assertEquals(0, resultCal.get(Calendar.MINUTE))
+        assertEquals(0, resultCal.get(Calendar.SECOND))
+        assertEquals(0, resultCal.get(Calendar.MILLISECOND))
+    }
+
+    @Test
+    fun testComputeDeadlineMillisAcrossDstChangeLondon() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"))
+
+        val march28Raw = Calendar.getInstance().apply {
+            set(2026, Calendar.MARCH, 28, 18, 0, 0)
+        }.timeInMillis
+
+        val march29DstRaw = Calendar.getInstance().apply {
+            set(2026, Calendar.MARCH, 29, 14, 0, 0)
+        }.timeInMillis
+
+        val march30Raw = Calendar.getInstance().apply {
+            set(2026, Calendar.MARCH, 30, 9, 0, 0)
+        }.timeInMillis
+
+        val d28 = computeDeadlineMillis(startOfLocalDay(march28Raw), 11, 0)
+        val d29 = computeDeadlineMillis(startOfLocalDay(march29DstRaw), 11, 0)
+        val d30 = computeDeadlineMillis(startOfLocalDay(march30Raw), 11, 0)
+
+        // Raw timestamp matches normalized timestamp
+        assertEquals(d29, computeDeadlineMillis(march29DstRaw, 11, 0))
+
+        // Strict chronological progression across transition boundary
+        assertTrue(d28 < d29)
+        assertTrue(d29 < d30)
+
+        val dCal = Calendar.getInstance().apply {
+            timeInMillis = d29
+        }
+        assertEquals(2026, dCal.get(Calendar.YEAR))
+        assertEquals(Calendar.MARCH, dCal.get(Calendar.MONTH))
+        assertEquals(29, dCal.get(Calendar.DAY_OF_MONTH))
+        assertEquals(11, dCal.get(Calendar.HOUR_OF_DAY))
+        assertEquals(0, dCal.get(Calendar.MINUTE))
+    }
+}

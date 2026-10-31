@@ -143,6 +143,19 @@ class ClassReminderScheduler(context: Context) {
         }
     }
 
+    /** Cancels alarms and notifications for all scheduled slots. */
+    fun cancelAll() {
+        synchronized(LOCK) {
+            val previous = prefs.getStringSet(KEY_SCHEDULED_IDS, emptySet())
+                .orEmpty()
+                .mapNotNull { it.toLongOrNull() }
+            for (id in previous) {
+                cancelSlot(id)
+            }
+            prefs.edit().remove(KEY_SCHEDULED_IDS).apply()
+        }
+    }
+
     /** Removes both alarms of one slot and any notification they already posted. */
     fun cancelSlot(slotId: Long) {
         cancelAlarm(requestCodeFor(slotId), intentFor(slotId, 0L))

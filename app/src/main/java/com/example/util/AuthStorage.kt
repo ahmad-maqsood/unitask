@@ -53,4 +53,8 @@ object AuthStorage {
             .putLong(KEY_LAST_SYNCED_TIMESTAMP, timestamp)
             .apply()
     }
+
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+    }
 }

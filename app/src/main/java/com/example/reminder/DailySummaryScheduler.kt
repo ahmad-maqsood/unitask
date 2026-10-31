@@ -90,7 +90,7 @@ class DailySummaryScheduler(context: Context) {
         }
     }
 
-    private fun cancel() {
+    fun cancel() {
         val pendingIntent = PendingIntent.getBroadcast(
             appContext,
             REQUEST_CODE,

@@ -459,16 +459,42 @@ fun CloudBackupSheet(
                         coroutineScope.launch {
                             try {
                                 val uid = SupabaseProvider.client.auth.currentUserOrNull()?.id
+                                val db = com.example.data.local.AppDatabase.getDatabase(context)
+
                                 if (uid != null) {
                                     runCatching { SupabaseProvider.client.postgrest["tasks"].delete { filter { eq("user_id", uid) } } }
                                     runCatching { SupabaseProvider.client.postgrest["courses"].delete { filter { eq("user_id", uid) } } }
                                     runCatching { SupabaseProvider.client.postgrest["slots"].delete { filter { eq("user_id", uid) } } }
                                     runCatching { SupabaseProvider.client.postgrest["group_members"].delete { filter { eq("user_id", uid) } } }
+                                    runCatching { SupabaseProvider.client.postgrest["group_done"].delete { filter { eq("user_id", uid) } } }
                                 }
-                                val db = com.example.data.local.AppDatabase.getDatabase(context)
+
+                                runCatching {
+                                    val reminderScheduler = com.example.reminder.ReminderScheduler(context)
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        reminderScheduler.cancelAll(db)
+                                    }
+                                }
+                                runCatching { com.example.reminder.ClassReminderScheduler(context).cancelAll() }
+                                runCatching { com.example.reminder.GroupReminderScheduler(context).cancelGroupsNotIn(emptySet()) }
+                                runCatching { com.example.reminder.GroupTaskProcessor(context).clearAll() }
+                                runCatching {
+                                    val dailyScheduler = com.example.reminder.DailySummaryScheduler(context)
+                                    dailyScheduler.cancel()
+                                    com.example.reminder.DailySummaryScheduler.setEnabled(context, false)
+                                }
+                                runCatching { androidx.work.WorkManager.getInstance(context).cancelAllWork() }
+
+                                runCatching { com.example.util.AttachmentManager.deleteAllAttachmentFiles(context) }
+                                runCatching { com.example.data.groups.GroupRepository.clearCache(context) }
+                                runCatching { com.example.data.groups.GroupChatTracker(context).clearAll() }
+                                runCatching { com.example.reminder.GroupChatNotifier(context).clearAll() }
+                                runCatching { com.example.util.AuthStorage.clear(context) }
+
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    db.clearAllTables()
+                                    runCatching { db.clearAllTables() }
                                 }
+
                                 signOut(context, credentialManager, onSignOutComplete = {
                                     isLoading = false
                                     onAuthChanged()

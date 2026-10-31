@@ -533,6 +533,8 @@ class GroupRepository(private val context: Context) {
         fun clearCache(context: Context) {
             try {
                 context.getSharedPreferences("group_cache", Context.MODE_PRIVATE).edit().clear().apply()
+                context.getSharedPreferences("chat_outbox_queue", Context.MODE_PRIVATE).edit().clear().apply()
+                context.getSharedPreferences("group_pending_done", Context.MODE_PRIVATE).edit().clear().apply()
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to clear group_cache: ${e.message}")
             }

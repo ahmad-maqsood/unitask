@@ -137,6 +137,16 @@ object AttachmentManager {
         }
     }
 
+    suspend fun deleteAllAttachmentFiles(context: Context): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val dir = File(context.filesDir, ATTACHMENTS_DIR)
+            dir.deleteRecursively()
+        } catch (e: Exception) {
+            Log.w(TAG, "Delete all attachments failed: ${e.message}")
+            false
+        }
+    }
+
     /** Deletes attachment files that no database row refers to. Skips files newer than 1 hour. */
     suspend fun deleteOrphanedFiles(context: Context, knownRelativePaths: Set<String>): Int =
         withContext(Dispatchers.IO) {

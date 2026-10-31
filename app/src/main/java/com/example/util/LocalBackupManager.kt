@@ -133,6 +133,7 @@ object LocalBackupManager {
                             .put("reminderOptions", encodeReminderOptions(t.reminderOptions))
                             .put("createdAt", t.createdAt)
                             .put("repeatRule", t.repeatRule)
+                            .put("completedAtMillis", t.completedAtMillis)
                     )
                 }
                 val data = JSONObject()
@@ -370,6 +371,7 @@ object LocalBackupManager {
 
                 val rawRepeat = if (o.has("repeatRule")) o.optString("repeatRule") else "NONE"
                 val repeatRule = decodeRepeatRule(rawRepeat).name
+                val completedAtMillis = o.optLong("completedAtMillis", 0L)
 
                 val isMyTask = norm == MY_TASKS_COURSE_CODE
 
@@ -395,6 +397,7 @@ object LocalBackupManager {
                         status = status,
                         reminderOptions = reminders,
                         repeatRule = repeatRule,
+                        completedAtMillis = completedAtMillis,
                         isSynced = false,
                         createdAt = createdAt
                     )
@@ -409,6 +412,7 @@ object LocalBackupManager {
                         status = status,
                         reminderOptions = reminders,
                         repeatRule = repeatRule,
+                        completedAtMillis = completedAtMillis,
                         isDeleted = false,
                         isSynced = false
                     )

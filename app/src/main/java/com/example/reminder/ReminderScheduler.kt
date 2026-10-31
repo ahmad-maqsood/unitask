@@ -101,6 +101,13 @@ class ReminderScheduler(private val context: Context) {
         }
     }
 
+    /** Cancels alarms of all active tasks. */
+    suspend fun cancelAll(database: AppDatabase) {
+        for (task in database.taskDao().getAllActiveTasksSync()) {
+            cancelReminder(task.id)
+        }
+    }
+
     fun cancelReminder(taskId: Long) {
         // Alarm set by earlier app versions: one per task, no data URI.
         cancelAlarm(taskId.toInt(), reminderIntent(taskId, null))

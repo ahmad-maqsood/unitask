@@ -399,6 +399,76 @@ alter table app_features add column how_to text not null default '';
 --     insert into announcements (title, body, expires_at)
 --     values ('Exam week tips', 'Remember to back up your tasks.', now() + interval '3 days');
 
+-- 2026-10-31: server side account deletion (NOT called by the app yet)
+-- Tested with a dry run (begin ... rollback) on an account with 13 chat messages and 4 memberships.
+-- Why step 4 exists: group_messages.sender_id, group_tasks.created_by and group_courses.created_by
+-- reference auth.users(id) with no ON DELETE action, so they must be removed before the login.
+-- Trade-off: group tasks and courses the user created disappear for everyone in that group.
+CREATE OR REPLACE FUNCTION public.delete_my_account()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+    v_user_id uuid := auth.uid();
+    v_group record;
+    v_new_owner_id uuid;
+BEGIN
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    -- 1. Personal data
+    DELETE FROM public.group_done WHERE user_id = v_user_id;
+    DELETE FROM public.tasks      WHERE user_id = v_user_id;
+    DELETE FROM public.courses    WHERE user_id = v_user_id;
+    DELETE FROM public.slots      WHERE user_id = v_user_id;
+
+    -- 2. Owned groups: hand over to the oldest admin, else the oldest member, else delete the group
+    FOR v_group IN SELECT id FROM public.groups WHERE owner_id = v_user_id LOOP
+        v_new_owner_id := NULL;
+
+        SELECT user_id INTO v_new_owner_id
+        FROM public.group_members
+        WHERE group_id = v_group.id AND user_id <> v_user_id AND role = 'admin'
+        ORDER BY joined_at ASC
+        LIMIT 1;
+
+        IF v_new_owner_id IS NULL THEN
+            SELECT user_id INTO v_new_owner_id
+            FROM public.group_members
+            WHERE group_id = v_group.id AND user_id <> v_user_id
+            ORDER BY joined_at ASC
+            LIMIT 1;
+        END IF;
+
+        IF v_new_owner_id IS NOT NULL THEN
+            UPDATE public.group_members SET role = 'owner'
+            WHERE group_id = v_group.id AND user_id = v_new_owner_id;
+            UPDATE public.groups SET owner_id = v_new_owner_id
+            WHERE id = v_group.id;
+        ELSE
+            DELETE FROM public.groups WHERE id = v_group.id;
+        END IF;
+    END LOOP;
+
+    -- 3. Membership rows
+    DELETE FROM public.group_members WHERE user_id = v_user_id;
+
+    -- 4. Content the user authored in groups that still exist
+    DELETE FROM public.group_messages WHERE sender_id  = v_user_id;
+    DELETE FROM public.group_tasks    WHERE created_by = v_user_id;
+    DELETE FROM public.group_courses  WHERE created_by = v_user_id;
+
+    -- 5. The login itself
+    DELETE FROM auth.users WHERE id = v_user_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.delete_my_account() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
+
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)
 -- =====================================================================

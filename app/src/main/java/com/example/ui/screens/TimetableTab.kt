@@ -45,12 +45,16 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Button
 import com.example.reminder.ClassReminderScheduler
 import com.example.util.WeekParity
 import com.example.util.WeekType
 import com.example.util.buildTimetableIcs
 import com.example.util.cleanClassroom
+import com.example.util.findConflicts
 import com.example.util.weekTypeOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -141,7 +145,8 @@ fun TimetableTab(
     }
     var isCardDismissed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var currentAnchor by remember { mutableStateOf(WeekParity.getWeekAAnchor(context)) }
-    
+    val conflicts = remember(allSlots) { findConflicts(allSlots) }
+
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
 
@@ -451,7 +456,8 @@ fun TimetableTab(
                         onEditClick = { onEditSlot(slotWithCourse.slot) },
                         onDeleteClick = { onDeleteSlot(slotWithCourse.slot) },
                         onTaskClick = onTaskClick,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        conflictsWith = conflicts[slotWithCourse.slot.id].orEmpty()
                     )
                 }
 
@@ -586,7 +592,8 @@ fun TimetableSlotCard(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onTaskClick: (TaskWithCourse) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    conflictsWith: List<String> = emptyList()
 ) {
     val context = LocalContext.current
     val slot = slotWithCourse.slot
@@ -633,10 +640,11 @@ fun TimetableSlotCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
+                    FlowRow(
                         modifier = Modifier.weight(1f, fill = false),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -662,6 +670,38 @@ fun TimetableSlotCard(
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold
                             )
+                        }
+
+                        if (conflictsWith.isNotEmpty()) {
+                            val conflictText = if (conflictsWith.size <= 2) {
+                                "Overlaps ${conflictsWith.joinToString(", ")}"
+                            } else {
+                                "Overlaps ${conflictsWith.take(2).joinToString(", ")} +${conflictsWith.size - 2}"
+                            }
+                            val conflictDescription = "Time conflict with ${conflictsWith.joinToString(", ")}"
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.semantics { contentDescription = conflictDescription }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = conflictDescription,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = conflictText,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
 

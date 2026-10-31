@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Activity
 import android.content.ClipData
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import androidx.core.content.FileProvider
 import java.io.File
@@ -522,6 +523,12 @@ fun CloudBackupSheet(
     }
 }
 
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 private fun signInWithGoogle(
     context: Context,
     credentialManager: CredentialManager,
@@ -538,8 +545,13 @@ private fun signInWithGoogle(
         .build()
 
     scope.launch {
+        val activity = context.findActivity()
+        if (activity == null) {
+            onError("Unable to find the screen needed for Google sign-in")
+            return@launch
+        }
         try {
-            val result = credentialManager.getCredential(context as Activity, request)
+            val result = credentialManager.getCredential(activity, request)
             val credential = result.credential
             if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken

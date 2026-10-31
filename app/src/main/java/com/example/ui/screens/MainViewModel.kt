@@ -974,7 +974,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (isGroupTaskItem(task)) return
         SupabaseSyncManager.clearPendingTaskDeletion(task.id, task.cloudId)
         viewModelScope.launch {
-            repository.insertTask(task.copy(isDeleted = false, isSynced = false))
+            repository.restoreTask(task.id)
         }
     }
 

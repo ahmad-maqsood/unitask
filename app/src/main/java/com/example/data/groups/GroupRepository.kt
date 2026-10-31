@@ -20,6 +20,9 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -452,12 +455,15 @@ class GroupRepository(private val context: Context) {
         }
     }
 
+    // Note: A crash between the server insert and saveQueuedOutboxMessages can still produce one duplicate, because messages have no client side id on the server.
     fun flushChatOutbox(groupId: String) {
-        val queued = getQueuedOutboxMessages(groupId)
-        if (queued.isEmpty()) return
+        val mutex = outboxMutexes.computeIfAbsent(groupId) { Mutex() }
         CoroutineScope(Dispatchers.IO).launch {
-            val remaining = queued.toMutableList()
-            for (item in queued) {
+            mutex.withLock {
+                val queued = getQueuedOutboxMessages(groupId)
+                if (queued.isEmpty()) return@withLock
+                val remaining = queued.toMutableList()
+                for (item in queued) {
                 try {
                     val payload = CreateGroupMessagePayload(
                         groupId = item.groupId,
@@ -486,11 +492,13 @@ class GroupRepository(private val context: Context) {
             }
         }
     }
+    }
 
 
 
 
     companion object {
+        private val outboxMutexes = ConcurrentHashMap<String, Mutex>()
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 30_000L

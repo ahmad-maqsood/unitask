@@ -303,11 +303,6 @@ class AppRepository(
 
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
         reminderScheduler.cancelReminder(task.id)
-        // Clean up any attachment files from disk
-        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
-        for (att in attachments) {
-            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
-        }
 
         // Soft-delete in Room first
         taskDao.softDeleteTask(task.id)
@@ -318,6 +313,17 @@ class AppRepository(
         }
         // When signed in, the sync removes it from the cloud and then purges the row.
 
+        triggerSyncIfLoggedIn()
+    }
+
+    suspend fun restoreTask(taskId: Long) = withContext(Dispatchers.IO) {
+        taskDao.restoreTask(taskId)
+        val task = taskDao.getTaskById(taskId)
+        if (task != null) {
+            val course = courseDao.getCourseByIdSync(task.courseId)
+            val courseCode = course?.code ?: "Course"
+            reminderScheduler.scheduleReminder(task, courseCode)
+        }
         triggerSyncIfLoggedIn()
     }
 

@@ -71,6 +71,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE id = :id")
     suspend fun softDeleteTask(id: Long)
 
+    @Query("UPDATE tasks SET isDeleted = 0, isSynced = 0 WHERE id = :id")
+    suspend fun restoreTask(id: Long)
+
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
     suspend fun softDeleteTasksForCourse(courseId: Long)
 

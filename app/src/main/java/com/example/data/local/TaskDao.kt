@@ -77,6 +77,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
     suspend fun softDeleteTasksForCourse(courseId: Long)
 
+    @Query("UPDATE tasks SET courseId = :newCourseId WHERE courseId = :oldCourseId")
+    suspend fun reassignTasksToCourse(oldCourseId: Long, newCourseId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskItem): Long
 

@@ -741,14 +741,7 @@ object SupabaseSyncManager {
                 courseDao.updateCourse(updated)
 
                 // Deduplicate local Room entries if multiple rows existed
-                val matching = courseDao.getAllCoursesMatchingNormalizedCode(normCode)
-                for (m in matching) {
-                    if (m.id != existing.id) {
-                        taskDao.deleteTasksForCourse(m.id)
-                        slotDao.deleteSlotsForCourse(m.id)
-                        courseDao.deleteCourseById(m.id)
-                    }
-                }
+                deduplicateCourse(database, existing.id, normCode)
             }
         }
 
@@ -765,6 +758,47 @@ object SupabaseSyncManager {
             courseDao.deleteCourseById(c.id)
         }
         return true
+    }
+
+    suspend fun deduplicateCourse(
+        database: AppDatabase,
+        existingId: Long,
+        normCode: String
+    ) {
+        val courseDao = database.courseDao()
+        val taskDao = database.taskDao()
+        val slotDao = database.lectureSlotDao()
+
+        val matching = courseDao.getAllCoursesMatchingNormalizedCode(normCode)
+        var reassignedAny = false
+        for (m in matching) {
+            if (m.id != existingId) {
+                taskDao.reassignTasksToCourse(oldCourseId = m.id, newCourseId = existingId)
+                slotDao.reassignSlotsToCourse(oldCourseId = m.id, newCourseId = existingId)
+                courseDao.deleteCourseById(m.id)
+                reassignedAny = true
+            }
+        }
+        if (reassignedAny) {
+            val tasks = taskDao.getAnyTasksForCourseSync(existingId).sortedBy { it.isDeleted }
+            val seenCloudIds = mutableSetOf<String>()
+            for (t in tasks) {
+                if (t.cloudId.isNotBlank()) {
+                    if (!seenCloudIds.add(t.cloudId)) {
+                        taskDao.deleteTaskById(t.id)
+                    }
+                }
+            }
+
+            val slots = slotDao.getSlotsForCourseSync(existingId).sortedBy { it.isDeleted }
+            val seenSlotTimes = mutableSetOf<Triple<Int, Int, Int>>()
+            for (s in slots) {
+                val key = Triple(s.dayOfWeek, s.startHour, s.startMinute)
+                if (!seenSlotTimes.add(key)) {
+                    slotDao.deleteSlotById(s.id)
+                }
+            }
+        }
     }
 
     private suspend fun pullAndMergeTasks(

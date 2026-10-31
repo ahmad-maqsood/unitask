@@ -633,7 +633,7 @@ object SupabaseSyncManager {
         context: Context,
         database: AppDatabase,
         userId: String
-    ) {
+    ): Boolean {
         val courseDao = database.courseDao()
         val taskDao = database.taskDao()
         val slotDao = database.lectureSlotDao()
@@ -647,7 +647,7 @@ object SupabaseSyncManager {
                 }.decodeList<CourseRow>()
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch courses from Supabase: ${e.message}")
-            return
+            return false
         }
 
         val seenCourseCodes = mutableSetOf<String>()
@@ -764,6 +764,7 @@ object SupabaseSyncManager {
             slotDao.deleteSlotsForCourse(c.id)
             courseDao.deleteCourseById(c.id)
         }
+        return true
     }
 
     private suspend fun pullAndMergeTasks(
@@ -817,22 +818,19 @@ object SupabaseSyncManager {
             }
 
             var course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
+            var coursesFetched = true
             if (course == null) {
                 // If course is not found locally, try pulling courses first in case it was just added
-                pullAndMergeCourses(context, database, userId)
+                coursesFetched = pullAndMergeCourses(context, database, userId)
                 course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
             }
 
             if (course == null) {
-                // Orphaned task in cloud: delete it
-                try {
-                    SupabaseProvider.client.postgrest["tasks"].delete {
-                        filter {
-                            eq("user_id", userId)
-                            eq("doc_id", row.docId)
-                        }
-                    }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                if (!coursesFetched) {
+                    Log.w(TAG, "Course fetch failed; skipping task ${row.docId} for course $courseCode")
+                } else {
+                    Log.w(TAG, "Parent course not found for cloud task ${row.docId} ($courseCode); skipping")
+                }
                 continue
             }
             val courseId = course.id
@@ -961,20 +959,18 @@ object SupabaseSyncManager {
             }
 
             var course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
+            var coursesFetched = true
             if (course == null) {
-                pullAndMergeCourses(context, database, userId)
+                coursesFetched = pullAndMergeCourses(context, database, userId)
                 course = if (courseCode.isNotBlank()) courseDao.getCourseByNormalizedCode(courseCode) else null
             }
 
             if (course == null) {
-                try {
-                    SupabaseProvider.client.postgrest["slots"].delete {
-                        filter {
-                            eq("user_id", userId)
-                            eq("doc_id", row.docId)
-                        }
-                    }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                if (!coursesFetched) {
+                    Log.w(TAG, "Course fetch failed; skipping slot ${row.docId} for course $courseCode")
+                } else {
+                    Log.w(TAG, "Parent course not found for cloud slot ${row.docId} ($courseCode); skipping")
+                }
                 continue
             }
             val courseId = course.id

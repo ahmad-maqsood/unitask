@@ -769,6 +769,17 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
         title = { Text("Notification sound") },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                SoundOptionRow(
+                    label = "Phone default",
+                    selected = selected == NotificationSound.CHOICE_SYSTEM,
+                    onSelect = {
+                        NotificationSound.setChoice(context, NotificationSound.CHOICE_SYSTEM)
+                        selected = NotificationSound.CHOICE_SYSTEM
+                        onChanged()
+                    },
+                    onPlay = { preview(null) },
+                    testTag = "sound_option_system"
+                )
                 NotificationSound.availableBuiltIn(context).forEach { sound ->
                     SoundOptionRow(
                         label = sound.label,
@@ -785,17 +796,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                         testTag = "sound_option_${sound.key}"
                     )
                 }
-                SoundOptionRow(
-                    label = "Phone default",
-                    selected = selected == NotificationSound.CHOICE_SYSTEM,
-                    onSelect = {
-                        NotificationSound.setChoice(context, NotificationSound.CHOICE_SYSTEM)
-                        selected = NotificationSound.CHOICE_SYSTEM
-                        onChanged()
-                    },
-                    onPlay = { preview(null) },
-                    testTag = "sound_option_system"
-                )
+
                 SoundOptionRow(
                     label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else "Choose from phone…",
                     selected = selected == NotificationSound.CHOICE_PHONE,

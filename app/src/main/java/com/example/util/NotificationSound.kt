@@ -27,7 +27,7 @@ object NotificationSound {
     data class BuiltIn(val key: String, val label: String, val rawName: String)
 
     val BUILT_IN = listOf(
-        BuiltIn(CHOICE_DEFAULT, "Sound 1 (UniTask)", "notification_sound"),
+        BuiltIn(CHOICE_DEFAULT, "Sound 1", "sound_1"),
         BuiltIn("s2", "Sound 2", "sound_2"),
         BuiltIn("s3", "Sound 3", "sound_3"),
         BuiltIn("s4", "Sound 4", "sound_4")

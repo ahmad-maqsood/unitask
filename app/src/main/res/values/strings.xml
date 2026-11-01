@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">UniTask</string>
+    <string name="widget_label">UniTask Today</string>
+    <string name="widget_description">Classes and tasks for today</string>
 </resources>

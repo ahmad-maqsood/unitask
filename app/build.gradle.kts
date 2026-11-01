@@ -125,6 +125,7 @@ dependencies {
   implementation(libs.androidx.credentials.play.services)
   implementation(libs.googleid)
   implementation(libs.androidx.work.runtime.ktx)
+  implementation(libs.androidx.glance.appwidget)
   implementation(platform(libs.supabase.bom))
   implementation(libs.supabase.auth)
   implementation(libs.supabase.postgrest)

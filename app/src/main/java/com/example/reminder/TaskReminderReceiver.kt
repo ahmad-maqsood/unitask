@@ -69,6 +69,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                     try {
                         val db = AppDatabase.getDatabase(context)
                         db.taskDao().updateStatusAndCompletedAt(taskId, TaskStatus.COMPLETED, System.currentTimeMillis())
+                        com.example.widget.UniTaskWidget.refresh(context)
                         ReminderScheduler(context).cancelReminder(taskId)
                         if (currentSupabaseUid() != null) {
                             com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)

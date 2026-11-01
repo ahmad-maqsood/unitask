@@ -25,18 +25,19 @@ UniTask helps students keep track of what is due, when classes start and what th
 - **Sign in with Google (optional)** to add cloud backup and shared study groups with chat.
 - **Personal project.** No ads and no tracking, built to solve everyday planning problems for me and my classmates.
 
-## Screenshots (from v2.0.0)
+## Screenshots (from v3.1.0)
 
 <p align="center">
-  <img src="docs/screenshots/deadlines.jpeg" width="20%" alt="Deadlines" />
-  <img src="docs/screenshots/my-tasks.jpeg" width="20%" alt="My tasks" />
-  <img src="docs/screenshots/group-chat.jpeg" width="20%" alt="Group chat" />
+  <img src="docs/screenshots/deadlines_top_nc.jpeg" width="20%" alt="Deadlines" />
+  <img src="docs/screenshots/deadlines_bottom_cv.jpeg" width="20%" alt="Deadlines" />
+  <img src="docs/screenshots/timetable.jpeg" width="20%" alt="Timetable" />
 </p>
 <p align="center">
   <img src="docs/screenshots/courses.jpeg" width="20%" alt="Courses" />
   <img src="docs/screenshots/settings.jpeg" width="20%" alt="Settings" />
+  <img src="docs/screenshots/group_chat.jpeg" width="20%" alt="Group chat" />
 </p>
-<p align="center"><sub>Deadlines · My tasks · Group chat · Courses · Settings</sub></p>
+<p align="center"><sub>Deadlines · Deadlines · Timetable · Courses · Settings · Group Chat</sub></p>
 
 ## Download
 

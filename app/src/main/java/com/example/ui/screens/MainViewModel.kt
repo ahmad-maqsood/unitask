@@ -800,7 +800,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val completedCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
         tasks.count { it.task.status == TaskStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-
+    // Pending tasks due later today (same rule as the "Due Today" section of the Deadlines list).
+    val dueTodayCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
+        groupDeadlines(tasks).today.size
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     // Actions
     fun setTab(tab: MainTab) {
         _currentTab.value = tab

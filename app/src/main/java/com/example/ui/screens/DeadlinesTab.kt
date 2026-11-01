@@ -84,7 +84,19 @@ import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.deadlineMillis
-
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeadlinesTab(
@@ -102,6 +114,7 @@ fun DeadlinesTab(
     onSortOptionSelect: (TaskSortOption) -> Unit,
     pendingCount: Int,
     completedCount: Int,
+    dueTodayCount: Int = 0,
     onStatusCycle: (TaskItem) -> Unit,
     onSetStatus: (TaskItem, TaskStatus) -> Unit = { _, _ -> },
     onEditTask: (TaskItem) -> Unit,
@@ -112,6 +125,7 @@ fun DeadlinesTab(
     // Tasks that come from groups, keyed by the (negative) id they have in [tasks].
     groupEntries: Map<Long, GroupTaskEntry> = emptyMap(),
     isLoading: Boolean = false,
+    snackbarHostState: SnackbarHostState? = null,
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
@@ -132,10 +146,38 @@ fun DeadlinesTab(
 
     val pendingCountStr by remember(pendingCount) { derivedStateOf { pendingCount.toString() } }
     val completedCountStr by remember(completedCount) { derivedStateOf { completedCount.toString() } }
-    val coursesCountStr by remember(courses.size) { derivedStateOf { courses.size.toString() } }
+    val dueTodayCountStr by remember(dueTodayCount) { derivedStateOf { dueTodayCount.toString() } }
     val allTasksLabel by remember(tasks.size) { derivedStateOf { "All (${tasks.size})" } }
     val sections = remember(tasks) { groupDeadlines(tasks) }
-
+    // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
+    val coroutineScope = rememberCoroutineScope()
+    var swipeSnackbarJob by remember { mutableStateOf<Job?>(null) }
+    val handleSwipeToggleDone: (TaskItem) -> Unit = { task ->
+        val wasDone = task.status == TaskStatus.COMPLETED
+        val newStatus = if (wasDone) TaskStatus.PENDING else TaskStatus.COMPLETED
+        val oldStatus = if (wasDone) TaskStatus.COMPLETED else TaskStatus.PENDING
+        swipeSnackbarJob?.cancel()
+        onSetStatus(task, newStatus)
+        val host = snackbarHostState
+        if (host != null) {
+            swipeSnackbarJob = coroutineScope.launch {
+                try {
+                    val result = withTimeoutOrNull(5000L) {
+                        host.showSnackbar(
+                            message = if (wasDone) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Indefinite
+                        )
+                    }
+                    if (result == SnackbarResult.ActionPerformed) {
+                        onSetStatus(task, oldStatus)
+                    }
+                } finally {
+                    host.currentSnackbarData?.dismiss()
+                }
+            }
+        }
+    }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
@@ -216,8 +258,8 @@ fun DeadlinesTab(
                             .background(MaterialTheme.colorScheme.outlineVariant)
                     )
                     StatItem(
-                        count = coursesCountStr,
-                        label = "Enrolled Courses",
+                        count = dueTodayCountStr,
+                        label = "Due today",
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.weight(1f)
                     )
@@ -685,6 +727,7 @@ fun DeadlinesTab(
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
+                        onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
                         onChecklistToggle = onChecklistToggle
@@ -711,6 +754,7 @@ fun DeadlinesTab(
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
+                        onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
                         onChecklistToggle = onChecklistToggle
@@ -737,6 +781,7 @@ fun DeadlinesTab(
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
+                        onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
                         onChecklistToggle = onChecklistToggle
@@ -763,6 +808,7 @@ fun DeadlinesTab(
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
+                        onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
                         onChecklistToggle = onChecklistToggle
@@ -789,6 +835,7 @@ fun DeadlinesTab(
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
                         onDeleteTask = onDeleteTask,
+                        onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
                         onChecklistToggle = onChecklistToggle
@@ -808,6 +855,7 @@ fun DeadlinesTab(
                     onStatusCycle = onStatusCycle,
                     onEditTask = onEditTask,
                     onDeleteTask = onDeleteTask,
+                    onSwipeToggleDone = handleSwipeToggleDone,
                     modifier = Modifier.animateItem(),
                     groupEntry = groupEntries[taskWithCourse.task.id],
                     onChecklistToggle = onChecklistToggle
@@ -979,6 +1027,7 @@ private fun SelectableTaskCard(
     onDeleteTask: (TaskItem) -> Unit,
     modifier: Modifier = Modifier,
     groupEntry: GroupTaskEntry? = null,
+    onSwipeToggleDone: ((TaskItem) -> Unit)? = null,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val checklistToggle = if (groupEntry == null) onChecklistToggle else null
@@ -1004,18 +1053,110 @@ private fun SelectableTaskCard(
             }
         }
     } else {
+        if (onSwipeToggleDone != null) {
+            SwipeDoneTaskCard(
+                taskWithCourse = taskWithCourse,
+                onSwipeToggleDone = onSwipeToggleDone,
+                onStatusCycle = onStatusCycle,
+                onEditTask = onEditTask,
+                onDeleteTask = onDeleteTask,
+                modifier = modifier,
+                groupEntry = groupEntry,
+                onChecklistToggle = checklistToggle
+            )
+        } else {
+            TaskCard(
+                taskWithCourse = taskWithCourse,
+                onStatusCycle = onStatusCycle,
+                onEditClick = onEditTask,
+                onDeleteClick = onDeleteTask,
+                modifier = modifier,
+                groupEntry = groupEntry,
+                onChecklistToggle = checklistToggle
+            )
+        }
+    }
+}
+/**
+ * A task card you can swipe to the right to mark done (or not done).
+ * Swiping left does nothing here: deleting stays behind the card's own delete button.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeDoneTaskCard(
+    taskWithCourse: TaskWithCourse,
+    onSwipeToggleDone: (TaskItem) -> Unit,
+    onStatusCycle: (TaskItem) -> Unit,
+    onEditTask: (TaskItem) -> Unit,
+    onDeleteTask: (TaskItem) -> Unit,
+    modifier: Modifier = Modifier,
+    groupEntry: GroupTaskEntry? = null,
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
+) {
+    val task = taskWithCourse.task
+    val isDone = task.status == TaskStatus.COMPLETED
+    // The swipe state lives on after the task changes, so always read the newest values.
+    val latestTask by rememberUpdatedState(task)
+    val latestOnSwipe by rememberUpdatedState(onSwipeToggleDone)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd) latestOnSwipe(latestTask)
+            false // always snap back; the task itself moves to its new section
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        enableDismissFromEndToStart = false,
+        backgroundContent = {
+            val color by animateColorAsState(
+                targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
+                    if (isDone) Color(0xFFD97706) else Color(0xFF16A34A)
+                } else {
+                    Color.Transparent
+                },
+                label = "deadline_swipe_bg"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isDone) Icons.AutoMirrored.Filled.Undo else Icons.Default.Check,
+                            contentDescription = if (isDone) "Mark not done" else "Mark done",
+                            tint = Color.White
+                        )
+                        Text(
+                            text = if (isDone) "Not done" else "Done",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+        }
+    ) {
         TaskCard(
             taskWithCourse = taskWithCourse,
             onStatusCycle = onStatusCycle,
             onEditClick = onEditTask,
             onDeleteClick = onDeleteTask,
-            modifier = modifier,
             groupEntry = groupEntry,
-            onChecklistToggle = checklistToggle
+            onChecklistToggle = onChecklistToggle
         )
     }
 }
-
 @Composable
 private fun DeadlinesCalendarView(
     tasks: List<TaskWithCourse>,

@@ -227,6 +227,7 @@ fun MainScreen(
     val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
     val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
     val completedCount by viewModel.completedCount.collectAsStateWithLifecycle()
+    val dueTodayCount by viewModel.dueTodayCount.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
      val tasksLoaded by viewModel.tasksLoaded.collectAsStateWithLifecycle()
     val isAddEditTaskDialogOpen by viewModel.isAddEditTaskDialogOpen.collectAsStateWithLifecycle()
@@ -679,6 +680,7 @@ fun MainScreen(
                             onSortOptionSelect = { viewModel.onSortOptionSelect(it) },
                             pendingCount = pendingCount,
                             completedCount = completedCount,
+                            dueTodayCount = dueTodayCount,
                             onStatusCycle = { viewModel.cycleTaskStatus(it) },
                             onSetStatus = { task, status -> viewModel.setTaskStatus(task, status) },
                             onEditTask = { viewModel.openEditTaskDialog(it) },
@@ -688,6 +690,7 @@ fun MainScreen(
                             onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) },
                             groupEntries = groupEntryByItemId,
                             isLoading = !tasksLoaded,
+                            snackbarHostState = snackbarHostState,
                             onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
                         )
                     }

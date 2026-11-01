@@ -218,7 +218,6 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 - Chat notifications come from a background check, so Android battery limits can delay them. There is no external push service.
 - Group chat is text only; messages cannot be edited after sending, and messages older than 30 days are purged automatically by database cron.
 - Reminders depend on notification permissions and your phone's battery optimization settings (see Background setup guide in Settings).
-- Cloud features require internet, while all personal tasks, timetable slots, and courses work 100% offline.
 - A monthly repeating task set on the 29th, 30th, or 31st moves to an earlier day after a short month.
 
 ## Support

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/sound_1,@raw/sound_2,@raw/sound_3,@raw/sound_4" />

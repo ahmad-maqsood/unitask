@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            MyApplicationTheme(darkTheme = darkTheme) {
+            MyApplicationTheme(darkTheme = darkTheme, accent = ThemePreference.accent) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainScreen(viewModel = mainViewModel)
                 }

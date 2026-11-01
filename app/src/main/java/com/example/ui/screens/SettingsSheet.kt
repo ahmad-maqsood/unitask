@@ -92,6 +92,13 @@ import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.example.ui.theme.AccentTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -346,6 +353,42 @@ fun SettingsButton(
                                                 label = { Text(themeMode.label) },
                                                 modifier = Modifier.testTag("theme_chip_${themeMode.name}")
                                             )
+                                        }
+                                    }
+                                    Text(
+                                        "Accent colour",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                                    )
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    ) {
+                                        AccentTheme.entries.forEach { accent ->
+                                            val selected = ThemePreference.accent == accent
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier
+                                                    .size(44.dp)
+                                                    .clip(CircleShape)
+                                                    .background(accent.swatch)
+                                                    .clickable { ThemePreference.setAccent(context, accent) }
+                                                    .semantics {
+                                                        contentDescription =
+                                                            if (selected) "${accent.label}, selected" else accent.label
+                                                    }
+                                                    .testTag("accent_chip_${accent.name}")
+                                            ) {
+                                                if (selected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = androidx.compose.ui.graphics.Color.White
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                     Spacer(Modifier.height(4.dp))

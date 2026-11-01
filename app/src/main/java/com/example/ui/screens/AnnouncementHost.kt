@@ -209,7 +209,12 @@ private const val TAB_ANNOUNCEMENTS = 1
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnnouncementBell(state: AnnouncementsState, onOpenTarget: (String) -> Unit = {}) {
+fun AnnouncementBell(
+    state: AnnouncementsState,
+    openRequest: Boolean = false,
+    onOpenRequestHandled: () -> Unit = {},
+    onOpenTarget: (String) -> Unit = {}
+) {
     var showSheet by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(TAB_NOTIFICATIONS) }
     // Notifications that were unread when the bell was opened, so they can be marked "New".
@@ -241,6 +246,16 @@ fun AnnouncementBell(state: AnnouncementsState, onOpenTarget: (String) -> Unit =
         }
     }
 
+    // Opened from outside (the daily summary notification): show the Notifications tab once.
+    LaunchedEffect(openRequest) {
+        if (openRequest) {
+            state.reload()
+            newIds = state.notifications.filter { it.unread }.map { it.id }.toSet()
+            selectedTab = TAB_NOTIFICATIONS
+            showSheet = true
+            onOpenRequestHandled()
+        }
+    }
     if (showSheet) {
         ModalBottomSheet(onDismissRequest = { showSheet = false }) {
             Column(

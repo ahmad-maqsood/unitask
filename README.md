@@ -61,7 +61,7 @@ Requires Android 7.0 (API 24) or newer.
 <details close>
 <summary><b>Noticeable changes in the recent release(s)</b></summary>
  
-- **A proper checklist editor.** When you add or edit an assignment, checklist items are now rows with a checkbox, a text box and a remove button. You no longer see or type `- [ ]` yourself. Press **Next** on the keyboard to add the following item. Empty rows are dropped when you save.
+- **A proper checklist editor.** When you add or edit an assignment, checklist items are now rows with a checkbox, a text box and a remove button.
 - **Your existing checklists keep working.** Older tasks open with their checklist shown as rows, and task cards, backups and cloud sync look exactly as before.
 - **Groups stay put when you lock and unlock the phone.** A short sign-in status change no longer clears your group list.
 - **Week A and Week B now really work.** Choose which week it is in Settings ("This week is") or from the Timetable tab. Class reminders, the daily summary and the current and next class card only count classes that meet this week, and a Week A class and a Week B class at the same time are no longer a clash.
@@ -218,7 +218,6 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 - Chat notifications come from a background check, so Android battery limits can delay them. There is no external push service.
 - Group chat is text only; messages cannot be edited after sending, and messages older than 30 days are purged automatically by database cron.
 - Reminders depend on notification permissions and your phone's battery optimization settings (see Background setup guide in Settings).
-- Cloud features require internet, while all personal tasks, timetable slots, and courses work 100% offline.
 - A monthly repeating task set on the 29th, 30th, or 31st moves to an earlier day after a short month.
 
 ## Support

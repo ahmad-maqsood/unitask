@@ -336,6 +336,15 @@ class GroupTaskProcessor(context: Context) {
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(id, notification)
 
+        com.example.util.NotificationHistory.add(
+            appContext,
+            kind = "Group update",
+            title = title,
+            body = text,
+            target = if (groupId.isNullOrBlank()) "tab:DEADLINES" else "group:$groupId",
+            key = "n|$id"
+        )
+
         val summary = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)

@@ -253,6 +253,7 @@ fun MainScreen(
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
     val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
     val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
+    val openBellRequest by viewModel.openBellRequest.collectAsStateWithLifecycle()
     val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
     val myTasksPendingCount by viewModel.myTasksPendingCount.collectAsStateWithLifecycle()
     val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
@@ -337,7 +338,19 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    AnnouncementBell(announcements)
+                    AnnouncementBell(
+                        announcements,
+                        openRequest = openBellRequest,
+                        onOpenRequestHandled = { viewModel.onBellOpened() }
+                    ) { target ->
+                        when {
+                            target.startsWith("group:") -> viewModel.openGroup(target.removePrefix("group:"))
+                            target.startsWith("chat:") -> viewModel.openGroup(target.removePrefix("chat:"), openChat = true)
+                            target == "tab:DEADLINES" -> viewModel.setTab(MainTab.DEADLINES)
+                            target == "tab:TIMETABLE" -> viewModel.setTab(MainTab.TIMETABLE)
+                            target == "tab:MYTASKS" -> viewModel.setTab(MainTab.MYTASKS)
+                        }
+                    }
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },

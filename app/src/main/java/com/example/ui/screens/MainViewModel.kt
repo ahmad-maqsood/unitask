@@ -586,6 +586,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _groupChatToOpen.value = null
     }
 
+    // Set when the daily summary notification is tapped; the top bar bell opens on the Notifications tab.
+    private val _openBellRequest = MutableStateFlow(false)
+    val openBellRequest: StateFlow<Boolean> = _openBellRequest.asStateFlow()
+
+    fun openBell() {
+        _openBellRequest.value = true
+    }
+
+    fun onBellOpened() {
+        _openBellRequest.value = false
+    }
     // Class schedule shown on the Deadlines tab. Re-evaluated every minute and on pull to refresh.
     // Today's classes that have not ended and started no more than STALE_CLASS_MINUTES ago are
     // shown. When nothing is left today, the full schedule of the next day with classes is shown.

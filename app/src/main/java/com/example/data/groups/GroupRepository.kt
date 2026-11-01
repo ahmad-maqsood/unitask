@@ -454,7 +454,49 @@ class GroupRepository(private val context: Context) {
             Log.w(TAG, "saveQueuedOutboxMessages failed: ${e.message}")
         }
     }
+    /**
+     * True when the server answered and said "no" (for example: you are not a member any more).
+     * Trying again can never help in that case. False means probably no internet, so retrying is fine.
+     */
+    private fun isPermanentSendError(e: Exception): Boolean {
+        val msg = e.message.orEmpty()
+        if (msg.contains("42501") || msg.contains("row-level security", ignoreCase = true)) return true
+        if (e is io.github.jan.supabase.exceptions.RestException) {
+            val code = e.statusCode
+            return code in 400..499 && code != 408 && code != 429
+        }
+        return false
+    }
 
+    /** A short, friendly text instead of the raw database error. */
+    private fun friendlySendError(e: Exception): Exception {
+        val msg = e.message.orEmpty()
+        return when {
+            msg.contains("42501") || msg.contains("row-level security", ignoreCase = true) ->
+                Exception("You are no longer a member of this group, so your message was not sent.")
+            isPermanentSendError(e) ->
+                Exception("Your message could not be sent.")
+            else ->
+                Exception("No connection. Your message will be sent when you are back online.")
+        }
+    }
+
+    /** Removes one message from the retry list and from the screen. */
+    private fun dropFromOutbox(groupId: String, localId: String) {
+        saveQueuedOutboxMessages(
+            groupId,
+            getQueuedOutboxMessages(groupId).filter { it.localId != localId }
+        )
+        pendingMessages.update { list -> list.filter { it.id != localId } }
+        localChanges.tryEmit(Unit)
+    }
+
+    /** Throws away every unsent message of a group (used when you were removed from it). */
+    fun clearChatOutbox(groupId: String) {
+        saveQueuedOutboxMessages(groupId, emptyList())
+        pendingMessages.update { list -> list.filter { it.groupId != groupId } }
+        localChanges.tryEmit(Unit)
+    }
     // Note: A crash between the server insert and saveQueuedOutboxMessages can still produce one duplicate, because messages have no client side id on the server.
     fun flushChatOutbox(groupId: String) {
         val mutex = outboxMutexes.computeIfAbsent(groupId) { Mutex() }
@@ -487,6 +529,11 @@ class GroupRepository(private val context: Context) {
                         localChanges.tryEmit(Unit)
                     } catch (e: Exception) {
                         Log.w(TAG, "flushChatOutbox message retry failed: ${e.message}")
+                        if (isPermanentSendError(e)) {
+                            // The server said "no" (for example you are not a member). Never retry this message.
+                            dropFromOutbox(groupId, item.localId)
+                            continue
+                        }
                         break
                     }
                 }
@@ -1354,9 +1401,14 @@ class GroupRepository(private val context: Context) {
                 }
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {
-                Log.w(TAG, "sendMessage failed (retained in outbox): ${e.message}", e)
-                // Message is kept in outbox queue and pendingMessages so user does not lose it
-                onFailure(e)
+                if (isPermanentSendError(e)) {
+                    Log.w(TAG, "sendMessage rejected by server, dropping: ${e.message}")
+                    mutex.withLock { dropFromOutbox(groupId, localMessage.id) }
+                } else {
+                    // Probably offline: keep the message in the outbox so it is sent later.
+                    Log.w(TAG, "sendMessage failed (retained in outbox): ${e.message}", e)
+                }
+                onFailure(friendlySendError(e))
             } finally {
                 inFlightSends.remove(localMessage.id)
             }

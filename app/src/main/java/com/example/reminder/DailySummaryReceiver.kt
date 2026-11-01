@@ -18,6 +18,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.local.isMyTasksCourse
+import com.example.util.NotificationHistory
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 import kotlinx.coroutines.CoroutineScope
@@ -59,10 +60,10 @@ class DailySummaryReceiver : BroadcastReceiver() {
     }
 
     private suspend fun postSummary(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
-        ) return
+        // Without this permission the summary still goes to the bell, only the notification is skipped.
+        val canNotify = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
 
         val db = AppDatabase.getDatabase(context)
         val courses = db.courseDao().getAllCoursesList().associateBy { it.id }
@@ -126,23 +127,44 @@ class DailySummaryReceiver : BroadcastReceiver() {
         }
         val summary = parts.joinToString(" \u2022 ")
 
-        val lines = ArrayList<String>()
-        for (slot in classes.take(MAX_LINES)) {
+        // Every class and task, for the bell. The notification below only has room for a few.
+        val classLines = classes.map { slot ->
             val code = courses[slot.courseId]?.code.orEmpty()
-            lines.add("${TimeFormatter.format12Hour(slot.startHour, slot.startMinute)} \u2022 $code")
+            "${TimeFormatter.format12Hour(slot.startHour, slot.startMinute)} \u2022 $code"
         }
-        if (classes.size > MAX_LINES) lines.add("+${classes.size - MAX_LINES} more classes")
-        for (item in dueToday.take(MAX_LINES)) {
+        val dueLines = dueToday.map { item ->
             val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
             val time = TimeFormatter.format12Hour(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-            lines.add("Due $time • ${item.label}: ${item.title}")
+            "Due $time \u2022 ${item.label}: ${item.title}"
         }
-        if (dueToday.size > MAX_LINES) lines.add("+${dueToday.size - MAX_LINES} more tasks")
+
+        // Keep the full text for the bell, even when notifications are switched off.
+        NotificationHistory.add(
+            context,
+            kind = "Daily summary",
+            title = "Today in UniTask",
+            body = (listOf(summary) + classLines + dueLines).joinToString("\n"),
+            target = "tab:DEADLINES",
+            key = "daily|$startOfToday"
+        )
+
+        if (!canNotify) return
+
+        val lines = ArrayList<String>()
+        lines.addAll(classLines.take(MAX_LINES))
+        if (classLines.size > MAX_LINES) {
+            lines.add("+${classLines.size - MAX_LINES} more classes \u2022 see the bell in UniTask")
+        }
+        lines.addAll(dueLines.take(MAX_LINES))
+        if (dueLines.size > MAX_LINES) {
+            lines.add("+${dueLines.size - MAX_LINES} more tasks \u2022 see the bell in UniTask")
+        }
 
         ensureChannel(context)
 
         val openApp = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("open_bell", true)
         }
         val contentIntent = PendingIntent.getActivity(
             context,

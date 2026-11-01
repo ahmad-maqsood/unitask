@@ -66,6 +66,10 @@ class MainActivity : ComponentActivity() {
                 intent.data = null
             }
         }
+        if (intent.getBooleanExtra("open_bell", false)) {
+            mainViewModel.openBell()
+            intent.removeExtra("open_bell")
+        }
         val groupId = intent.getStringExtra("open_group_id")
         val openChat = intent.getBooleanExtra("open_group_chat", false)
         val openedTaskId = intent.getLongExtra("opened_task_id", -1L)

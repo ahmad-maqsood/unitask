@@ -110,6 +110,18 @@ class TaskReminderReceiver : BroadcastReceiver() {
             return
         }
 
+        // Handle the "Snooze" buttons: remove the notification and bring the reminder back later.
+        if (intent.action == ReminderSnooze.ACTION_SNOOZE) {
+            val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
+            val minutes = intent.getIntExtra(ReminderSnooze.EXTRA_SNOOZE_MINUTES, 10)
+            if (notifId != 0) {
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                nm?.cancel(notifId)
+                cancelSilenceAlarm(context, notifId)
+                ReminderSnooze.schedule(context, notifId, intent, minutes)
+            }
+            return
+        }
         if (intent.action == ACTION_SILENCE_ALARM) {
             val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -137,6 +149,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val groupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID)
         val isGroupTask = !groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()
 
+        // A snoozed reminder only comes back if the task is still open.
+        if (intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) &&
+            !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)
+        ) return
         createNotificationChannel(context)
 
         val isMyTask = !isGroupTask && courseCode.trim().replace("\\s+".toRegex(), "").uppercase() == "MYTASKS"
@@ -243,6 +259,24 @@ class TaskReminderReceiver : BroadcastReceiver() {
             builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
         }
 
+        // Snooze buttons: bring the same reminder back after 10 minutes or 1 hour.
+        for ((minutes, buttonText) in ReminderSnooze.CHOICES) {
+            val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
+                action = ReminderSnooze.ACTION_SNOOZE
+                // Data makes each button's PendingIntent different from the others.
+                data = Uri.parse("unitask://snooze-action/$notificationId/$minutes")
+                putExtras(intent)
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(ReminderSnooze.EXTRA_SNOOZE_MINUTES, minutes)
+            }
+            val snoozePending = PendingIntent.getBroadcast(
+                context,
+                notificationId * 37 + 20 + minutes,
+                snoozeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.addAction(R.drawable.ic_stat_unitask, buttonText, snoozePending)
+        }
         if (isAlarm && !isSilence) {
             builder.setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)
                 .setVibrate(HighPriorityAlarm.VIBRATION_PATTERN)
@@ -266,6 +300,21 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(notificationId, notification)
+
+        if (!isSilence) {
+            com.example.util.NotificationHistory.add(
+                context,
+                kind = if (isGroupTask) "Group deadline" else "Deadline",
+                title = title,
+                body = "$bigSummary\n$dueInfo",
+                target = when {
+                    isGroupTask -> "group:$groupId"
+                    isMyTask -> "tab:MYTASKS"
+                    else -> "tab:DEADLINES"
+                },
+                key = "n|$notificationId"
+            )
+        }
 
         val summaryNotification = NotificationCompat.Builder(
             context,

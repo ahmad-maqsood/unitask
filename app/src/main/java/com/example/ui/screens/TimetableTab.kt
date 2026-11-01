@@ -30,7 +30,7 @@ import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -69,6 +69,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -295,17 +296,6 @@ fun TimetableTab(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        IconButton(
-                            onClick = { exportTimetableToIcs(context, allSlots) },
-                            modifier = Modifier.testTag("timetable_export_ics_button")
-                        ) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Export schedule (.ics)",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
                         OutlinedButton(
                             onClick = onAddSlotClick,
                             shape = RoundedCornerShape(12.dp),
@@ -380,6 +370,18 @@ fun TimetableTab(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+
+                // Calendar export: a labelled button, so nobody has to guess what a share icon does.
+                TextButton(
+                    onClick = { exportTimetableToIcs(context, allSlots) },
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .testTag("timetable_export_ics_button")
+                ) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.size(6.dp))
+                    Text("Add timetable to calendar", style = MaterialTheme.typography.labelLarge)
                 }
             }
         }

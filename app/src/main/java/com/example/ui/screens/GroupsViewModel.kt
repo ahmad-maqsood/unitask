@@ -222,6 +222,17 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         _selectedGroupId.value = null
     }
 
+    /** Called when the app notices you are not a member of the open group any more (kicked or left elsewhere). */
+    fun onRemovedFromGroup(groupId: String) {
+        repository.clearChatOutbox(groupId)
+        reminderScheduler.cancelGroup(groupId)
+        if (_selectedGroupId.value == groupId) {
+            _selectedGroupId.value = null
+        }
+        viewModelScope.launch {
+            _snackbarMessage.emit("You are no longer a member of that group.")
+        }
+    }
     fun openCreateDialog() {
         _isCreateDialogOpen.value = true
     }
@@ -472,7 +483,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val user = _currentUser.value ?: return
         repository.sendMessage(groupId, user.uid, user.displayName ?: "Student", text, replyTo) { e ->
             viewModelScope.launch {
-                _snackbarMessage.emit("Message not sent: ${e.message}")
+                _snackbarMessage.emit(e.message ?: "Your message could not be sent.")
             }
         }
     }

@@ -93,13 +93,20 @@ class GroupReminderScheduler(private val context: Context) {
 
     fun cancel(groupId: String, taskId: String) {
         for (key in prefs.all.keys.toList()) {
-            if (key.startsWith("$groupId|$taskId|")) cancelKey(key)
+            if (key.startsWith("$groupId|$taskId|")) {
+                // Also cancel a snoozed copy of this reminder. Same id the receiver uses for group reminders.
+                ReminderSnooze.cancel(context, "GROUP_$key".hashCode())
+                cancelKey(key)
+            }
         }
     }
 
     fun cancelGroup(groupId: String) {
         for (key in prefs.all.keys.toList()) {
-            if (key.startsWith("$groupId|")) cancelKey(key)
+            if (key.startsWith("$groupId|")) {
+                ReminderSnooze.cancel(context, "GROUP_$key".hashCode())
+                cancelKey(key)
+            }
         }
     }
 

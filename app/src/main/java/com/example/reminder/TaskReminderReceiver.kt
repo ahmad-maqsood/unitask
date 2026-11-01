@@ -114,7 +114,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         // Handle the "Snooze" buttons: remove the notification and bring the reminder back later.
         if (intent.action == ReminderSnooze.ACTION_SNOOZE) {
             val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
-            val minutes = intent.getIntExtra(ReminderSnooze.EXTRA_SNOOZE_MINUTES, 10)
+            val minutes = intent.getIntExtra(ReminderSnooze.EXTRA_SNOOZE_MINUTES, 30)
             if (notifId != 0) {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
@@ -260,7 +260,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
         }
 
-        // Snooze buttons: bring the same reminder back after 10 minutes or 1 hour.
+        // Snooze button: bring the same reminder back after 30 minutes.
         for ((minutes, buttonText) in ReminderSnooze.CHOICES) {
             val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ReminderSnooze.ACTION_SNOOZE

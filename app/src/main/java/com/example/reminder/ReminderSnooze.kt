@@ -30,8 +30,7 @@ object ReminderSnooze {
 
     /** The snooze buttons: minutes and the text on the button. Change this list to change them. */
     val CHOICES: List<Pair<Int, String>> = listOf(
-        10 to "Snooze 10 min",
-        60 to "Snooze 1 hr"
+        30 to "Snooze 30m"
     )
 
     private fun requestCode(notificationId: Int) = notificationId * 37 + 55

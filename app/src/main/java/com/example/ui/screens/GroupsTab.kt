@@ -132,6 +132,19 @@ fun GroupsTab(
         }
     }
 
+    // Close the group screen if I get removed from the group while it is open.
+    var wasMemberOfSelected by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedGroupId) { wasMemberOfSelected = false }
+    LaunchedEffect(memberships, selectedGroupId) {
+        val gid = selectedGroupId ?: return@LaunchedEffect
+        val isMember = memberships.any { it.groupId == gid }
+        if (isMember) {
+            wasMemberOfSelected = true
+        } else if (wasMemberOfSelected) {
+            wasMemberOfSelected = false
+            viewModel.onRemovedFromGroup(gid)
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collectLatest { msg ->
             snackbarHostState.currentSnackbarData?.dismiss()

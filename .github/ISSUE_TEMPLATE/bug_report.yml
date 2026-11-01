@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in UniTask is not working
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in Settings, or the release you installed (for example v3.1.0)
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model and Android version
+      placeholder: Xiaomi Poco C75, Android 14
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you tap, in order?
+      placeholder: |
+        1. Open Groups
+        2. Tap ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, whether it happens every time, whether battery optimization or autostart is set up. Do not post passwords or join codes.

@@ -267,6 +267,21 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(notificationId, notification)
 
+        if (!isSilence) {
+            com.example.util.NotificationHistory.add(
+                context,
+                kind = if (isGroupTask) "Group deadline" else "Deadline",
+                title = title,
+                body = "$bigSummary\n$dueInfo",
+                target = when {
+                    isGroupTask -> "group:$groupId"
+                    isMyTask -> "tab:MYTASKS"
+                    else -> "tab:DEADLINES"
+                },
+                key = "n|$notificationId"
+            )
+        }
+
         val summaryNotification = NotificationCompat.Builder(
             context,
             when {

@@ -337,7 +337,15 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    AnnouncementBell(announcements)
+                    AnnouncementBell(announcements) { target ->
+                        when {
+                            target.startsWith("group:") -> viewModel.openGroup(target.removePrefix("group:"))
+                            target.startsWith("chat:") -> viewModel.openGroup(target.removePrefix("chat:"), openChat = true)
+                            target == "tab:DEADLINES" -> viewModel.setTab(MainTab.DEADLINES)
+                            target == "tab:TIMETABLE" -> viewModel.setTab(MainTab.TIMETABLE)
+                            target == "tab:MYTASKS" -> viewModel.setTab(MainTab.MYTASKS)
+                        }
+                    }
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },

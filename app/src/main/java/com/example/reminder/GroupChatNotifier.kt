@@ -186,6 +186,18 @@ class GroupChatNotifier(context: Context) {
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, builder.build())
 
+        val last = candidates.last()
+        val who = last.senderName.ifBlank { "Member" }
+        val preview = last.text.replace('\n', ' ').trim().let { if (it.length > 100) it.take(99) + "..." else it }
+        com.example.util.NotificationHistory.add(
+            appContext,
+            kind = "Group chat",
+            title = title,
+            body = if (candidates.size > 1) "${candidates.size} new messages. Latest, $who: $preview" else "$who: $preview",
+            target = "chat:$groupId",
+            key = "chat|$groupId"
+        )
+
         val summaryNotification = NotificationCompat.Builder(appContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)

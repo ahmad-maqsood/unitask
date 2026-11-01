@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import android.content.Context
+import android.text.format.DateUtils
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,9 +24,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,8 +47,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.reminder.AnnouncementNotifier
 import com.example.util.Announcement
 import com.example.util.Announcements
-import com.example.util.DailySummaryEntry
-import com.example.util.DailySummaryLog
+import com.example.util.AppNotification
+import com.example.util.NotificationHistory
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -51,9 +56,10 @@ import java.util.Locale
 
 /**
  * Everything the pop-up and the bell share:
- *  - [items]:  what the bell lists (active, not removed, newest first)
- *  - [unread]: how many of them were not shown in the pop-up yet (the badge number)
- *  - [popup]:  the messages to show in the pop-up right now (empty = no pop-up)
+ *  - [items]:          the Announcements tab (active, not removed, newest first)
+ *  - [notifications]:  the Notifications tab (what the app told you, newest first)
+ *  - [unread]:         both unread counts added together (the number on the bell)
+ *  - [popup]:          the announcements to show in the pop-up right now (empty = no pop-up)
  */
 @Stable
 class AnnouncementsState(context: Context) {
@@ -63,12 +69,17 @@ class AnnouncementsState(context: Context) {
     var items by mutableStateOf<List<Announcement>>(Announcements.bellItems(appContext))
         private set
 
-    /** Daily summaries kept for the bell (newest first). Full text, not cut short like the notification. */
-    var summaries by mutableStateOf<List<DailySummaryEntry>>(DailySummaryLog.items(appContext))
+    var notifications by mutableStateOf<List<AppNotification>>(NotificationHistory.items(appContext))
         private set
 
-    var unread by mutableIntStateOf(Announcements.unseen(appContext).size + DailySummaryLog.unreadCount(appContext))
+    var unreadAnnouncements by mutableIntStateOf(Announcements.unseen(appContext).size)
         private set
+
+    var unreadNotifications by mutableIntStateOf(NotificationHistory.unreadCount(appContext))
+        private set
+
+    /** The number on the bell. */
+    val unread: Int get() = unreadAnnouncements + unreadNotifications
 
     var popup by mutableStateOf<List<Announcement>>(emptyList())
         private set
@@ -76,8 +87,9 @@ class AnnouncementsState(context: Context) {
     /** Reads the saved lists again (cheap, no network). */
     fun reload() {
         items = Announcements.bellItems(appContext)
-        summaries = DailySummaryLog.items(appContext)
-        unread = Announcements.unseen(appContext).size + DailySummaryLog.unreadCount(appContext)
+        notifications = NotificationHistory.items(appContext)
+        unreadAnnouncements = Announcements.unseen(appContext).size
+        unreadNotifications = NotificationHistory.unreadCount(appContext)
     }
 
     /** Downloads the latest list, updates the bell, and opens the pop-up if something is new. Offline is fine. */
@@ -103,28 +115,36 @@ class AnnouncementsState(context: Context) {
         reload()
     }
 
-    /** Opening the bell counts as reading everything in it. */
-    fun onBellOpened() {
+    /** Looking at the Notifications tab counts as reading everything in it. */
+    fun markNotificationsRead() {
+        NotificationHistory.markAllRead(appContext)
+        reload()
+    }
+
+    /** Looking at the Announcements tab counts as reading everything in it. */
+    fun markAnnouncementsRead() {
         reload()
         val current = items
         Announcements.markSeen(appContext, current)
         AnnouncementNotifier.cancel(appContext, current)
-        DailySummaryLog.markAllRead(appContext)
         reload()
     }
 
-    fun remove(item: Announcement) = removeAll(listOf(item), clearSummaries = false)
+    fun remove(item: Announcement) = removeAll(listOf(item))
 
-    fun removeSummary(entry: DailySummaryEntry) {
-        DailySummaryLog.remove(appContext, entry.id)
-        reload()
-    }
-
-    /** "Clear all" in the bell: announcements and daily summaries. */
-    fun removeAll(list: List<Announcement> = items, clearSummaries: Boolean = true) {
+    fun removeAll(list: List<Announcement> = items) {
         Announcements.remove(appContext, list)
         AnnouncementNotifier.cancel(appContext, list)
-        if (clearSummaries) DailySummaryLog.clear(appContext)
+        reload()
+    }
+
+    fun removeNotification(item: AppNotification) {
+        NotificationHistory.remove(appContext, item.id)
+        reload()
+    }
+
+    fun clearNotifications() {
+        NotificationHistory.clear(appContext)
         reload()
     }
 }
@@ -179,15 +199,28 @@ fun AnnouncementHost(state: AnnouncementsState) {
     }
 }
 
-/** The bell in the top bar, next to the Settings gear. Opens a sheet with all active announcements. */
+private const val TAB_NOTIFICATIONS = 0
+private const val TAB_ANNOUNCEMENTS = 1
+
+/**
+ * The bell in the top bar, next to the Settings gear. Opens a sheet with two tabs:
+ * Notifications (what the app told you) and Announcements (messages from UniTask).
+ * [onOpenTarget] is called with a notification's target when the person taps it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnnouncementBell(state: AnnouncementsState) {
+fun AnnouncementBell(state: AnnouncementsState, onOpenTarget: (String) -> Unit = {}) {
     var showSheet by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableIntStateOf(TAB_NOTIFICATIONS) }
+    // Notifications that were unread when the bell was opened, so they can be marked "New".
+    var newIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
 
     IconButton(
         onClick = {
-            state.onBellOpened()
+            state.reload()
+            newIds = state.notifications.filter { it.unread }.map { it.id }.toSet()
+            // A new announcement is rare and important, so it gets the first look.
+            selectedTab = if (state.unreadAnnouncements > 0) TAB_ANNOUNCEMENTS else TAB_NOTIFICATIONS
             showSheet = true
         },
         modifier = Modifier.testTag("top_bar_announcements_button")
@@ -197,7 +230,14 @@ fun AnnouncementBell(state: AnnouncementsState) {
                 if (state.unread > 0) Badge { Text(state.unread.toString()) }
             }
         ) {
-            Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+            Icon(Icons.Default.Notifications, contentDescription = "Notifications and announcements")
+        }
+    }
+
+    // Whatever tab is on screen counts as read.
+    LaunchedEffect(showSheet, selectedTab) {
+        if (showSheet) {
+            if (selectedTab == TAB_NOTIFICATIONS) state.markNotificationsRead() else state.markAnnouncementsRead()
         }
     }
 
@@ -209,39 +249,59 @@ fun AnnouncementBell(state: AnnouncementsState) {
                     .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        "Notifications",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == TAB_NOTIFICATIONS,
+                        onClick = { selectedTab = TAB_NOTIFICATIONS },
+                        modifier = Modifier.testTag("bell_tab_notifications"),
+                        text = { TabLabel("Notifications", state.unreadNotifications) }
                     )
-                    if (state.items.isNotEmpty() || state.summaries.isNotEmpty()) {
-                        TextButton(onClick = { state.removeAll() }) { Text("Clear all") }
-                    }
+                    Tab(
+                        selected = selectedTab == TAB_ANNOUNCEMENTS,
+                        onClick = { selectedTab = TAB_ANNOUNCEMENTS },
+                        modifier = Modifier.testTag("bell_tab_announcements"),
+                        text = { TabLabel("Announcements", state.unreadAnnouncements) }
+                    )
                 }
 
-                if (state.items.isEmpty() && state.summaries.isEmpty()) {
-                    Text(
-                        "Nothing here right now.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = 480.dp)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        state.summaries.forEach { entry ->
-                            DailySummaryRow(entry = entry, onRemove = { state.removeSummary(entry) })
+                if (selectedTab == TAB_NOTIFICATIONS) {
+                    if (state.notifications.isEmpty()) {
+                        EmptyText("No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.")
+                    } else {
+                        ClearAllRow { state.clearNotifications() }
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 480.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            state.notifications.forEach { item ->
+                                NotificationRow(
+                                    item = item,
+                                    isNew = item.id in newIds,
+                                    onOpen = {
+                                        showSheet = false
+                                        onOpenTarget(item.target)
+                                    },
+                                    onRemove = { state.removeNotification(item) }
+                                )
+                            }
                         }
-                        state.items.forEach { item ->
-                            AnnouncementRow(item = item, onRemove = { state.remove(item) })
+                    }
+                } else {
+                    if (state.items.isEmpty()) {
+                        EmptyText("No announcements right now.")
+                    } else {
+                        ClearAllRow { state.removeAll() }
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 480.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            state.items.forEach { item ->
+                                AnnouncementRow(item = item, onRemove = { state.remove(item) })
+                            }
                         }
                     }
                 }
@@ -250,15 +310,62 @@ fun AnnouncementBell(state: AnnouncementsState) {
     }
 }
 
-/** A saved daily summary with every class and task, so a long day is easy to read. */
 @Composable
-private fun DailySummaryRow(entry: DailySummaryEntry, onRemove: () -> Unit) {
-    val whenText = remember(entry.id) {
-        SimpleDateFormat("EEE, MMM d \u2022 h:mm a", Locale.getDefault()).format(Date(entry.id))
+private fun TabLabel(text: String, unread: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text, maxLines = 1)
+        if (unread > 0) {
+            Badge(modifier = Modifier.padding(start = 6.dp)) { Text(unread.toString()) }
+        }
     }
-    Card(
+}
+
+@Composable
+private fun EmptyText(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 12.dp)
+    )
+}
+
+@Composable
+private fun ClearAllRow(onClear: () -> Unit) {
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        horizontalArrangement = Arrangement.End
+    ) {
+        TextButton(onClick = onClear) { Text("Clear all") }
+    }
+}
+
+/** One saved notification. Full text, so a long daily summary is easy to read. Tap to open the screen it is about. */
+@Composable
+private fun NotificationRow(
+    item: AppNotification,
+    isNew: Boolean,
+    onOpen: () -> Unit,
+    onRemove: () -> Unit
+) {
+    val whenText = remember(item.id) {
+        DateUtils.getRelativeTimeSpanString(
+            item.timeMillis,
+            System.currentTimeMillis(),
+            DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE
+        ).toString()
+    }
+    val isSummary = item.kind == "Daily summary"
+    val container = if (isSummary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+    val content = if (isSummary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val tappable = item.target.isNotBlank()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = tappable, onClick = onOpen),
+        colors = CardDefaults.cardColors(containerColor = container, contentColor = content)
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
@@ -269,28 +376,27 @@ private fun DailySummaryRow(entry: DailySummaryEntry, onRemove: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    entry.title,
+                    item.title,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    fontWeight = FontWeight.SemiBold
                 )
+                if (item.body.isNotBlank()) {
+                    Text(item.body, style = MaterialTheme.typography.bodyMedium)
+                }
                 Text(
-                    entry.body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    whenText,
+                    buildString {
+                        if (isNew) append("New • ")
+                        append(item.kind)
+                        append(" • ")
+                        append(whenText)
+                    },
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    fontWeight = if (isNew) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isNew) MaterialTheme.colorScheme.primary else content.copy(alpha = 0.7f)
                 )
             }
             IconButton(onClick = onRemove) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Remove daily summary",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Icon(Icons.Default.Close, contentDescription = "Remove notification")
             }
         }
     }

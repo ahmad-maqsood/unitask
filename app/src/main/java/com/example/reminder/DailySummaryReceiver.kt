@@ -18,7 +18,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.local.isMyTasksCourse
-import com.example.util.DailySummaryLog
+import com.example.util.NotificationHistory
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 import kotlinx.coroutines.CoroutineScope
@@ -139,10 +139,13 @@ class DailySummaryReceiver : BroadcastReceiver() {
         }
 
         // Keep the full text for the bell, even when notifications are switched off.
-        DailySummaryLog.add(
+        NotificationHistory.add(
             context,
-            "Today in UniTask",
-            (listOf(summary) + classLines + dueLines).joinToString("\n")
+            kind = "Daily summary",
+            title = "Today in UniTask",
+            body = (listOf(summary) + classLines + dueLines).joinToString("\n"),
+            target = "tab:DEADLINES",
+            key = "daily|$startOfToday"
         )
 
         if (!canNotify) return

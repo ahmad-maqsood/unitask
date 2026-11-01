@@ -1,0 +1,15 @@
+name: Feedback or feature idea
+description: Suggest something or tell me what could be better
+labels: [feedback]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to see or change?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+      description: A real situation from your studies is the most useful thing here.

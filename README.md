@@ -12,7 +12,7 @@ Assignments, timetable, reminders, personal tasks and study groups in one app.
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
  
-[Download](#download) · [Features](#features) · [Architecture](#architecture) · [Build from source](#build-from-source) · [Report a problem](#support)
+[Download](#download) · [Features](#features) · [Architecture](#architecture) · [Build your own](#build-your-own-copy) · [Report a problem](#support)
  
 </div>
  
@@ -148,45 +148,25 @@ app/src/main/java/com/example/
  
 </details>
 
-## Build from source
- 
-**Prerequisites:** a recent Android Studio, JDK 17 or newer, and a free [Supabase](https://supabase.com/) project.
- 
-```bash
-git clone https://github.com/ahmad-maqsood/unitask.git
-cd unitask
-```
- 
-**1. Backend (Supabase)**
- 
-- Enable the Google provider under Authentication.
-- Create the tables the app uses: `courses`, `tasks`, `slots`, `groups`, `group_members`, `group_tasks`, `group_courses`, `group_done`, `group_messages`, `app_features` and `announcements`, plus the `create_group` and `join_group` functions. Turn on Row Level Security for every table and add policies that limit each user to their own rows or groups.
-- Enable Realtime for the group tables.
-- [`supabase/schema.sql`](supabase/schema.sql) documents the live setup: tables, Row Level Security policies, functions, triggers, indexes and the 30-day chat cleanup job. Use it as a reference to recreate the backend. It is documentation, so read it before running anything from it.
+## Build your own copy
 
-**2. App configuration**
- 
-Set these values in `app/build.gradle.kts`, inside `defaultConfig`:
- 
-| Field | Value |
-| --- | --- |
-| `SUPABASE_URL` | Your project URL |
-| `SUPABASE_ANON_KEY` | Your project's anon (public) key |
-| `GOOGLE_WEB_CLIENT_ID` | The Web client ID from Google Cloud Console |
- 
-Register your build's signing certificate (SHA-1) on an Android OAuth client in Google Cloud Console, or Google sign-in will fail.
- 
-**3. Signing and build**
- 
-Release builds read the keystore from `my-upload-key.jks` in the project root (or `KEYSTORE_PATH`) and the `STORE_PASSWORD` and `KEY_PASSWORD` environment variables. Keep keystores out of Git; `*.jks` is already ignored.
- 
-```bash
-./gradlew assembleDebug      # debug build
-./gradlew assembleRelease    # signed release build
-```
- 
-Keep the same signing key for every release, otherwise users cannot update over their existing install.
- 
+Want to run UniTask with your own database, or change the code? Follow the step-by-step **[Setup guide](SETUP_GUIDE.md)**. It is written for beginners and covers:
+
+- Creating a free [Supabase](https://supabase.com/) project and building the database with ready-to-paste SQL
+- Setting up Google sign-in
+- Creating a signing key
+- Building the APK on GitHub (nothing to install) or in Android Studio
+- Fixes for the most common problems
+
+Just want to use the app? Download it from [Releases](https://github.com/ahmad-maqsood/unitask/releases/latest). No setup needed.
+
+**Quick facts for developers**
+
+- Stack: Kotlin, Jetpack Compose, Room, Supabase (Auth, Postgres, Realtime). Minimum Android 7.0.
+- The values you change live in `app/build.gradle.kts`: `applicationId`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (your publishable key) and `GOOGLE_WEB_CLIENT_ID`.
+- [`supabase/schema.sql`](supabase/schema.sql) documents the live database for reference. It is not a runnable script. The runnable SQL is in the [Setup guide](SETUP_GUIDE.md).
+- Keep the same signing key for every release, otherwise users cannot update over their existing install.
+
 ## Reliable notifications
  
 Some phone makers stop background apps aggressively. If reminders arrive late or not at all:

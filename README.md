@@ -58,17 +58,11 @@ Requires Android 7.0 (API 24) or newer.
 | **Backup & Privacy** | Automatic Google Cloud sync with multi-account isolation. GDPR-compliant JSON Data Export and complete Account & Cloud Data purge. Password-encrypted offline backups. |
 | **In-app updates** | GitHub release updater, official university announcements bell, and a built-in interactive "Learn to use the app" feature guide. |
 
-<details open>
-<summary><b>What's new in 3.0.0</b></summary>
-
+<details close>
+<summary><b>Noticeable changes in the recent release(s)</b></summary>
+ 
 - **A proper checklist editor.** When you add or edit an assignment, checklist items are now rows with a checkbox, a text box and a remove button. You no longer see or type `- [ ]` yourself. Press **Next** on the keyboard to add the following item. Empty rows are dropped when you save.
 - **Your existing checklists keep working.** Older tasks open with their checklist shown as rows, and task cards, backups and cloud sync look exactly as before.
-
-</details>
-
-<details>
-<summary><b>What's new in 3.0.0-beta-3</b></summary>
-
 - **Groups stay put when you lock and unlock the phone.** A short sign-in status change no longer clears your group list.
 - **Week A and Week B now really work.** Choose which week it is in Settings ("This week is") or from the Timetable tab. Class reminders, the daily summary and the current and next class card only count classes that meet this week, and a Week A class and a Week B class at the same time are no longer a clash.
 - **Join a group with the camera.** Tap **Scan with camera**, or use **From image** or **Paste Link**. Scanning only fills the form, it never joins by itself.
@@ -80,16 +74,9 @@ Requires Android 7.0 (API 24) or newer.
 - **Timetable export** now shares a real `.ics` calendar file, and **Export my data** shares a `.json` file instead of a long text.
 - **Update check:** beta users will be offered the final release of the same version.
 - **Batch mode:** **Done** always marks tasks as done, **Delete** asks you to confirm, and the selection survives rotating the phone.
-- **Smaller fixes:** Back inside a group goes to Tasks first, back on the home screen asks you to press it twice to exit, the time picker follows your 12 or 24 hour setting, `- [X]` counts as a ticked checklist item, classes that end after midnight are handled, and local backups keep the completion time of repeating tasks.
+- **Smaller fixes:** Back inside a group goes to Tasks first, back on the home screen asks you to press it twice to exit, the time picker follows your 12 or 24 hour setting, classes that end after midnight are handled, and local backups keep the completion time of repeating tasks.
 - **Deleting your account** now also cancels reminders and removes attachments and cached group data from the phone.
-
-</details>
-
-<details>
-<summary><b>What's new in 3.0.0-beta</b></summary>
-
 - **Interactive Calendar View for Deadlines:** Toggle between standard list and a monthly calendar grid showing deadline dot indicators and day-specific assignment filtering.
-- **Subtasks & Checklists:** Add `- [ ]` checklist items to tasks with a dedicated "+ Add Checklist Item" button and live subtask progress chips on task cards.
 - **Batch Operations:** Multi-select mode with checkboxes to bulk complete or delete assignments in one tap.
 - **Bi-Weekly Timetable Support (Week A & B):** Schedule classes that alternate weekly and filter your timetable view between All, Week A, and Week B.
 - **Class Break & Free Time Indicators:** Visual pills highlight free gaps between consecutive lectures (e.g. `☕ 1h 30m free until next class`).
@@ -102,49 +89,12 @@ Requires Android 7.0 (API 24) or newer.
 - **Notification "Mark as Done" Action:** Complete tasks directly from reminder notifications without opening the app.
 - **GDPR Data Export & Account Deletion:** Export all personal data as JSON and permanently purge cloud/local data with one tap.
 - **Multi-Account Cache Isolation:** Prevents data blending when switching Google accounts, with zero data loss on logout.
-
-All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
-
-</details>
-
-<details>
-<summary><b>What's new in 2.3.0-beta</b></summary>
-
 - **Light, dark and system theme.** Pick your preferred appearance in Settings. The choice is saved on the device.
 - **Multiple notification sounds.** Choose from four built-in sounds, your phone's default, or any ringtone installed on your phone. Each sound has its own notification channel so Android remembers the volume you set.
-- **Announcement notifications.** New announcements are shown as phone notifications even when the app is closed, checked roughly every 15 minutes in the background. At most three are posted at once to avoid flooding your shade.
 - **High-priority alarm toggle.** Turn the alarm-style ringing on or off directly in Settings without digging through Android notification settings.
-
-All releases: [GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases)
-
-</details>
-
-<details>
-<summary><b>What's new in 2.1.1</b></summary>
-
-- **Group chat no longer shows repeated messages** when a new message arrives. A message you send now keeps one identity from the moment you tap send until the server confirms it.
-- **Correct message and task times on Android 8 to 12.** Server timestamps are now read in a way every Android version accepts.
-- **Deletes that fail are retried.** Deleting a task, course or class while offline no longer leaves a hidden copy in the cloud.
-- **Names in group chat and group tasks are verified by the server**, so nobody can post under another member's name.
 - **Reply to a message** by swiping it right in group chat, with a quote that jumps back to the original.
-- **Completed repeating tasks roll over to their next date** automatically every day.
-- **Group tasks are cached** for offline viewing, and groups stay visible while sign-in is still loading.
-- **Join codes are 8 characters** (new groups only; existing codes keep working).
-
-</details>
-
-<details>
-<summary><b>What's new in 2.0.0</b></summary>
-<br>
-- **Moved to Supabase** for sign-in, cloud backup, group sync and realtime updates (replacing Firebase and Firestore).
 - **My tasks and repeating tasks**, with a new bottom navigation bar.
-- **12-hours-before reminder** and alarm-style alerts for high-priority tasks.
-- **Faster, steadier groups:** realtime connections no longer block refreshes, group lists are cached for an instant start, and false "task deleted" notices were fixed.
-- **Pull to refresh** now waits for the sync and reports the result.
-- **Feature guide and announcements** loaded from Supabase.
-- Local backups now include My tasks and repeat rules and still restore old backup files.
-Full list: [v1.3.0 ... main](https://github.com/ahmad-maqsood/unitask/compare/v1.3.0...main)
- 
+
 </details>
 
 ## Architecture

@@ -42,6 +42,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.reminder.AnnouncementNotifier
 import com.example.util.Announcement
 import com.example.util.Announcements
+import com.example.util.DailySummaryEntry
+import com.example.util.DailySummaryLog
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,7 +63,11 @@ class AnnouncementsState(context: Context) {
     var items by mutableStateOf<List<Announcement>>(Announcements.bellItems(appContext))
         private set
 
-    var unread by mutableIntStateOf(Announcements.unseen(appContext).size)
+    /** Daily summaries kept for the bell (newest first). Full text, not cut short like the notification. */
+    var summaries by mutableStateOf<List<DailySummaryEntry>>(DailySummaryLog.items(appContext))
+        private set
+
+    var unread by mutableIntStateOf(Announcements.unseen(appContext).size + DailySummaryLog.unreadCount(appContext))
         private set
 
     var popup by mutableStateOf<List<Announcement>>(emptyList())
@@ -70,7 +76,8 @@ class AnnouncementsState(context: Context) {
     /** Reads the saved lists again (cheap, no network). */
     fun reload() {
         items = Announcements.bellItems(appContext)
-        unread = Announcements.unseen(appContext).size
+        summaries = DailySummaryLog.items(appContext)
+        unread = Announcements.unseen(appContext).size + DailySummaryLog.unreadCount(appContext)
     }
 
     /** Downloads the latest list, updates the bell, and opens the pop-up if something is new. Offline is fine. */
@@ -102,14 +109,22 @@ class AnnouncementsState(context: Context) {
         val current = items
         Announcements.markSeen(appContext, current)
         AnnouncementNotifier.cancel(appContext, current)
+        DailySummaryLog.markAllRead(appContext)
         reload()
     }
 
-    fun remove(item: Announcement) = removeAll(listOf(item))
+    fun remove(item: Announcement) = removeAll(listOf(item), clearSummaries = false)
 
-    fun removeAll(list: List<Announcement> = items) {
+    fun removeSummary(entry: DailySummaryEntry) {
+        DailySummaryLog.remove(appContext, entry.id)
+        reload()
+    }
+
+    /** "Clear all" in the bell: announcements and daily summaries. */
+    fun removeAll(list: List<Announcement> = items, clearSummaries: Boolean = true) {
         Announcements.remove(appContext, list)
         AnnouncementNotifier.cancel(appContext, list)
+        if (clearSummaries) DailySummaryLog.clear(appContext)
         reload()
     }
 }
@@ -182,7 +197,7 @@ fun AnnouncementBell(state: AnnouncementsState) {
                 if (state.unread > 0) Badge { Text(state.unread.toString()) }
             }
         ) {
-            Icon(Icons.Default.Notifications, contentDescription = "Announcements")
+            Icon(Icons.Default.Notifications, contentDescription = "Notifications")
         }
     }
 
@@ -200,18 +215,18 @@ fun AnnouncementBell(state: AnnouncementsState) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "Announcements",
+                        "Notifications",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-                    if (state.items.isNotEmpty()) {
+                    if (state.items.isNotEmpty() || state.summaries.isNotEmpty()) {
                         TextButton(onClick = { state.removeAll() }) { Text("Clear all") }
                     }
                 }
 
-                if (state.items.isEmpty()) {
+                if (state.items.isEmpty() && state.summaries.isEmpty()) {
                     Text(
-                        "No announcements right now.",
+                        "Nothing here right now.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -222,11 +237,60 @@ fun AnnouncementBell(state: AnnouncementsState) {
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        state.summaries.forEach { entry ->
+                            DailySummaryRow(entry = entry, onRemove = { state.removeSummary(entry) })
+                        }
                         state.items.forEach { item ->
                             AnnouncementRow(item = item, onRemove = { state.remove(item) })
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** A saved daily summary with every class and task, so a long day is easy to read. */
+@Composable
+private fun DailySummaryRow(entry: DailySummaryEntry, onRemove: () -> Unit) {
+    val whenText = remember(entry.id) {
+        SimpleDateFormat("EEE, MMM d \u2022 h:mm a", Locale.getDefault()).format(Date(entry.id))
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    entry.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    entry.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    whenText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
+            IconButton(onClick = onRemove) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove daily summary",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         }
     }

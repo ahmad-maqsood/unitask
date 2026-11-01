@@ -23,9 +23,6 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Image
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.barcode.common.Barcode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -195,10 +192,29 @@ fun JoinGroupDialog(
     var username by rememberSaveable { mutableStateOf(initialUsername) }
     var joinCode by rememberSaveable { mutableStateOf(initialJoinCode) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var showScanner by remember { mutableStateOf(false) }
 
     androidx.compose.runtime.LaunchedEffect(initialUsername, initialJoinCode) {
         if (initialUsername.isNotBlank()) username = initialUsername
         if (initialJoinCode.isNotBlank()) joinCode = initialJoinCode
+    }
+
+    if (showScanner) {
+        QrScannerDialog(
+            onResult = { rawValue ->
+                showScanner = false
+                val parsed = com.example.util.QrCodeUtil.parseGroupInvite(rawValue)
+                if (parsed != null) {
+                    username = parsed.first
+                    joinCode = parsed.second
+                    errorMessage = null
+                    Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                } else {
+                    errorMessage = "QR code found, but invalid invite format."
+                }
+            },
+            onDismiss = { showScanner = false }
+        )
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -254,44 +270,7 @@ fun JoinGroupDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = {
-                            try {
-                                val options = GmsBarcodeScannerOptions.Builder()
-                                    .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                                    .build()
-                                val scanner = GmsBarcodeScanning.getClient(context, options)
-                                scanner.startScan()
-                                    .addOnSuccessListener { barcode ->
-                                        val rawValue = barcode.rawValue
-                                        if (!rawValue.isNullOrBlank()) {
-                                            val parsed = com.example.util.QrCodeUtil.parseGroupInvite(rawValue)
-                                            if (parsed != null) {
-                                                username = parsed.first
-                                                joinCode = parsed.second
-                                                Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                errorMessage = "QR code found, but invalid invite format."
-                                            }
-                                        }
-                                    }
-                                    .addOnCanceledListener {
-                                        // Silent
-                                    }
-                                    .addOnFailureListener {
-                                        Toast.makeText(
-                                            context,
-                                            "Camera scan is not available on this phone. Use From image.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                            } catch (_: Exception) {
-                                Toast.makeText(
-                                    context,
-                                    "Camera scan is not available on this phone. Use From image.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
+                        onClick = { showScanner = true },
                         enabled = !isLoading,
                         modifier = Modifier.weight(1f)
                     ) {

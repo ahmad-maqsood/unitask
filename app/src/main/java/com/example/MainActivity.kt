@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         AppVisibility.isForeground = false
+        com.example.widget.UniTaskWidget.refreshAsync(applicationContext)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -131,7 +132,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            MyApplicationTheme(darkTheme = darkTheme) {
+            MyApplicationTheme(darkTheme = darkTheme, accent = ThemePreference.accent) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainScreen(viewModel = mainViewModel)
                 }

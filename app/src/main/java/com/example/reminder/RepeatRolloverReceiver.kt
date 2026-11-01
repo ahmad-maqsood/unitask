@@ -89,6 +89,9 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 // Leaves every reminder in a consistent state after the tasks moved.
                 scheduler.rescheduleAll(db)
             }
+
+            // A new day has started: redraw the home screen widget.
+            com.example.widget.UniTaskWidget.refresh(appContext)
         }
     }
 

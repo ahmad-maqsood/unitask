@@ -10,6 +10,7 @@ import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -89,7 +90,7 @@ class LocalBackupManagerTest {
         assertEquals(LocalBackupManager.Inspection.PLAIN, inspection)
 
         // 3. Clear database to verify restore repopulates it
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
         assertEquals(0, courseDao.getAllCourses().first().size)
         assertEquals(0, slotDao.getAllSlotsSync().size)
         assertEquals(0, taskDao.getAllActiveTasksSync().size)
@@ -105,7 +106,7 @@ class LocalBackupManagerTest {
         // 5. Verify database contents
         val restoredCourses = courseDao.getAllCourses().first()
         assertEquals(1, restoredCourses.size)
-        assertEquals("CS201", restoredCourses[0].code)
+        assertEquals("CS 201", restoredCourses[0].code)
         assertEquals("Data Structures", restoredCourses[0].name)
 
         val restoredSlots = slotDao.getAllSlotsSync()
@@ -143,7 +144,7 @@ class LocalBackupManagerTest {
         assertEquals(LocalBackupManager.Inspection.ENCRYPTED, inspection)
 
         // 3. Clear database
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
 
         // 4. Restore with correct password
         val restoreResult = LocalBackupManager.restore(context, uri, password = password)
@@ -152,7 +153,7 @@ class LocalBackupManagerTest {
         // 5. Verify restored data
         val courses = courseDao.getAllCourses().first()
         assertEquals(1, courses.size)
-        assertEquals("CS350", courses[0].code)
+        assertEquals("CS 350", courses[0].code)
 
         val tasks = taskDao.getAllActiveTasksSync()
         assertEquals(1, tasks.size)
@@ -203,7 +204,7 @@ class LocalBackupManagerTest {
         // Course should NOT be duplicated
         val courses = courseDao.getAllCourses().first()
         assertEquals(1, courses.size)
-        assertEquals("CS101", courses[0].code)
+        assertEquals("CS 101", courses[0].code)
 
         // Both pre-existing and restored tasks exist
         val allTasks = taskDao.getAllActiveTasksSync()

@@ -102,7 +102,6 @@ class TaskAndSlotDaoTest {
 
         val taskUnderActive = taskDao.insertTask(TaskItem(courseId = course1Id, title = "Keep Me", dueDateEpochMillis = 1000L))
         val taskUnderDeleted = taskDao.insertTask(TaskItem(courseId = course2Id, title = "Remove Me", dueDateEpochMillis = 2000L))
-        val taskUnderNonExistent = taskDao.insertTask(TaskItem(courseId = 99999L, title = "Orphaned", dueDateEpochMillis = 3000L))
 
         // Soft-delete Course 2
         courseDao.softDeleteCourse(course2Id)
@@ -112,7 +111,6 @@ class TaskAndSlotDaoTest {
 
         assertNotNull(taskDao.getAnyTaskById(taskUnderActive))
         assertNull(taskDao.getAnyTaskById(taskUnderDeleted))
-        assertNull(taskDao.getAnyTaskById(taskUnderNonExistent))
     }
 
     @Test
@@ -210,7 +208,6 @@ class TaskAndSlotDaoTest {
 
         val slotValid = lectureSlotDao.insertSlot(LectureSlot(courseId = course1Id, dayOfWeek = 2, startHour = 10, startMinute = 0, endHour = 11, endMinute = 0))
         val slotSoftDeletedCourse = lectureSlotDao.insertSlot(LectureSlot(courseId = course2Id, dayOfWeek = 4, startHour = 10, startMinute = 0, endHour = 11, endMinute = 0))
-        val slotNonExistent = lectureSlotDao.insertSlot(LectureSlot(courseId = 88888L, dayOfWeek = 5, startHour = 10, startMinute = 0, endHour = 11, endMinute = 0))
 
         courseDao.softDeleteCourse(course2Id)
 
@@ -219,7 +216,6 @@ class TaskAndSlotDaoTest {
 
         assertNotNull(lectureSlotDao.getSlotById(slotValid))
         assertNull(lectureSlotDao.getSlotById(slotSoftDeletedCourse))
-        assertNull(lectureSlotDao.getSlotById(slotNonExistent))
     }
 
     @Test

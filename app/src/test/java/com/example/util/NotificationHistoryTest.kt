@@ -26,8 +26,9 @@ class NotificationHistoryTest {
 
     @Test
     fun newestFirstAndUnreadUntilMarked() {
-        NotificationHistory.add(context, "Deadline", "First", "a", nowMillis = 1_000_000_000_000L)
-        NotificationHistory.add(context, "Class", "Second", "b", nowMillis = 1_000_000_001_000L)
+        val now = System.currentTimeMillis()
+        NotificationHistory.add(context, "Deadline", "First", "a", nowMillis = now - 1_000L)
+        NotificationHistory.add(context, "Class", "Second", "b", nowMillis = now)
         val items = NotificationHistory.items(context)
         assertEquals(listOf("Second", "First"), items.map { it.title })
         assertEquals(2, NotificationHistory.unreadCount(context))

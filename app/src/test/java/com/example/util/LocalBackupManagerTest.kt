@@ -9,6 +9,7 @@ import com.example.data.local.LectureSlot
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -34,12 +35,16 @@ class LocalBackupManagerTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         db = AppDatabase.getDatabase(context)
-        db.clearAllTables()
+        runBlocking(Dispatchers.IO) { db.clearAllTables() }
     }
 
     @After
     fun tearDown() {
-        db.clearAllTables()
+        db.close()
+        // Forget the saved database so the next test builds a fresh one.
+        AppDatabase::class.java.getDeclaredField("INSTANCE")
+            .apply { isAccessible = true }
+            .set(null, null)
         for (f in createdFiles) {
             if (f.exists()) f.delete()
         }

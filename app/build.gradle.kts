@@ -72,7 +72,7 @@ android {
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
   sourceSets {
-    getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    getByName("androidTest").assets.directories.add("$projectDir/schemas")
   }
   dependenciesInfo {
     includeInApk = false

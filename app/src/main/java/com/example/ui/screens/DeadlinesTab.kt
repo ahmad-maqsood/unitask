@@ -636,6 +636,7 @@ fun DeadlinesTab(
                     onEditTask = onEditTask,
                     onDeleteTask = onDeleteTask,
                     groupEntries = groupEntries,
+                    onSwipeToggleDone = handleSwipeToggleDone,
                     onChecklistToggle = onChecklistToggle
                 )
             }
@@ -1165,6 +1166,7 @@ private fun DeadlinesCalendarView(
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     groupEntries: Map<Long, GroupTaskEntry>,
+    onSwipeToggleDone: ((TaskItem) -> Unit)? = null,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val cal = remember { Calendar.getInstance() }
@@ -1370,14 +1372,26 @@ private fun DeadlinesCalendarView(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
             tasksOnSelectedDay.forEach { taskWithCourse ->
                 val entry = groupEntries[taskWithCourse.task.id]
-                TaskCard(
-                    taskWithCourse = taskWithCourse,
-                    onStatusCycle = onStatusCycle,
-                    onEditClick = onEditTask,
-                    onDeleteClick = onDeleteTask,
-                    groupEntry = entry,
-                    onChecklistToggle = if (entry == null) onChecklistToggle else null
-                )
+                if (onSwipeToggleDone != null) {
+                    SwipeDoneTaskCard(
+                        taskWithCourse = taskWithCourse,
+                        onSwipeToggleDone = onSwipeToggleDone,
+                        onStatusCycle = onStatusCycle,
+                        onEditTask = onEditTask,
+                        onDeleteTask = onDeleteTask,
+                        groupEntry = entry,
+                        onChecklistToggle = if (entry == null) onChecklistToggle else null
+                    )
+                } else {
+                    TaskCard(
+                        taskWithCourse = taskWithCourse,
+                        onStatusCycle = onStatusCycle,
+                        onEditClick = onEditTask,
+                        onDeleteClick = onDeleteTask,
+                        groupEntry = entry,
+                        onChecklistToggle = if (entry == null) onChecklistToggle else null
+                    )
+                }
             }
         }
     }

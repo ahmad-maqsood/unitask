@@ -1,7 +1,6 @@
 name: Build release APK
 
-# Runs only when you start it by hand (Actions tab > Build release APK > Run workflow),
-# or when you push a version tag such as v2.1.2.
+# Runs only when you start it by hand (Actions tab > Build release APK > Run workflow).
 on:
   workflow_dispatch:
 
@@ -22,7 +21,19 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+      # Run the unit tests first. If a test fails, the build stops here and no APK is made.
+      - name: Run unit tests
+        run: gradle testDebugUnitTest --no-daemon
 
+      # Only if something failed: keep the test report so you can read what went wrong.
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
       # Needs 3 repository secrets (Settings > Secrets and variables > Actions):
       #   KEYSTORE_BASE64  your my-upload-key.jks, base64 encoded
       #   STORE_PASSWORD   the keystore password

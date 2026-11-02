@@ -21,6 +21,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+
+      # The tests run on Android 16 (API 36), which needs Java 21. The release build keeps Java 17.
+      - name: Set up Java 21 for the tests
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          
       # Run the unit tests first. If a test fails, the build stops here and no APK is made.
       - name: Run unit tests
         run: gradle testDebugUnitTest --no-daemon
@@ -34,6 +42,14 @@ jobs:
           path: app/build/reports/tests/
           if-no-files-found: ignore
           retention-days: 7
+
+      # Back to Java 17 for the release build, exactly as before.
+      - name: Set up Java 17 for the release build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       # Needs 3 repository secrets (Settings > Secrets and variables > Actions):
       #   KEYSTORE_BASE64  your my-upload-key.jks, base64 encoded
       #   STORE_PASSWORD   the keystore password

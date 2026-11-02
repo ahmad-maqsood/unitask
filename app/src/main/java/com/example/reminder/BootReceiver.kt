@@ -22,11 +22,23 @@ class BootReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                ReminderScheduler(appContext).rescheduleAll(AppDatabase.getDatabase(appContext))
-                ClassReminderScheduler(appContext).rescheduleAll(AppDatabase.getDatabase(appContext))
-                GroupReminderScheduler(appContext).rescheduleAll()
-                DailySummaryScheduler(appContext).reschedule()
-                RepeatRolloverReceiver.rolloverAndReschedule(appContext)
+                // Each step on its own: one failing step (for example a group lookup with no
+                // internet) must not crash the app or leave the other alarms missing.
+                suspend fun step(name: String, block: suspend () -> Unit) {
+                    try {
+                        block()
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        android.util.Log.w("BootReceiver", "$name failed: ${e.message}")
+                    }
+                }
+                val db = AppDatabase.getDatabase(appContext)
+                step("task reminders") { ReminderScheduler(appContext).rescheduleAll(db) }
+                step("class reminders") { ClassReminderScheduler(appContext).rescheduleAll(db) }
+                step("group reminders") { GroupReminderScheduler(appContext).rescheduleAll() }
+                step("daily summary") { DailySummaryScheduler(appContext).reschedule() }
+                step("repeat rollover") { RepeatRolloverReceiver.rolloverAndReschedule(appContext) }
             } finally {
                 pending.finish()
             }

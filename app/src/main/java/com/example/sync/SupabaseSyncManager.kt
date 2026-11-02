@@ -567,7 +567,13 @@ object SupabaseSyncManager {
                                 taskDao.markTasksUnsyncedForCourse(course.id)
                                 slotDao.markSlotsUnsyncedForCourse(course.id)
                             }
-                            courseDao.markCourseSynced(course.id, canonicalDocId)
+                            // Edited while the upload was running? Keep it unsynced (see tasks below).
+                            val current = courseDao.getAnyCourseByIdSync(course.id) ?: continue
+                            if (current == course) {
+                                courseDao.markCourseSynced(course.id, canonicalDocId)
+                            } else {
+                                courseDao.updateCourse(current.copy(cloudId = canonicalDocId, isSynced = false))
+                            }
                         }
                     }
 
@@ -605,7 +611,12 @@ object SupabaseSyncManager {
                             onConflict = "user_id,doc_id"
                         }
                         for ((task, row) in tasksToPush) {
-                            taskDao.markTaskSynced(task.id, row.docId)
+                            // Edited or ticked while the upload was running? Keep it unsynced so the
+                            // pull below cannot overwrite the change with the older cloud copy.
+                            val current = taskDao.getAnyTaskById(task.id) ?: continue
+                            if (current == task || current == task.copy(cloudId = row.docId)) {
+                                taskDao.markTaskSynced(task.id, row.docId)
+                            }
                         }
                     }
 
@@ -639,7 +650,15 @@ object SupabaseSyncManager {
                             onConflict = "user_id,doc_id"
                         }
                         for ((slot, row) in slotsToPush) {
-                            slotDao.markSlotSynced(slot.id, row.docId)
+                            // Edited while the upload was running? Then keep it unsynced so the next
+                            // pass uploads the newer version (the cloud id is still saved).
+                            val current = slotDao.getSlotById(slot.id)
+                            if (current == null) continue
+                            if (current == slot) {
+                                slotDao.markSlotSynced(slot.id, row.docId)
+                            } else {
+                                slotDao.updateSlot(current.copy(cloudId = row.docId, isSynced = false))
+                            }
                         }
                     }
 
@@ -1130,12 +1149,19 @@ object SupabaseSyncManager {
 
                 channel.subscribe()
 
+                // A failed pull must never crash the app or stop the other listeners.
                 launch {
                     coursesFlow
                         .debounce(500L)
                         .collect {
-                            syncMutex.withLock {
-                                pullAndMergeCourses(context, database, userId)
+                            try {
+                                syncMutex.withLock {
+                                    pullAndMergeCourses(context, database, userId)
+                                }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Realtime course pull failed: ${e.message}")
                             }
                         }
                 }
@@ -1144,8 +1170,14 @@ object SupabaseSyncManager {
                     tasksFlow
                         .debounce(500L)
                         .collect {
-                            syncMutex.withLock {
-                                pullAndMergeTasks(context, database, userId)
+                            try {
+                                syncMutex.withLock {
+                                    pullAndMergeTasks(context, database, userId)
+                                }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Realtime task pull failed: ${e.message}")
                             }
                         }
                 }
@@ -1154,8 +1186,14 @@ object SupabaseSyncManager {
                     slotsFlow
                         .debounce(500L)
                         .collect {
-                            syncMutex.withLock {
-                                pullAndMergeSlots(context, database, userId)
+                            try {
+                                syncMutex.withLock {
+                                    pullAndMergeSlots(context, database, userId)
+                                }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Realtime slot pull failed: ${e.message}")
                             }
                         }
                 }

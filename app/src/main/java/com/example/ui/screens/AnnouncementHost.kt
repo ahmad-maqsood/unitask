@@ -232,7 +232,13 @@ fun AnnouncementBell(
     ) {
         BadgedBox(
             badge = {
-                if (state.unread > 0) Badge { Text(state.unread.toString()) }
+                if (state.unread > 0) {
+                    val hasAnnouncement = state.unreadAnnouncements > 0
+                    Badge(
+                        containerColor = if (hasAnnouncement) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        contentColor = if (hasAnnouncement) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
+                    ) { Text(state.unread.toString()) }
+                }
             }
         ) {
             Icon(Icons.Default.Notifications, contentDescription = "Notifications and announcements")
@@ -275,7 +281,7 @@ fun AnnouncementBell(
                         selected = selectedTab == TAB_ANNOUNCEMENTS,
                         onClick = { selectedTab = TAB_ANNOUNCEMENTS },
                         modifier = Modifier.testTag("bell_tab_announcements"),
-                        text = { TabLabel("Announcements", state.unreadAnnouncements) }
+                        text = { TabLabel("Announcements", state.unreadAnnouncements, urgent = true) }
                     )
                 }
 
@@ -326,11 +332,15 @@ fun AnnouncementBell(
 }
 
 @Composable
-private fun TabLabel(text: String, unread: Int) {
+private fun TabLabel(text: String, unread: Int, urgent: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(text, maxLines = 1)
         if (unread > 0) {
-            Badge(modifier = Modifier.padding(start = 6.dp)) { Text(unread.toString()) }
+            Badge(
+                containerColor = if (urgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                contentColor = if (urgent) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(start = 6.dp)
+            ) { Text(unread.toString()) }
         }
     }
 }

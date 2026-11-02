@@ -99,7 +99,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
                     try {
                         val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(context).orEmpty()
                         if (uid.isNotBlank()) {
-                            GroupRepository(context).setTaskDone(uid, groupId, taskId, isDone = true)
+                            val repo = GroupRepository(context)
+                            repo.setTaskDone(uid, groupId, taskId, isDone = true)
+                            // setTaskDone sends in the background. Wait here, or the phone may stop
+                            // the app before the tick reaches the server.
+                            repo.flushPendingDone()
                         }
                         GroupReminderScheduler(context).cancel(groupId, taskId)
                     } catch (_: Exception) {

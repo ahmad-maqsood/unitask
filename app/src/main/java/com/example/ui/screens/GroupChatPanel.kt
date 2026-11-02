@@ -162,7 +162,7 @@ fun GroupChatPanel(
     // messages visible when the keyboard opens and the list gets shorter.
     val newestFirst = remember(filteredMessages) { filteredMessages.distinctBy { it.id }.reversed() }
 
-    val topVisibleDateText by remember {
+    val topVisibleDateText by remember(newestFirst) {
         derivedStateOf {
             val visible = listState.layoutInfo.visibleItemsInfo
             if (visible.isEmpty()) null

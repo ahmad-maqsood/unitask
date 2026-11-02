@@ -337,6 +337,17 @@ class AppRepository(
         triggerSyncIfLoggedIn()
     }
 
+    /**
+     * Undo for a deleted task. If the row is still on the phone it is restored as before. If the sync
+     * already erased it, the task is saved again as a new task (new cloud id), so Undo always works.
+     */
+    suspend fun undoDeleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
+        if (taskDao.getAnyTaskById(task.id) != null) {
+            restoreTask(task.id)
+        } else {
+            insertTask(task.copy(id = 0L, cloudId = "", isSynced = false, isDeleted = false))
+        }
+    }
     // Attachments
     fun getAttachmentsForTask(taskId: Long): Flow<List<TaskAttachment>> {
         return taskAttachmentDao.getAttachmentsForTask(taskId).flowOn(Dispatchers.IO)

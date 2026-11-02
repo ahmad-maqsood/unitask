@@ -220,6 +220,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 if (prevSyncedUid != null && user != null && user.id != prevSyncedUid) {
                                     Log.i("MainViewModel", "Switching user accounts ($prevSyncedUid -> ${user.id}). Resetting local data.")
                                     try {
+                                        // Stop the old account's alarms first, or they keep firing after the data is gone.
+                                        runCatching { com.example.reminder.ReminderScheduler(application).cancelAll(database) }
+                                        runCatching { com.example.reminder.ClassReminderScheduler(application).cancelAll() }
+                                        runCatching { com.example.reminder.GroupReminderScheduler(application).cancelGroupsNotIn(emptySet()) }                                       
                                         database.clearAllTables()
                                         com.example.data.groups.GroupRepository.clearCache(application)
                                     } catch (e: Exception) {

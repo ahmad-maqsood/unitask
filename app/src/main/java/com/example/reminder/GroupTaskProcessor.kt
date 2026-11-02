@@ -14,6 +14,7 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.groups.GroupSnapshot
 import com.example.data.groups.GroupTask
+import com.example.data.groups.isForUser
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.groups.GroupsState
 import com.example.util.NotificationSound
@@ -191,7 +192,9 @@ class GroupTaskProcessor(context: Context) {
             return
         }
 
-        val fresh = snapshot.allTasks.filter { it.id !in seen && it.createdBy != myUid }
+        val fresh = snapshot.allTasks.filter {
+            it.id !in seen && it.createdBy != myUid && it.isForUser(myUid)
+        }
         // Keep only ids that still exist, so the set cannot grow forever.
         val updated = HashSet<String>().apply {
             add(BASELINE)

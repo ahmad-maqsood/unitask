@@ -642,9 +642,11 @@ class GroupRepository(private val context: Context) {
     ): List<GroupMessage> {
         val now = System.currentTimeMillis()
         val serverIds = server.map { it.id }.toSet()
+        // A message still waiting in the outbox stays on screen however long it waits.
+        val queuedIds = getQueuedOutboxMessages(groupId).map { it.localId }.toSet()
         val extra = pending.filter { p ->
             p.groupId == groupId &&
-                now - p.createdAtMillis < PENDING_MAX_AGE_MILLIS &&
+                (now - p.createdAtMillis < PENDING_MAX_AGE_MILLIS || p.id in queuedIds) &&
                 p.id !in serverIds &&
                 // Only a message still in flight (no server id yet) falls back to the text match.
                 !(p.id.startsWith("local-") && server.any { s ->
@@ -1196,6 +1198,8 @@ class GroupRepository(private val context: Context) {
                 while (true) {
                     delay(CHAT_POLL_MILLIS)
                     if (AppVisibility.isForeground && isGoodConnection()) {
+                        // Internet is back: send any messages that were waiting in the outbox.
+                        flushChatOutbox(groupId)
                         queryAndEmit()
                     }
                 }
@@ -1353,8 +1357,12 @@ class GroupRepository(private val context: Context) {
             replyToText = replyText
         )
 
+        val stillQueuedIds = getQueuedOutboxMessages(groupId).map { it.localId }.toSet()
         pendingMessages.update { list ->
-            list.filter { System.currentTimeMillis() - it.createdAtMillis < PENDING_MAX_AGE_MILLIS } + localMessage
+            list.filter {
+                System.currentTimeMillis() - it.createdAtMillis < PENDING_MAX_AGE_MILLIS ||
+                    it.id in stillQueuedIds
+            } + localMessage
         }
 
         val payload = CreateGroupMessagePayload(
@@ -2285,38 +2293,11 @@ class GroupRepository(private val context: Context) {
 
         return try {
             withTimeout(TIMEOUT_MILLIS) {
-                try {
                     val params = buildJsonObject {
                         put("p_group_id", groupId)
                         put("p_new_owner_id", newOwnerUid)
                     }
                     SupabaseProvider.client.postgrest.rpc("transfer_group_ownership", params)
-                } catch (_: Exception) {
-                    // Fallback to direct table updates
-                    SupabaseProvider.client.postgrest["group_members"].update(
-                        UpdateRolePayload(role = "owner")
-                    ) {
-                        filter {
-                            eq("group_id", groupId)
-                            eq("user_id", newOwnerUid)
-                        }
-                    }
-                    SupabaseProvider.client.postgrest["group_members"].update(
-                        UpdateRolePayload(role = "admin")
-                    ) {
-                        filter {
-                            eq("group_id", groupId)
-                            eq("user_id", currentUid)
-                        }
-                    }
-                    SupabaseProvider.client.postgrest["groups"].update(
-                        buildJsonObject { put("owner_id", newOwnerUid) }
-                    ) {
-                        filter {
-                            eq("id", groupId)
-                        }
-                    }
-                }
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)

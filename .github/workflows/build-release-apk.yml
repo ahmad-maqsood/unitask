@@ -3,8 +3,9 @@ name: Build release APK
 # Runs only when you start it by hand (Actions tab > Build release APK > Run workflow).
 on:
   workflow_dispatch:
-  permissions:
-    contents: read
+
+permissions:
+  contents: read
 
 jobs:
   build:

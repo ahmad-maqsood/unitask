@@ -90,6 +90,11 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Every migration, in one place. getDatabase() and the migration test both use this list. */
+        val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+            MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9
+        )
+        
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -97,7 +102,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "unitask_database"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(*ALL_MIGRATIONS)
                     // Only applies to pre-release versions (v1 and v2)
                     .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()

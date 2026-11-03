@@ -89,7 +89,7 @@ android {
     }
   }
   sourceSets {
-    getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    getByName("test").assets.directories.add("$projectDir/schemas")
   }
   dependenciesInfo {
     includeInApk = false
@@ -150,7 +150,7 @@ dependencies {
   testImplementation(libs.androidx.junit)
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
-  testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.room.testing)
   androidTestImplementation(platform(libs.androidx.compose.bom))
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)
   androidTestImplementation(libs.androidx.espresso.core)

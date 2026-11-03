@@ -21,6 +21,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
+          cache-provider: basic
 
       # The tests run on Android 16 (API 36), which needs Java 21. The release build keeps Java 17.
       - name: Set up Java 21 for the tests

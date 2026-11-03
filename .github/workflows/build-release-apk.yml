@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -24,7 +24,7 @@ jobs:
 
       # The tests run on Android 16 (API 36), which needs Java 21. The release build keeps Java 17.
       - name: Set up Java 21 for the tests
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -45,7 +45,7 @@ jobs:
 
       # Back to Java 17 for the release build, exactly as before.
       - name: Set up Java 17 for the release build
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'

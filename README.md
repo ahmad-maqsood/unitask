@@ -125,11 +125,10 @@ Requires **Android 7.0 (API 24)** or newer.
 
 ### 3.1.0
 
-- **New app icon.** A U whose right arm stretches into a tick, with a gold dot. It also replaces the old graduation cap in notifications.
-- **Swipe to mark done on Deadlines.** Swipe a card right to mark it done or not done, with Undo. It works for group tasks too (it only marks your own tick). Swiping left does nothing, so nothing is deleted by accident.
-- **"Due today" on the stats card.** It replaces "Enrolled Courses", which rarely changed.
-- **Clearer reminder buttons.** One **Snooze 30m** button instead of three snooze options, so the notification buttons are easier to read.
-- **Tidier sound list.** Phone default is first, and the built-in sounds are named Sound 1 to Sound 4.
+- **New Widget**: Today home screen widget displaying classes, upcoming tasks, and overdue task counts.
+- **Easier Group Joining**: QR code scanning for joining study groups.
+- **Notification History**: Notification history with unread counts and quick navigation. Daily summary notifications with notification history access.
+- **Color Themes**: Six customizable accent color themes.
 
 See the full history in the [CHANGELOG](CHANGELOG.md).
 

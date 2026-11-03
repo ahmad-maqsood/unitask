@@ -23,17 +23,16 @@ jobs:
       - name: Set up Gradle 9.8.2
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '9.8.2'
           cache-provider: basic
           
       # Run the unit tests first. If a test fails, the build stops here and no APK is made.
       - name: Run unit tests
-        run: gradle testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest --no-daemon
 
       # Only if something failed: keep the test report so you can read what went wrong.
       - name: Upload test report
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-report
           path: app/build/reports/tests/
@@ -58,10 +57,10 @@ jobs:
           KEYSTORE_PATH: ${{ runner.temp }}/my-upload-key.jks
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: unitask-release-apk
           path: app/build/outputs/apk/release/*.apk

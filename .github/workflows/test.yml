@@ -52,18 +52,17 @@ jobs:
       - name: Set up Gradle 9.8.2
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '9.8.2'
           cache-provider: basic
 
       - name: Run unit tests
-        run: gradle testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: Run Android lint
-        run: gradle lintDebug --no-daemon
+        run: ./gradlew lintDebug --no-daemon
 
       - name: Upload reports
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: test-and-lint-reports
           path: |

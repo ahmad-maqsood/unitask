@@ -926,6 +926,7 @@ GitHub builds the APK for free using the workflow already in the project (`.gith
 Free-memory tip: if Android Studio is too heavy for your computer, close other programs, or use Option A, which does the heavy building on GitHub's servers.
 
 > Command-line users can run `gradlew assembleRelease` (Windows) or `./gradlew assembleRelease` (macOS and Linux) from the project folder, with the environment variables `STORE_PASSWORD`, `KEY_PASSWORD` and, if the keystore is not in the project root, `KEYSTORE_PATH`.
+
 ### Troubleshooting Step 7
 
 | What you see | Cause | Fix |

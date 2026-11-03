@@ -120,8 +120,8 @@ flowchart LR
 | Cloud | Supabase (`supabase-kt` 3.8.0): Auth with Google sign-in, PostgREST, Realtime |
 | Networking | Ktor 3.6.1 |
 | Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
-| Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 || CI | GitHub Actions builds the signed release APK |
-
+| Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 |
+| CI | GitHub Actions builds the signed release APK |
 **Sync notes**
 
 - Personal data is stored in Room first and pushed when signed in. Deletions are tracked so removed items do not come back, and a delete that fails (for example while offline) is kept and retried on the next sync.

@@ -37,7 +37,7 @@ concurrency:
 jobs:
   test:
     name: Unit tests and Android lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out code
@@ -59,24 +59,15 @@ jobs:
         run: gradle testDebugUnitTest --no-daemon
 
       - name: Run Android lint
-        id: lint
-        continue-on-error: true
         run: gradle lintDebug --no-daemon
 
-      - name: Upload test report
+      - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: unit-test-report
-          path: app/build/reports/tests/
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload lint report
-        if: steps.lint.outcome == 'failure'
-        uses: actions/upload-artifact@v5
-        with:
-          name: android-lint-report
-          path: app/build/reports/lint-results-debug.html
+          name: test-and-lint-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
           retention-days: 7

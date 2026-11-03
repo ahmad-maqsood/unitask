@@ -54,6 +54,7 @@ object NotificationSound {
      * The marker file lives in noBackupFilesDir, which is never backed up or restored,
      * so it is always missing on a fresh install.
      */
+    @Suppress("ApplySharedPref")
     private fun ensureFreshInstallDefaults(context: Context) {
         try {
             val marker = File(context.noBackupFilesDir, "sound_defaults_checked")

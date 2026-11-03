@@ -121,9 +121,8 @@ class PeriodicSyncWorker(
             Result.retry()
         }
 
-        if (groupResult is Result.Failure || announcementResult is Result.Failure) {
-            Result.failure()
-        } else if (groupResult is Result.Retry || announcementResult is Result.Retry) {
+        // Neither helper ever returns failure(), so only retry or success are possible.
+        if (groupResult == Result.retry() || announcementResult == Result.retry()) {
             Result.retry()
         } else {
             Result.success()

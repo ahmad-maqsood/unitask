@@ -170,9 +170,3 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
 }
 
-configurations.all {
-  resolutionStrategy {
-    force("androidx.compose.foundation:foundation:1.7.0")
-    force("androidx.compose.foundation:foundation-layout:1.7.0")
-  }
-}

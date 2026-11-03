@@ -9,7 +9,7 @@ Assignments, timetable, reminders, personal tasks and study groups in one app. N
 [![Release](https://img.shields.io/github/v/release/ahmad-maqsood/unitask?style=flat-square&color=4F46E5)](https://github.com/ahmad-maqsood/unitask/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ahmad-maqsood/unitask/total?style=flat-square&color=0D9488)](https://github.com/ahmad-maqsood/unitask/releases)
 [![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://www.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
@@ -116,11 +116,11 @@ flowchart LR
 | --- | --- |
 | UI | Kotlin, Jetpack Compose, Material 3 |
 | Home-screen widget | Jetpack Glance |
-| Local data | Room 2.7 with explicit migrations |
-| Cloud | Supabase (`supabase-kt` 3.2.4): Auth with Google sign-in, PostgREST, Realtime |
-| Networking | Ktor 3.2.3 |
+| Local data | Room 2.8.5 with explicit migrations |
+| Cloud | Supabase (`supabase-kt` 3.8.0): Auth with Google sign-in, PostgREST, Realtime |
+| Networking | Ktor 3.6.1 |
 | Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
-| Build | Android Gradle Plugin 9.1.1, Gradle 9.3.1 (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 |
+| Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), Kotlin 2.4.21, Compose BOM 2024.09.00, KSP 2.3.13, version catalog, min SDK 24, target SDK 36 |
 | CI | GitHub Actions builds the signed release APK |
 
 **Sync notes**

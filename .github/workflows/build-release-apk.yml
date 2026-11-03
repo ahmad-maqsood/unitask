@@ -18,7 +18,7 @@ jobs:
           java-version: '17'
 
       - name: Set up Gradle 9.3.1 (matches gradle-wrapper.properties)
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
 

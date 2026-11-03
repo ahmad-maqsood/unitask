@@ -60,6 +60,13 @@ jobs:
       - name: Run Android lint
         run: ./gradlew lintDebug --no-daemon
 
+      - name: Regenerate Room schema files
+        if: always()
+        run: |
+          ./gradlew kspDebugKotlin --rerun --no-daemon
+          echo "Schema files found:"
+          ls -R app/schemas || echo "no app/schemas folder was created"
+          
       # Room writes its database schema files into app/schemas every time the app is built.
       # They must be committed, because the migration test reads them. If this build made new or
       # changed schema files, this step fails and the next step attaches them so you can commit them.
@@ -80,7 +87,7 @@ jobs:
           path: app/schemas/
           if-no-files-found: ignore
           retention-days: 7
-          
+
       - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v7

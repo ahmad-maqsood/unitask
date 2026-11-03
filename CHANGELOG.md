@@ -204,8 +204,3 @@ All notable changes to UniTask are documented in this file.
 - Offline file attachments.
 - Optional Google Sign-In and cloud synchronization.
 
----
-
-[Unreleased]
-
-Changes made after the latest release will be documented here.

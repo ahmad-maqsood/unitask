@@ -2,7 +2,7 @@
 
 All notable changes to UniTask are documented in this file.
 
-## [3.1.0] - 2026-11-01
+## [3.1.0] - 01-11-2026
 
 ### Added
 - Today home screen widget displaying classes, upcoming tasks, and overdue task counts.
@@ -21,7 +21,7 @@ All notable changes to UniTask are documented in this file.
 - Refreshed app icon and branding.
 - Various performance, reliability, and UI improvements.
 
-## [3.0.0] - 2026-10-31
+## [3.0.0] - 31-10-2026
 
 ### Added
 - Interactive task checklists with individual item completion.
@@ -47,7 +47,118 @@ All notable changes to UniTask are documented in this file.
 ### Fixed
 - Various synchronization, backup, timetable, reminder, and task management issues.
 
-## [2.3.0] - 2026-10-30 (Beta)
+## [3.0.0-beta4] - 31-10-2026
+
+### Added
+- Interactive task checklists directly from task cards.
+- Timetable calendar export to `.ics` files, including alternating-week schedules.
+- Automatic timetable conflict detection.
+- Week A / Week B timetable configuration and support across displays, reminders, and summaries.
+- Reorganized settings into dedicated categories.
+
+### Improved
+- Better deadline grouping, sorting, and task organization.
+- Paginated Supabase synchronization for larger datasets.
+- Safer cloud sync to prevent temporary course-fetch failures from causing data loss.
+- Improved duplicate-course handling while preserving associated tasks and lecture slots.
+- Improved backup, restore, and account cleanup.
+- More reliable QR code generation and scanning.
+- Improved notification behavior when silencing alarms.
+- Better Google Sign-In context handling.
+- Improved timezone and daylight-saving date handling.
+- More reliable synchronization scheduling and database migrations.
+- Added extensive automated tests.
+- Enabled code minification and resource shrinking for release builds.
+- Removed unused networking dependencies.
+
+### Fixed
+- Potential data loss during temporary cloud synchronization failures.
+- Course deduplication issues affecting associated tasks and lecture slots.
+- Task deadline inconsistencies around daylight-saving transitions.
+- QR code generation and decoding reliability.
+- Unwanted vibration when silenced alarms were active.
+
+## [3.0.0-beta3] - 31-10-2026
+
+### Added
+- Bi-weekly timetables with configurable Week A / Week B scheduling.
+- QR code scanning through the camera or images to join study groups.
+- Deep-link invitations using `unitask://join` links.
+- Automatic invite-code detection from the clipboard.
+- Personal cloud data export as a downloadable JSON file.
+- Expanded account cleanup covering cached authentication and group data, reminders, scheduled work, and attachments.
+- Backup and restore support for task completion timestamps.
+- Server-side account deletion functionality and supporting database changes.
+
+### Improved
+- Chat synchronization using per-group locking and in-flight send tracking.
+- Batch task selection persistence and confirmation before bulk deletion.
+- Back-button navigation and app exit behavior.
+- Time picker support for the device's 12-hour or 24-hour format.
+- Task reminder scheduling and cancellation.
+- Semantic version comparison and timetable week-parity tests.
+
+### Fixed
+- Timetable `.ics` exports opening correctly in calendar applications.
+- Update checker handling of beta and pre-release versions.
+- Checklist parsing for uppercase and lowercase completion markers.
+- Bulk task completion.
+- Task attachments being lost when undoing deletion.
+- Duplicate group chat messages and concurrent chat outbox update issues.
+- Reminder alarms continuing beyond their intended duration.
+- Overdue tasks missing from daily summaries.
+- Daily summaries and timetables for classes ending after midnight.
+- Missing completion timestamps during backup restoration.
+
+## [3.0.0-beta2] - 31-10-2026
+
+### Improved
+- **Groups Tab Stability:** Prevented temporary authentication states from clearing user sessions and cached groups when the screen is unlocked. Cached data remains visible while reconnecting.
+- **Notifications:** Improved chat notifications with Android MessagingStyle, better permission handling, category grouping, primary color tinting, and clearer notification content.
+- **Join Code Dialog:** Improved the layout of group invitation codes, with a larger monospace code and better-arranged Copy and New Code buttons.
+- **Synchronization:** Faster sync feedback, immediate data refresh when returning to the app, reduced observer delay, and less unnecessary polling while the app is in the background.
+
+## [3.0.0-beta] - 30-10-2026
+
+### Added
+
+**Deadlines & Tasks**
+- Interactive calendar view for deadlines.
+- Checklist subtasks with progress tracking.
+- Bulk task selection, completion, and deletion.
+- Ability to mark tasks as completed directly from notifications.
+- Urgency-based deadline organization.
+
+**Timetable & Courses**
+- Bi-weekly timetables with Week A / Week B support.
+- Visual free-time indicators between classes.
+- Timetable export to standard `.ics` calendar files.
+- Lecture clash detection with confirmation warnings.
+
+**Study Groups & Chat**
+- QR code generation and scanning for group invitations.
+- Universal group invitation links.
+- Group name and handle editing.
+- Group ownership transfer.
+- Persistent offline message queue with automatic synchronization.
+- Real-time chat search.
+- Floating chat date indicators.
+- Pagination for loading earlier messages.
+
+**Account & Privacy**
+- Export personal cloud data in JSON format.
+- Account and associated cloud data deletion.
+- Improved Google account switching and cache isolation.
+- Preserve local data when logging out.
+
+### Improved
+- Interactive task completion from notifications.
+- Notification sound handling.
+- Timetable layouts and database reliability.
+- Built-in Feature Guide expanded to 20 guides.
+- Overall synchronization, performance, and stability.
+
+## [2.3.0] - 30-10-2026 (Beta)
 
 ### Added
 - Announcement inbox with notification bell and unread count.
@@ -61,7 +172,7 @@ All notable changes to UniTask are documented in this file.
 - Improved background announcement handling.
 - Prevented duplicate announcement notifications.
 
-## [2.2.0] - 2026-10-30
+## [2.2.0] - 30-10-2026
 
 ### Added
 - Interactive Feature Guide with step-by-step instructions for major app features.
@@ -72,7 +183,7 @@ All notable changes to UniTask are documented in this file.
 - Added support for remotely managed feature instructions.
 - General code cleanup and maintenance.
 
-## [2.1.1] - 2026-10-29
+## [2.1.1] - 29-10-2026
 
 ### Added
 - Reply to group chat messages.
@@ -97,7 +208,7 @@ All notable changes to UniTask are documented in this file.
 - Improved database constraints, triggers, and identity validation.
 - Documented database security policies and maintenance procedures.
 
-## [2.1.0] - 2026-10-29 (Beta)
+## [2.1.0] - 29-10-2026 (Beta)
 
 ### Added
 - Supabase cloud integration for authentication and data synchronization.
@@ -110,7 +221,7 @@ All notable changes to UniTask are documented in this file.
 - Authentication and session handling.
 - Database migrations and synchronization reliability.
 
-## [2.0.0] - 2026-10-28
+## [2.0.0] - 28-10-2026
 
 ### Added
 - My Tasks for personal tasks and habits independent of university courses.
@@ -134,7 +245,7 @@ All notable changes to UniTask are documented in this file.
 - Improved reminder handling.
 - Various UI, accessibility, and performance improvements.
 
-## [1.3.0] - 2026-10-25
+## [1.3.0] - 25-10-2026
 
 ### Added
 - Daily summary notifications.
@@ -157,7 +268,7 @@ All notable changes to UniTask are documented in this file.
 - Added MIT License.
 - Updated project documentation.
 
-## [1.2.0] - 2026-10-25
+## [1.2.0] - 25-10-2026
 
 ### Added
 - Class reminders.
@@ -177,7 +288,7 @@ All notable changes to UniTask are documented in this file.
 - Background execution reliability.
 - Various UI and stability issues.
 
-## [1.1.0] - 2026-10-24
+## [1.1.0] - 24-10-2026
 
 ### Added
 - Group chat with real-time messaging.
@@ -195,7 +306,7 @@ All notable changes to UniTask are documented in this file.
 - Group task creation permission issues.
 - Build configuration issues.
 
-## [1.0.0] - 2026-10-23
+## [1.0.0] - 23-10-2026
 
 ### Initial Release
 - Task and deadline management with priority tags.
@@ -203,4 +314,3 @@ All notable changes to UniTask are documented in this file.
 - Study groups with invitation codes.
 - Offline file attachments.
 - Optional Google Sign-In and cloud synchronization.
-

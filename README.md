@@ -1,71 +1,125 @@
-# UniTask
-
 <div align="center">
 
-**An offline-first Android task manager built for university life.**
-Assignments, timetable, reminders, personal tasks and study groups in one app. No ads, no tracking.
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="UniTask icon" />
 
-[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ahmad-maqsood/badge.svg)](https://hub.xerj.org/contributors/ahmad-maqsood)
+# UniTask
+
+**An offline-first Android task manager built for university life.**
+Assignments, timetable, reminders, personal tasks and study groups in one app.
+No ads, no tracking.
+
 [![Release](https://img.shields.io/github/v/release/ahmad-maqsood/unitask?style=flat-square&color=4F46E5)](https://github.com/ahmad-maqsood/unitask/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ahmad-maqsood/unitask/total?style=flat-square&color=0D9488)](https://github.com/ahmad-maqsood/unitask/releases)
 [![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ahmad-maqsood/badge.svg)](https://hub.xerj.org/contributors/ahmad-maqsood)
 
-[Download](#download) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Build your own](#build-your-own-copy) · [Privacy](#privacy-and-permissions) · [Support](#support)
+[**⬇️ Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
+
+[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [What's new](#whats-new) · [Architecture](#architecture) · [Build your own](#build-your-own-copy) · [Privacy](#privacy-and-permissions) · [Support](#support)
 
 </div>
+
+---
 
 ## Overview
 
 UniTask helps students keep track of what is due, when classes start and what the group still has to finish.
 
-- **Works without an account or internet.** Deadlines, personal tasks, courses, the timetable and reminders all live on your phone.
-- **Sign in with Google (optional)** to add cloud backup and shared study groups with chat.
-- **Personal project.** No ads and no tracking, built to solve everyday planning problems for me and my classmates.
+|   |   |
+| --- | --- |
+| 📴 **Works offline** | Deadlines, personal tasks, courses, the timetable and reminders all live on your phone. No account needed. |
+| ☁️ **Optional cloud** | Sign in with Google to add cloud backup and shared study groups with chat. |
+| 🔒 **Private by design** | No ads and no tracking. A personal project, built to solve everyday planning problems for me and my classmates. |
 
-## Screenshots (from v3.1.0)
+## Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/deadlines_top_nc.jpeg" width="20%" alt="Deadlines" />
-  <img src="docs/screenshots/deadlines_bottom_cv.jpeg" width="20%" alt="Deadlines" />
-  <img src="docs/screenshots/timetable.jpeg" width="20%" alt="Timetable" />
-</p>
-<p align="center">
-  <img src="docs/screenshots/courses.jpeg" width="20%" alt="Courses" />
-  <img src="docs/screenshots/settings.jpeg" width="20%" alt="Settings" />
-  <img src="docs/screenshots/group_chat.jpeg" width="20%" alt="Group chat" />
-</p>
-<p align="center"><sub>Deadlines · Deadlines · Timetable · Courses · Settings · Group Chat</sub></p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/deadlines_top_nc.jpeg" width="240" alt="Deadlines: next class and stats" /></td>
+    <td align="center"><img src="docs/screenshots/deadlines_bottom_cv.jpeg" width="240" alt="Deadlines: task list" /></td>
+    <td align="center"><img src="docs/screenshots/timetable.jpeg" width="240" alt="Timetable" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Deadlines</b><br/>Next class and stats</sub></td>
+    <td align="center"><sub><b>Deadlines</b><br/>Task list</sub></td>
+    <td align="center"><sub><b>Timetable</b><br/>Week A and Week B</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/courses.jpeg" width="240" alt="Courses" /></td>
+    <td align="center"><img src="docs/screenshots/settings.jpeg" width="240" alt="Settings" /></td>
+    <td align="center"><img src="docs/screenshots/group_chat.jpeg" width="240" alt="Group chat" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Courses</b><br/>Modules and colour tags</sub></td>
+    <td align="center"><sub><b>Settings</b><br/>Themes, sounds, backup</sub></td>
+    <td align="center"><sub><b>Group chat</b><br/>Real-time study groups</sub></td>
+  </tr>
+</table>
 
-## Download
+<p align="center"><sub>Screenshots from v3.1.0.</sub></p>
+
+## Install
 
 1. Open the [latest release](https://github.com/ahmad-maqsood/unitask/releases/latest).
 2. Download the `.apk` file and open it on your phone. Allow installation from your browser or file manager if Android asks.
 3. Already installed? Tap the update button in the top bar, or open **Settings, Check for updates**. It compares your version with the newest GitHub release tag.
 
-Requires Android 7.0 (API 24) or newer.
+Requires **Android 7.0 (API 24)** or newer.
 
-Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates**, so install them by hand.
+> [!NOTE]
+> Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates**, so install them by hand.
 
 ## Features
 
-| Area | What you get |
-| --- | --- |
-| **Deadlines** | Assignments with priority, due date and exact time, linked to courses with colour coding. A stats card shows Pending, Done and Due today. Urgency grouping (Overdue, Due Today, Due Tomorrow, Upcoming, Completed). **Swipe a card right** to mark it done, with Undo. Calendar view with a month grid and deadline dots. Checklist editor for subtasks with live progress on the card. Batch select to complete or delete many at once. Multiple reminders per task. Offline file attachments up to 25 MB. |
-| **My tasks** | A separate to-do list for things that are not coursework. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. |
-| **Repeating tasks** | Repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next due date. |
-| **Timetable** | Weekly and bi-weekly (Week A and Week B) schedules. Tell UniTask which week it is and the reminders, daily summary and next-class card follow it. Live "current and next class" card, free-time pills between classes (`☕ 1h 30m free`), clash warnings, and one-tap `.ics` export to Google Calendar, Outlook or Apple Calendar. |
-| **Courses** | Course modules, credit hours, instructors and colour tags that timetable slots and assignments inherit. |
-| **Study groups** | Create or join a group with a QR code (scan it with the camera or from an image), an invite link or an 8-character code. Owner tools to rename the group, regenerate codes and transfer ownership. Shared tasks with member tagging (`@all`), shared courses and personal done ticks. |
-| **Group chat** | Real-time search by keyword or sender, sticky date headers, loading of earlier messages in batches, swipe to reply with a quote, and an offline outbox that sends when you are back online. |
-| **Reminders** | Alerts with **Mark as Done** and **Snooze 30m** buttons right in the notification. Optional alarm-style ringing for high-priority tasks, class reminders, and a daily morning summary. Notifications are grouped by type so they do not flood the shade. |
-| **Home-screen widget** | "UniTask Today" shows today's classes and tasks. Tap a row to open the app. |
-| **Look and feel** | Light, dark or system theme, six accent colours (Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet), and a themed icon on Android 13 and newer. |
-| **Notification sounds** | Phone default, four built-in sounds, or any ringtone from your phone. Each sound has its own notification channel, so Android remembers the volume you set. |
-| **Backup and privacy** | Automatic Google cloud sync with multi-account isolation, password-protected offline backups, a JSON export of your data, and full account and cloud data deletion. |
-| **Updates and help** | GitHub release updater, an announcements bell, and a built-in "Learn to use the app" guide. |
+### 📚 Coursework
+
+- **Deadlines:** assignments with priority, due date and exact time, linked to courses with colour coding.
+  - A stats card shows Pending, Done and Due today.
+  - Urgency grouping: Overdue, Due Today, Due Tomorrow, Upcoming, Completed.
+  - **Swipe a card right** to mark it done, with Undo.
+  - Calendar view with a month grid and deadline dots.
+  - Checklist editor for subtasks, with live progress on the card.
+  - Batch select to complete or delete many at once.
+  - Multiple reminders per task, and offline file attachments up to 25 MB.
+- **Courses:** modules, credit hours, instructors and colour tags that timetable slots and assignments inherit.
+- **Repeating tasks:** repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next due date.
+- **My tasks:** a separate to-do list for things that are not coursework. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done.
+
+### 🗓️ Timetable
+
+- Weekly and bi-weekly (**Week A** and **Week B**) schedules. Tell UniTask which week it is and the reminders, daily summary and next-class card follow it.
+- Live "current and next class" card, free-time pills between classes (`☕ 1h 30m free`) and clash warnings.
+- One-tap `.ics` export to Google Calendar, Outlook or Apple Calendar.
+
+### 👥 Study groups
+
+- Create or join a group with a **QR code** (scan it with the camera or from an image), an invite link or an 8-character code.
+- Owner tools to rename the group, regenerate codes and transfer ownership.
+- Shared tasks with member tagging (`@all`), shared courses and personal done ticks.
+- **Group chat:** real-time search by keyword or sender, sticky date headers, earlier messages loaded in batches, swipe to reply with a quote, and an offline outbox that sends when you are back online.
+
+### 🔔 Reminders and widget
+
+- Alerts with **Mark as Done** and **Snooze 30m** buttons right in the notification.
+- Optional alarm-style ringing for high-priority tasks, class reminders and a daily morning summary.
+- Notifications are grouped by type so they do not flood the shade.
+- **"UniTask Today" home-screen widget** shows today's classes and tasks. Tap a row to open the app.
+
+### 🎨 Personalisation
+
+- Light, dark or system theme, and six accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange and Violet.
+- Themed icon on Android 13 and newer.
+- Notification sounds: Phone default, four built-in sounds, or any ringtone from your phone. Each sound has its own notification channel, so Android remembers the volume you set.
+
+### 💾 Backup and data
+
+- Automatic Google cloud sync with multi-account isolation.
+- Password-protected offline backups and a JSON export of your data.
+- Full account and cloud data deletion.
+- GitHub release updater, an announcements bell and a built-in "Learn to use the app" guide.
 
 ## What's new
 
@@ -76,6 +130,8 @@ Beta builds are published as **pre-releases** on the [Releases page](https://git
 - **"Due today" on the stats card.** It replaces "Enrolled Courses", which rarely changed.
 - **Clearer reminder buttons.** One **Snooze 30m** button instead of three snooze options, so the notification buttons are easier to read.
 - **Tidier sound list.** Phone default is first, and the built-in sounds are named Sound 1 to Sound 4.
+
+See the full history in the [CHANGELOG](CHANGELOG.md).
 
 <details>
 <summary><b>Earlier changes</b></summary>
@@ -112,6 +168,8 @@ flowchart LR
     Repo --> Alarms["AlarmManager and WorkManager"]
 ```
 
+### Tech stack
+
 | Layer | Technology |
 | --- | --- |
 | UI | Kotlin, Jetpack Compose, Material 3 |
@@ -121,8 +179,9 @@ flowchart LR
 | Networking | Ktor 3.6.1 |
 | Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
 | Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, min SDK 24, target SDK 36 |
-| CI | GitHub Actions builds the signed release APK |
-**Sync notes**
+| CI | GitHub Actions builds the signed release APK, runs tests and lint, and scans the code with CodeQL |
+
+### How sync works
 
 - Personal data is stored in Room first and pushed when signed in. Deletions are tracked so removed items do not come back, and a delete that fails (for example while offline) is kept and retried on the next sync.
 - Group screens use Supabase Realtime for instant updates, with a short polling safety net in case an event is missed.
@@ -148,7 +207,7 @@ app/src/main/java/com/example/
   util/            Supabase client, local backup, update checker, announcements,
                    attachments, notification sounds, .ics export, QR codes
 supabase/          schema.sql, a reference copy of the live database
-.github/workflows/ Release APK build and a Supabase keep-alive ping
+.github/workflows/ Release APK build, tests, CodeQL and a Supabase keep-alive ping
 ```
 
 </details>
@@ -167,7 +226,6 @@ Just want to use the app? Download it from [Releases](https://github.com/ahmad-m
 
 **Quick facts for developers**
 
-- Stack: Kotlin, Jetpack Compose, Room, Supabase (Auth, Postgres, Realtime). Minimum Android 7.0.
 - The values you change live in `app/build.gradle.kts`: `applicationId`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (your publishable key) and `GOOGLE_WEB_CLIENT_ID`.
 - [`supabase/schema.sql`](supabase/schema.sql) documents the live database for reference. It is not a runnable script. The runnable SQL is in the [Setup guide](SETUP_GUIDE.md).
 - Keep the same signing key for every release, otherwise users cannot update over their existing install.
@@ -181,7 +239,8 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 3. Allow background activity and exact alarms if Android asks.
 4. Make sure notifications are enabled for UniTask.
 
-The in-app **Background setup** guide in Settings walks through these steps. Menu names differ between brands.
+> [!TIP]
+> The in-app **Background setup** guide in Settings walks through these steps. Menu names differ between brands.
 
 ## Privacy and permissions
 
@@ -205,7 +264,7 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 
 - Chat notifications come from a background check, so Android battery limits can delay them. There is no external push service.
 - Group chat is text only. Messages cannot be edited after sending, and messages older than 30 days are deleted automatically by a scheduled database job.
-- Reminders depend on notification permissions and your phone's battery settings (see the **Background setup** guide in Settings).
+- Reminders depend on notification permissions and your phone's battery settings (see **Reliable notifications** above).
 - The home-screen widget is read-only. Tapping a row opens the app, and you cannot tick a task off from the widget.
 - A monthly repeating task set on the 29th, 30th or 31st moves to an earlier day after a short month.
 
@@ -214,10 +273,16 @@ The in-app **Background setup** guide in Settings walks through these steps. Men
 - **Report a problem:** in the app, open **Settings, Report a problem**, or use the [form](https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform). No GitHub account needed.
 - **Request a feature:** **Settings, Request a feature** in the app.
 - **Bugs and ideas:** [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose).
-- **Security problems:** Please do not use a public issue. See [SECURITY.md](SECURITY.md).
+- **Security problems:** please do not use a public issue. See [SECURITY.md](SECURITY.md).
 
 UniTask is a personal project, so I am not accepting pull requests. Bug reports and feedback are very welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+<sub>Made with ☕ by <a href="https://github.com/ahmad-maqsood">Ahmad Maqsood</a> for students who have too many deadlines.</sub>
+</div>

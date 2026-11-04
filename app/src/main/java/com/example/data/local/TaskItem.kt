@@ -82,7 +82,10 @@ data class TaskItem(
     val repeatRule: String = "NONE",
     // When the task was ticked Done (0 = not done, or unknown). A repeating task uses this to
     // stay Done until the end of that day and then move to its next date.
-    val completedAtMillis: Long = 0L
+    val completedAtMillis: Long = 0L,
+    // The day of the month (1 to 31) a monthly or yearly repeating task keeps returning to, so a task
+    // set on the 31st goes to Feb 28 and then back to Mar 31. 0 = not set yet (the due day is used).
+    val repeatAnchorDay: Int = 0
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

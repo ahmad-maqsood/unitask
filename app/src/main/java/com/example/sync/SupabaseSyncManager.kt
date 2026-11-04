@@ -381,6 +381,7 @@ object SupabaseSyncManager {
             Log.d(TAG, "Successfully purged course $normCode, its tasks, and timetable slots from Supabase")
             true
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Failed to delete course ${course.code} from Supabase: ${e.message}", e)
             false
         }
@@ -412,6 +413,7 @@ object SupabaseSyncManager {
             Log.d(TAG, "Successfully deleted task ${task.title} from Supabase")
             true
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Failed to delete task from Supabase: ${e.message}", e)
             false
         }
@@ -452,6 +454,7 @@ object SupabaseSyncManager {
             Log.d(TAG, "Successfully deleted timetable slot from Supabase")
             true
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Failed to delete slot from Supabase: ${e.message}", e)
             false
         }
@@ -564,7 +567,7 @@ object SupabaseSyncManager {
                                             eq("doc_id", oldDocId)
                                         }
                                     }
-                                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                                 taskDao.markTasksUnsyncedForCourse(course.id)
                                 slotDao.markSlotsUnsyncedForCourse(course.id)
                             }
@@ -684,6 +687,11 @@ object SupabaseSyncManager {
 
             Log.d(TAG, "syncAllDataNow: Completed successfully for user $userId")
             true
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Log.w(TAG, "syncAllDataNow: timed out after ${SYNC_TIMEOUT_MS / 1000}s")
+            false
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "syncAllDataNow: Error syncing data: ${e.message}", e)
             false
@@ -722,7 +730,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
 
@@ -736,7 +744,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
             seenCourseCodes.add(normCode)
@@ -781,7 +789,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
             } else if (!existing.isSynced) {
                 // Local edit not uploaded yet: keep it. The next sync pushes it.
             } else {
@@ -886,7 +894,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
 
@@ -898,7 +906,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
 
@@ -960,7 +968,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
             } else if (!existing.isSynced) {
                 // Local edit not uploaded yet: keep it. The next sync pushes it.
             } else {
@@ -1030,7 +1038,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
 
@@ -1042,7 +1050,7 @@ object SupabaseSyncManager {
                             eq("doc_id", row.docId)
                         }
                     }
-                } catch (e: Exception) { Log.w(TAG, "Cloud delete failed: ${e.message}") }
+                } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; Log.w(TAG, "Cloud delete failed: ${e.message}") }
                 continue
             }
 

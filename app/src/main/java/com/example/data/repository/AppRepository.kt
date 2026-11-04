@@ -37,7 +37,10 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 class AppRepository(
     private val context: Context,
     private val courseDao: CourseDao,
@@ -404,19 +407,34 @@ class AppRepository(
     fun triggerSyncIfLoggedIn() {
         if (!isUserLoggedIn()) return
         try {
-            // Eager immediate background sync
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val db = com.example.data.local.AppDatabase.getDatabase(context)
-                    SupabaseSyncManager.syncAllDataNow(context, db)
-                } catch (e: Exception) {
-                    Log.w("AppRepository", "Eager sync exception: ${e.message}")
+            // Safety net: WorkManager retries later, also when the internet comes back.
+            SyncScheduler.scheduleSync(context)
+
+            // Wait 2 seconds after the LAST change, then sync once.
+            synchronized(syncLock) {
+                pendingSync?.cancel()
+                pendingSync = syncScope.launch {
+                    delay(SYNC_DEBOUNCE_MS)
+                    // From here on, a new edit must not stop a sync that has already started.
+                    withContext(NonCancellable) {
+                        try {
+                            val db = AppDatabase.getDatabase(context)
+                            SupabaseSyncManager.syncAllDataNow(context, db)
+                        } catch (e: Exception) {
+                            Log.w("AppRepository", "Eager sync exception: ${e.message}")
+                        }
+                    }
                 }
             }
-            // WorkManager schedule for offline retry resilience
-            SyncScheduler.scheduleSync(context)
         } catch (e: Exception) {
             Log.w("AppRepository", "Error scheduling sync: ${e.message}")
         }
+    }
+
+    private companion object {
+        const val SYNC_DEBOUNCE_MS = 2_000L
+        val syncLock = Any()
+        val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        var pendingSync: Job? = null
     }
 }

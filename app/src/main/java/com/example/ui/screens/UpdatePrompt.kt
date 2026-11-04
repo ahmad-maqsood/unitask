@@ -32,8 +32,8 @@ fun UpdatePrompt() {
     var update by remember { mutableStateOf<UpdateResult.Available?>(null) }
 
     LaunchedEffect(Unit) {
-        val result = UpdateChecker.check(context)
-        if (result is UpdateResult.Available) {
+        val result = UpdateChecker.checkIfDue(context)
+        if (result != null) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             if (prefs.getString(KEY_LAST_PROMPTED, null) != result.latestVersion) {
                 prefs.edit().putString(KEY_LAST_PROMPTED, result.latestVersion).apply()

@@ -134,6 +134,7 @@ object LocalBackupManager {
                             .put("createdAt", t.createdAt)
                             .put("repeatRule", t.repeatRule)
                             .put("completedAtMillis", t.completedAtMillis)
+                            .put("repeatAnchorDay", t.repeatAnchorDay)
                     )
                 }
                 val data = JSONObject()
@@ -372,7 +373,7 @@ object LocalBackupManager {
                 val rawRepeat = if (o.has("repeatRule")) o.optString("repeatRule") else "NONE"
                 val repeatRule = decodeRepeatRule(rawRepeat).name
                 val completedAtMillis = o.optLong("completedAtMillis", 0L)
-
+                val repeatAnchorDay = o.optInt("repeatAnchorDay", 0).coerceIn(0, 31)
                 val isMyTask = norm == MY_TASKS_COURSE_CODE
 
                 val known = knownByCourse.getOrPut(courseId) { taskDao.getAnyTasksForCourseSync(courseId) }
@@ -398,6 +399,7 @@ object LocalBackupManager {
                         reminderOptions = reminders,
                         repeatRule = repeatRule,
                         completedAtMillis = completedAtMillis,
+                        repeatAnchorDay = repeatAnchorDay,
                         isSynced = false,
                         createdAt = createdAt
                     )
@@ -413,6 +415,7 @@ object LocalBackupManager {
                         reminderOptions = reminders,
                         repeatRule = repeatRule,
                         completedAtMillis = completedAtMillis,
+                        repeatAnchorDay = repeatAnchorDay,
                         isDeleted = false,
                         isSynced = false
                     )

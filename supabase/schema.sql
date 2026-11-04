@@ -23,6 +23,7 @@
 --                 description text '' | due_date_epoch_millis bigint | due_time_hour int 0
 --                 due_time_minute int 0 | priority text | status text | reminder_option text 'NONE'
 --                 updated_at timestamptz now() | repeat_rule text 'NONE' | completed_at_millis bigint 0
+--                 repeat_anchor_day int 0
 -- slots:          user_id uuid auth.uid() | doc_id text | course_code text | day_of_week int
 --                 start_hour int | start_minute int | end_hour int | end_minute int
 --                 classroom text '' | instructor text '' | updated_at timestamptz now()
@@ -471,6 +472,9 @@ GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
 
 -- 2026-10-31: persist task completion timestamp for cross-device rollover of repeating tasks
 alter table tasks add column completed_at_millis bigint not null default 0;
+
+-- 2026-11-04: day of the month a monthly/yearly repeating task keeps returning to (0 = not set)
+alter table tasks add column repeat_anchor_day int not null default 0 check (repeat_anchor_day between 0 and 31);
 
 -- =====================================================================
 -- PART B: queries that print the live setup again (run one at a time)

@@ -65,7 +65,8 @@ private data class TaskRow(
     @SerialName("status") val status: String? = "PENDING",
     @SerialName("reminder_option") val reminderOption: String? = "NONE",
     @SerialName("repeat_rule") val repeatRule: String? = "NONE",
-    @SerialName("completed_at_millis") val completedAtMillis: Long = 0L
+    @SerialName("completed_at_millis") val completedAtMillis: Long = 0L,
+    @SerialName("repeat_anchor_day") val repeatAnchorDay: Int = 0
 )
 
 @Serializable
@@ -602,7 +603,8 @@ object SupabaseSyncManager {
                             status = task.status.name,
                             reminderOption = encodeReminderOptions(task.reminderOptions),
                             repeatRule = task.repeatRule,
-                            completedAtMillis = if (task.status == TaskStatus.COMPLETED) task.completedAtMillis else 0L
+                            completedAtMillis = if (task.status == TaskStatus.COMPLETED) task.completedAtMillis else 0L,
+                            repeatAnchorDay = task.repeatAnchorDay
                         )
                         tasksToPush.add(task to taskRow)
                     }
@@ -941,6 +943,7 @@ object SupabaseSyncManager {
                     reminderOptions = decodeReminderOptions(reminderStr),
                     repeatRule = repeatStr,
                     completedAtMillis = if (parsedStatus == TaskStatus.COMPLETED) row.completedAtMillis else 0L,
+                    repeatAnchorDay = row.repeatAnchorDay.coerceIn(0, 31),
                     isSynced = true,
                     cloudId = row.docId,
                     isDeleted = false
@@ -977,6 +980,7 @@ object SupabaseSyncManager {
                     } else {
                         0L
                     },
+                    repeatAnchorDay = row.repeatAnchorDay.coerceIn(0, 31),
                     isSynced = true,
                     cloudId = row.docId
                 )

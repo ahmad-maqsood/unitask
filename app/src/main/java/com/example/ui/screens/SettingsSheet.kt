@@ -177,8 +177,8 @@ fun SettingsButton(
 
     // Silent check when the app opens: only a found update is remembered.
     LaunchedEffect(Unit) {
-        val result = UpdateChecker.check(context)
-        if (result is UpdateResult.Available) updateResult = result
+        val result = UpdateChecker.checkIfDue(context)
+        if (result != null) updateResult = result
     }
 
     val available = updateResult as? UpdateResult.Available

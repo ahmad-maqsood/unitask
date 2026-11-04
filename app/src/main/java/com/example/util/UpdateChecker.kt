@@ -6,7 +6,11 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 sealed class UpdateResult {
     data class Available(val latestVersion: String, val pageUrl: String) : UpdateResult()
     data class UpToDate(val currentVersion: String) : UpdateResult()
@@ -31,7 +35,7 @@ object UpdateChecker {
         "0"
     }
 
-    suspend fun check(context: Context): UpdateResult = withContext(Dispatchers.IO) {
+    private suspend fun fetch(context: Context): UpdateResult = withContext(Dispatchers.IO) {
         val current = currentVersion(context)
         var connection: HttpURLConnection? = null
         try {
@@ -65,6 +69,31 @@ object UpdateChecker {
         }
     }
 
+    private val _available = MutableStateFlow<UpdateResult.Available?>(null)
+
+    /** The newest release when it is newer than this app, otherwise null. Shared by the pop-up, the bell and Settings. */
+    val available: StateFlow<UpdateResult.Available?> = _available.asStateFlow()
+
+    private const val CHECK_EVERY_MILLIS = 10 * 60 * 1000L
+    private val checkLock = Mutex()
+    @Volatile private var lastCheckMillis = 0L
+
+    /** Asks GitHub and shares the answer with everyone listening to [available]. A failed check changes nothing. */
+    suspend fun check(context: Context): UpdateResult {
+        val result = fetch(context)
+        if (result !is UpdateResult.Failed) {
+            _available.value = result as? UpdateResult.Available
+            lastCheckMillis = System.currentTimeMillis()
+        }
+        return result
+    }
+
+    /** Silent check on app open: asks GitHub only if the last good answer is older than 10 minutes. */
+    suspend fun checkIfDue(context: Context): UpdateResult.Available? = checkLock.withLock {
+        val age = System.currentTimeMillis() - lastCheckMillis
+        if (lastCheckMillis == 0L || age >= CHECK_EVERY_MILLIS) check(context)
+        _available.value
+    }
     /** "v1.2.0" is newer than "1.1"; missing parts count as 0. */
     fun isNewer(latestTag: String, current: String): Boolean {
         val aCore = versionParts(latestTag)

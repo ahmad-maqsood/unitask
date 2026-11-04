@@ -95,7 +95,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Repeating Tasks", "Tasks that come back daily, weekly, monthly or yearly. A task set on the 31st goes to the last day of shorter months, then back to the 31st.", "assignment", 22,
-            "1. In the task dialog, open the Repeat option.\n2. Pick Every day, Every weekday, Every week, Every 2 weeks, Every month or Every year.\n3. Tick the task Done. It stays Done until midnight, then moves to its next date."
+            "1. In the task dialog, open the Repeat option.\n2. Pick Every day, Every weekday, Every week, Every 2 weeks, Every month or Every year.\n3. Tick the task Done. It stays Done until midnight, then moves to its next date.\n4. Checklist items are unticked again when it moves."
         ),
         AppFeature(
             "Swipe to Complete", "Swipe a deadline card to mark it done, with Undo.", "assignment", 26,
@@ -112,6 +112,14 @@ object FeatureGuide {
         AppFeature(
             "Notification History", "See reminders you missed, with unread counts.", "notifications", 33,
             "1. Tap the bell in the top bar.\n2. Open an item to jump to the task."
+        ),
+        AppFeature(
+            "Check Reminders", "Find out why reminders are late or missing, and send yourself a test.", "notifications", 34,
+            "1. Open Settings, then Notifications & reminders.\n2. Tap Check reminders.\n3. Tap Fix this next to any line with a warning.\n4. Tap Send test reminder, lock the screen and wait about 10 seconds.\n5. If a reminder was due while your phone was off, you get one 'Missed reminder' notification when it starts again."
+        ),
+        AppFeature(
+            "Delete When Done", "Let finished one-time tasks in My tasks remove themselves.", "assignment", 23,
+            "1. In My tasks, add a task or edit one.\n2. Leave Repeat on 'Does not repeat'.\n3. Switch on 'Delete when done' and save.\n4. Tick the task done. It is deleted after that day, so you can still undo it the same day."
         ),
         AppFeature(
             "Accent Colours", "Choose one of six accent colours for the app.", "star", 95,

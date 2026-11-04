@@ -18,6 +18,7 @@ import com.example.data.local.deadlineMillis
 import com.example.data.local.isMyTasksCourse
 import com.example.data.local.nextOccurrenceMillis
 import com.example.data.local.repeat
+import com.example.data.local.resolveAnchorDay
 import android.util.Log
 import com.example.reminder.ReminderScheduler
 import com.example.data.local.AppDatabase
@@ -294,11 +295,16 @@ class AppRepository(
             // Ticked today: leave it Done until the day is over.
             if (task.completedAtMillis >= startOfToday) continue
 
-            val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis, now)
+            // Monthly and yearly tasks keep the day they were set on (for example the 31st), so a
+            // short month does not pull them to an earlier day for good. The day is saved on the task.
+            val keepsDay = task.repeat == RepeatRule.MONTHLY || task.repeat == RepeatRule.YEARLY
+            val anchorDay = if (keepsDay) resolveAnchorDay(task.repeatAnchorDay, task.deadlineMillis) else 0
+            val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis, now, anchorDay)
             val moved = task.copy(
                 dueDateEpochMillis = next,
                 status = TaskStatus.PENDING,
                 completedAtMillis = 0L,
+                repeatAnchorDay = anchorDay,
                 isSynced = false
             )
             val finalTask = moved.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(moved))

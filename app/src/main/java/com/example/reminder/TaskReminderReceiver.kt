@@ -138,6 +138,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
             if (!isStillActive) return
         }
 
+        // An in-app snooze is over once its alarm fires: forget it so the card stops saying "Snoozed".
+        if (intent.action != ACTION_SILENCE_ALARM && intent.hasExtra(ReminderSnooze.EXTRA_SNOOZE_KEY)) {
+            SnoozeStore.clearIfDue(context, intent.getLongExtra(ReminderSnooze.EXTRA_SNOOZE_KEY, 0L))
+        }
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED

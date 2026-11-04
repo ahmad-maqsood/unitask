@@ -293,7 +293,19 @@ class AppRepository(
 
         var changed = false
         for (task in taskDao.getAllActiveTasksSync()) {
-            if (task.repeat == RepeatRule.NONE) continue
+            if (task.repeat == RepeatRule.NONE) {
+                // "Delete when done": a finished one-time task goes away once the day it was finished is over.
+                if (task.autoDeleteWhenDone && task.status == TaskStatus.COMPLETED) {
+                    if (task.completedAtMillis <= 0L) {
+                        // Ticked on another device, or before this update: count the day from now.
+                        taskDao.updateTask(task.copy(completedAtMillis = now))
+                    } else if (task.completedAtMillis < startOfToday) {
+                        deleteTask(task)
+                        changed = true
+                    }
+                }
+                continue
+            }
 
             // Monthly and yearly tasks keep the day they were set on (for example the 31st), so a
             // short month does not pull them to an earlier day for good. The day is saved on the task.

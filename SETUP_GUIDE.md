@@ -914,7 +914,7 @@ GitHub builds the APK for free using the workflow already in the project (`.gith
 
 **A4. Run the build.** Open the **Actions** tab, click **Build release APK** on the left, click **Run workflow**, keep the branch as `main`, and click the green **Run workflow** button. The first build usually takes roughly 5 to 15 minutes. A green tick means success.
 
-**A5. Download the APK.** Click the finished run, scroll to **Artifacts**, and click **unitask-release-apk**. You get a zip. Unzip it, and inside is the `.apk` file.
+**A5. Download the APK.** Click the finished run. The top of the page says **Building UniTask** followed by your version name and version code. Scroll to **Artifacts** and click the one named after your version, for example **unitask-3.1.0-15**. You get a zip. Unzip it, and inside is the `.apk` file.
 
 ### Option B: build on your own computer with Android Studio
 
@@ -995,7 +995,7 @@ GitHub switches off scheduled workflows in a public repository after 60 days wit
 ## Releasing updates later
 
 1. In `app/build.gradle.kts` raise `versionCode` by 1 and change `versionName` (for example `3.0.0` to `3.0.1`).
-2. Run the build again (Step 7).
+2. Run the build again (Step 7). The run page shows which version it is building, and the downloaded file is named with it, so you can check that you raised the right numbers.
 3. On GitHub create a **Release** whose **tag** is `v` plus the version name (for example `v3.0.1`), and attach the APK.
 
 The in-app **Check for update** button reads only the release **tag**, so the title and file name do not matter. Always sign with the **same keystore**, otherwise phones refuse the update.

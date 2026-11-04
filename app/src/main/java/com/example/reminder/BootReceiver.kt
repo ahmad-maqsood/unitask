@@ -37,6 +37,7 @@ class BootReceiver : BroadcastReceiver() {
                 step("task reminders") { ReminderScheduler(appContext).rescheduleAll(db) }
                 step("class reminders") { ClassReminderScheduler(appContext).rescheduleAll(db) }
                 step("group reminders") { GroupReminderScheduler(appContext).rescheduleAll() }
+                step("snoozed reminders") { SnoozeStore.restoreAll(appContext) }
                 step("daily summary") { DailySummaryScheduler(appContext).reschedule() }
                 step("repeat rollover") { RepeatRolloverReceiver.rolloverAndReschedule(appContext) }
             } finally {

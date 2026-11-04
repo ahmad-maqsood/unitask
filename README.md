@@ -205,6 +205,7 @@ app/src/main/java/com/example/
     theme/         Colours, accent themes, typography, theme preference
   util/            Supabase client, local backup, update checker, announcements,
                    attachments, notification sounds, .ics export, QR codes
+app/schemas/       Room database schema files, one per version, read by the migration test
 supabase/          schema.sql, a reference copy of the live database
 .github/workflows/ Release APK build, tests, CodeQL and a Supabase keep-alive ping
 ```

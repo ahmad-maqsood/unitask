@@ -20,6 +20,7 @@ import com.example.R
 import com.example.data.groups.GroupRepository
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
+import com.example.ui.screens.groupTaskItemId
 import com.example.util.AuthStorage
 import com.example.util.HighPriorityAlarm
 import com.example.util.NotificationSound
@@ -123,7 +124,34 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
                 cancelSilenceAlarm(context, notifId)
-                ReminderSnooze.schedule(context, notifId, intent, minutes)
+                // Keep it in SnoozeStore, so the task card shows "Snoozed until ..." and a reboot keeps it.
+                val snoozeGroupId = intent.getStringExtra(EXTRA_GROUP_ID).orEmpty()
+                val snoozeGroupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID).orEmpty()
+                val snoozeRowId = intent.getLongExtra(EXTRA_TASK_ID, 0L)
+                val snoozeKey = when {
+                    snoozeGroupId.isNotBlank() && snoozeGroupTaskId.isNotBlank() ->
+                        groupTaskItemId(snoozeGroupId, snoozeGroupTaskId)
+                    snoozeRowId > 0L -> snoozeRowId
+                    else -> null
+                }
+                if (snoozeKey != null) {
+                    SnoozeStore.set(
+                        context,
+                        SnoozeStore.Entry(
+                            key = snoozeKey,
+                            until = System.currentTimeMillis() + minutes * 60_000L,
+                            taskId = if (snoozeGroupId.isBlank()) snoozeRowId else 0L,
+                            title = intent.getStringExtra(EXTRA_TASK_TITLE).orEmpty(),
+                            courseCode = intent.getStringExtra(EXTRA_COURSE_CODE).orEmpty(),
+                            dueInfo = intent.getStringExtra(EXTRA_DUE_INFO).orEmpty(),
+                            priority = intent.getStringExtra(EXTRA_PRIORITY).orEmpty(),
+                            groupId = snoozeGroupId,
+                            groupTaskId = snoozeGroupTaskId
+                        )
+                    )
+                } else {
+                    ReminderSnooze.schedule(context, notifId, intent, minutes)
+                }
             }
             return
         }
@@ -138,6 +166,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
             if (!isStillActive) return
         }
 
+        // An in-app snooze is over once its alarm fires: forget it so the card stops saying "Snoozed".
+        if (intent.action != ACTION_SILENCE_ALARM && intent.hasExtra(ReminderSnooze.EXTRA_SNOOZE_KEY)) {
+            SnoozeStore.clearIfDue(context, intent.getLongExtra(ReminderSnooze.EXTRA_SNOOZE_KEY, 0L))
+        }
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED

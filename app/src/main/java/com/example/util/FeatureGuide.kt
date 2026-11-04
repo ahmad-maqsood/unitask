@@ -51,6 +51,10 @@ object FeatureGuide {
             "1. When a deadline reminder notification arrives, look at the action buttons.\n2. Tap 'Mark as Done' on the notification without opening the app."
         ),
         AppFeature(
+            "Snooze a Reminder", "Get one extra reminder later, from the notification or from the task card.", "notifications", 32,
+            "1. On a reminder notification, tap 'Snooze 30m' to get it again in 30 minutes.\n2. Or open the three dot menu on a task card and tap 'Snooze reminder'.\n3. Pick 30 minutes, 1 hour, 3 hours or tomorrow 8:00 AM. The card shows 'Snoozed until ...'.\n4. Your other reminders still ring. To change or cancel it, tap the 'Snoozed until' line on the card."
+        ),
+        AppFeature(
             "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 40,
             "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap + Add Class and enter course, time, classroom, and instructor."
         ),

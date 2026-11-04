@@ -17,14 +17,15 @@ import kotlinx.coroutines.withTimeout
 
 /**
  * Snooze for reminder notifications. Tapping a snooze button removes the notification and sets one
- * alarm that shows the same reminder again later. Nothing is stored: the alarm carries a copy of
- * the original reminder.
+ * alarm that shows the same reminder again later. The alarm carries a copy of the original
+ * reminder. Snoozes started inside the app are remembered separately, in SnoozeStore.
  */
 object ReminderSnooze {
     const val ACTION_SNOOZE = "com.example.ACTION_SNOOZE_REMINDER"
     const val EXTRA_SNOOZE_MINUTES = "extra_snooze_minutes"
     const val EXTRA_SNOOZED = "extra_snoozed"
-
+    /** Set on a reminder that came from an in-app snooze. Holds the task card id (see SnoozeStore). */
+    const val EXTRA_SNOOZE_KEY = "extra_snooze_key"
     // Same action that ReminderScheduler uses for normal reminders.
     private const val ACTION_TASK_REMINDER = "com.example.ACTION_TASK_REMINDER"
 
@@ -41,8 +42,12 @@ object ReminderSnooze {
             data = Uri.parse("unitask://snooze/$notificationId")
         }
 
-    /** Sets the alarm that brings the reminder back. [original] holds the reminder's details. */
-    fun schedule(context: Context, notificationId: Int, original: Intent, minutes: Int) {
+    /** Sets the alarm that brings the reminder back after [minutes]. [original] holds the reminder's details. */
+    fun schedule(context: Context, notificationId: Int, original: Intent, minutes: Int) =
+        scheduleAt(context, notificationId, original, System.currentTimeMillis() + minutes * 60_000L)
+
+    /** The same, at an exact time. In-app snooze uses this (see SnoozeStore). */
+    fun scheduleAt(context: Context, notificationId: Int, original: Intent, triggerAt: Long) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val intent = firedIntent(context, notificationId).apply {
             putExtras(original)
@@ -55,7 +60,6 @@ object ReminderSnooze {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val triggerAt = System.currentTimeMillis() + minutes * 60_000L
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (am.canScheduleExactAlarms()) {

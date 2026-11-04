@@ -2,7 +2,7 @@
 
 This guide takes you from zero to your own copy of UniTask running on your phone, with **your own** database. You do not need to be an Android developer. Every step says exactly what to click or paste.
 
-**Last checked:** 1 November 2026, against UniTask v3.0.0. Dashboards change names now and then. If a button is not where this guide says, look for the same words nearby.
+**Last checked:** 4 November 2026, against UniTask v3.2.0. Dashboards change names now and then. If a button is not where this guide says, look for the same words nearby.
 
 ## What you will end up with
 
@@ -756,7 +756,7 @@ On Windows the file is `C:\Users\YOUR-NAME\.android\debug.keystore`.
 
 ## Step 5: Put your values in the code
 
-Open `app/build.gradle.kts`. Find the block that starts with `defaultConfig`. Change these lines (near line 16 and lines 21 to 23 in v3.0.0). You do not have the Google Web client ID yet. Leave that line as it is for now and fill it in at the end of Step 6.
+Open `app/build.gradle.kts`. Find the block that starts with `defaultConfig`. Change the relevant values in the `defaultConfig` block. Line numbers can change between versions. You do not have the Google Web client ID yet. Leave that line as it is for now and fill it in at the end of Step 6.
 
 ```kotlin
 applicationId = "com.yourname.unitask"
@@ -977,7 +977,7 @@ GitHub switches off scheduled workflows in a public repository after 60 days wit
 
 ## Releasing updates later
 
-1. In `app/build.gradle.kts` raise `versionCode` by 1 and change `versionName` (for example `3.0.0` to `3.0.1`).
+1. In `app/build.gradle.kts` raise `versionCode` by 1 and change `versionName` (for example `3.2.0` to `3.2.1`).
 2. Run the build again (Step 7). The run page shows which version it is building, and the downloaded file is named with it, so you can check that you raised the right numbers.
 3. On GitHub create a **Release** whose **tag** is `v` plus the version name (for example `v3.0.1`), and attach the APK.
 

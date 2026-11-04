@@ -129,25 +129,23 @@ Requires **Android 7.0 (API 24)** or newer.
 
 ### 3.2.0
 
-- **Snooze from the task card**: choose 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM. The card shows when the snooze ends.
-- **Check reminders**: one screen that checks notifications, exact alarms and battery settings, with a **Fix this** button and a **Send test reminder** button.
-- **Missed reminders**: one notification for reminders that could not ring because the phone was off.
-- **More reliable reminders**: exact time on Android 13 and newer without extra settings, and no reminders for tasks already finished or deleted.
-- **Delete when done**: a switch on one-time My tasks that removes the task after the day you finish it.
-- **Fixed**: a repeating task with a checklist starts its next round with every item unticked.
+- **Task checklists and calendar actions:** edit checklist items from the task dialog, track progress on cards, and swipe calendar tasks to complete or undo them.
+- **Flexible snoozing:** snooze from a task card or notification for 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM.
+- **Smarter repeating tasks:** monthly and yearly tasks keep their original day across shorter months and leap years; missed repeats roll forward and reset their checklists.
+- **Update alerts:** an in-app prompt and notification-bell card let you know when a new stable release is available.
+- **Reminder diagnostics and recovery:** check notification, exact-alarm and battery settings, fix detected issues, send a test reminder, and get notified about reminders missed while the phone was off.
+- **Delete when done:** optionally remove completed one-time My tasks after their completion day.
+- **Reliability fixes:** improved synchronization, account-switch cleanup, reminder recovery and notification handling.
 
-### 3.1.0
-
-- **New Widget**: Today home screen widget displaying classes, upcoming tasks, and overdue task counts.
-- **Easier Group Joining**: QR code scanning for joining study groups.
-- **Notification History**: Notification history with unread counts and quick navigation. Daily summary notifications with notification history access.
-- **Color Themes**: Six customizable accent color themes.
 
 See the full history in the [CHANGELOG](CHANGELOG.md).
 
 <details>
 <summary><b>Earlier changes</b></summary>
 
+- **Today home-screen widget.** Shows today's classes, upcoming tasks and overdue task counts.
+- **Notification history.** View notifications with unread counts and quick navigation; daily summaries provide access to notification history.
+- **Six accent colour themes.** Choose from six customizable accent colour themes.
 - **A proper checklist editor.** Checklist items are rows with a checkbox, a text box and a remove button. Older checklists open as rows and keep working in task cards, backups and cloud sync.
 - **Week A and Week B really work.** Choose the current week in Settings ("This week is") or from the Timetable tab. Class reminders, the daily summary and the next-class card only count classes that meet this week, and a Week A and a Week B class at the same time are no longer a clash.
 - **Join a group with the camera.** Tap **Scan with camera**, or use **From image** or **Paste Link**. Scanning only fills the form, it never joins by itself.

@@ -6,19 +6,35 @@ All notable changes to UniTask are documented in this file.
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)
 
 ### Added
-- Snooze from the task card: pick 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM. The card shows "Snoozed until ...", also when you snooze from a reminder notification. A snooze adds one extra reminder and never replaces the normal ones.
-- **Check reminders** in Settings, Notifications and reminders: four checks (notifications allowed, reminder category not blocked, exact alarms, battery) with a **Fix this** button for each problem, and a **Send test reminder** button.
-- **Missed reminder** notification: if a reminder was due in the last 12 hours while the phone was off, or its alarm was removed (restart, app update, force stop, battery cleaner), you get one notification about it instead of silence.
-- **Delete when done** switch for one-time My tasks tasks. A finished task is deleted automatically after the day you finished it, so Undo still works that day.
+- **Task checklist editor:** add, edit, tick off and remove checklist items directly in the task dialog, with progress shown on task cards.
+- **Calendar task completion:** swipe deadline cards in the calendar to mark tasks done or undo completion.
+- **Task-card snoozing:** snooze a reminder for 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM. The task card shows when the snooze ends, including snoozes started from a notification.
+- **Release update prompt:** see an in-app prompt and an update-available card in the notification bell when a new stable release is available.
+- **Check reminders:** a Settings diagnostic checks notification permission, reminder-channel status, exact alarms and battery restrictions. Each detected issue has a **Fix this** action, plus a **Send test reminder** option.
+- **Missed reminder alerts:** receive one notification when a reminder from the previous 12 hours could not fire because the phone was off or its alarm was removed.
+- **Delete when done:** enable automatic deletion for one-time My tasks after the day they are completed, while keeping Undo available that day.
 
 ### Improved
-- Reminders ring at the exact time on Android 13 and newer without turning on "Alarms & reminders" (the app now uses the automatic `USE_EXACT_ALARM` permission). Android 12 still uses the setting.
-- Reminders no longer ring for a task that was finished on another phone or deleted after the alarm was set.
-- The notification tray keeps only the newest reminder of a task. A snoozed earlier reminder never removes a later one.
-- The test reminder is not saved in the notification history.
+- **Repeating tasks:** monthly and yearly repeats keep their original day when moving through shorter months and leap years (for example, a task set for the 31st returns to the 31st when possible).
+- **Automatic repeat rollover:** missed repeating tasks move forward to their next applicable date, and checklist items are reset for the new round.
+- **Reminder reliability:** Android 13 and newer use the automatically granted `USE_EXACT_ALARM` permission; Android 12 continues to use the Alarms & reminders setting.
+- **Reminder handling:** reminders are skipped for tasks completed on another device or deleted after scheduling. The notification tray keeps the newest reminder for each task without allowing an earlier snooze to replace a later reminder.
+- **Snooze recovery:** scheduled snoozes are restored after a device restart and are cleared when their task or group is removed.
+- **Synchronization:** improved queued group-message handling, task filtering, recovery of locally deleted tasks, account-switch cleanup and cancellation of background sync.
+- **Course setup:** course instructor and colour can be omitted when creating a course; sensible defaults are supplied.
 
 ### Fixed
-- A repeating task with a checklist now starts its next round with every item unticked.
+- Repeating-task checklists now start each new cycle with all items unticked.
+- Reminder completion is saved before an active reminder is stopped, preventing a completed task from being treated as unfinished.
+- Improved boot-time reminder scheduling and recovery of reminders that were missed while the app or phone was unavailable.
+- Test reminders no longer appear in notification history, and notification-tray cleanup no longer removes the wrong reminder.
+- Refreshed the visible chat date when messages change and improved handling of queued messages.
+
+### Developer & project maintenance
+- Added automated unit tests, lint checks, Room database migration tests and CodeQL code scanning.
+- Added dependency review for pull requests and scheduled Dependabot updates.
+- Added the Gradle wrapper and modernized GitHub Actions build, test and release workflows, including a choice between test builds and publishing a release.
+- Updated Gradle and Android dependencies and improved build caching and workflow permissions.
 
 ## [3.1.0] - 01-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.1.0)

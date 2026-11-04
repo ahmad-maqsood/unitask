@@ -266,7 +266,6 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 - Group chat is text only. Messages cannot be edited after sending, and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and your phone's battery settings (see **Reliable notifications** above).
 - The home-screen widget is read-only. Tapping a row opens the app, and you cannot tick a task off from the widget.
-- A monthly repeating task set on the 29th, 30th or 31st moves to an earlier day after a short month.
 
 ## Support
 

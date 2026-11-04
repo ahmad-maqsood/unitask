@@ -346,6 +346,15 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        // Keep only the newest reminder of a task in the tray: remove its earlier ones.
+        if (!isSilence && taskId > 0L && !reminderOption.isNullOrBlank()) {
+            for (other in com.example.data.local.ReminderOption.entries) {
+                if (other.name == reminderOption) continue
+                val olderId = ((taskId and 0x7FFFFFFF) * 31 + other.name.hashCode()).toInt()
+                notificationManager?.cancel(olderId)
+                cancelSilenceAlarm(context, olderId)
+            }
+        }
         notificationManager?.notify(notificationId, notification)
 
         if (!isSilence) {

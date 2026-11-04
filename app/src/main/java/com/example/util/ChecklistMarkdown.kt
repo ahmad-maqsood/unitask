@@ -85,3 +85,21 @@ fun buildDescriptionWithChecklist(notes: String, items: List<DraftChecklistItem>
         .filter { it.isNotBlank() }
         .joinToString("\n")
 }
+
+
+/**
+ * Unticks every checklist item ("- [x]" becomes "- [ ]"). Used when a repeating task starts its
+ * next round, so the checklist is fresh again. Other text is not touched.
+ */
+fun uncheckAllChecklistItems(description: String): String {
+    if (description.isEmpty()) return description
+    val delimiter = if (description.contains("\r\n")) "\r\n" else "\n"
+    return description.split(delimiter).joinToString(delimiter) { line ->
+        val trimmed = line.trimStart()
+        if (trimmed.startsWith("- [x]", ignoreCase = true)) {
+            line.substring(0, line.length - trimmed.length) + "- [ ]" + trimmed.substring(5)
+        } else {
+            line
+        }
+    }
+}

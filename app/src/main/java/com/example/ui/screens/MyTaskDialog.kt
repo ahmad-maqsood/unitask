@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -90,7 +91,8 @@ fun MyTaskDialog(
         minute: Int,
         priority: Priority,
         reminders: Set<ReminderOption>,
-        repeat: RepeatRule
+        repeat: RepeatRule,
+        autoDeleteWhenDone: Boolean
     ) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -135,7 +137,7 @@ fun MyTaskDialog(
     }
 
     var repeatRule by rememberSaveable { mutableStateOf(taskToEdit?.repeat ?: RepeatRule.NONE) }
-
+    var autoDeleteWhenDone by rememberSaveable { mutableStateOf(taskToEdit?.autoDeleteWhenDone ?: false) }
     var titleError by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var repeatDropdownExpanded by remember { mutableStateOf(false) }
@@ -635,6 +637,35 @@ fun MyTaskDialog(
                     }
                 }
 
+                // Delete when done. Only for tasks that do not repeat.
+                if (repeatRule == RepeatRule.NONE) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { autoDeleteWhenDone = !autoDeleteWhenDone }
+                            .testTag("my_task_auto_delete_row"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Delete when done",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Removed automatically after the day you finish it.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = autoDeleteWhenDone,
+                            onCheckedChange = { autoDeleteWhenDone = it }
+                        )
+                    }
+                }
+
                 // Notification Reminders (Multiple selections allowed)
                 Column {
                     Row(
@@ -705,7 +736,8 @@ fun MyTaskDialog(
                             dueMinute!!,
                             priority,
                             reminderOptions,
-                            repeatRule
+                            repeatRule,
+                            autoDeleteWhenDone
                         )
                     }
                 },

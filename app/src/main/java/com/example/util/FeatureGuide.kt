@@ -118,5 +118,4 @@ object FeatureGuide {
             "1. Open Settings, then General.\n2. Tap an Accent colour swatch."
         )
     ).sortedBy { it.sortOrder }
-    )
 }

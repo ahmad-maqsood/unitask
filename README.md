@@ -85,8 +85,8 @@ Requires **Android 7.0 (API 24)** or newer.
   - Batch select to complete or delete many at once.
   - Multiple reminders per task, and offline file attachments up to 25 MB.
 - **Courses:** modules, credit hours, instructors and colour tags that timetable slots and assignments inherit.
-- **Repeating tasks:** repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next due date.
-- **My tasks:** a separate to-do list for things that are not coursework. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done.
+- **Repeating tasks:** repeat daily, on weekdays, weekly, every 2 weeks, monthly or yearly. Completing a repeating task moves it to its next due date and unticks its checklist.
+- **My tasks:** a separate to-do list for things that are not coursework. Quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. One-time tasks can have **Delete when done**, which removes them the day after you finish them.
 
 ### 🗓️ Timetable
 
@@ -104,6 +104,10 @@ Requires **Android 7.0 (API 24)** or newer.
 ### 🔔 Reminders and widget
 
 - Alerts with **Mark as Done** and **Snooze 30m** buttons right in the notification.
+- **Snooze from the task card** to 30 minutes, 1 hour, 3 hours or tomorrow morning. The card shows "Snoozed until ...".
+- Reminders ring at the exact time on Android 13 and newer, and are skipped for tasks you already finished or deleted.
+- A **Missed reminder** notification tells you about reminders that were due while the phone was off.
+- **Check reminders** in Settings tests notifications, exact alarms and battery settings, can fix them and sends a test reminder.
 - Optional alarm-style ringing for high-priority tasks, class reminders and a daily morning summary.
 - Notifications are grouped by type so they do not flood the shade.
 - **"UniTask Today" home-screen widget** shows today's classes and tasks. Tap a row to open the app.
@@ -122,6 +126,15 @@ Requires **Android 7.0 (API 24)** or newer.
 - GitHub release updater, an announcements bell and a built-in "Learn to use the app" guide.
 
 ## What's new
+
+### 3.2.0
+
+- **Snooze from the task card**: choose 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM. The card shows when the snooze ends.
+- **Check reminders**: one screen that checks notifications, exact alarms and battery settings, with a **Fix this** button and a **Send test reminder** button.
+- **Missed reminders**: one notification for reminders that could not ring because the phone was off.
+- **More reliable reminders**: exact time on Android 13 and newer without extra settings, and no reminders for tasks already finished or deleted.
+- **Delete when done**: a switch on one-time My tasks that removes the task after the day you finish it.
+- **Fixed**: a repeating task with a checklist starts its next round with every item unticked.
 
 ### 3.1.0
 
@@ -238,6 +251,7 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 2. Set battery usage to **No restrictions**.
 3. Allow background activity and exact alarms if Android asks.
 4. Make sure notifications are enabled for UniTask.
+5. Open **Settings, Check reminders**. It shows what is wrong, fixes it with one tap and can send a test reminder.
 
 > [!TIP]
 > The in-app **Background setup** guide in Settings walks through these steps. Menu names differ between brands.
@@ -252,7 +266,8 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 | Permission | Why |
 | --- | --- |
 | `POST_NOTIFICATIONS` | Deadline, class, daily summary, chat and announcement alerts |
-| `SCHEDULE_EXACT_ALARM` | Reminders at the exact time |
+| `USE_EXACT_ALARM` | Reminders at the exact time on Android 13 and newer. Granted automatically |
+| `SCHEDULE_EXACT_ALARM` | The same on Android 12 only. You may need to allow it in Settings |
 | `RECEIVE_BOOT_COMPLETED` | Restore reminders after a restart |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Offer the battery setting for reliable reminders |
 | `VIBRATE` | Alarm-style alerts |
@@ -265,6 +280,7 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 - Chat notifications come from a background check, so Android battery limits can delay them. There is no external push service.
 - Group chat is text only. Messages cannot be edited after sending, and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and your phone's battery settings (see **Reliable notifications** above).
+- Snoozes and the **Delete when done** switch belong to the phone they were set on. They are not synced to the cloud, but **Delete when done** is kept in local backups.
 - The home-screen widget is read-only. Tapping a row opens the app, and you cannot tick a task off from the widget.
 
 ## Support

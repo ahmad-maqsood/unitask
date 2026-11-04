@@ -152,4 +152,20 @@ class RepeatRolloverTest {
 
         assertEquals(due, db.taskDao().getTaskById(id)!!.dueDateEpochMillis)
     }
+
+    @Test
+    fun rollover_unticksChecklistItems() = runBlocking {
+        val now = System.currentTimeMillis()
+        val startOfToday = startOfLocalDay(now)
+        val id = addTask("DAILY", startOfToday - 12 * hour, TaskStatus.COMPLETED, startOfToday - hour)
+        val task = db.taskDao().getTaskById(id)!!
+        db.taskDao().updateTask(task.copy(description = "Notes\n- [x] Mulk\n- [x] Assajdah"))
+
+        assertTrue(repo.rolloverCompletedRepeatingTasks())
+
+        assertEquals(
+            "Notes\n- [ ] Mulk\n- [ ] Assajdah",
+            db.taskDao().getTaskById(id)!!.description
+        )
+    }
 }

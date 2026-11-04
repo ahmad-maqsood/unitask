@@ -138,18 +138,14 @@ Requires **Android 7.0 (API 24)** or newer.
 - **Reliability fixes:** improved synchronization, account-switch cleanup, reminder recovery and notification handling.
 
 
-### 3.1.0
-
-- **New Widget**: Today home screen widget displaying classes, upcoming tasks, and overdue task counts.
-- **Easier Group Joining**: QR code scanning for joining study groups.
-- **Notification History**: Notification history with unread counts and quick navigation. Daily summary notifications with notification history access.
-- **Color Themes**: Six customizable accent color themes.
-
 See the full history in the [CHANGELOG](CHANGELOG.md).
 
 <details>
 <summary><b>Earlier changes</b></summary>
 
+- **Today home-screen widget.** Shows today's classes, upcoming tasks and overdue task counts.
+- **Notification history.** View notifications with unread counts and quick navigation; daily summaries provide access to notification history.
+- **Six accent colour themes.** Choose from six customizable accent colour themes.
 - **A proper checklist editor.** Checklist items are rows with a checkbox, a text box and a remove button. Older checklists open as rows and keep working in task cards, backups and cloud sync.
 - **Week A and Week B really work.** Choose the current week in Settings ("This week is") or from the Timetable tab. Class reminders, the daily summary and the next-class card only count classes that meet this week, and a Week A and a Week B class at the same time are no longer a clash.
 - **Join a group with the camera.** Tap **Scan with camera**, or use **From image** or **Paste Link**. Scanning only fills the form, it never joins by itself.

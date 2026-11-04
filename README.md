@@ -283,5 +283,5 @@ Released under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-<sub>Made with ☕ by <a href="https://github.com/ahmad-maqsood">Ahmad Maqsood</a> for students who have too many deadlines.</sub>
+<sub>Made with ☕.</sub>
 </div>

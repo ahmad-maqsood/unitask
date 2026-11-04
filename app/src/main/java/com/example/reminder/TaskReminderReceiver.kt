@@ -45,6 +45,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_REMINDER_LABEL = "extra_reminder_label"
         const val EXTRA_REMINDER_OPTION = "extra_reminder_option"
         const val EXTRA_PRIORITY = "extra_priority"
+        const val EXTRA_TRIGGER_AT = "extra_trigger_at"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_IS_MY_TASK = "extra_is_my_task"
         const val EXTRA_GROUP_ID = "extra_group_id"
@@ -170,7 +171,13 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_SILENCE_ALARM && intent.hasExtra(ReminderSnooze.EXTRA_SNOOZE_KEY)) {
             SnoozeStore.clearIfDue(context, intent.getLongExtra(ReminderSnooze.EXTRA_SNOOZE_KEY, 0L))
         }
-        
+        // This alarm has gone off, so it is no longer "waiting". See MissedReminders.
+        MissedReminders.markHandled(
+            context,
+            intent.getLongExtra(EXTRA_TASK_ID, 0L),
+            intent.getStringExtra(EXTRA_REMINDER_OPTION),
+            intent.getLongExtra(EXTRA_TRIGGER_AT, 0L)
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -187,10 +194,12 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val groupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID)
         val isGroupTask = !groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()
 
-        // A snoozed reminder only comes back if the task is still open.
-        if (intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) &&
-            !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)
-        ) return
+        // Only show the reminder if the task is still open. This stops reminders for tasks that were
+        // finished on another phone or deleted after the alarm was set. Group tasks are skipped here
+        // (they are checked when they sync), unless it is a snoozed reminder.
+        val checkStillOpen = intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) ||
+            (!isGroupTask && taskId > 0L)
+        if (checkStillOpen && !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)) return
         createNotificationChannel(context)
 
         val isMyTask = !isGroupTask && courseCode.trim().replace("\\s+".toRegex(), "").uppercase() == "MYTASKS"

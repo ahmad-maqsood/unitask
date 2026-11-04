@@ -28,6 +28,7 @@ import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.currentSupabaseUid
 import com.example.util.toggleChecklistLine
+import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -319,6 +320,8 @@ class AppRepository(
                 status = TaskStatus.PENDING,
                 completedAtMillis = 0L,
                 repeatAnchorDay = anchorDay,
+                // A new round starts with an empty checklist.
+                description = uncheckAllChecklistItems(task.description),
                 isSynced = false
             )
             val finalTask = moved.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(moved))

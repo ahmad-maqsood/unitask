@@ -251,6 +251,7 @@ fun MainScreen(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val announcements = rememberAnnouncements(currentUser?.uid)
     AnnouncementHost(announcements)
+    UpdatePrompt()
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
     val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
     val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()

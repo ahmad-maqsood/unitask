@@ -65,14 +65,10 @@ private fun featureIcon(name: String): ImageVector? = when (name.trim().lowercas
 
 @Composable
 fun FeatureGuideDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    var features by remember { mutableStateOf(FeatureGuide.cachedOrDefault(context)) }
+    val features = FeatureGuide.all
     var expandedIndex by remember { mutableStateOf(-1) }
 
-    // Show the saved list at once, then swap in the fresh one when it arrives.
-    LaunchedEffect(Unit) {
-        FeatureGuide.refresh(context)?.let { features = it }
-    }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,

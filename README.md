@@ -274,7 +274,7 @@ Some phone makers stop background apps aggressively. If reminders arrive late or
 - **Bugs and ideas:** [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose).
 - **Security problems:** please do not use a public issue. See [SECURITY.md](SECURITY.md).
 
-UniTask is a personal project, so I am not accepting pull requests. Bug reports and feedback are very welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+UniTask is a personal project, but community contributions and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 

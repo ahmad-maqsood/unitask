@@ -1,6 +1,25 @@
 # Contributing
 
-UniTask is a personal project. I am not accepting code contributions or pull requests, but bug reports and feedback are very welcome.
+UniTask is a personal project, but contributions from the community are welcome!
+
+Whether you want to fix a bug, improve an existing feature, or suggest something new, your contributions are appreciated. All pull requests will be reviewed before being accepted.
+
+## Before contributing
+
+- For major changes or new features, please open an issue first to discuss the idea.
+- Keep changes focused and avoid unrelated modifications.
+- Make sure your changes do not unintentionally break existing functionality.
+- Include a clear description of what you changed and why.
+
+## Submitting a pull request
+
+1. Fork the repository.
+2. Create a branch for your changes.
+3. Make your changes and test them where applicable.
+4. Submit a pull request against the `main` branch.
+5. Describe your changes and mention any relevant issues.
+
+Please be patient while your pull request is reviewed. I may request changes or provide feedback before accepting it. Not every submission is guaranteed to be merged.
 
 ## Report a bug
 

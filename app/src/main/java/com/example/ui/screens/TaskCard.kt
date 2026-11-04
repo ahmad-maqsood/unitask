@@ -82,6 +82,9 @@ import com.example.ui.theme.StatusDoneBgLight
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
+import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.runtime.collectAsState
+import com.example.reminder.SnoozeStore
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.example.data.local.deadlineMillis
@@ -146,6 +149,19 @@ fun TaskCard(
             message = "\"${task.title}\" will be removed from this phone and from your cloud backup.",
             onConfirm = { onDeleteClick(task) },
             onDismiss = { showDeleteConfirm = false }
+        )
+    }
+
+    // In-app snooze (see SnoozeStore): one extra reminder at a time the user picks.
+    var showSnooze by remember { mutableStateOf(false) }
+    val snoozes by SnoozeStore.untilByTask(context).collectAsState()
+    val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted }
+    if (showSnooze) {
+        SnoozeDialog(
+            taskWithCourse = taskWithCourse,
+            groupEntry = groupEntry,
+            currentUntil = snoozedUntil,
+            onDismiss = { showSnooze = false }
         )
     }
     val cardColor by androidx.compose.animation.animateColorAsState(
@@ -285,6 +301,18 @@ fun TaskCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
+                            if (!isCompleted) {
+                                DropdownMenuItem(
+                                    text = { Text(if (snoozedUntil != null) "Change snooze" else "Snooze reminder") },
+                                    onClick = {
+                                        showMenu = false
+                                        showSnooze = true
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Snooze, contentDescription = null)
+                                    }
+                                )
+                            }
                             if (groupEntry != null) {
                                 // Group tasks are edited or deleted inside the group.
                                 DropdownMenuItem(
@@ -567,6 +595,32 @@ fun TaskCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Shown while an in-app snooze is waiting. Tap it to change the time.
+                if (snoozedUntil != null) {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { showSnooze = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Snooze,
+                            contentDescription = "Snoozed",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Snoozed until ${formatSnoozeTime(snoozedUntil)}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
                 // Bottom row: Due date/time & Status toggle pill
                 Row(
                     modifier = Modifier.fillMaxWidth(),

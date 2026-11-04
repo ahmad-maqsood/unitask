@@ -1,11 +1,18 @@
 name: Build release APK
 
 # Runs only when you start it by hand (Actions tab > Build release APK > Run workflow).
+# Leave "Publish as a GitHub release" unticked for a test build.
+# Tick it only when this version is ready for everyone.
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish as a GitHub release (leave unticked for a test build)'
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write   # needed only to create the release when the box is ticked
 
 jobs:
   build:
@@ -26,7 +33,32 @@ jobs:
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "### Building UniTask $NAME (versionCode $CODE)" >> "$GITHUB_STEP_SUMMARY"
-          
+          if [ "${{ inputs.publish }}" = "true" ]; then
+            echo "This run will PUBLISH release v$NAME." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Test build only. Nothing will be published." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Only when publishing: stop early if this version was already released or has no changelog.
+      - name: Check the release can be published
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          if gh release view "v$NAME" >/dev/null 2>&1; then
+            echo "::error::A release named v$NAME already exists. Raise versionName in app/build.gradle.kts first."
+            exit 1
+          fi
+          awk -v v="$NAME" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found=1; next } }
+            found && !/^\[Download APK\]/ { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::CHANGELOG.md has no notes under a heading like '## [$NAME] - date'."
+            exit 1
+          fi
+
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:
@@ -37,7 +69,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
-          
+
       # Run the unit tests first. If a test fails, the build stops here and no APK is made.
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest --no-daemon
@@ -78,3 +110,21 @@ jobs:
           name: unitask-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
           path: app/build/outputs/apk/release/*.apk
           retention-days: 14
+
+      # Only when the box was ticked: create the GitHub release with the APK and the changelog notes.
+      - name: Publish GitHub release
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" "$RUNNER_TEMP/UniTask-$NAME.apk"
+          FLAGS=""
+          case "$NAME" in *-*) FLAGS="--prerelease" ;; esac
+          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" \
+            --target "${{ github.sha }}" \
+            --title "UniTask $NAME" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            $FLAGS
+          echo "Published release v$NAME." >> "$GITHUB_STEP_SUMMARY"

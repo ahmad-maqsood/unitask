@@ -526,3 +526,7 @@ order by 1, 2;
 -- Go to Database -> Extensions -> Search pg_cron -> Enable it and run:-
  select cron.schedule('delete-old-chat', '0 3 * * *',
   $$delete from public.group_messages where created_at < now() - interval '30 days'$$);
+
+-- 2026-11-04: removed the "Learn to use the app" table. The feature list now lives in the app code
+-- (util/FeatureGuide.kt), so the app no longer reads app_features from Supabase.
+drop table if exists public.app_features;

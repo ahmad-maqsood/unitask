@@ -25,6 +25,7 @@ object SyncScheduler {
 
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(constraints)
+            .setInitialDelay(5, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context.applicationContext)

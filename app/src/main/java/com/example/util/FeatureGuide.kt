@@ -1,35 +1,22 @@
 package com.example.util
 
-import android.content.Context
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
-/** One line in the "App features" list. Rows live in the Supabase table app_features. */
-@Serializable
+/** One entry in "Learn to use the app". Edit the list below to add or change a feature. */
 data class AppFeature(
     val title: String = "",
     val description: String = "",
     val icon: String = "star",
-    @SerialName("sort_order") val sortOrder: Int = 0,
-    @SerialName("how_to") val howTo: String = ""
+    val sortOrder: Int = 0,
+    val howTo: String = ""
 )
 
 /**
- * Loads the feature list. Order of trust: fresh from Supabase, else the copy saved on the phone,
- * else the short built-in list (so the screen is never empty, even offline on first run).
+ * The feature list shown in Settings > Learn to use the app.
+ * It lives in the code, so it always matches the version of the app the person has.
+ * Entries are shown in order of sortOrder (the number before the steps).
  */
 object FeatureGuide {
-    private const val PREFS = "feature_guide"
-    private const val KEY = "cached_json"
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    private val builtIn = listOf(
+    val all: List<AppFeature> = listOf(
         AppFeature(
             "Deadlines & Urgency", "Track assignments and tasks grouped by urgency: Overdue, Today, Tomorrow, Upcoming, and Completed.", "assignment", 10,
             "1. Open the Deadlines tab.\n2. Tap + Add Assignment.\n3. Fill in the title, course, due date, time, priority and reminders.\n4. Tasks group automatically by urgency when sorted by date."
@@ -105,42 +92,30 @@ object FeatureGuide {
         AppFeature(
             "Announcements Bell", "Official university updates and exam tips, fully offline-ready.", "notifications", 130,
             "1. Tap the notification bell in the top bar to read official announcements.\n2. All data is cached locally in Room database on the phone for 100% offline access."
+        ),
+        AppFeature(
+            "Repeating Tasks", "Tasks that come back daily, weekly, monthly or yearly. A task set on the 31st goes to the last day of shorter months, then back to the 31st.", "assignment", 22,
+            "1. In the task dialog, open the Repeat option.\n2. Pick Every day, Every weekday, Every week, Every 2 weeks, Every month or Every year.\n3. Tick the task Done. It stays Done until midnight, then moves to its next date."
+        ),
+        AppFeature(
+            "Swipe to Complete", "Swipe a deadline card to mark it done, with Undo.", "assignment", 26,
+            "1. Open the Deadlines tab.\n2. Swipe a task card.\n3. Tap Undo on the bar at the bottom if it was a mistake."
+        ),
+        AppFeature(
+            "Home Screen Widget", "A Today widget with your classes, upcoming tasks and overdue count.", "sun", 90,
+            "1. Long-press an empty spot on your home screen.\n2. Open Widgets and find UniTask.\n3. Drag the Today widget onto the screen."
+        ),
+        AppFeature(
+            "Daily Summary", "One notification each morning with your day.", "notifications", 31,
+            "1. Open Settings, then Notifications & reminders.\n2. Turn on Daily summary and pick the time."
+        ),
+        AppFeature(
+            "Notification History", "See reminders you missed, with unread counts.", "notifications", 33,
+            "1. Tap the bell in the top bar.\n2. Open an item to jump to the task."
+        ),
+        AppFeature(
+            "Accent Colours", "Choose one of six accent colours for the app.", "star", 95,
+            "1. Open Settings, then General.\n2. Tap an Accent colour swatch."
         )
-    )
-
-    /** What to show instantly: the saved copy if there is one, else the built-in list. */
-    fun cachedOrDefault(context: Context): List<AppFeature> {
-        return try {
-            val text = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
-            val saved = if (text != null) json.decodeFromString<List<AppFeature>>(text) else emptyList()
-            saved.ifEmpty { builtIn }
-        } catch (_: Exception) {
-            builtIn
-        }
-    }
-
-    /** Fetches the latest list and saves it. Returns null if offline, slow, or the table is empty. */
-    suspend fun refresh(context: Context): List<AppFeature>? {
-        return try {
-            val rows = withTimeout(8_000L) {
-                SupabaseProvider.client.postgrest["app_features"]
-                    .select {
-                        filter { eq("enabled", true) }
-                        order("sort_order", Order.ASCENDING)
-                    }
-                    .decodeList<AppFeature>()
-            }
-            if (rows.isEmpty()) return null
-            try {
-                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .edit().putString(KEY, json.encodeToString(rows)).apply()
-            } catch (_: Exception) {
-            }
-            rows
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        }
-    }
+    ).sortedBy { it.sortOrder }
 }

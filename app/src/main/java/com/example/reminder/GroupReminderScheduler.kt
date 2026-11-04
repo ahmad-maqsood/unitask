@@ -99,6 +99,7 @@ class GroupReminderScheduler(private val context: Context) {
                 cancelKey(key)
             }
         }
+        SnoozeStore.clearGroupTask(context, groupId, taskId)
     }
 
     fun cancelGroup(groupId: String) {
@@ -108,6 +109,7 @@ class GroupReminderScheduler(private val context: Context) {
                 cancelKey(key)
             }
         }
+        SnoozeStore.clearGroup(context, groupId)
     }
 
     /** Cancels alarms of every group that is not in [keepGroupIds]. */
@@ -115,6 +117,7 @@ class GroupReminderScheduler(private val context: Context) {
         for (key in prefs.all.keys.toList()) {
             if (key.substringBefore('|') !in keepGroupIds) cancelKey(key)
         }
+        SnoozeStore.clearGroupsNotIn(context, keepGroupIds)
     }
 
     /** Alarms are wiped by a reboot or an app update; this puts the remembered ones back. */

@@ -177,6 +177,7 @@ create table public.tasks (
   updated_at            timestamptz not null default now(),
   repeat_rule           text not null default 'NONE',
   completed_at_millis   bigint not null default 0,
+  repeat_anchor_day     int not null default 0 check (repeat_anchor_day between 0 and 31),
   primary key (user_id, doc_id)
 );
 

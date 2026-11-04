@@ -864,8 +864,8 @@ fun MainScreen(
         MyTaskDialog(
             taskToEdit = myTaskToEdit,
             onDismiss = { viewModel.closeMyTaskDialog() },
-            onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat ->
-                viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit)
+            onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat, autoDelete ->
+                viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit, autoDelete)
             }
         )
     }

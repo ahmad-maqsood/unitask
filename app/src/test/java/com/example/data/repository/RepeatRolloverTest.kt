@@ -15,6 +15,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -167,5 +168,37 @@ class RepeatRolloverTest {
             "Notes\n- [ ] Mulk\n- [ ] Assajdah",
             db.taskDao().getTaskById(id)!!.description
         )
+    }
+
+    @Test
+    fun rollover_deletesFinishedOneTimeTask_whenSwitchIsOn() = runBlocking {
+        val startOfToday = startOfLocalDay(System.currentTimeMillis())
+        val id = addTask("NONE", startOfToday - 12 * hour, TaskStatus.COMPLETED, startOfToday - hour)
+        db.taskDao().updateTask(db.taskDao().getTaskById(id)!!.copy(autoDeleteWhenDone = true))
+
+        assertTrue(repo.rolloverCompletedRepeatingTasks())
+
+        assertNull(db.taskDao().getTaskById(id))
+    }
+
+    @Test
+    fun rollover_keepsFinishedOneTimeTask_whenSwitchIsOff() = runBlocking {
+        val startOfToday = startOfLocalDay(System.currentTimeMillis())
+        val id = addTask("NONE", startOfToday - 12 * hour, TaskStatus.COMPLETED, startOfToday - hour)
+
+        repo.rolloverCompletedRepeatingTasks()
+
+        assertNotNull(db.taskDao().getTaskById(id))
+    }
+
+    @Test
+    fun rollover_keepsFinishedOneTimeTask_untilTheDayIsOver() = runBlocking {
+        val now = System.currentTimeMillis()
+        val id = addTask("NONE", now - hour, TaskStatus.COMPLETED, now)
+        db.taskDao().updateTask(db.taskDao().getTaskById(id)!!.copy(autoDeleteWhenDone = true))
+
+        repo.rolloverCompletedRepeatingTasks()
+
+        assertNotNull(db.taskDao().getTaskById(id))
     }
 }

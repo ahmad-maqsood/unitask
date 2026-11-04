@@ -18,8 +18,8 @@ import org.robolectric.annotation.Config
  * Builds a database exactly as version 9 left it (with one course and one task, like a real user),
  * then opens it with the app's real migrations. Room checks the migrated tables against the current
  * code when it opens, so a wrong migration fails here instead of crashing users after an update.
- * Today version 9 is also the latest, so nothing migrates yet. Once the database moves to version 10
- * and the migration is added to AppDatabase.ALL_MIGRATIONS, this same test checks 9 to 10 with no change.
+ * This checks the 9 to 10 migration (the new repeatAnchorDay column). When a later version is added to
+ * AppDatabase.ALL_MIGRATIONS, this same test checks the whole chain from 9 with no change.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -65,6 +65,14 @@ class AppDatabaseMigrationTest {
                     assertTrue("the old task is missing after the upgrade", cursor.moveToFirst())
                     assertEquals("Lab report", cursor.getString(0))
                     assertEquals("old user task", cursor.getString(1))
+                }
+
+            // 4. The new column exists, and the old task starts at 0 (not set).
+            db.openHelper.writableDatabase
+                .query("SELECT repeatAnchorDay FROM tasks WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("repeatAnchorDay is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals(0, cursor.getInt(0))
                 }
         } finally {
             db.close()

@@ -53,7 +53,16 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material3.Button
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.util.UpdateChecker
+import com.example.util.UpdateResult
 
+private const val UPDATE_PREFS = "bell_update_card"
+private const val KEY_UPDATE_SEEN = "seen_version"
+private const val KEY_UPDATE_HIDDEN = "hidden_version"
 /**
  * Everything the pop-up and the bell share:
  *  - [items]:          the Announcements tab (active, not removed, newest first)
@@ -78,8 +87,46 @@ class AnnouncementsState(context: Context) {
     var unreadNotifications by mutableIntStateOf(NotificationHistory.unreadCount(appContext))
         private set
 
+    /** The update card of the Announcements tab: set while a newer release exists and it is not hidden. */
+    var update by mutableStateOf<UpdateResult.Available?>(null)
+        private set
+
+    /** True until the update card has been looked at (adds 1 to the bell). */
+    var updateUnread by mutableStateOf(false)
+        private set
+
+    private var latestUpdate: UpdateResult.Available? = null
+
     /** The number on the bell. */
-    val unread: Int get() = unreadAnnouncements + unreadNotifications
+    val unread: Int get() = unreadAnnouncements + unreadNotifications + (if (updateUnread) 1 else 0)
+
+    /** Called with the shared GitHub check result (null means up to date or unknown). */
+    fun onUpdateInfo(found: UpdateResult.Available?) {
+        latestUpdate = found
+        reloadUpdate()
+    }
+
+    /** Looking at the Announcements tab counts as seeing the update card. */
+    fun markUpdateSeen() {
+        val found = latestUpdate ?: return
+        updatePrefs().edit().putString(KEY_UPDATE_SEEN, found.latestVersion).apply()
+        reloadUpdate()
+    }
+
+    /** "Hide" on the update card: hidden until the next version comes out. */
+    fun dismissUpdate() {
+        val found = latestUpdate ?: return
+        updatePrefs().edit().putString(KEY_UPDATE_HIDDEN, found.latestVersion).apply()
+        reloadUpdate()
+    }
+
+    private fun updatePrefs() = appContext.getSharedPreferences(UPDATE_PREFS, Context.MODE_PRIVATE)
+
+    private fun reloadUpdate() {
+        val prefs = updatePrefs()
+        update = latestUpdate?.takeIf { it.latestVersion != prefs.getString(KEY_UPDATE_HIDDEN, null) }
+        updateUnread = update?.let { it.latestVersion != prefs.getString(KEY_UPDATE_SEEN, null) } ?: false
+    }
 
     var popup by mutableStateOf<List<Announcement>>(emptyList())
         private set
@@ -128,6 +175,7 @@ class AnnouncementsState(context: Context) {
         Announcements.markSeen(appContext, current)
         AnnouncementNotifier.cancel(appContext, current)
         reload()
+        markUpdateSeen()
     }
 
     fun remove(item: Announcement) = removeAll(listOf(item))
@@ -164,6 +212,10 @@ fun rememberAnnouncements(currentUserId: String?): AnnouncementsState {
         scope.launch { state.refreshFromServer() }
         onPauseOrDispose { }
     }
+
+    // Keeps the update card in step with the shared GitHub check.
+    val found by UpdateChecker.available.collectAsStateWithLifecycle()
+    LaunchedEffect(found) { state.onUpdateInfo(found) }
     return state
 }
 
@@ -215,6 +267,7 @@ fun AnnouncementBell(
     onOpenRequestHandled: () -> Unit = {},
     onOpenTarget: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(TAB_NOTIFICATIONS) }
     // Notifications that were unread when the bell was opened, so they can be marked "New".
@@ -225,7 +278,7 @@ fun AnnouncementBell(
             state.reload()
             newIds = state.notifications.filter { it.unread }.map { it.id }.toSet()
             // A new announcement is rare and important, so it gets the first look.
-            selectedTab = if (state.unreadAnnouncements > 0) TAB_ANNOUNCEMENTS else TAB_NOTIFICATIONS
+            selectedTab = if (state.unreadAnnouncements > 0 || state.updateUnread) TAB_ANNOUNCEMENTS else TAB_NOTIFICATIONS
             showSheet = true
         },
         modifier = Modifier.testTag("top_bar_announcements_button")
@@ -281,7 +334,13 @@ fun AnnouncementBell(
                         selected = selectedTab == TAB_ANNOUNCEMENTS,
                         onClick = { selectedTab = TAB_ANNOUNCEMENTS },
                         modifier = Modifier.testTag("bell_tab_announcements"),
-                        text = { TabLabel("Announcements", state.unreadAnnouncements, urgent = true) }
+                        text = {
+                            TabLabel(
+                                "Announcements",
+                                state.unreadAnnouncements + (if (state.updateUnread) 1 else 0),
+                                urgent = state.unreadAnnouncements > 0
+                            )
+                        }
                     )
                 }
 
@@ -310,8 +369,22 @@ fun AnnouncementBell(
                         }
                     }
                 } else {
+                    state.update?.let { found ->
+                        UpdateCard(
+                            update = found,
+                            currentVersion = UpdateChecker.currentVersion(context),
+                            onOpen = {
+                                showSheet = false
+                                try {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(found.pageUrl)))
+                                } catch (_: Exception) {
+                                }
+                            },
+                            onDismiss = { state.dismissUpdate() }
+                        )
+                    }
                     if (state.items.isEmpty()) {
-                        EmptyText("No announcements right now.")
+                        if (state.update == null) EmptyText("No announcements right now.")
                     } else {
                         ClearAllRow { state.removeAll() }
                         Column(
@@ -355,6 +428,52 @@ private fun EmptyText(text: String) {
     )
 }
 
+/**
+ * The "update available" card at the top of the Announcements tab. It is not saved anywhere,
+ * so it disappears by itself once the app is updated. "Hide" hides it until the next version.
+ */
+@Composable
+private fun UpdateCard(
+    update: UpdateResult.Available,
+    currentVersion: String,
+    onOpen: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("bell_update_card"),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                "Update available",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "A new version (${update.latestVersion}) of UniTask is available. You have $currentVersion.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) { Text("Hide") }
+                Button(
+                    onClick = onOpen,
+                    modifier = Modifier.testTag("bell_update_open_button")
+                ) { Text("Open release page") }
+            }
+        }
+    }
+}
 @Composable
 private fun ClearAllRow(onClear: () -> Unit) {
     Row(

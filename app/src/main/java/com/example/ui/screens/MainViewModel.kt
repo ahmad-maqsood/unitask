@@ -979,7 +979,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         priority: Priority,
         reminders: Set<ReminderOption>,
         repeat: RepeatRule,
-        existing: TaskItem?
+        existing: TaskItem?,
+        autoDelete: Boolean = false
     ) {
         closeMyTaskDialog()
         viewModelScope.launch {
@@ -996,6 +997,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     priority = priority,
                     reminderOptions = reminders,
                     repeatRule = repeat.name,
+                    autoDeleteWhenDone = autoDelete && repeat == RepeatRule.NONE,
                     isSynced = false
                 )
                 repository.updateTask(updated)
@@ -1011,6 +1013,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     status = TaskStatus.PENDING,
                     reminderOptions = reminders,
                     repeatRule = repeat.name,
+                    autoDeleteWhenDone = autoDelete && repeat == RepeatRule.NONE,
                     isSynced = false
                 )
                 repository.insertTask(newTask)

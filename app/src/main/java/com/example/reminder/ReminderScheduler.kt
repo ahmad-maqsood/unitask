@@ -50,13 +50,15 @@ class ReminderScheduler(private val context: Context) {
                 putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
                 putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, option.label)
                 putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, option.name)
+                putExtra(TaskReminderReceiver.EXTRA_TRIGGER_AT, triggerTime)
                 putExtra(TaskReminderReceiver.EXTRA_PRIORITY, task.priority.name)
                 putExtra(
                     TaskReminderReceiver.EXTRA_DUE_INFO,
                     "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
                 )
             }
-
+            // Remember that this alarm is waiting, so we can tell if it never rang.
+            MissedReminders.recordArmed(context, task.id, option, triggerTime)
             val requestCode = requestCodeFor(task.id, option)
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -109,6 +111,7 @@ class ReminderScheduler(private val context: Context) {
     }
 
     fun cancelReminder(taskId: Long) {
+        MissedReminders.forgetTask(context, taskId)
         // Alarm set by earlier app versions: one per task, no data URI.
         cancelAlarm(taskId.toInt(), reminderIntent(taskId, null))
         // Cancel all reminder options for this task with both requestCode and legacy taskId code.

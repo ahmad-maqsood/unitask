@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
+import com.example.data.local.startOfLocalDay
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
@@ -79,12 +80,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             }
             .sortedBy { it.startHour * 60 + it.startMinute }
 
-        val startOfToday = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        val startOfToday = startOfLocalDay(System.currentTimeMillis())
         val startOfTomorrow = Calendar.getInstance().apply {
             timeInMillis = startOfToday
             add(Calendar.DAY_OF_YEAR, 1)

@@ -79,6 +79,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupTaskEntry
+import com.example.data.local.startOfLocalDay
 import com.example.data.local.Course
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -1172,15 +1173,7 @@ private fun DeadlinesCalendarView(
     val cal = remember { Calendar.getInstance() }
     var currentYear by remember { mutableIntStateOf(cal.get(Calendar.YEAR)) }
     var currentMonth by remember { mutableIntStateOf(cal.get(Calendar.MONTH)) }
-    var selectedDayEpoch by remember {
-        val todayCal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        mutableStateOf(todayCal.timeInMillis)
-    }
+    var selectedDayEpoch by remember { mutableStateOf(startOfLocalDay(System.currentTimeMillis())) }
 
     val monthFormatter = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
     val displayMonth = remember(currentYear, currentMonth) {
@@ -1206,14 +1199,7 @@ private fun DeadlinesCalendarView(
     val tasksByDay = remember(tasks) {
         val map = mutableMapOf<Long, MutableList<TaskWithCourse>>()
         for (item in tasks) {
-            val c = Calendar.getInstance().apply {
-                timeInMillis = item.task.dueDateEpochMillis
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            map.getOrPut(c.timeInMillis) { mutableListOf() }.add(item)
+                map.getOrPut(startOfLocalDay(item.task.dueDateEpochMillis)) { mutableListOf() }.add(item)
         }
         map
     }

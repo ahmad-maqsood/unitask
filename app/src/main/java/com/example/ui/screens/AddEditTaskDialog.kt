@@ -77,6 +77,7 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.util.DateFormats
 import com.example.util.AttachmentManager
 import com.example.util.SavedAttachmentInfo
 import java.text.SimpleDateFormat
@@ -515,8 +516,7 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Date selector
-                        val dateFormatter = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
-                        val formattedDate = dateFormatter.format(Date(selectedDueDateMillis))
+                        val formattedDate = DateFormats.fullDate(selectedDueDateMillis)
 
                         OutlinedCard(
                             modifier = Modifier

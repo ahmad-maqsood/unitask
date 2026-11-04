@@ -83,6 +83,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.util.DateFormats
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
@@ -760,7 +761,7 @@ fun GroupTaskRow(
     }
 
     val dueDateStr = remember(task.dueDateEpochMillis) {
-        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(task.dueDateEpochMillis))
+        DateFormats.shortDate(task.dueDateEpochMillis)
     }
     val timeStr = remember(task.dueTimeHour, task.dueTimeMinute) {
         com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)

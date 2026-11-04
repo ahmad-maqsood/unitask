@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.util.DateFormats
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import com.example.data.groups.GroupMember
@@ -258,8 +259,7 @@ fun GroupTaskDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val dateFormatter = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
-                        val formattedDate = dateFormatter.format(Date(selectedDueDateMillis))
+                        val formattedDate = DateFormats.fullDate(selectedDueDateMillis)
 
                         OutlinedCard(
                             modifier = Modifier

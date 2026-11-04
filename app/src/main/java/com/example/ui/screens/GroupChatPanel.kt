@@ -75,6 +75,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.example.util.DateFormats
 import com.example.data.groups.GroupMessage
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -519,7 +520,7 @@ private fun ChatBubble(
     val haptic = LocalHapticFeedback.current
 
     val timeText = remember(message.createdAtMillis) {
-        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(message.createdAtMillis))
+        DateFormats.chatClock(message.createdAtMillis)
     }
 
     // A bubble is at most 80% of the available width, so it fits small phones and tablets alike.
@@ -691,7 +692,7 @@ private fun ChatBubble(
 @Composable
 private fun ChatDayLabel(millis: Long) {
     val label = remember(millis) {
-        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(millis))
+        DateFormats.shortDate(millis)
     }
     Box(
         modifier = Modifier
@@ -708,13 +709,15 @@ private fun ChatDayLabel(millis: Long) {
 }
 
 private fun formatDayLabel(millis: Long): String {
-    val cal = Calendar.getInstance().apply { timeInMillis = millis }
-    val today = Calendar.getInstance()
+    val now = System.currentTimeMillis()
+    val yesterday = Calendar.getInstance().apply {
+        timeInMillis = now
+        add(Calendar.DAY_OF_YEAR, -1)
+    }.timeInMillis
     return when {
-        isSameDay(millis, today.timeInMillis) -> "Today"
-        today.get(Calendar.DAY_OF_YEAR) - cal.get(Calendar.DAY_OF_YEAR) == 1 &&
-            today.get(Calendar.YEAR) == cal.get(Calendar.YEAR) -> "Yesterday"
-        else -> SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(millis))
+        isSameDay(millis, now) -> "Today"
+        isSameDay(millis, yesterday) -> "Yesterday"
+        else -> DateFormats.shortDate(millis)
     }
 }
 

@@ -62,6 +62,7 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.RepeatRule
 import com.example.data.local.TaskItem
 import com.example.data.local.repeat
+import com.example.util.DateFormats
 import com.example.util.HighPriorityAlarm
 import com.example.util.TimeFormatter
 import java.text.SimpleDateFormat
@@ -312,7 +313,7 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Date selector
-                        val dateFormatter = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
+
                         val isDateMissing = selectedDueDateMillis == null
 
                         OutlinedCard(
@@ -362,7 +363,7 @@ fun MyTaskDialog(
                                     Column {
                                         if (selectedDueDateMillis != null) {
                                             Text(
-                                                text = dateFormatter.format(Date(selectedDueDateMillis!!)),
+                                                text = DateFormats.fullDate(selectedDueDateMillis!!),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.Medium
                                             )

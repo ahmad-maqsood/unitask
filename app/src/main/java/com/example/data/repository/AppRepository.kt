@@ -10,6 +10,7 @@ import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskAttachmentDao
 import com.example.data.local.TaskDao
+import com.example.data.local.startOfLocalDay
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
@@ -284,12 +285,7 @@ class AppRepository(
      */
     suspend fun rolloverCompletedRepeatingTasks(): Boolean = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
-        val startOfToday = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        val startOfToday = startOfLocalDay(now)
 
         var changed = false
         for (task in taskDao.getAllActiveTasksSync()) {

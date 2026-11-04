@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.util.DateFormats
 import com.example.data.local.Priority
 import com.example.data.local.RepeatRule
 import com.example.data.local.isMyTasksCourse
@@ -774,15 +775,13 @@ private fun formatDueDate(epochMillis: Long, hour: Int, minute: Int): String {
     val isTomorrow = tomorrow.get(Calendar.YEAR) == calendarDue.get(Calendar.YEAR) &&
             tomorrow.get(Calendar.DAY_OF_YEAR) == calendarDue.get(Calendar.DAY_OF_YEAR)
 
-    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-    val formattedTime = timeFormat.format(calendarDue.time)
+    val formattedTime = DateFormats.clock(calendarDue.timeInMillis)
 
     return when {
         isToday -> "Today, $formattedTime"
         isTomorrow -> "Tomorrow, $formattedTime"
         else -> {
-            val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-            "${dateFormat.format(calendarDue.time)}, $formattedTime"
+            "${DateFormats.monthDay(calendarDue.timeInMillis)}, $formattedTime"
         }
     }
 }

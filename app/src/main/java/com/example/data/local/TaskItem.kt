@@ -85,7 +85,10 @@ data class TaskItem(
     val completedAtMillis: Long = 0L,
     // The day of the month (1 to 31) a monthly or yearly repeating task keeps returning to, so a task
     // set on the 31st goes to Feb 28 and then back to Mar 31. 0 = not set yet (the due day is used).
-    val repeatAnchorDay: Int = 0
+    val repeatAnchorDay: Int = 0,
+    // "Delete when done": a one-time task with this on is removed after the day it was finished.
+    // Saved on the phone and in the local backup only.
+    val autoDeleteWhenDone: Boolean = false
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

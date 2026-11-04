@@ -2,6 +2,24 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [3.2.0] - 04-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)
+
+### Added
+- Snooze from the task card: pick 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM. The card shows "Snoozed until ...", also when you snooze from a reminder notification. A snooze adds one extra reminder and never replaces the normal ones.
+- **Check reminders** in Settings, Notifications and reminders: four checks (notifications allowed, reminder category not blocked, exact alarms, battery) with a **Fix this** button for each problem, and a **Send test reminder** button.
+- **Missed reminder** notification: if a reminder was due in the last 12 hours while the phone was off, or its alarm was removed (restart, app update, force stop, battery cleaner), you get one notification about it instead of silence.
+- **Delete when done** switch for one-time My tasks tasks. A finished task is deleted automatically after the day you finished it, so Undo still works that day.
+
+### Improved
+- Reminders ring at the exact time on Android 13 and newer without turning on "Alarms & reminders" (the app now uses the automatic `USE_EXACT_ALARM` permission). Android 12 still uses the setting.
+- Reminders no longer ring for a task that was finished on another phone or deleted after the alarm was set.
+- The notification tray keeps only the newest reminder of a task. A snoozed earlier reminder never removes a later one.
+- The test reminder is not saved in the notification history.
+
+### Fixed
+- A repeating task with a checklist now starts its next round with every item unticked.
+
 ## [3.1.0] - 01-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.1.0)
 

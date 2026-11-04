@@ -140,6 +140,7 @@ fun SettingsButton(
     var soundLabel by remember { mutableStateOf(NotificationSound.label(context)) }
     var showSoundDialog by remember { mutableStateOf(false) }
     var isBatteryIgnoring by remember { mutableStateOf(BackgroundAccess.isIgnoringBatteryOptimizations(context)) }
+    var showReminderCheck by remember { mutableStateOf(false) }
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     var showWeekParityDialog by remember { mutableStateOf(false) }
     var weekParityType by remember { mutableStateOf(com.example.util.WeekParity.currentWeekType(context)) }
@@ -482,6 +483,14 @@ fun SettingsButton(
                                         onClick = { showBackgroundSetupDialog = true },
                                         testTag = "settings_background_row"
                                     )
+                                    SettingsRow(
+                                        icon = Icons.Default.NotificationsActive,
+                                        title = "Check reminders",
+                                        subtitle = "Make sure reminders reach this phone. Send a test.",
+                                        onClick = { showReminderCheck = true },
+                                        testTag = "settings_reminder_check_row"
+                                    )
+                                    if (showReminderCheck) ReminderCheckDialog(onDismiss = { showReminderCheck = false })
                                     SettingsRow(
                                         icon = Icons.Default.School,
                                         title = "Class start notifications",

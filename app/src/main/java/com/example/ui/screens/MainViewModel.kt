@@ -185,6 +185,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
             try {
+                // Reminders that never rang (app force-stopped, alarms removed by a battery cleaner).
+                // This must run BEFORE the alarms are set again below.
+                com.example.reminder.MissedReminders.notifyMissed(application, database)
+            } catch (_: Exception) {
+            }
+            try {
                 ReminderScheduler(application).rescheduleAll(database)
             } catch (_: Exception) {
             }
@@ -973,7 +979,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         priority: Priority,
         reminders: Set<ReminderOption>,
         repeat: RepeatRule,
-        existing: TaskItem?
+        existing: TaskItem?,
+        autoDelete: Boolean = false
     ) {
         closeMyTaskDialog()
         viewModelScope.launch {
@@ -990,6 +997,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     priority = priority,
                     reminderOptions = reminders,
                     repeatRule = repeat.name,
+                    autoDeleteWhenDone = autoDelete && repeat == RepeatRule.NONE,
                     isSynced = false
                 )
                 repository.updateTask(updated)
@@ -1005,6 +1013,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     status = TaskStatus.PENDING,
                     reminderOptions = reminders,
                     repeatRule = repeat.name,
+                    autoDeleteWhenDone = autoDelete && repeat == RepeatRule.NONE,
                     isSynced = false
                 )
                 repository.insertTask(newTask)

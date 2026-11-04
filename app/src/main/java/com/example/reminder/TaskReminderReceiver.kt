@@ -45,6 +45,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_REMINDER_LABEL = "extra_reminder_label"
         const val EXTRA_REMINDER_OPTION = "extra_reminder_option"
         const val EXTRA_PRIORITY = "extra_priority"
+        const val EXTRA_TRIGGER_AT = "extra_trigger_at"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_IS_MY_TASK = "extra_is_my_task"
         const val EXTRA_GROUP_ID = "extra_group_id"
@@ -170,7 +171,13 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_SILENCE_ALARM && intent.hasExtra(ReminderSnooze.EXTRA_SNOOZE_KEY)) {
             SnoozeStore.clearIfDue(context, intent.getLongExtra(ReminderSnooze.EXTRA_SNOOZE_KEY, 0L))
         }
-        
+        // This alarm has gone off, so it is no longer "waiting". See MissedReminders.
+        MissedReminders.markHandled(
+            context,
+            intent.getLongExtra(EXTRA_TASK_ID, 0L),
+            intent.getStringExtra(EXTRA_REMINDER_OPTION),
+            intent.getLongExtra(EXTRA_TRIGGER_AT, 0L)
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -187,10 +194,12 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val groupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID)
         val isGroupTask = !groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()
 
-        // A snoozed reminder only comes back if the task is still open.
-        if (intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) &&
-            !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)
-        ) return
+        // Only show the reminder if the task is still open. This stops reminders for tasks that were
+        // finished on another phone or deleted after the alarm was set. Group tasks are skipped here
+        // (they are checked when they sync), unless it is a snoozed reminder.
+        val checkStillOpen = intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) ||
+            (!isGroupTask && taskId > 0L)
+        if (checkStillOpen && !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)) return
         createNotificationChannel(context)
 
         val isMyTask = !isGroupTask && courseCode.trim().replace("\\s+".toRegex(), "").uppercase() == "MYTASKS"
@@ -337,9 +346,22 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        // Keep only the newest reminder of a task in the tray: remove its earlier ones.
+        // "Earlier" means a bigger offset (1 day before is earlier than 1 hour before), so a snoozed
+        // earlier reminder never removes a later one.
+        val currentOption = com.example.data.local.ReminderOption.entries.firstOrNull { it.name == reminderOption }
+        if (!isSilence && taskId > 0L && currentOption != null) {
+            for (other in com.example.data.local.ReminderOption.entries) {
+                if (other.offsetMinutes <= currentOption.offsetMinutes) continue
+                val olderId = ((taskId and 0x7FFFFFFF) * 31 + other.name.hashCode()).toInt()
+                notificationManager?.cancel(olderId)
+                cancelSilenceAlarm(context, olderId)
+            }
+        }
         notificationManager?.notify(notificationId, notification)
 
-        if (!isSilence) {
+        // The test reminder from "Check reminders" is not saved in the bell history.
+        if (!isSilence && intent.data?.host != "reminder-test") {
             com.example.util.NotificationHistory.add(
                 context,
                 kind = if (isGroupTask) "Group deadline" else "Deadline",

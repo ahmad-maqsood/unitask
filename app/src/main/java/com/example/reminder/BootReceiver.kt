@@ -34,6 +34,11 @@ class BootReceiver : BroadcastReceiver() {
                     }
                 }
                 val db = AppDatabase.getDatabase(appContext)
+                // Reminders that should have rung while the phone was off. This must run BEFORE the
+                // alarms are set again, because setting them again clears the waiting list.
+                if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+                    step("missed reminders") { MissedReminders.notifyMissed(appContext, db) }
+                }
                 step("task reminders") { ReminderScheduler(appContext).rescheduleAll(db) }
                 step("class reminders") { ClassReminderScheduler(appContext).rescheduleAll(db) }
                 step("group reminders") { GroupReminderScheduler(appContext).rescheduleAll() }

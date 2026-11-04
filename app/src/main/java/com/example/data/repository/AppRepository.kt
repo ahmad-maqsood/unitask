@@ -28,6 +28,7 @@ import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.currentSupabaseUid
 import com.example.util.toggleChecklistLine
+import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -292,7 +293,19 @@ class AppRepository(
 
         var changed = false
         for (task in taskDao.getAllActiveTasksSync()) {
-            if (task.repeat == RepeatRule.NONE) continue
+            if (task.repeat == RepeatRule.NONE) {
+                // "Delete when done": a finished one-time task goes away once the day it was finished is over.
+                if (task.autoDeleteWhenDone && task.status == TaskStatus.COMPLETED) {
+                    if (task.completedAtMillis <= 0L) {
+                        // Ticked on another device, or before this update: count the day from now.
+                        taskDao.updateTask(task.copy(completedAtMillis = now))
+                    } else if (task.completedAtMillis < startOfToday) {
+                        deleteTask(task)
+                        changed = true
+                    }
+                }
+                continue
+            }
 
             // Monthly and yearly tasks keep the day they were set on (for example the 31st), so a
             // short month does not pull them to an earlier day for good. The day is saved on the task.
@@ -319,6 +332,8 @@ class AppRepository(
                 status = TaskStatus.PENDING,
                 completedAtMillis = 0L,
                 repeatAnchorDay = anchorDay,
+                // A new round starts with an empty checklist.
+                description = uncheckAllChecklistItems(task.description),
                 isSynced = false
             )
             val finalTask = moved.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(moved))

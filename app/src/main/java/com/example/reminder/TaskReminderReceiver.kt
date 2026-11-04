@@ -347,9 +347,12 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         // Keep only the newest reminder of a task in the tray: remove its earlier ones.
-        if (!isSilence && taskId > 0L && !reminderOption.isNullOrBlank()) {
+        // "Earlier" means a bigger offset (1 day before is earlier than 1 hour before), so a snoozed
+        // earlier reminder never removes a later one.
+        val currentOption = com.example.data.local.ReminderOption.entries.firstOrNull { it.name == reminderOption }
+        if (!isSilence && taskId > 0L && currentOption != null) {
             for (other in com.example.data.local.ReminderOption.entries) {
-                if (other.name == reminderOption) continue
+                if (other.offsetMinutes <= currentOption.offsetMinutes) continue
                 val olderId = ((taskId and 0x7FFFFFFF) * 31 + other.name.hashCode()).toInt()
                 notificationManager?.cancel(olderId)
                 cancelSilenceAlarm(context, olderId)
@@ -357,7 +360,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
         notificationManager?.notify(notificationId, notification)
 
-        if (!isSilence) {
+        // The test reminder from "Check reminders" is not saved in the bell history.
+        if (!isSilence && intent.data?.host != "reminder-test") {
             com.example.util.NotificationHistory.add(
                 context,
                 kind = if (isGroupTask) "Group deadline" else "Deadline",

@@ -121,7 +121,7 @@ class LocalBackupNotesTest {
 
         // Verify course link restored
         assertNotNull(note.courseId)
-        val restoredCourse = courseDao.getCourseById(note.courseId!!)
+        val restoredCourse = courseDao.getCourseByIdSync(note.courseId!!)
         assertNotNull(restoredCourse)
         assertEquals("CS 201", restoredCourse!!.code)
     }

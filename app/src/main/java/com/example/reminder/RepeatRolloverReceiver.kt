@@ -10,6 +10,9 @@ import android.os.Build
 import android.util.Log
 import com.example.data.local.AppDatabase
 import com.example.data.repository.AppRepository
+import com.example.data.repository.NoteRepository
+import com.example.util.NoteImages
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,11 +86,23 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 taskDao = db.taskDao(),
                 taskAttachmentDao = db.taskAttachmentDao(),
                 lectureSlotDao = db.lectureSlotDao(),
-                reminderScheduler = scheduler
+                reminderScheduler = scheduler,
+                noteDao = db.noteDao()
             )
             if (repository.rolloverCompletedRepeatingTasks()) {
                 // Leaves every reminder in a consistent state after the tasks moved.
                 scheduler.rescheduleAll(db)
+            }
+
+            // Purge old notes trash (deleted more than 30 days ago).
+            // This runs on app open, after boot and every midnight.
+            try {
+                NoteRepository(db.noteDao()).purgeOldTrash()
+                NoteImages.cleanupOrphans(context, db.noteDao())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not purge old notes trash: ${e.message}")
             }
 
             // A new day has started: redraw the home screen widget.

@@ -78,4 +78,54 @@ class AppDatabaseMigrationTest {
             db.close()
         }
     }
+
+    @Test
+    fun migrating11To12KeepsOldDataAndEnablesNotes() {
+        // 1. A version 11 database holding one course and one task.
+        val old = helper.createDatabase("migration-test-11-12", 11)
+        old.execSQL(
+            "INSERT INTO courses (id, name, code, instructor, colorHex, location, isSynced, cloudId, isDeleted) " +
+                "VALUES (1, 'Algorithms', 'CS201', '', '#4F46E5', '', 0, '', 0)"
+        )
+        old.execSQL(
+            "INSERT INTO tasks (id, courseId, title, description, dueDateEpochMillis, dueTimeHour, dueTimeMinute, " +
+                "priority, status, reminderOption, reminderEpochMillis, isSynced, cloudId, isDeleted, createdAt, " +
+                "repeatRule, completedAtMillis, repeatAnchorDay, autoDeleteWhenDone) " +
+                "VALUES (1, 1, 'Lab report', 'old user task', 1700000000000, 12, 0, " +
+                "'MEDIUM', 'PENDING', 'NONE', NULL, 0, '', 0, 1700000000000, 'NONE', 0, 0, 0)"
+        )
+        old.close()
+
+        // 2. Open it the way the app does. Room throws here if the schema does not match the code.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-11-12")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            // 3. The old task is still there, unchanged.
+            db.openHelper.writableDatabase
+                .query("SELECT title, description FROM tasks WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old task is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Lab report", cursor.getString(0))
+                    assertEquals("old user task", cursor.getString(1))
+                }
+
+            // 4. The notes table can be written to and read afterwards.
+            db.openHelper.writableDatabase.execSQL(
+                "INSERT INTO notes (id, title, body, courseId, isPinned, createdAt, updatedAt, isDeleted, deletedAt, isSynced, cloudId, cloudUpdatedAt) " +
+                    "VALUES (1, 'Lecture 1', 'Intro to graphs', 1, 0, 1700000000000, 1700000000000, 0, 0, 0, '', 0)"
+            )
+            db.openHelper.writableDatabase
+                .query("SELECT title, body, courseId FROM notes WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the note is missing after writing to notes table", cursor.moveToFirst())
+                    assertEquals("Lecture 1", cursor.getString(0))
+                    assertEquals("Intro to graphs", cursor.getString(1))
+                    assertEquals(1L, cursor.getLong(2))
+                }
+        } finally {
+            db.close()
+        }
+    }
 }

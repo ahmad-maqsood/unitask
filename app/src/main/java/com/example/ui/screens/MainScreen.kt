@@ -35,6 +35,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
@@ -267,6 +269,9 @@ fun MainScreen(
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     // FAB Speed-dial menu expanded state
     var isFabMenuExpanded by remember { mutableStateOf(false) }
+    val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
+    var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showNotes by rememberSaveable { mutableStateOf(false) }
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
     // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
@@ -297,6 +302,7 @@ fun MainScreen(
     // chat gets the space. They come back when the keyboard closes.
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val hideMainChrome = imeVisible && currentTab == MainTab.GROUPS
+    Box(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -342,6 +348,15 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showNotes = true },
+                        modifier = Modifier.testTag("top_bar_notes_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EditNote,
+                            contentDescription = "Notes"
+                        )
+                    }
                     AnnouncementBell(
                         announcements,
                         openRequest = openBellRequest,
@@ -868,6 +883,39 @@ fun MainScreen(
                 viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit, autoDelete)
             }
         )
+    }
+
+    if (showNotes) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            NotesHost(onClose = { showNotes = false })
+        }
+    }
+
+    markdownViewerState?.let { mState ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            MarkdownFileViewer(
+                state = mState,
+                onClose = { viewModel.closeMarkdownViewer() },
+                onSaveToNotes = { displayName, content ->
+                    viewModel.saveMarkdownToNotes(displayName, content)
+                },
+                onOpenSavedNote = { noteId ->
+                    viewModel.closeMarkdownViewer()
+                    openedNoteIdFromViewer = noteId
+                }
+            )
+        }
+    }
+
+    openedNoteIdFromViewer?.let { targetId ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            NoteEditorScreen(
+                noteId = targetId,
+                onClose = { openedNoteIdFromViewer = null },
+                onDeleted = { openedNoteIdFromViewer = null }
+            )
+        }
+    }
     }
 }
 

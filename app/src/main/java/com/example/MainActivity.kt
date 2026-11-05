@@ -59,12 +59,33 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationIntent(intent: Intent?) {
         if (intent == null) return
+        if ((intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return
+
         val dataUri = intent.data
         if (dataUri != null) {
             val parsed = com.example.util.QrCodeUtil.parseGroupInvite(dataUri.toString())
             if (parsed != null) {
                 mainViewModel.openJoinWithInvite(parsed.first, parsed.second)
                 intent.data = null
+            } else if (intent.action == Intent.ACTION_VIEW) {
+                val scheme = dataUri.scheme?.lowercase()
+                if (scheme == "content") {
+                    mainViewModel.openMarkdownFile(dataUri)
+                    intent.data = null
+                }
+            }
+        }
+
+        if (intent.action == Intent.ACTION_SEND) {
+            val streamUri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri
+            }
+            if (streamUri != null && streamUri.scheme?.lowercase() == "content") {
+                mainViewModel.openMarkdownFile(streamUri)
+                intent.removeExtra(Intent.EXTRA_STREAM)
             }
         }
         if (intent.getBooleanExtra("open_bell", false)) {

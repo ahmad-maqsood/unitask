@@ -118,7 +118,7 @@ object SupabaseSyncManager {
         return allRows
     }
 
-    private suspend inline fun <reified T : Any> fetchAllRows(
+    internal suspend inline fun <reified T : Any> fetchAllRows(
         table: String,
         userId: String
     ): List<T> {
@@ -685,6 +685,15 @@ object SupabaseSyncManager {
                     // 6. Pull & merge slots
                     pullAndMergeSlots(context, database, userId)
 
+                    // 7. Sync notes (pull first, then push; errors logged without failing the pass)
+                    try {
+                        NoteSync.sync(context, database, userId)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Note sync failed: ${e.message}", e)
+                    }
+
                     taskDao.deleteOrphanedTasks()
                     slotDao.deleteOrphanedSlots()
 
@@ -854,6 +863,7 @@ object SupabaseSyncManager {
             if (m.id != existingId) {
                 taskDao.reassignTasksToCourse(oldCourseId = m.id, newCourseId = existingId)
                 slotDao.reassignSlotsToCourse(oldCourseId = m.id, newCourseId = existingId)
+                database.noteDao().reassignCourse(m.id, existingId)
                 courseDao.deleteCourseById(m.id)
                 reassignedAny = true
             }

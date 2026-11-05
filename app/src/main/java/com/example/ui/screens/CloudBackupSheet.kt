@@ -83,6 +83,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.example.BuildConfig
 import com.example.util.AppUser
+import com.example.util.NoteImages
+import com.example.util.markdown.referencedImageNames
 import com.example.ui.theme.StatusDoneBgDark
 import com.example.ui.theme.StatusDoneBgLight
 import com.example.ui.theme.StatusDoneFgDark
@@ -603,6 +605,16 @@ private fun exportUserData(
             val courses = db.courseDao().getAllCoursesList()
             val tasks = db.taskDao().getAllActiveTasksSync()
             val slots = db.lectureSlotDao().getAllSlotsSync()
+            val notes = db.noteDao().getActiveNotesSync()
+            val courseCodeById = courses.associate { it.id to it.code }
+
+            val referencedImages = mutableSetOf<String>()
+            for (note in notes) {
+                referencedImages.addAll(referencedImageNames(note.body))
+            }
+            val noteImagesCount = referencedImages.count { name ->
+                NoteImages.isValidImageName(name) && NoteImages.imageFile(context, name)?.exists() == true
+            }
 
             val jsonObj = buildJsonObject {
                 put("exportedAt", java.time.Instant.now().toString())
@@ -610,6 +622,8 @@ private fun exportUserData(
                 put("coursesCount", courses.size)
                 put("tasksCount", tasks.size)
                 put("timetableSlotsCount", slots.size)
+                put("notesCount", notes.size)
+                put("noteImagesCount", noteImagesCount)
                 put("courses", Json.encodeToJsonElement(courses.map { mapOf("code" to it.code, "name" to it.name, "colorHex" to it.colorHex) }))
                 put("tasks", Json.encodeToJsonElement(tasks.map { 
                     mapOf(
@@ -628,6 +642,15 @@ private fun exportUserData(
                         "endHour" to it.endHour.toString(),
                         "endMinute" to it.endMinute.toString(),
                         "classroom" to (it.classroom ?: "")
+                    )
+                }))
+                put("notes", Json.encodeToJsonElement(notes.map {
+                    mapOf(
+                        "title" to it.title,
+                        "body" to it.body,
+                        "courseCode" to (it.courseId?.let { id -> courseCodeById[id] } ?: ""),
+                        "createdAt" to it.createdAt.toString(),
+                        "updatedAt" to it.updatedAt.toString()
                     )
                 }))
             }

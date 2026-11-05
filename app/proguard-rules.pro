@@ -38,6 +38,7 @@
 -keep class com.example.sync.CourseRow { *; }
 -keep class com.example.sync.TaskRow { *; }
 -keep class com.example.sync.SlotRow { *; }
+-keep class com.example.sync.NoteRow { *; }
 -keep class com.example.data.groups.** { *; }
 -keep class com.example.util.Announcement { *; }
 -keep class com.example.util.AppFeature { *; }

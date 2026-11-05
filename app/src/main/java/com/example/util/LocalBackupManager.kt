@@ -8,6 +8,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
 import com.example.data.local.MY_TASKS_COURSE_CODE
+import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -19,12 +20,14 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
+import com.example.util.markdown.referencedImageNames
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.security.GeneralSecurityException
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -33,7 +36,15 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-data class BackupCounts(val courses: Int, val slots: Int, val tasks: Int, val myTasks: Int = 0)
+data class BackupCounts(
+    val courses: Int,
+    val slots: Int,
+    val tasks: Int,
+    val myTasks: Int = 0,
+    val notes: Int = 0,
+    val images: Int = 0,
+    val skippedImages: Int = 0
+)
 
 sealed class BackupResult {
     data class Success(val counts: BackupCounts) : BackupResult()
@@ -56,6 +67,7 @@ object LocalBackupManager {
     private const val FORMAT = "unitask-backup"
     private const val FORMAT_VERSION = 1
     private const val MAX_FILE_BYTES = 20 * 1024 * 1024
+    const val MAX_BACKUP_IMAGE_BYTES: Long = 20L * 1024 * 1024
     private const val PBKDF2_ITERATIONS = 120_000
     private const val MIN_ITERATIONS = 10_000
     private const val MAX_ITERATIONS = 2_000_000
@@ -82,7 +94,12 @@ object LocalBackupManager {
 
     // ------------------------------------------------------------------ export
 
-    suspend fun export(context: Context, uri: Uri, password: String?): BackupResult =
+    suspend fun export(
+        context: Context,
+        uri: Uri,
+        password: String?,
+        maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES
+    ): BackupResult =
         withContext(Dispatchers.IO) {
             try {
                 val db = AppDatabase.getDatabase(context)
@@ -92,6 +109,7 @@ object LocalBackupManager {
                     .filter { !it.isDeleted && it.courseId in codeById }
                 val tasks = db.taskDao().getAllActiveTasksSync()
                     .filter { !it.isDeleted && it.courseId in codeById }
+                val notes = db.noteDao().getActiveNotesSync()
 
                 val courseArray = JSONArray()
                 for (c in courses) {
@@ -138,10 +156,61 @@ object LocalBackupManager {
                             .put("autoDeleteWhenDone", t.autoDeleteWhenDone)
                     )
                 }
+                val noteArray = JSONArray()
+                for (n in notes) {
+                    noteArray.put(
+                        JSONObject()
+                            .put("title", n.title)
+                            .put("body", n.body)
+                            .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
+                            .put("isPinned", n.isPinned)
+                            .put("createdAt", n.createdAt)
+                            .put("updatedAt", n.updatedAt)
+                    )
+                }
+
+                val referencedNames = LinkedHashSet<String>()
+                for (n in notes) {
+                    referencedNames.addAll(referencedImageNames(n.body))
+                }
+
+                var totalImageBytes = 0L
+                var exportedImagesCount = 0
+                var skippedImagesCount = 0
+                val imageArray = JSONArray()
+
+                for (name in referencedNames) {
+                    if (!NoteImages.isValidImageName(name)) continue
+                    val file = NoteImages.imageFile(context, name) ?: continue
+                    if (!file.exists() || !file.isFile) continue
+
+                    val fileSize = file.length()
+                    if (totalImageBytes + fileSize > maxImageBytes) {
+                        skippedImagesCount++
+                        continue
+                    }
+
+                    val bytes = try {
+                        file.readBytes()
+                    } catch (_: Exception) {
+                        continue
+                    }
+
+                    imageArray.put(
+                        JSONObject()
+                            .put("name", name)
+                            .put("data", Base64.encodeToString(bytes, Base64.NO_WRAP))
+                    )
+                    totalImageBytes += fileSize
+                    exportedImagesCount++
+                }
+
                 val data = JSONObject()
                     .put("courses", courseArray)
                     .put("slots", slotArray)
                     .put("tasks", taskArray)
+                    .put("notes", noteArray)
+                    .put("noteImages", imageArray)
 
                 val envelope = JSONObject()
                     .put("format", FORMAT)
@@ -174,7 +243,10 @@ object LocalBackupManager {
                         courses = exportedCoursesCount,
                         slots = slots.size,
                         tasks = exportedTasksCount,
-                        myTasks = exportedMyTasksCount
+                        myTasks = exportedMyTasksCount,
+                        notes = notes.size,
+                        images = exportedImagesCount,
+                        skippedImages = skippedImagesCount
                     )
                 )
             } catch (e: Exception) {
@@ -228,12 +300,14 @@ object LocalBackupManager {
         val courseDao = db.courseDao()
         val slotDao = db.lectureSlotDao()
         val taskDao = db.taskDao()
+        val noteDao = db.noteDao()
         val reminderScheduler = ReminderScheduler(context)
 
         var addedCourses = 0
         var addedSlots = 0
         var addedTasks = 0
         var addedMyTasks = 0
+        var addedNotes = 0
 
         // One transaction: either everything is restored or nothing is changed.
         db.withTransaction {
@@ -430,6 +504,78 @@ object LocalBackupManager {
                     if (isMyTask) addedMyTasks++ else addedTasks++
                 }
             }
+
+            // ---- notes
+            val existingNotes = noteDao.getActiveNotesSync().toMutableList()
+            val noteArray = data.optJSONArray("notes") ?: JSONArray()
+            for (i in 0 until noteArray.length()) {
+                val o = noteArray.optJSONObject(i) ?: continue
+                val rawCourseCode = o.optString("courseCode").trim()
+                val courseId = if (rawCourseCode.isNotBlank()) {
+                    val norm = SupabaseSyncManager.normalizeCode(rawCourseCode)
+                    idByCode[norm]
+                } else {
+                    null
+                }
+
+                val title = o.optString("title")
+                val body = o.optString("body")
+                val isPinned = o.optBoolean("isPinned", false)
+                val createdAt = o.optLong("createdAt", System.currentTimeMillis())
+                val updatedAt = o.optLong("updatedAt", createdAt)
+
+                val duplicate = existingNotes.firstOrNull {
+                    it.title == title && it.body == body && it.createdAt == createdAt
+                }
+                if (duplicate != null) {
+                    continue
+                }
+
+                val newNote = Note(
+                    title = title,
+                    body = body,
+                    courseId = courseId,
+                    isPinned = isPinned,
+                    createdAt = createdAt,
+                    updatedAt = updatedAt,
+                    isDeleted = false,
+                    deletedAt = 0L,
+                    isSynced = false,
+                    cloudId = ""
+                )
+                val newId = noteDao.insert(newNote)
+                existingNotes.add(newNote.copy(id = newId))
+                addedNotes++
+            }
+        }
+
+        // ---- note images
+        var addedImages = 0
+        val imageArray = data.optJSONArray("noteImages") ?: JSONArray()
+        for (i in 0 until imageArray.length()) {
+            try {
+                val o = imageArray.optJSONObject(i) ?: continue
+                val name = o.optString("name")
+                if (!NoteImages.isValidImageName(name)) continue
+                val rawData = o.optString("data")
+                if (rawData.isEmpty()) continue
+                val decoded = try {
+                    Base64.decode(rawData, Base64.NO_WRAP)
+                } catch (_: Exception) {
+                    continue
+                }
+                if (decoded.size > 5 * 1024 * 1024) continue
+                val targetFile = NoteImages.imageFile(context, name) ?: continue
+                if (targetFile.exists()) continue
+                try {
+                    targetFile.writeBytes(decoded)
+                    addedImages++
+                } catch (_: Exception) {
+                    // skip writing on IO failure
+                }
+            } catch (_: Exception) {
+                // a bad image must never fail the whole restore
+            }
         }
 
         // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
@@ -444,7 +590,9 @@ object LocalBackupManager {
             courses = addedCourses,
             slots = addedSlots,
             tasks = addedTasks,
-            myTasks = addedMyTasks
+            myTasks = addedMyTasks,
+            notes = addedNotes,
+            images = addedImages
         )
     }
 

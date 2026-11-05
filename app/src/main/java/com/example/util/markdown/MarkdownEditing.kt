@@ -273,4 +273,23 @@ fun continueListOnEnter(before: EditorText, after: EditorText): EditorText? {
     return EditorText(newText, newCursor, newCursor)
 }
 
+fun insertImageLine(t: EditorText, imageMarkdown: String): EditorText {
+    val clamped = t.clamped()
+    val text = clamped.text
+    val s = clamped.selStart
+    val e = clamped.selEnd
+
+    val needsNewlineBefore = s > 0 && text[s - 1] != '\n'
+    val toInsert = buildString {
+        if (needsNewlineBefore) append("\n")
+        append(imageMarkdown)
+        append("\n")
+    }
+
+    val newText = text.substring(0, s) + toInsert + text.substring(e)
+    val newCursor = s + toInsert.length
+    return EditorText(newText, newCursor, newCursor)
+}
+
+
 

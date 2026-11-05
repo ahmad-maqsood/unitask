@@ -9,6 +9,7 @@ import com.example.data.local.Course
 import com.example.data.local.NoteListItem
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.NoteRepository
+import com.example.util.NoteImages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -91,12 +92,14 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteForever(id: Long) {
         viewModelScope.launch {
             repository.deleteForever(id)
+            NoteImages.cleanupOrphans(getApplication(), database.noteDao())
         }
     }
 
     fun emptyTrash() {
         viewModelScope.launch {
             repository.emptyTrash()
+            NoteImages.cleanupOrphans(getApplication(), database.noteDao())
         }
     }
 }

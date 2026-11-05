@@ -308,37 +308,7 @@ private fun RenderMarkdownBlock(
             if (imageContent != null) {
                 imageContent(block.src, block.alt)
             } else {
-                val isSafe = isSafeLinkUrl(block.src)
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (isSafe) {
-                                Modifier.clickable { openLinkSafely(context, block.src) }
-                            } else Modifier
-                        )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Image: ${block.alt}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            textDecoration = if (isSafe) TextDecoration.Underline else TextDecoration.None
-                        )
-                    }
-                }
+                MarkdownImageFallback(src = block.src, alt = block.alt)
             }
         }
 
@@ -574,4 +544,45 @@ private fun openLinkSafely(context: Context, url: String) {
         // Ignored
     }
 }
+
+@Composable
+fun MarkdownImageFallback(
+    src: String,
+    alt: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val isSafe = isSafeLinkUrl(src)
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (isSafe) {
+                    Modifier.clickable { openLinkSafely(context, src) }
+                } else Modifier
+            )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Image,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Image: $alt",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                textDecoration = if (isSafe) TextDecoration.Underline else TextDecoration.None
+            )
+        }
+    }
+}
+
 

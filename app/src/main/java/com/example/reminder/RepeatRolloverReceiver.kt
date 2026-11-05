@@ -11,6 +11,7 @@ import android.util.Log
 import com.example.data.local.AppDatabase
 import com.example.data.repository.AppRepository
 import com.example.data.repository.NoteRepository
+import com.example.util.NoteImages
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -97,6 +98,7 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
             // This runs on app open, after boot and every midnight.
             try {
                 NoteRepository(db.noteDao()).purgeOldTrash()
+                NoteImages.cleanupOrphans(context, db.noteDao())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

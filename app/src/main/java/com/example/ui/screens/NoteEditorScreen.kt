@@ -30,6 +30,10 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.NoteShare
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
@@ -237,6 +241,7 @@ fun NoteEditorScreen(
         viewModel.loadNote(noteId)
     }
 
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle(emptyList())
 
@@ -365,6 +370,42 @@ fun NoteEditorScreen(
                         expanded = showOverflowMenu,
                         onDismissRequest = { showOverflowMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Share as text") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            onClick = {
+                                showOverflowMenu = false
+                                NoteShare.shareAsText(
+                                    context = context,
+                                    title = viewModel.title,
+                                    body = viewModel.bodyValue.text
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Share as .md file") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            onClick = {
+                                showOverflowMenu = false
+                                NoteShare.shareAsMarkdownFile(
+                                    context = context,
+                                    title = viewModel.title,
+                                    body = viewModel.bodyValue.text
+                                )
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Delete") },
                             leadingIcon = {

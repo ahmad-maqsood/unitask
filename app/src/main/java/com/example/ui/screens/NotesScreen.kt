@@ -23,7 +23,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.repository.NoteRepository
+import com.example.util.NoteShare
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -86,8 +98,20 @@ fun NotesScreen(
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
+    var showListOverflowMenu by remember { mutableStateOf(false) }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            coroutineScope.launch {
+                importNoteFile(context, uri, viewModel, snackbarHostState)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -105,6 +129,45 @@ fun NotesScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
                         )
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(
+                            onClick = { showListOverflowMenu = true },
+                            modifier = Modifier.testTag("notes_list_overflow_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Options"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showListOverflowMenu,
+                            onDismissRequest = { showListOverflowMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Import .md or .txt file") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Description,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showListOverflowMenu = false
+                                    importLauncher.launch(
+                                        arrayOf(
+                                            "text/markdown",
+                                            "text/plain",
+                                            "text/x-markdown",
+                                            "application/octet-stream"
+                                        )
+                                    )
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -471,3 +534,80 @@ private fun formatNoteDate(millis: Long): String {
     return if (isToday) DateFormats.clock(millis) else DateFormats.shortDate(millis)
 }
 
+
+private suspend fun importNoteFile(
+    context: Context,
+    uri: Uri,
+    viewModel: NotesViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    var displayName = "note.txt"
+    try {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (idx != -1) {
+                    val name = cursor.getString(idx)
+                    if (!name.isNullOrBlank()) {
+                        displayName = name
+                    }
+                }
+            }
+        }
+    } catch (_: Exception) {
+    }
+
+    val maxBytes = 1_000_000
+    val readResult = withContext(Dispatchers.IO) {
+        try {
+            val stream = context.contentResolver.openInputStream(uri)
+                ?: return@withContext null
+            stream.use { input ->
+                val out = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > maxBytes) {
+                        return@withContext "TOO_LARGE"
+                    }
+                    out.write(buffer, 0, read)
+                }
+                out.toString("UTF-8").removePrefix("\uFEFF")
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    when (readResult) {
+        null -> {
+            snackbarHostState.showSnackbar("Could not read that file")
+        }
+        "TOO_LARGE" -> {
+            snackbarHostState.showSnackbar("File is too large (limit 1 MB)")
+        }
+        else -> {
+            try {
+                val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult)
+                val title = rawTitle.take(NoteRepository.MAX_TITLE)
+                val body = rawBody.take(NoteRepository.MAX_BODY)
+                val newId = viewModel.repository.saveNote(
+                    id = 0L,
+                    title = title,
+                    body = body,
+                    courseId = null
+                )
+                if (newId > 0L) {
+                    snackbarHostState.showSnackbar("Note imported")
+                } else {
+                    snackbarHostState.showSnackbar("Could not read that file")
+                }
+            } catch (_: Exception) {
+                snackbarHostState.showSnackbar("Could not read that file")
+            }
+        }
+    }
+}

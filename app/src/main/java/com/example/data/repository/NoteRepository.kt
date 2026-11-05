@@ -28,7 +28,7 @@ class NoteRepository(private val noteDao: NoteDao) {
         noteDao.getNoteById(id)
     }
 
-    suspend fun saveNote(id: Long, title: String, body: String, courseId: Long?): Long = withContext(Dispatchers.IO) {
+    suspend fun saveNote(id: Long, title: String, body: String, courseId: Long? = null): Long = withContext(Dispatchers.IO) {
         val trimmedTitle = title.take(MAX_TITLE)
         val trimmedBody = body.take(MAX_BODY)
 
@@ -104,4 +104,3 @@ class NoteRepository(private val noteDao: NoteDao) {
         noteDao.purgeDeletedBefore(cutoff)
     }
 }
-

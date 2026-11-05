@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = AppDatabase.getDatabase(application)
-    private val repository = NoteRepository(database.noteDao())
+    val repository = NoteRepository(database.noteDao())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -60,4 +60,3 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
-

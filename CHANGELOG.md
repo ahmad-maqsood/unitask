@@ -2,8 +2,8 @@
 
 All notable changes to UniTask are documented in this file.
 
-## [3.3.0] - XX-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.3.0)
+## [3.4.0] - 05-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.4.0)
 
 ### Added
 - Notes: markdown notes with an optional course tag, opened from the top bar.
@@ -22,7 +22,8 @@ All notable changes to UniTask are documented in this file.
 - High priority reminders, for assignments, My Tasks and group tasks, and their snoozes, now use alarm-clock alarms so phones do not delay or drop them.
 - The high priority alarm hint now shows when adding assignments and group tasks too.
 - Group invites are shared as a tappable web link that opens UniTask.
-
+- Check for updates no longer fails with error 403 on shared networks.
+  
 ## [3.2.0] - 04-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)
 

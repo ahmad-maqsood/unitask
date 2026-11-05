@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
+import com.example.util.MarkdownFileReader
+import com.example.util.MarkdownReadResult
 import com.example.util.NoteShare
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -646,57 +648,18 @@ private suspend fun importNoteFile(
     viewModel: NotesViewModel,
     snackbarHostState: SnackbarHostState
 ) {
-    var displayName = "note.txt"
-    try {
-        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (idx != -1) {
-                    val name = cursor.getString(idx)
-                    if (!name.isNullOrBlank()) {
-                        displayName = name
-                    }
-                }
-            }
-        }
-    } catch (_: Exception) {
-    }
-
-    val maxBytes = 1_000_000
-    val readResult = withContext(Dispatchers.IO) {
-        try {
-            val stream = context.contentResolver.openInputStream(uri)
-                ?: return@withContext null
-            stream.use { input ->
-                val out = ByteArrayOutputStream()
-                val buffer = ByteArray(8192)
-                var total = 0
-                while (true) {
-                    val read = input.read(buffer)
-                    if (read < 0) break
-                    total += read
-                    if (total > maxBytes) {
-                        return@withContext "TOO_LARGE"
-                    }
-                    out.write(buffer, 0, read)
-                }
-                out.toString("UTF-8").removePrefix("\uFEFF")
-            }
-        } catch (_: Exception) {
-            null
-        }
-    }
+    val (displayName, readResult) = MarkdownFileReader.readFromUri(context, uri)
 
     when (readResult) {
-        null -> {
-            snackbarHostState.showSnackbar("Could not read that file")
-        }
-        "TOO_LARGE" -> {
+        is MarkdownReadResult.TooLarge -> {
             snackbarHostState.showSnackbar("File is too large (limit 1 MB)")
         }
-        else -> {
+        is MarkdownReadResult.Unreadable -> {
+            snackbarHostState.showSnackbar("Could not read that file")
+        }
+        is MarkdownReadResult.Success -> {
             try {
-                val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult)
+                val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult.text)
                 val title = rawTitle.take(NoteRepository.MAX_TITLE)
                 val body = rawBody.take(NoteRepository.MAX_BODY)
                 val newId = viewModel.repository.saveNote(

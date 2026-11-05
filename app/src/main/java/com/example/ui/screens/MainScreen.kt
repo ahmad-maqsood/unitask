@@ -269,6 +269,8 @@ fun MainScreen(
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     // FAB Speed-dial menu expanded state
     var isFabMenuExpanded by remember { mutableStateOf(false) }
+    val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
+    var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -886,6 +888,32 @@ fun MainScreen(
     if (showNotes) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NotesHost(onClose = { showNotes = false })
+        }
+    }
+
+    markdownViewerState?.let { mState ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            MarkdownFileViewer(
+                state = mState,
+                onClose = { viewModel.closeMarkdownViewer() },
+                onSaveToNotes = { displayName, content ->
+                    viewModel.saveMarkdownToNotes(displayName, content)
+                },
+                onOpenSavedNote = { noteId ->
+                    viewModel.closeMarkdownViewer()
+                    openedNoteIdFromViewer = noteId
+                }
+            )
+        }
+    }
+
+    openedNoteIdFromViewer?.let { targetId ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            NoteEditorScreen(
+                noteId = targetId,
+                onClose = { openedNoteIdFromViewer = null },
+                onDeleted = { openedNoteIdFromViewer = null }
+            )
         }
     }
     }

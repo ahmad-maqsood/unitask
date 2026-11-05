@@ -100,6 +100,7 @@ UniTask requires **Android 7.0 (API 24)** or newer.
   - Autosave as you type with full undo and redo history in the editor.
   - Recently deleted notes are kept in the trash for 30 days before permanent deletion, with instant restore.
   - Share notes as plain text or export as `.md` files, and import `.md` or `.txt` files directly into Notes.
+  - Open Markdown files from other apps via "Open with" and Share, and save the preview to Notes.
   - Photos from the gallery are stored locally with thumbnail preview, full-screen viewing and automatic orphan cleanup.
   - Notes are included in encrypted local backups, data export and cloud sync with conflict protection.
   - Deleting a course keeps notes safe and cleanly detaches the course link.

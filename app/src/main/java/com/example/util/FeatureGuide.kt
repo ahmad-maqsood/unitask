@@ -135,7 +135,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Share, Backup and Sync for Notes", "Share notes, import files, back up notes locally and sync with your cloud account.", "backup", 145,
-            "1. In the note editor, open the three dots menu and tap Share as text or Share as .md file.\n2. In the notes list, open the top-right menu and tap Import .md or .txt file.\n3. Notes are included automatically in local backups and in Export My Data under Settings.\n4. When you are signed in, notes sync to the cloud with conflict protection.\n5. Note images stay saved on your phone and are kept in local backups, but are not uploaded to the cloud."
+            "1. In the note editor, open the three dots menu and tap Share as text or Share as .md file.\n2. In the notes list, open the top-right menu and tap Import .md or .txt file.\n3. Open Markdown files from other apps via Open with and Share, and save the preview to Notes.\n4. Notes are included automatically in local backups and in Export My Data under Settings.\n5. When you are signed in, notes sync to the cloud with conflict protection.\n6. Note images stay saved on your phone and are kept in local backups, but are not uploaded to the cloud."
         )
     ).sortedBy { it.sortOrder }
 }

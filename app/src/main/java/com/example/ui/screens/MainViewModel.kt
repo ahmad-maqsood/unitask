@@ -81,6 +81,18 @@ import com.example.data.local.deadlineMillis
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
 import com.example.sync.SupabaseSyncManager
+import android.net.Uri
+import com.example.data.repository.NoteRepository
+import com.example.util.MarkdownFileReader
+import com.example.util.MarkdownReadResult
+import com.example.util.NoteShare
+import kotlinx.coroutines.withContext
+
+sealed interface MarkdownViewerState {
+    object Loading : MarkdownViewerState
+    data class Content(val displayName: String, val text: String) : MarkdownViewerState
+    data class Error(val message: String) : MarkdownViewerState
+}
 
 enum class MainTab {
     DEADLINES,
@@ -563,6 +575,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val filteredPersonal = personal.filter { it.course?.isMyTasksCourse() != true }
         filteredPersonal + groups.map { it.toTaskWithCourse() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Markdown file viewer state when a .md or .txt file is opened from another app.
+    private val _markdownViewerState = MutableStateFlow<MarkdownViewerState?>(null)
+    val markdownViewerState: StateFlow<MarkdownViewerState?> = _markdownViewerState.asStateFlow()
+
+    fun openMarkdownFile(uri: Uri) {
+        _markdownViewerState.value = MarkdownViewerState.Loading
+        viewModelScope.launch {
+            val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
+            when (result) {
+                is MarkdownReadResult.Success -> {
+                    _markdownViewerState.value = MarkdownViewerState.Content(
+                        displayName = name,
+                        text = result.text
+                    )
+                }
+                is MarkdownReadResult.TooLarge -> {
+                    _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                }
+                is MarkdownReadResult.Binary -> {
+                    _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
+                }
+                is MarkdownReadResult.Unreadable -> {
+                    _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
+                }
+            }
+        }
+    }
+
+    fun closeMarkdownViewer() {
+        _markdownViewerState.value = null
+    }
+
+    suspend fun saveMarkdownToNotes(displayName: String, text: String): Long = withContext(Dispatchers.IO) {
+        try {
+            val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, text)
+            val title = rawTitle.take(NoteRepository.MAX_TITLE)
+            val body = rawBody.take(NoteRepository.MAX_BODY)
+            val db = AppDatabase.getDatabase(getApplication())
+            val noteRepo = NoteRepository(db.noteDao())
+            val newId = noteRepo.saveNote(
+                id = 0L,
+                title = title,
+                body = body,
+                courseId = null
+            )
+            if (newId > 0L && currentSupabaseUid() != null) {
+                try {
+                    com.example.sync.SyncScheduler.scheduleSync(getApplication())
+                } catch (_: Exception) {
+                }
+            }
+            newId
+        } catch (_: Exception) {
+            0L
+        }
+    }
 
     // Set when an invite link (unitask://join) is opened; the Groups tab opens the Join dialog with prefilled fields.
     private val _pendingGroupInvite = MutableStateFlow<Pair<String, String>?>(null)

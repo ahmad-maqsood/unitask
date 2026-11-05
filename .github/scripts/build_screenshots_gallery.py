@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 SCREENS = [
@@ -36,12 +37,11 @@ def main():
     version_match = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
     version = version_match.group(1) if version_match else "current"
 
-    rows = []
-    for offset in range(0, len(SCREENS), 3):
+    # Keep the repository lightweight: convert lossless emulator PNGs into high-quality JPEGs.\n    for name, _, _ in SCREENS:\n        source = directory / f"{name}.png"\n        target = directory / f"{name}.jpg"\n        with Image.open(source) as image:\n            image.convert("RGB").save(target, "JPEG", quality=88, optimize=True, progressive=True)\n\n    rows = []\n    for offset in range(0, len(SCREENS), 3):
         cells = []
         for name, title, description in SCREENS[offset:offset + 3]:
             cells.append(
-                f'    <td align="center"><a href="docs/screenshots/{name}.png">'
+                f'    <td align="center"><a href="docs/screenshots/{name}.jpg">'
                 f'<img src="docs/screenshots/{name}.png" width="220" alt="{title}" /></a>'
                 f'<br/><sub><b>{title}</b><br/>{description}</sub></td>'
             )
@@ -71,10 +71,7 @@ def main():
         raise SystemExit("Could not locate the README Screenshots section.")
     readme_path.write_text(readme[:start] + section + readme[end + 1:], encoding="utf-8")
 
-    for pattern in ("*.jpeg", "*.jpg"):
-        for old in directory.glob(pattern):
-            old.unlink()
-
+    for old in directory.glob("*.jpeg"):\n        old.unlink()\n    for old in directory.glob("*.png"):\n        old.unlink()\n
     print(f"Updated the README screenshot gallery for UniTask {version}.")
 
 

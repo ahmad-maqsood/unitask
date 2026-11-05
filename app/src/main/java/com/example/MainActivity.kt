@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                 intent.data = null
             } else if (intent.action == Intent.ACTION_VIEW) {
                 val scheme = dataUri.scheme?.lowercase()
-                if (scheme == "content" || scheme == "file") {
+                if (scheme == "content") {
                     mainViewModel.openMarkdownFile(dataUri)
                     intent.data = null
                 }
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri
             }
-            if (streamUri != null) {
+            if (streamUri != null && streamUri.scheme?.lowercase() == "content") {
                 mainViewModel.openMarkdownFile(streamUri)
                 intent.removeExtra(Intent.EXTRA_STREAM)
             }

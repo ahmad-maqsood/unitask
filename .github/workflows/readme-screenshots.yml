@@ -26,6 +26,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install screenshot image tooling
+        run: python -m pip install --disable-pip-version-check Pillow
+
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:

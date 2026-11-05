@@ -9,7 +9,9 @@ import com.example.data.local.Course
 import com.example.data.local.NoteListItem
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.NoteRepository
+import com.example.sync.SyncScheduler
 import com.example.util.NoteImages
+import com.example.util.currentSupabaseUid
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -71,21 +73,37 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString("sort", newSort.name).apply()
     }
 
+    private fun triggerSyncIfLoggedIn() {
+        if (currentSupabaseUid() != null) {
+            try {
+                SyncScheduler.scheduleSync(getApplication())
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun triggerSync() {
+        triggerSyncIfLoggedIn()
+    }
+
     fun setPinned(id: Long, pinned: Boolean) {
         viewModelScope.launch {
             repository.setPinned(id, pinned)
+            triggerSyncIfLoggedIn()
         }
     }
 
     fun moveToTrash(id: Long) {
         viewModelScope.launch {
             repository.moveToTrash(id)
+            triggerSyncIfLoggedIn()
         }
     }
 
     fun restoreFromTrash(id: Long) {
         viewModelScope.launch {
             repository.restoreFromTrash(id)
+            triggerSyncIfLoggedIn()
         }
     }
 
@@ -93,6 +111,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.deleteForever(id)
             NoteImages.cleanupOrphans(getApplication(), database.noteDao())
+            triggerSyncIfLoggedIn()
         }
     }
 
@@ -100,6 +119,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.emptyTrash()
             NoteImages.cleanupOrphans(getApplication(), database.noteDao())
+            triggerSyncIfLoggedIn()
         }
     }
 }

@@ -706,6 +706,7 @@ private suspend fun importNoteFile(
                     courseId = null
                 )
                 if (newId > 0L) {
+                    viewModel.triggerSync()
                     snackbarHostState.showSnackbar("Note imported")
                 } else {
                     snackbarHostState.showSnackbar("Could not read that file")

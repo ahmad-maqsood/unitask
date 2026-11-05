@@ -58,5 +58,20 @@ interface NoteDao {
 
     @Query("UPDATE notes SET courseId = :newCourseId, isSynced = 0 WHERE courseId = :oldCourseId")
     suspend fun reassignCourse(oldCourseId: Long, newCourseId: Long)
+
+    @Query("SELECT * FROM notes WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun getByCloudId(cloudId: String): Note?
+
+    @Query("SELECT * FROM notes WHERE isDeleted = 0 AND isSynced = 0")
+    suspend fun getUnsyncedNotesSync(): List<Note>
+
+    @Query("UPDATE notes SET cloudId = :cloudId WHERE id = :id")
+    suspend fun setCloudId(id: Long, cloudId: String)
+
+    @Query("UPDATE notes SET isSynced = 1, cloudId = :cloudId, cloudUpdatedAt = :cloudUpdatedAt WHERE id = :id")
+    suspend fun markSynced(id: Long, cloudId: String, cloudUpdatedAt: Long)
+
+    @Query("SELECT * FROM notes WHERE isDeleted = 1 AND isSynced = 0 AND cloudId != ''")
+    suspend fun getDeletedUnsyncedWithCloudIdSync(): List<Note>
 }
 

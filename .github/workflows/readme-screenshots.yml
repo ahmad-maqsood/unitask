@@ -56,34 +56,13 @@ jobs:
           SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
           SCREENSHOT_GROUP_ID: ${{ steps.seed_demo.outputs.group_id }}
         with:
-          # API 30 is compatible with minSdk 24 and lighter than recent images.
           api-level: 30
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          # Avoid the action's automatic ADB animation commands: on this runner
-          # they intermittently fail with a broken pipe immediately after boot.
           disable-animations: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
-          script: |
-            set -e
-            # Wait until ADB is responsive before issuing commands.
-            adb wait-for-device
-            for attempt in $(seq 1 30); do
-              if [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
-                break
-              fi
-              sleep 5
-            done
-            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-            mkdir -p "$HOME/.android"
-            if [ ! -f "$HOME/.android/debug.keystore" ]; then
-              keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
-            fi
-            adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATIONS || true
-            ./gradlew connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=com.example.ReadmeScreenshotTest -Pandroid.testInstrumentationRunnerArguments.demoEmail="$SCREENSHOT_DEMO_OWNER_EMAIL" -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
-            mkdir -p docs/screenshots
-            adb pull /sdcard/Android/data/com.aistudio.unitask.zrvqk/files/readme-screenshots/. docs/screenshots/
+          script: bash .github/scripts/capture_readme_screenshots.sh
 
       - name: Update README gallery
         run: python3 .github/scripts/build_screenshots_gallery.py

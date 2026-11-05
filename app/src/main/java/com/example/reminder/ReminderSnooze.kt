@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import com.example.MainActivity
 import com.example.data.groups.GroupRepository
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
@@ -61,7 +62,16 @@ object ReminderSnooze {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (original.getStringExtra(TaskReminderReceiver.EXTRA_PRIORITY) == "HIGH") {
+                // A snoozed high priority reminder must not be delayed by battery saving either.
+                val showIntent = PendingIntent.getActivity(
+                    context,
+                    requestCode(notificationId),
+                    Intent(context, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                am.setAlarmClock(AlarmManager.AlarmClockInfo(triggerAt, showIntent), pending)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (am.canScheduleExactAlarms()) {
                     am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
                 } else {

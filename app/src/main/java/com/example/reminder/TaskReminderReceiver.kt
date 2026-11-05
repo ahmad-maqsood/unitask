@@ -73,6 +73,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         db.taskDao().updateStatusAndCompletedAt(taskId, TaskStatus.COMPLETED, System.currentTimeMillis())
                         com.example.widget.UniTaskWidget.refresh(context)
                         ReminderScheduler(context).cancelReminder(taskId)
+                        SnoozeStore.clear(context, taskId, cancelAlarm = true)
                         if (currentSupabaseUid() != null) {
                             com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
                         }

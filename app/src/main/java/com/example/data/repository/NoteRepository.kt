@@ -99,6 +99,13 @@ class NoteRepository(private val noteDao: NoteDao) {
         noteDao.deleteForever(id)
     }
 
+    suspend fun emptyTrash() = withContext(Dispatchers.IO) {
+        val deleted = noteDao.getAllNotesSync().filter { it.isDeleted }
+        for (note in deleted) {
+            noteDao.deleteForever(note.id)
+        }
+    }
+
     suspend fun purgeOldTrash(now: Long = System.currentTimeMillis()): Int = withContext(Dispatchers.IO) {
         val cutoff = now - (TRASH_DAYS * 24L * 60L * 60L * 1000L)
         noteDao.purgeDeletedBefore(cutoff)

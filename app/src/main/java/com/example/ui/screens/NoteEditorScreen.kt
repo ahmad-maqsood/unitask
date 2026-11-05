@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.platform.LocalContext
 import com.example.util.NoteShare
@@ -124,6 +125,9 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     var selectedCourseId by mutableStateOf<Long?>(null)
         private set
 
+    var isPinned by mutableStateOf(false)
+        private set
+
     var isLoaded by mutableStateOf(false)
         private set
 
@@ -148,6 +152,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                     title = note.title
                     bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
                     selectedCourseId = note.courseId
+                    isPinned = note.isPinned
                 }
                 isLoaded = true
             }
@@ -221,6 +226,21 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
         savedId
+    }
+
+    fun togglePinned() {
+        viewModelScope.launch {
+            val target = !isPinned
+            isPinned = target
+            if (currentId == 0L) {
+                val savedId = saveAndFlush()
+                if (savedId > 0L) {
+                    repository.setPinned(savedId, target)
+                }
+            } else {
+                repository.setPinned(currentId, target)
+            }
+        }
     }
 
     suspend fun moveToTrash(id: Long) = withContext(Dispatchers.IO) {
@@ -370,6 +390,20 @@ fun NoteEditorScreen(
                         expanded = showOverflowMenu,
                         onDismissRequest = { showOverflowMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text(if (viewModel.isPinned) "Unpin" else "Pin") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = viewModel.currentId > 0L || viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            onClick = {
+                                showOverflowMenu = false
+                                viewModel.togglePinned()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Share as text") },
                             leadingIcon = {
@@ -535,15 +569,35 @@ fun NoteEditorScreen(
                     .testTag("note_body_input")
             )
 
-            // Character limit warning (only when fewer than 1,000 remain)
-            val remainingBodyChars = NoteRepository.MAX_BODY - viewModel.bodyValue.text.length
-            if (remainingBodyChars < 1000) {
+            // Word and character count line
+            val bodyText = viewModel.bodyValue.text
+            val words = remember(bodyText) { wordCount(bodyText) }
+            val chars = remember(bodyText) { characterCount(bodyText) }
+            val wordsLabel = if (words == 1) "1 word" else "$words words"
+            val charsLabel = if (chars == 1) "1 character" else "$chars characters"
+            val remainingBodyChars = NoteRepository.MAX_BODY - chars
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "$remainingBodyChars characters left",
+                    text = "$wordsLabel  |  $charsLabel",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("note_word_count")
                 )
+
+                if (remainingBodyChars < 1000) {
+                    Text(
+                        text = "$remainingBodyChars characters left",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // Markdown editing toolbar

@@ -9,6 +9,12 @@ sealed interface NotesFilter {
     data class Course(val courseId: Long) : NotesFilter
 }
 
+enum class NotesSort {
+    UPDATED,
+    CREATED,
+    TITLE
+}
+
 fun filterNotes(
     items: List<NoteListItem>,
     query: String,
@@ -29,6 +35,48 @@ fun filterNotes(
         }
         matchesCourse && matchesQuery
     }
+}
+
+fun sortNotes(items: List<NoteListItem>, sort: NotesSort): List<NoteListItem> {
+    return items.sortedWith(
+        compareByDescending<NoteListItem> { it.note.isPinned }
+            .then(
+                when (sort) {
+                    NotesSort.UPDATED -> compareByDescending { it.note.updatedAt }
+                    NotesSort.CREATED -> compareByDescending { it.note.createdAt }
+                    NotesSort.TITLE -> compareBy(String.CASE_INSENSITIVE_ORDER) { noteDisplayTitle(it.note) }
+                }
+            )
+    )
+}
+
+fun daysLeftInTrash(deletedAt: Long, now: Long): Int {
+    if (now <= deletedAt) return 30
+    val millisPerDay = 24L * 60 * 60 * 1000L
+    val elapsedDays = (now - deletedAt) / millisPerDay
+    val remaining = 30 - elapsedDays
+    return if (remaining < 0) 0 else remaining.toInt()
+}
+
+fun wordCount(text: String): Int {
+    var count = 0
+    var inWord = false
+    for (i in 0 until text.length) {
+        val c = text[i]
+        if (!c.isWhitespace()) {
+            if (!inWord) {
+                count++
+                inWord = true
+            }
+        } else {
+            inWord = false
+        }
+    }
+    return count
+}
+
+fun characterCount(text: String): Int {
+    return text.length
 }
 
 // Strips markdown markers from a single line:
@@ -78,4 +126,3 @@ fun notePreviewText(body: String, maxLines: Int = 2): String {
     }
     return lines.joinToString(" ")
 }
-

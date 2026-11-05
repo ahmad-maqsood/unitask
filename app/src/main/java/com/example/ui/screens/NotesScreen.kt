@@ -30,6 +30,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
 import com.example.util.NoteShare
@@ -89,6 +91,7 @@ import kotlinx.coroutines.launch
 fun NotesScreen(
     onOpenNote: (Long) -> Unit,
     onNewNote: () -> Unit,
+    onOpenTrash: () -> Unit = {},
     onClose: () -> Unit,
     viewModel: NotesViewModel = viewModel(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
@@ -96,12 +99,14 @@ fun NotesScreen(
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
+    val currentSort by viewModel.sort.collectAsStateWithLifecycle()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     var showListOverflowMenu by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -132,6 +137,63 @@ fun NotesScreen(
                     }
                 },
                 actions = {
+                    Box {
+                        IconButton(
+                            onClick = { showSortMenu = true },
+                            modifier = Modifier.testTag("notes_sort_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Sort,
+                                contentDescription = "Sort notes"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Last edited",
+                                        fontWeight = if (currentSort == NotesSort.UPDATED) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (currentSort == NotesSort.UPDATED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setSort(NotesSort.UPDATED)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Date created",
+                                        fontWeight = if (currentSort == NotesSort.CREATED) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (currentSort == NotesSort.CREATED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setSort(NotesSort.CREATED)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Title A to Z",
+                                        fontWeight = if (currentSort == NotesSort.TITLE) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (currentSort == NotesSort.TITLE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setSort(NotesSort.TITLE)
+                                    showSortMenu = false
+                                }
+                            )
+                        }
+                    }
+
                     Box {
                         IconButton(
                             onClick = { showListOverflowMenu = true },
@@ -165,6 +227,19 @@ fun NotesScreen(
                                             "application/octet-stream"
                                         )
                                     )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Recently deleted") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showListOverflowMenu = false
+                                    onOpenTrash()
                                 }
                             )
                         }
@@ -370,6 +445,7 @@ fun NotesScreen(
                         NoteCard(
                             item = item,
                             onClick = { onOpenNote(item.note.id) },
+                            onTogglePin = { viewModel.setPinned(item.note.id, !item.note.isPinned) },
                             onDelete = {
                                 val noteId = item.note.id
                                 viewModel.moveToTrash(noteId)
@@ -397,6 +473,7 @@ fun NotesScreen(
 private fun NoteCard(
     item: NoteListItem,
     onClick: () -> Unit,
+    onTogglePin: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -437,15 +514,30 @@ private fun NoteCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = displayTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (item.note.isPinned) {
+                        Icon(
+                            imageVector = Icons.Default.PushPin,
+                            contentDescription = "Pinned",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .padding(end = 4.dp)
+                                .testTag("note_pin_icon_${item.note.id}")
+                        )
+                    }
+                    Text(
+                        text = displayTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 Box {
                     IconButton(
@@ -463,6 +555,19 @@ private fun NoteCard(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text(if (item.note.isPinned) "Unpin" else "Pin") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onTogglePin()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Delete") },
                             leadingIcon = {

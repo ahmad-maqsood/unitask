@@ -41,3 +41,5 @@ The emulator uses fictional courses, deadlines, timetable entries, notes and tas
 The workflow reserves the group username `unitask-screenshot-demo`. Before creating a fresh group, it removes the previous screenshot group's messages and member, then deletes that group. It does not touch other groups. The latest demo group and messages remain in Supabase after a run, until the next screenshot run replaces them or you delete the group from UniTask while signed in as its owner.
 
 If the workflow fails during setup, check that both demo users exist, their email addresses are confirmed, and the four GitHub secrets are spelled exactly as shown above.
+
+If the workflow captures the images but cannot open the generated pull request, check **GitHub → Settings → Actions → General → Workflow permissions** and enable **Allow GitHub Actions to create and approve pull requests**. The workflow needs this permission only to open the screenshot PR.

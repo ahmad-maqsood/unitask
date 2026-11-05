@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListBulleted
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +61,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +86,7 @@ import com.example.data.repository.NoteRepository
 import com.example.util.markdown.EditorText
 import com.example.util.markdown.insertLink
 import com.example.util.markdown.insertTable
+import com.example.util.markdown.toggleCheckboxAtLine
 import com.example.util.markdown.toggleLinePrefix
 import com.example.util.markdown.toggleWrap
 import kotlinx.coroutines.Dispatchers
@@ -95,6 +99,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+
+// When true, opening an existing note starts in Preview mode.
+// Set this to false to always open existing notes in Edit mode.
+private const val OPEN_EXISTING_NOTES_IN_PREVIEW = true
 
 class NoteEditorViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
@@ -232,6 +240,11 @@ fun NoteEditorScreen(
     val coroutineScope = rememberCoroutineScope()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle(emptyList())
 
+    val isExistingNote = (noteId != null && noteId > 0L)
+    var isPreviewMode by rememberSaveable(noteId) {
+        mutableStateOf(isExistingNote && OPEN_EXISTING_NOTES_IN_PREVIEW)
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -293,81 +306,15 @@ fun NoteEditorScreen(
     ) {
         TopAppBar(
             title = {
-                Box {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (selectedCourse != null) courseColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showCoursePicker = true }
-                            .testTag("note_course_picker_button")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (selectedCourse != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(courseColor, CircleShape)
-                                )
-                                Text(
-                                    text = selectedCourse.code,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = courseColor
-                                )
-                            } else {
-                                Text(
-                                    text = "No course",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Pick course",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
+                if (!isPreviewMode) {
+                    CoursePickerPill(
+                        selectedCourse = selectedCourse,
+                        courseColor = courseColor,
+                        courses = courses,
                         expanded = showCoursePicker,
-                        onDismissRequest = { showCoursePicker = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("No course") },
-                            onClick = {
-                                viewModel.setCourse(null)
-                                showCoursePicker = false
-                            }
-                        )
-                        courses.forEach { course ->
-                            val cColor = try {
-                                Color(android.graphics.Color.parseColor(course.colorHex))
-                            } catch (_: Exception) {
-                                Color(0xFF4F46E5)
-                            }
-                            DropdownMenuItem(
-                                text = { Text("${course.code} - ${course.name}") },
-                                leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .background(cColor, CircleShape)
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.setCourse(course.id)
-                                    showCoursePicker = false
-                                }
-                            )
-                        }
-                    }
+                        onExpandedChange = { showCoursePicker = it },
+                        onSelectCourse = { viewModel.setCourse(it) }
+                    )
                 }
             },
             navigationIcon = {
@@ -379,6 +326,30 @@ fun NoteEditorScreen(
                 }
             },
             actions = {
+                // Edit mode toggle button
+                IconButton(
+                    onClick = { isPreviewMode = false },
+                    modifier = Modifier.testTag("note_mode_edit_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = if (!isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+
+                // Preview mode toggle button
+                IconButton(
+                    onClick = { isPreviewMode = true },
+                    modifier = Modifier.testTag("note_mode_preview_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = "Preview",
+                        tint = if (isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+
                 Box {
                     IconButton(
                         onClick = { showOverflowMenu = true },
@@ -423,154 +394,287 @@ fun NoteEditorScreen(
             )
         )
 
-        // Title input field
-        TextField(
-            value = viewModel.title,
-            onValueChange = { viewModel.updateTitle(it) },
-            placeholder = {
-                Text(
-                    text = "Title",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
-            },
-            textStyle = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("note_title_input")
-        )
-
-        // Body input field
-        TextField(
-            value = viewModel.bodyValue,
-            onValueChange = { viewModel.updateBody(it) },
-            placeholder = {
-                Text(
-                    text = "Start writing",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
-            },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .testTag("note_body_input")
-        )
-
-        // Character limit warning (only when fewer than 1,000 remain)
-        val remainingBodyChars = NoteRepository.MAX_BODY - viewModel.bodyValue.text.length
-        if (remainingBodyChars < 1000) {
-            Text(
-                text = "$remainingBodyChars characters left",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-            )
-        }
-
-        // Markdown editing toolbar
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
+        if (isPreviewMode) {
+            // Preview mode: shows title (headlineSmall), course chip, then MarkdownPreview(body)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
             ) {
-                IconButton(
-                    onClick = { applyEditing { toggleLinePrefix(it, "## ") } },
-                    modifier = Modifier.testTag("toolbar_heading")
-                ) {
-                    Icon(Icons.Default.Title, contentDescription = "Heading")
+                Text(
+                    text = viewModel.title.ifBlank { "Untitled Note" },
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (viewModel.title.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .testTag("note_preview_title")
+                )
+
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
+                    CoursePickerPill(
+                        selectedCourse = selectedCourse,
+                        courseColor = courseColor,
+                        courses = courses,
+                        expanded = showCoursePicker,
+                        onExpandedChange = { showCoursePicker = it },
+                        onSelectCourse = { viewModel.setCourse(it) }
+                    )
                 }
-                IconButton(
-                    onClick = { applyEditing { toggleWrap(it, "**") } },
-                    modifier = Modifier.testTag("toolbar_bold")
+
+                MarkdownPreview(
+                    markdown = viewModel.bodyValue.text,
+                    onToggleChecklist = { lineIndex ->
+                        val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
+                        viewModel.updateBody(
+                            TextFieldValue(
+                                text = newText,
+                                selection = viewModel.bodyValue.selection
+                            )
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            }
+        } else {
+            // Edit mode: Title input field, Body input field, Character limit, Formatting toolbar
+            TextField(
+                value = viewModel.title,
+                onValueChange = { viewModel.updateTitle(it) },
+                placeholder = {
+                    Text(
+                        text = "Title",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                },
+                textStyle = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("note_title_input")
+            )
+
+            TextField(
+                value = viewModel.bodyValue,
+                onValueChange = { viewModel.updateBody(it) },
+                placeholder = {
+                    Text(
+                        text = "Start writing",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .testTag("note_body_input")
+            )
+
+            // Character limit warning (only when fewer than 1,000 remain)
+            val remainingBodyChars = NoteRepository.MAX_BODY - viewModel.bodyValue.text.length
+            if (remainingBodyChars < 1000) {
+                Text(
+                    text = "$remainingBodyChars characters left",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                )
+            }
+
+            // Markdown editing toolbar
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.FormatBold, contentDescription = "Bold")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleWrap(it, "*") } },
-                    modifier = Modifier.testTag("toolbar_italic")
-                ) {
-                    Icon(Icons.Default.FormatItalic, contentDescription = "Italic")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleWrap(it, "~~") } },
-                    modifier = Modifier.testTag("toolbar_strikethrough")
-                ) {
-                    Icon(Icons.Default.FormatStrikethrough, contentDescription = "Strikethrough")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
-                    modifier = Modifier.testTag("toolbar_bullet")
-                ) {
-                    Icon(Icons.Default.FormatListBulleted, contentDescription = "Bullet list")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },
-                    modifier = Modifier.testTag("toolbar_numbered")
-                ) {
-                    Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered list")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleLinePrefix(it, "- [ ] ") } },
-                    modifier = Modifier.testTag("toolbar_checklist")
-                ) {
-                    Icon(Icons.Default.Checklist, contentDescription = "Checklist")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleLinePrefix(it, "> ") } },
-                    modifier = Modifier.testTag("toolbar_quote")
-                ) {
-                    Icon(Icons.Default.FormatQuote, contentDescription = "Quote")
-                }
-                IconButton(
-                    onClick = { applyEditing { toggleWrap(it, "`") } },
-                    modifier = Modifier.testTag("toolbar_code")
-                ) {
-                    Icon(Icons.Default.Code, contentDescription = "Inline code")
-                }
-                IconButton(
-                    onClick = { applyEditing { insertLink(it) } },
-                    modifier = Modifier.testTag("toolbar_link")
-                ) {
-                    Icon(Icons.Default.Link, contentDescription = "Link")
-                }
-                IconButton(
-                    onClick = { applyEditing { insertTable(it) } },
-                    modifier = Modifier.testTag("toolbar_table")
-                ) {
-                    Icon(Icons.Default.TableChart, contentDescription = "Table")
+                    IconButton(
+                        onClick = { applyEditing { toggleLinePrefix(it, "## ") } },
+                        modifier = Modifier.testTag("toolbar_heading")
+                    ) {
+                        Icon(Icons.Default.Title, contentDescription = "Heading")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleWrap(it, "**") } },
+                        modifier = Modifier.testTag("toolbar_bold")
+                    ) {
+                        Icon(Icons.Default.FormatBold, contentDescription = "Bold")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleWrap(it, "*") } },
+                        modifier = Modifier.testTag("toolbar_italic")
+                    ) {
+                        Icon(Icons.Default.FormatItalic, contentDescription = "Italic")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleWrap(it, "~~") } },
+                        modifier = Modifier.testTag("toolbar_strikethrough")
+                    ) {
+                        Icon(Icons.Default.FormatStrikethrough, contentDescription = "Strikethrough")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
+                        modifier = Modifier.testTag("toolbar_bullet")
+                    ) {
+                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Bullet list")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },
+                        modifier = Modifier.testTag("toolbar_numbered")
+                    ) {
+                        Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered list")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleLinePrefix(it, "- [ ] ") } },
+                        modifier = Modifier.testTag("toolbar_checklist")
+                    ) {
+                        Icon(Icons.Default.Checklist, contentDescription = "Checklist")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleLinePrefix(it, "> ") } },
+                        modifier = Modifier.testTag("toolbar_quote")
+                    ) {
+                        Icon(Icons.Default.FormatQuote, contentDescription = "Quote")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { toggleWrap(it, "`") } },
+                        modifier = Modifier.testTag("toolbar_code")
+                    ) {
+                        Icon(Icons.Default.Code, contentDescription = "Inline code")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { insertLink(it) } },
+                        modifier = Modifier.testTag("toolbar_link")
+                    ) {
+                        Icon(Icons.Default.Link, contentDescription = "Link")
+                    }
+                    IconButton(
+                        onClick = { applyEditing { insertTable(it) } },
+                        modifier = Modifier.testTag("toolbar_table")
+                    ) {
+                        Icon(Icons.Default.TableChart, contentDescription = "Table")
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+private fun CoursePickerPill(
+    selectedCourse: Course?,
+    courseColor: Color,
+    courses: List<Course>,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onSelectCourse: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = if (selectedCourse != null) courseColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onExpandedChange(true) }
+                .testTag("note_course_picker_button")
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (selectedCourse != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(courseColor, CircleShape)
+                    )
+                    Text(
+                        text = selectedCourse.code,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = courseColor
+                    )
+                } else {
+                    Text(
+                        text = "No course",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Pick course",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) }
+        ) {
+            DropdownMenuItem(
+                text = { Text("No course") },
+                onClick = {
+                    onSelectCourse(null)
+                    onExpandedChange(false)
+                }
+            )
+            courses.forEach { course ->
+                val cColor = try {
+                    Color(android.graphics.Color.parseColor(course.colorHex))
+                } catch (_: Exception) {
+                    Color(0xFF4F46E5)
+                }
+                DropdownMenuItem(
+                    text = { Text("${course.code} - ${course.name}") },
+                    leadingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(cColor, CircleShape)
+                        )
+                    },
+                    onClick = {
+                        onSelectCourse(course.id)
+                        onExpandedChange(false)
+                    }
+                )
+            }
+        }
+    }
+}

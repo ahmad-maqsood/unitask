@@ -12,7 +12,7 @@ import com.example.data.local.TaskStatus
 import com.example.util.AuthStorage
 import com.example.util.currentSupabaseUid
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -94,8 +94,8 @@ object ReminderSnooze {
      * Asked when a snoozed reminder comes back: is the task still open?
      * Answers true ("show it") whenever it cannot find out, so a reminder is never lost.
      */
-    fun isStillNeeded(context: Context, taskId: Long, groupId: String?, groupTaskId: String?): Boolean =
-        runBlocking(Dispatchers.IO) {
+suspend fun isStillNeeded(context: Context, taskId: Long, groupId: String?, groupTaskId: String?): Boolean =
+        withContext(Dispatchers.IO) {
             try {
                 withTimeout(3000L) {
                     if (!groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()) {

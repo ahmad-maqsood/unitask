@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import com.example.MainActivity
 import com.example.data.groups.GroupTask
 import com.example.data.local.ReminderOption
 import com.example.data.local.decodeReminderOptions
@@ -178,7 +179,16 @@ class GroupReminderScheduler(private val context: Context) {
         )
         val am = alarmManager ?: return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (priority == "HIGH") {
+                // Alarm-clock alarms are not delayed or blocked by battery saving.
+                val showIntent = PendingIntent.getActivity(
+                    context,
+                    key.hashCode(),
+                    Intent(context, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                am.setAlarmClock(AlarmManager.AlarmClockInfo(trigger, showIntent), pendingIntent)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (am.canScheduleExactAlarms()) {
                     am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pendingIntent)
                 } else {

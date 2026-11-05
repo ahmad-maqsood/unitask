@@ -521,7 +521,7 @@ fun GroupQrCodeDialog(
                             action = Intent.ACTION_SEND
                             putExtra(
                                 Intent.EXTRA_TEXT,
-                                "Join my study group '$groupName' on UniTask!\nUsername: @$username\nJoin Code: $joinCode\nInvite Link: $inviteUri"
+                                "Join my study group '$groupName' on UniTask!\nUsername: @$username\nJoin Code: $joinCode\nInvite Link: ${com.example.util.QrCodeUtil.buildGroupInviteWebLink(username, joinCode)}"
                             )
                             type = "text/plain"
                         }

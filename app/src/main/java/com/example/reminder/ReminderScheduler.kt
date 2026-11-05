@@ -9,6 +9,9 @@ import android.os.Build
 import com.example.data.local.AppDatabase
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
+import com.example.MainActivity
+import com.example.data.local.Priority
+import com.example.util.HighPriorityAlarm
 import com.example.data.local.TaskStatus
 import java.util.Calendar
 
@@ -67,9 +70,20 @@ class ReminderScheduler(private val context: Context) {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            // High priority tasks use an alarm-clock alarm, which phones do not delay or block
+            // with battery saving. Everything else keeps the normal alarm.
+            val useAlarmClock = task.priority == Priority.HIGH
             alarmManager?.let { am ->
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (useAlarmClock) {
+                        val showIntent = PendingIntent.getActivity(
+                            context,
+                            requestCode,
+                            Intent(context, MainActivity::class.java),
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        am.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime, showIntent), pendingIntent)
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         if (am.canScheduleExactAlarms()) {
                             am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                         } else {

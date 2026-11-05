@@ -25,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Checklist
@@ -88,7 +90,9 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.NoteRepository
+import com.example.util.markdown.EditHistory
 import com.example.util.markdown.EditorText
+import com.example.util.markdown.continueListOnEnter
 import com.example.util.markdown.insertLink
 import com.example.util.markdown.insertTable
 import com.example.util.markdown.toggleCheckboxAtLine
@@ -112,6 +116,21 @@ private const val OPEN_EXISTING_NOTES_IN_PREVIEW = true
 class NoteEditorViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val repository = NoteRepository(database.noteDao())
+
+    val editHistory = EditHistory()
+
+    var canUndo by mutableStateOf(false)
+        private set
+
+    var canRedo by mutableStateOf(false)
+        private set
+
+    private var lastTypingTime = 0L
+
+    private fun updateHistoryState() {
+        canUndo = editHistory.canUndo
+        canRedo = editHistory.canRedo
+    }
 
     var currentId by mutableStateOf(0L)
         private set
@@ -141,6 +160,9 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
         if (isLoaded) return
         if (noteId == null || noteId == 0L) {
             currentId = 0L
+            editHistory.clear()
+            lastTypingTime = 0L
+            updateHistoryState()
             isLoaded = true
             return
         }
@@ -154,9 +176,97 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                     selectedCourseId = note.courseId
                     isPinned = note.isPinned
                 }
+                editHistory.clear()
+                lastTypingTime = 0L
+                updateHistoryState()
                 isLoaded = true
             }
         }
+    }
+
+    fun onBodyChange(newBody: TextFieldValue) {
+        val before = EditorText(
+            text = bodyValue.text,
+            selStart = bodyValue.selection.start,
+            selEnd = bodyValue.selection.end
+        )
+        val after = EditorText(
+            text = newBody.text,
+            selStart = newBody.selection.start,
+            selEnd = newBody.selection.end
+        )
+
+        val continued = continueListOnEnter(before, after)
+        val effectiveBody = if (continued != null) {
+            TextFieldValue(
+                text = continued.text,
+                selection = TextRange(continued.selStart, continued.selEnd)
+            )
+        } else {
+            newBody
+        }
+
+        if (effectiveBody.text != bodyValue.text) {
+            val now = System.currentTimeMillis()
+            if (now - lastTypingTime > 500L) {
+                editHistory.checkpoint(before)
+                updateHistoryState()
+            }
+            lastTypingTime = now
+        }
+
+        updateBody(effectiveBody)
+    }
+
+    fun checkpointBeforeToolbar() {
+        val current = EditorText(
+            text = bodyValue.text,
+            selStart = bodyValue.selection.start,
+            selEnd = bodyValue.selection.end
+        )
+        editHistory.checkpoint(current)
+        lastTypingTime = 0L
+        updateHistoryState()
+    }
+
+    fun undo() {
+        val current = EditorText(
+            text = bodyValue.text,
+            selStart = bodyValue.selection.start,
+            selEnd = bodyValue.selection.end
+        )
+        val target = editHistory.undo(current) ?: return
+        lastTypingTime = 0L
+        updateHistoryState()
+        updateBody(
+            TextFieldValue(
+                text = target.text,
+                selection = TextRange(
+                    target.selStart.coerceIn(0, target.text.length),
+                    target.selEnd.coerceIn(0, target.text.length)
+                )
+            )
+        )
+    }
+
+    fun redo() {
+        val current = EditorText(
+            text = bodyValue.text,
+            selStart = bodyValue.selection.start,
+            selEnd = bodyValue.selection.end
+        )
+        val target = editHistory.redo(current) ?: return
+        lastTypingTime = 0L
+        updateHistoryState()
+        updateBody(
+            TextFieldValue(
+                text = target.text,
+                selection = TextRange(
+                    target.selStart.coerceIn(0, target.text.length),
+                    target.selEnd.coerceIn(0, target.text.length)
+                )
+            )
+        )
     }
 
     fun updateTitle(newTitle: String) {
@@ -310,6 +420,7 @@ fun NoteEditorScreen(
     }
 
     fun applyEditing(transform: (EditorText) -> EditorText) {
+        viewModel.checkpointBeforeToolbar()
         val current = EditorText(
             text = viewModel.bodyValue.text,
             selStart = viewModel.bodyValue.selection.min,
@@ -351,6 +462,29 @@ fun NoteEditorScreen(
                 }
             },
             actions = {
+                if (!isPreviewMode) {
+                    IconButton(
+                        onClick = { viewModel.undo() },
+                        enabled = viewModel.canUndo,
+                        modifier = Modifier.testTag("note_undo_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Undo,
+                            contentDescription = "Undo"
+                        )
+                    }
+                    IconButton(
+                        onClick = { viewModel.redo() },
+                        enabled = viewModel.canRedo,
+                        modifier = Modifier.testTag("note_redo_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Redo,
+                            contentDescription = "Redo"
+                        )
+                    }
+                }
+
                 // Edit mode toggle button
                 IconButton(
                     onClick = { isPreviewMode = false },
@@ -501,6 +635,7 @@ fun NoteEditorScreen(
                 MarkdownPreview(
                     markdown = viewModel.bodyValue.text,
                     onToggleChecklist = { lineIndex ->
+                        viewModel.checkpointBeforeToolbar()
                         val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
                         viewModel.updateBody(
                             TextFieldValue(
@@ -545,7 +680,7 @@ fun NoteEditorScreen(
 
             TextField(
                 value = viewModel.bodyValue,
-                onValueChange = { viewModel.updateBody(it) },
+                onValueChange = { viewModel.onBodyChange(it) },
                 placeholder = {
                     Text(
                         text = "Start writing",

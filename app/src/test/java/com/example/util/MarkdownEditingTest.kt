@@ -1,11 +1,13 @@
 package com.example.util
 
 import com.example.util.markdown.EditorText
+import com.example.util.markdown.continueListOnEnter
 import com.example.util.markdown.insertLink
 import com.example.util.markdown.insertTable
 import com.example.util.markdown.toggleLinePrefix
 import com.example.util.markdown.toggleWrap
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -186,6 +188,102 @@ class MarkdownEditingTest {
         assertTrue(tableRes.selStart in 0..tableRes.text.length)
         assertTrue(tableRes.selEnd in 0..tableRes.text.length)
         assertTrue(tableRes.selStart <= tableRes.selEnd)
+    }
+
+    // -------------------------------------------------------------------------
+    // continueListOnEnter tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun continueListOnEnterBulletContinuesSameBullet() {
+        val before = EditorText("- Item one", 10, 10)
+        val after = EditorText("- Item one\n", 11, 11)
+        val res = continueListOnEnter(before, after)
+        assertEquals("- Item one\n- ", res?.text)
+        assertEquals(13, res?.selStart)
+        assertEquals(13, res?.selEnd)
+    }
+
+    @Test
+    fun continueListOnEnterNestedBulletKeepsIndentation() {
+        val before = EditorText("    * Nested item", 17, 17)
+        val after = EditorText("    * Nested item\n", 18, 18)
+        val res = continueListOnEnter(before, after)
+        assertEquals("    * Nested item\n    * ", res?.text)
+        assertEquals(24, res?.selStart)
+        assertEquals(24, res?.selEnd)
+    }
+
+    @Test
+    fun continueListOnEnterNumberedIncrements() {
+        val beforeDot = EditorText("1. Step one", 11, 11)
+        val afterDot = EditorText("1. Step one\n", 12, 12)
+        val resDot = continueListOnEnter(beforeDot, afterDot)
+        assertEquals("1. Step one\n2. ", resDot?.text)
+        assertEquals(15, resDot?.selStart)
+        assertEquals(15, resDot?.selEnd)
+
+        val beforeParen = EditorText("  9) Ninth item", 15, 15)
+        val afterParen = EditorText("  9) Ninth item\n", 16, 16)
+        val resParen = continueListOnEnter(beforeParen, afterParen)
+        assertEquals("  9) Ninth item\n  10) ", resParen?.text)
+        assertEquals(22, resParen?.selStart)
+        assertEquals(22, resParen?.selEnd)
+    }
+
+    @Test
+    fun continueListOnEnterChecklistContinuesUnchecked() {
+        val before = EditorText("- [x] Done item", 15, 15)
+        val after = EditorText("- [x] Done item\n", 16, 16)
+        val res = continueListOnEnter(before, after)
+        assertEquals("- [x] Done item\n- [ ] ", res?.text)
+        assertEquals(22, res?.selStart)
+        assertEquals(22, res?.selEnd)
+
+        val beforeStar = EditorText("  * [X] Checked with star", 25, 25)
+        val afterStar = EditorText("  * [X] Checked with star\n", 26, 26)
+        val resStar = continueListOnEnter(beforeStar, afterStar)
+        assertEquals("  * [X] Checked with star\n  - [ ] ", resStar?.text)
+        assertEquals(34, resStar?.selStart)
+        assertEquals(34, resStar?.selEnd)
+    }
+
+    @Test
+    fun continueListOnEnterEmptyItemExitsTheList() {
+        val before = EditorText("- Item\n- ", 9, 9)
+        val after = EditorText("- Item\n- \n", 10, 10)
+        val res = continueListOnEnter(before, after)
+        assertEquals("- Item\n", res?.text)
+        assertEquals(7, res?.selStart)
+        assertEquals(7, res?.selEnd)
+
+        val beforeNested = EditorText("  1. First\n  2. ", 16, 16)
+        val afterNested = EditorText("  1. First\n  2. \n", 17, 17)
+        val resNested = continueListOnEnter(beforeNested, afterNested)
+        assertEquals("  1. First\n", resNested?.text)
+        assertEquals(11, resNested?.selStart)
+        assertEquals(11, resNested?.selEnd)
+    }
+
+    @Test
+    fun continueListOnEnterOnPlainLineReturnsNull() {
+        val before = EditorText("Plain text line", 15, 15)
+        val after = EditorText("Plain text line\n", 16, 16)
+        assertNull(continueListOnEnter(before, after))
+    }
+
+    @Test
+    fun continueListOnEnterSelectionReplacedByEnterReturnsNull() {
+        val before = EditorText("- List item", 2, 6)
+        val after = EditorText("- item\n", 3, 3)
+        assertNull(continueListOnEnter(before, after))
+    }
+
+    @Test
+    fun continueListOnEnterPasteOfSeveralCharactersReturnsNull() {
+        val before = EditorText("- List item", 11, 11)
+        val after = EditorText("- List item\n\nMore text", 22, 22)
+        assertNull(continueListOnEnter(before, after))
     }
 }
 

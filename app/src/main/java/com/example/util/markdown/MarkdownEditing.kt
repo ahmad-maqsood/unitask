@@ -219,3 +219,58 @@ fun insertTable(t: EditorText): EditorText {
     return EditorText(newText, newPos, newPos)
 }
 
+fun continueListOnEnter(before: EditorText, after: EditorText): EditorText? {
+    if (before.selStart != before.selEnd) return null
+    if (after.text.length != before.text.length + 1) return null
+    if (before.selStart !in 0 until after.text.length) return null
+    if (after.text[before.selStart] != '\n') return null
+    if (after.selStart != before.selStart + 1) return null
+
+    val pos = before.selStart
+    val lineStart = before.text.lastIndexOf('\n', pos - 1).let { if (it == -1) 0 else it + 1 }
+    val lineEnd = before.text.indexOf('\n', pos).let { if (it == -1) before.text.length else it }
+    val line = before.text.substring(lineStart, lineEnd)
+
+    // List marker regex:
+    // Group 1: Leading spaces or tabs
+    // Group 2: Checklist marker (- [ ], - [x], * [ ], etc.)
+    // Group 3: Number N
+    // Group 4: Number delimiter (. or ))
+    // Group 5: Bullet marker (- , * , + )
+    val markerRegex = Regex("""^(\s*)(?:([-*+]\s+\[[ xX]\]\s+)|(\d+)([.)])\s+|([-*+]\s+))""")
+    val match = markerRegex.find(line) ?: return null
+    if (match.range.first != 0) return null
+
+    val fullMarkerLen = match.value.length
+    val remainder = line.substring(fullMarkerLen)
+
+    // If the line contains ONLY the marker (an empty item):
+    // remove the marker and the Enter, leaving an empty line, cursor at its start.
+    if (remainder.isBlank()) {
+        val newText = before.text.substring(0, lineStart) + before.text.substring(lineEnd)
+        return EditorText(newText, lineStart, lineStart)
+    }
+
+    // Otherwise, insert on the new line the same leading spaces and marker.
+    val indent = match.groupValues[1]
+    val continuationPrefix = when {
+        match.groupValues[2].isNotEmpty() -> {
+            "$indent- [ ] "
+        }
+        match.groupValues[3].isNotEmpty() -> {
+            val n = match.groupValues[3].toLongOrNull() ?: 1L
+            val delim = match.groupValues[4]
+            "$indent${n + 1}$delim "
+        }
+        else -> {
+            "$indent${match.groupValues[5]}"
+        }
+    }
+
+    val insertPos = after.selStart
+    val newText = after.text.substring(0, insertPos) + continuationPrefix + after.text.substring(insertPos)
+    val newCursor = insertPos + continuationPrefix.length
+    return EditorText(newText, newCursor, newCursor)
+}
+
+

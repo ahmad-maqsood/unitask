@@ -75,8 +75,10 @@ object NoteShare {
     fun safeFileName(title: String): String {
         val replaced = StringBuilder()
         for (c in title) {
-            if (c.isLetter() || c.isDigit() || c == ' ' || c == '-' || c == '_') {
+            if (c.isLetter() || c.isDigit() || c == '-' || c == '_') {
                 replaced.append(c)
+            } else if (c.isWhitespace()) {
+                replaced.append(' ')
             } else {
                 replaced.append('_')
             }

@@ -12,6 +12,7 @@ on:
       - 'gradle.properties'
       - 'supabase/**'
       - '.github/workflows/**'
+      - '.github/scripts/**'
 
   pull_request:
     branches:
@@ -24,6 +25,7 @@ on:
       - 'gradle.properties'
       - 'supabase/**'
       - '.github/workflows/**'
+      - '.github/scripts/**'
 
   workflow_dispatch:
 

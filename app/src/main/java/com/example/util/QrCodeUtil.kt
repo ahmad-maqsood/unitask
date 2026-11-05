@@ -24,7 +24,12 @@ object QrCodeUtil {
     fun buildGroupInviteUri(username: String, joinCode: String): String {
         return "$URI_SCHEME://$URI_HOST?username=${Uri.encode(username.trim())}&code=${Uri.encode(joinCode.trim())}"
     }
-
+    /**
+     * A normal https link. Chat apps make it tappable, and the page it opens starts UniTask.
+     */
+    fun buildGroupInviteWebLink(username: String, joinCode: String): String {
+        return "https://ahmad-maqsood.github.io/unitask/join/?username=${Uri.encode(username.trim())}&code=${Uri.encode(joinCode.trim())}"
+    }
     /**
      * Parses username and joinCode from an invite link, QR text, or message.
      */
@@ -32,7 +37,10 @@ object QrCodeUtil {
         val trimmed = text.trim()
         try {
             val uri = Uri.parse(trimmed)
-            if (uri.scheme.equals(URI_SCHEME, ignoreCase = true) || uri.host.equals("unitask.app", ignoreCase = true)) {
+            if (uri.scheme.equals(URI_SCHEME, ignoreCase = true) ||
+                uri.host.equals("unitask.app", ignoreCase = true) ||
+                uri.host.equals("ahmad-maqsood.github.io", ignoreCase = true)
+            ) {
                 val username = uri.getQueryParameter("username")
                 val code = uri.getQueryParameter("code")
                 if (!username.isNullOrBlank() && !code.isNullOrBlank()) {

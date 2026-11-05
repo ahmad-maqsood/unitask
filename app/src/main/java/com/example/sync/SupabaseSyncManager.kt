@@ -854,6 +854,7 @@ object SupabaseSyncManager {
             if (m.id != existingId) {
                 taskDao.reassignTasksToCourse(oldCourseId = m.id, newCourseId = existingId)
                 slotDao.reassignSlotsToCourse(oldCourseId = m.id, newCourseId = existingId)
+                database.noteDao().reassignCourse(m.id, existingId)
                 courseDao.deleteCourseById(m.id)
                 reassignedAny = true
             }

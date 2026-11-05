@@ -7,7 +7,9 @@ import com.example.data.local.CourseWithTaskCount
 import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotDao
 import com.example.data.local.LectureSlotWithCourse
+import com.example.data.local.NoteDao
 import com.example.data.local.TaskAttachment
+import com.example.data.local.NoteDao
 import com.example.data.local.TaskAttachmentDao
 import com.example.data.local.TaskDao
 import com.example.data.local.startOfLocalDay
@@ -50,7 +52,8 @@ class AppRepository(
     private val taskDao: TaskDao,
     private val taskAttachmentDao: TaskAttachmentDao,
     private val lectureSlotDao: LectureSlotDao,
-    private val reminderScheduler: ReminderScheduler
+    private val reminderScheduler: ReminderScheduler,
+    private val noteDao: NoteDao? = null
 ) {
 
     val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
@@ -171,6 +174,9 @@ class AppRepository(
             lectureSlotDao.softDeleteSlotsForCourse(cId)
             courseDao.softDeleteCourse(cId)
         }
+
+        // Detach notes tagged with deleted courses without deleting the user's notes.
+        noteDao?.detachCourses(allIds)
 
         // 5. Record in pending deletion guards
         SupabaseSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)

@@ -10,6 +10,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.deadlineMillis
 import com.example.data.local.startOfLocalDay
 import com.example.reminder.ReminderScheduler
+import com.example.util.NotificationHistory
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -144,10 +145,43 @@ class RepeatRolloverTest {
     }
 
     @Test
-    fun missedDailyTask_onlyOneHourLate_staysOverdue() = runBlocking {
+    fun missedDailyTask_dueEarlierToday_staysOverdueUntilMidnight() = runBlocking {
         val now = System.currentTimeMillis()
-        val due = now - hour
+        val startOfToday = startOfLocalDay(now)
+        // Due at the start of today, so it is late but still today.
+        val due = startOfToday
         val id = addTask("DAILY", due, TaskStatus.PENDING, 0L)
+
+        assertFalse(repo.rolloverCompletedRepeatingTasks())
+
+        assertEquals(due, db.taskDao().getTaskById(id)!!.dueDateEpochMillis)
+    }
+
+    @Test
+    fun missedDailyTask_dueYesterday_isReplacedByTodayOrLater_andLogged() = runBlocking {
+        val now = System.currentTimeMillis()
+        val startOfToday = startOfLocalDay(now)
+        val due = startOfToday - 15 * hour // yesterday 09:00
+        val id = addTask("DAILY", due, TaskStatus.PENDING, 0L)
+
+        assertTrue(repo.rolloverCompletedRepeatingTasks())
+
+        val task = db.taskDao().getTaskById(id)!!
+        assertEquals(TaskStatus.PENDING, task.status)
+        assertTrue(task.deadlineMillis > now)
+        // Never skips a whole day: the new date is today or tomorrow, not later.
+        assertTrue(task.deadlineMillis <= startOfToday + 2 * day)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertTrue(
+            NotificationHistory.items(context).any { it.kind == "Missed task" }
+        )
+    }
+
+    @Test
+    fun missedWeeklyTask_oneDayLate_staysOverdue() = runBlocking {
+        val now = System.currentTimeMillis()
+        val due = startOfLocalDay(now) - 15 * hour
+        val id = addTask("WEEKLY", due, TaskStatus.PENDING, 0L)
 
         assertFalse(repo.rolloverCompletedRepeatingTasks())
 

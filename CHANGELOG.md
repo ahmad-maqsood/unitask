@@ -23,6 +23,9 @@ All notable changes to UniTask are documented in this file.
 - The high priority alarm hint now shows when adding assignments and group tasks too.
 - Group invites are shared as a tappable web link that opens UniTask.
 - Check for updates no longer fails with error 403 on shared networks.
+- Repeating tasks: a missed daily or weekday task is now replaced by today's copy at midnight, so today's reminder rings. Before, it stayed overdue and the next reminder was skipped.
+- Missed daily and weekday tasks are saved in the notification bell.
+- The daily summary now moves repeating tasks to today first, so it matches your task list.
   
 ## [3.2.0] - 04-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)

@@ -29,6 +29,8 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
+import com.example.util.DateFormats
+import com.example.util.NotificationHistory
 import com.example.util.currentSupabaseUid
 import com.example.util.toggleChecklistLine
 import com.example.util.uncheckAllChecklistItems
@@ -325,9 +327,26 @@ class AppRepository(
                 // Ticked today: leave it Done until the day is over.
                 if (task.completedAtMillis >= startOfToday) continue
             } else {
-                // Not done. Only move it when the date AFTER its current one has also passed.
-                val following = nextOccurrenceMillis(task.repeat, task.deadlineMillis, task.deadlineMillis, anchorDay)
-                if (following > now) continue
+                // Not done. Daily and weekday tasks are replaced at midnight by today's copy, so
+                // today's reminder is armed and rings. Other repeats only move once the date AFTER
+                // the current one has also passed, so a missed weekly or monthly task stays visible.
+                val replacedAtMidnight =
+                    (task.repeat == RepeatRule.DAILY || task.repeat == RepeatRule.WEEKDAYS) &&
+                        task.deadlineMillis < startOfToday
+                if (!replacedAtMidnight) {
+                    val following = nextOccurrenceMillis(task.repeat, task.deadlineMillis, task.deadlineMillis, anchorDay)
+                    if (following > now) continue
+                }
+                // Keep a record of the missed copy, because the card will no longer show it.
+                NotificationHistory.add(
+                    context,
+                    kind = "Missed task",
+                    title = "Missed: ${task.title}",
+                    body = "It was due ${"${DateFormats.shortDate(task.deadlineMillis)}, ${DateFormats.clock(task.deadlineMillis)}"} and was not marked done.",
+                    target = "tab:MYTASKS",
+                    key = "missed-task|${task.id}|${task.deadlineMillis}",
+                    nowMillis = now
+                )
             }
 
             val next = nextOccurrenceMillis(task.repeat, task.deadlineMillis, now, anchorDay)

@@ -51,6 +51,15 @@ class DailySummaryReceiver : BroadcastReceiver() {
             try {
                 // Tomorrow's alarm first, so a problem below can never end the series.
                 DailySummaryScheduler(appContext).reschedule()
+                // Safety net: if the midnight alarm was delayed or killed, repeating tasks are still
+                // on yesterday's date. Move them now so the summary and today's reminders are right.
+                try {
+                    RepeatRolloverReceiver.rolloverAndReschedule(appContext)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not roll over repeating tasks: ${e.message}")
+                }
                 if (DailySummaryScheduler.isEnabled(appContext)) postSummary(appContext)
             } catch (e: Exception) {
                 Log.w(TAG, "Could not show the daily summary: ${e.message}")

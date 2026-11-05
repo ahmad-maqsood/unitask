@@ -12,6 +12,7 @@ All notable changes to UniTask are documented in this file.
 - Search, course filter, pin, sort.
 - Recently deleted for 30 days.
 - Share as text or .md file and import .md or .txt files.
+- Open Markdown files from other apps with Open with or Share, read them as a formatted preview and save them to Notes.
 - Images from the gallery stored on the phone.
 - Notes included in local backups and Export my data.
 - Cloud sync with conflict protection.

@@ -78,14 +78,14 @@ fun NotesScreen(
     onOpenNote: (Long) -> Unit,
     onNewNote: () -> Unit,
     onClose: () -> Unit,
-    viewModel: NotesViewModel = viewModel()
+    viewModel: NotesViewModel = viewModel(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
 

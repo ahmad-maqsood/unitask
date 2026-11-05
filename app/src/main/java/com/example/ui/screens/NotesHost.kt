@@ -1,78 +1,58 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotesHost(onClose: () -> Unit) {
+fun NotesHost(
+    onClose: () -> Unit,
+    viewModel: NotesViewModel = viewModel()
+) {
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(enabled = true) {
-        if (editorTarget != null) {
-            editorTarget = null
-        } else {
-            onClose()
-        }
+    BackHandler(enabled = editorTarget == null) {
+        onClose()
     }
 
     if (editorTarget == null) {
         NotesScreen(
             onOpenNote = { id -> editorTarget = id.toString() },
             onNewNote = { editorTarget = "new" },
-            onClose = onClose
+            onClose = onClose,
+            viewModel = viewModel,
+            snackbarHostState = snackbarHostState
         )
     } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Note") },
-                    navigationIcon = {
-                        IconButton(onClick = { editorTarget = null }) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+        val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
+        NoteEditorScreen(
+            noteId = targetId,
+            onClose = { editorTarget = null },
+            onDeleted = { deletedId ->
+                editorTarget = null
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Note deleted",
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
                     )
-                )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.restoreFromTrash(deletedId)
+                    }
+                }
             }
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Editor arrives in the next step",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        )
     }
 }
-

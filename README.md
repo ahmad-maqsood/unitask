@@ -144,7 +144,7 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 
 ## What's new
 
-### 3.3.0
+### 3.4.0
 
 - **Notes.** Markdown notes with an optional course tag, opened from the top bar.
 - **Editor with formatting toolbar.** Dedicated toolbar for headings, lists, tables, links, code, quotes and text styles, with automatic list continuation on Enter.

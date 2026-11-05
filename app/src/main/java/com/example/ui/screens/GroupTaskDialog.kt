@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.util.DateFormats
+import com.example.util.HighPriorityAlarm
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import com.example.data.groups.GroupMember
@@ -350,6 +351,24 @@ fun GroupTaskDialog(
                                 modifier = Modifier.testTag("group_task_priority_chip_$p")
                             )
                         }
+                    }
+                    val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
+                    if (priority == "HIGH") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (highAlarmOn) {
+                                "High priority tasks ring like an alarm for everyone in the group."
+                            } else {
+                                "Members who turn on \"Alarm for high priority tasks\" in Settings get an alarm for this."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (highAlarmOn) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
                     }
                 }
 

@@ -9,8 +9,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Course::class, TaskItem::class, TaskAttachment::class, LectureSlot::class, GroupCacheEntity::class],
-    version = 11,
+    entities = [Course::class, TaskItem::class, TaskAttachment::class, LectureSlot::class, GroupCacheEntity::class, Note::class],
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -21,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskAttachmentDao(): TaskAttachmentDao
     abstract fun lectureSlotDao(): LectureSlotDao
     abstract fun groupCacheDao(): GroupCacheDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile
@@ -101,10 +102,21 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN autoDeleteWhenDone INTEGER NOT NULL DEFAULT 0")
             }
         }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, courseId INTEGER, isPinned INTEGER NOT NULL, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL, isDeleted INTEGER NOT NULL, deletedAt INTEGER NOT NULL, isSynced INTEGER NOT NULL, cloudId TEXT NOT NULL, cloudUpdatedAt INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_courseId ON notes (courseId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_updatedAt ON notes (updatedAt)")
+            }
+        }
+
         /** Every migration, in one place. getDatabase() and the migration test both use this list. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-            MIGRATION_9_10, MIGRATION_10_11
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12
         )
         
         fun getDatabase(context: Context): AppDatabase {

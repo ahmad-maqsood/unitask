@@ -54,7 +54,11 @@ private const val MIN_PASSWORD_LENGTH = 6
 
 private fun describe(counts: BackupCounts): String {
     val base = "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
-    return if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
+    var result = if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
+    if (counts.notes > 0) {
+        result += ", ${counts.notes} notes"
+    }
+    return result
 }
 
 /**

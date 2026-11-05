@@ -8,6 +8,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
 import com.example.data.local.MY_TASKS_COURSE_CODE
+import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -33,7 +34,13 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-data class BackupCounts(val courses: Int, val slots: Int, val tasks: Int, val myTasks: Int = 0)
+data class BackupCounts(
+    val courses: Int,
+    val slots: Int,
+    val tasks: Int,
+    val myTasks: Int = 0,
+    val notes: Int = 0
+)
 
 sealed class BackupResult {
     data class Success(val counts: BackupCounts) : BackupResult()
@@ -92,6 +99,7 @@ object LocalBackupManager {
                     .filter { !it.isDeleted && it.courseId in codeById }
                 val tasks = db.taskDao().getAllActiveTasksSync()
                     .filter { !it.isDeleted && it.courseId in codeById }
+                val notes = db.noteDao().getActiveNotesSync()
 
                 val courseArray = JSONArray()
                 for (c in courses) {
@@ -138,10 +146,23 @@ object LocalBackupManager {
                             .put("autoDeleteWhenDone", t.autoDeleteWhenDone)
                     )
                 }
+                val noteArray = JSONArray()
+                for (n in notes) {
+                    noteArray.put(
+                        JSONObject()
+                            .put("title", n.title)
+                            .put("body", n.body)
+                            .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
+                            .put("isPinned", n.isPinned)
+                            .put("createdAt", n.createdAt)
+                            .put("updatedAt", n.updatedAt)
+                    )
+                }
                 val data = JSONObject()
                     .put("courses", courseArray)
                     .put("slots", slotArray)
                     .put("tasks", taskArray)
+                    .put("notes", noteArray)
 
                 val envelope = JSONObject()
                     .put("format", FORMAT)
@@ -174,7 +195,8 @@ object LocalBackupManager {
                         courses = exportedCoursesCount,
                         slots = slots.size,
                         tasks = exportedTasksCount,
-                        myTasks = exportedMyTasksCount
+                        myTasks = exportedMyTasksCount,
+                        notes = notes.size
                     )
                 )
             } catch (e: Exception) {
@@ -228,12 +250,14 @@ object LocalBackupManager {
         val courseDao = db.courseDao()
         val slotDao = db.lectureSlotDao()
         val taskDao = db.taskDao()
+        val noteDao = db.noteDao()
         val reminderScheduler = ReminderScheduler(context)
 
         var addedCourses = 0
         var addedSlots = 0
         var addedTasks = 0
         var addedMyTasks = 0
+        var addedNotes = 0
 
         // One transaction: either everything is restored or nothing is changed.
         db.withTransaction {
@@ -430,6 +454,49 @@ object LocalBackupManager {
                     if (isMyTask) addedMyTasks++ else addedTasks++
                 }
             }
+
+            // ---- notes
+            val existingNotes = noteDao.getActiveNotesSync().toMutableList()
+            val noteArray = data.optJSONArray("notes") ?: JSONArray()
+            for (i in 0 until noteArray.length()) {
+                val o = noteArray.optJSONObject(i) ?: continue
+                val rawCourseCode = o.optString("courseCode").trim()
+                val courseId = if (rawCourseCode.isNotBlank()) {
+                    val norm = SupabaseSyncManager.normalizeCode(rawCourseCode)
+                    idByCode[norm]
+                } else {
+                    null
+                }
+
+                val title = o.optString("title")
+                val body = o.optString("body")
+                val isPinned = o.optBoolean("isPinned", false)
+                val createdAt = o.optLong("createdAt", System.currentTimeMillis())
+                val updatedAt = o.optLong("updatedAt", createdAt)
+
+                val duplicate = existingNotes.firstOrNull {
+                    it.title == title && it.body == body && it.createdAt == createdAt
+                }
+                if (duplicate != null) {
+                    continue
+                }
+
+                val newNote = Note(
+                    title = title,
+                    body = body,
+                    courseId = courseId,
+                    isPinned = isPinned,
+                    createdAt = createdAt,
+                    updatedAt = updatedAt,
+                    isDeleted = false,
+                    deletedAt = 0L,
+                    isSynced = false,
+                    cloudId = ""
+                )
+                val newId = noteDao.insert(newNote)
+                existingNotes.add(newNote.copy(id = newId))
+                addedNotes++
+            }
         }
 
         // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
@@ -444,7 +511,8 @@ object LocalBackupManager {
             courses = addedCourses,
             slots = addedSlots,
             tasks = addedTasks,
-            myTasks = addedMyTasks
+            myTasks = addedMyTasks,
+            notes = addedNotes
         )
     }
 

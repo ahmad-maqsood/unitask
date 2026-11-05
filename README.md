@@ -152,6 +152,7 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 - **Search, filter, pin and sort.** Find notes quickly by keyword, filter by course, pin notes to the top and sort by updated date, created date or title.
 - **Recently deleted.** Soft-deleted notes are kept in the trash for 30 days before permanent removal, with instant restore.
 - **Share and import.** Share notes as text or `.md` files, and import `.md` or `.txt` files directly into Notes.
+- **Open files from other apps.** Tap a `.md` file in WhatsApp, Files or Gmail and choose UniTask to read it as formatted text, then save it to Notes if you want to keep it.
 - **Images in notes.** Add photos from the device gallery, stored locally with thumbnail rendering, full-screen preview and automatic orphan cleanup.
 - **Backup and cloud sync.** Notes and images are included in encrypted local backups, and notes sync to the cloud with automatic conflict protection when signed in.
 

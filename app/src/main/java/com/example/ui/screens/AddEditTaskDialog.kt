@@ -648,6 +648,7 @@ fun AddEditTaskDialog(
                                     .testTag("priority_chip_${p.name}")
                             )
                         }
+                    }
                     val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
                     if (priority == Priority.HIGH) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -665,7 +666,6 @@ fun AddEditTaskDialog(
                             },
                             modifier = Modifier.padding(start = 4.dp)
                         )
-                    }
                     }
                 }
 

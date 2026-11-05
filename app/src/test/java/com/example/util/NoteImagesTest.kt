@@ -196,8 +196,10 @@ class NoteImagesTest {
         File(imgDir, activeImg).writeText("fake jpg 1")
         File(imgDir, trashedImg).writeText("fake jpg 2")
         File(imgDir, orphanImg).writeText("fake jpg 3")
-
+        // Make the orphan look old; files younger than 60 seconds are protected
+        File(imgDir, orphanImg).setLastModified(System.currentTimeMillis() - 120_000L)
         // Active note references activeImg
+        
         db.noteDao().insert(
             Note(
                 id = 1L,

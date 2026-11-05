@@ -152,7 +152,8 @@ class ReadmeScreenshotTest {
                 code = "CS201",
                 instructor = "Dr. Sarah Ahmed",
                 colorHex = "#536DFE",
-                location = "Room 204"
+                location = "Room 204",
+                isSynced = true
             )
         )
         val databasesId = database.courseDao().insertCourse(
@@ -161,7 +162,8 @@ class ReadmeScreenshotTest {
                 code = "CS305",
                 instructor = "Mr. Usman Khan",
                 colorHex = "#009688",
-                location = "Lab 3"
+                location = "Lab 3",
+                isSynced = true
             )
         )
         val designId = database.courseDao().insertCourse(
@@ -170,7 +172,8 @@ class ReadmeScreenshotTest {
                 code = "SE210",
                 instructor = "Ms. Ayesha Malik",
                 colorHex = "#E8794A",
-                location = "Room 108"
+                location = "Room 108",
+                isSynced = true
             )
         )
 
@@ -185,7 +188,8 @@ class ReadmeScreenshotTest {
                 dueDateEpochMillis = dayOffset(1),
                 dueTimeHour = 23,
                 dueTimeMinute = 59,
-                priority = Priority.HIGH
+                priority = Priority.HIGH,
+                isSynced = true
             )
         )
         database.taskDao().insertTask(
@@ -195,7 +199,8 @@ class ReadmeScreenshotTest {
                 description = "Submit the library management system diagram.",
                 dueDateEpochMillis = dayOffset(3),
                 dueTimeHour = 17,
-                priority = Priority.MEDIUM
+                priority = Priority.MEDIUM,
+                isSynced = true
             )
         )
         database.taskDao().insertTask(
@@ -204,7 +209,8 @@ class ReadmeScreenshotTest {
                 title = "Read Chapter 4",
                 dueDateEpochMillis = dayOffset(-1),
                 status = TaskStatus.COMPLETED,
-                priority = Priority.LOW
+                priority = Priority.LOW,
+                isSynced = true
             )
         )
 
@@ -217,7 +223,8 @@ class ReadmeScreenshotTest {
                 endHour = 10,
                 endMinute = 30,
                 classroom = "Room 204",
-                instructor = "Dr. Sarah Ahmed"
+                instructor = "Dr. Sarah Ahmed",
+                isSynced = true
             )
         )
         database.lectureSlotDao().insertSlot(
@@ -229,7 +236,8 @@ class ReadmeScreenshotTest {
                 endHour = 12,
                 endMinute = 30,
                 classroom = "Lab 3",
-                instructor = "Mr. Usman Khan"
+                instructor = "Mr. Usman Khan",
+                isSynced = true
             )
         )
         database.lectureSlotDao().insertSlot(
@@ -241,7 +249,8 @@ class ReadmeScreenshotTest {
                 endHour = 14,
                 endMinute = 30,
                 classroom = "Room 108",
-                instructor = "Ms. Ayesha Malik"
+                instructor = "Ms. Ayesha Malik",
+                isSynced = true
             )
         )
 
@@ -270,14 +279,16 @@ class ReadmeScreenshotTest {
                 title = "Week 6 study notes",
                 body = "# Week 6\n\n- Review linked lists\n- Practise SQL joins\n- Prepare the design assignment\n\n**Remember:** revise before Friday.",
                 courseId = algorithmsId,
-                isPinned = true
+                isPinned = true,
+                isSynced = true
             )
         )
         database.noteDao().insert(
             Note(
                 title = "Project ideas",
                 body = "Ideas for the semester project.",
-                courseId = designId
+                courseId = designId,
+                isSynced = true
             )
         )
     }

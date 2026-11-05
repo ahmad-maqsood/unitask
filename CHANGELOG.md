@@ -2,6 +2,23 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [3.3.0] - XX-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.3.0)
+
+### Added
+- Notes: markdown notes with an optional course tag, opened from the top bar.
+- Editor with autosave and formatting toolbar.
+- Edit and Preview with tables, links, checklists and images.
+- Search, course filter, pin, sort.
+- Recently deleted for 30 days.
+- Share as text or .md file and import .md or .txt files.
+- Images from the gallery stored on the phone.
+- Notes included in local backups and Export my data.
+- Cloud sync with conflict protection.
+
+### Improved
+- Course deletion keeps notes.
+
 ## [3.2.0] - 04-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)
 

@@ -91,6 +91,19 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 - **Repeating tasks.** Tasks can repeat daily, on weekdays, weekly, every two weeks, monthly or yearly. A completed repeating task moves to its next due date and its checklist is reset.
 - **My tasks.** A separate to-do list for items that are not coursework, with quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. One-time tasks can use **Delete when done**, which removes them the day after they are finished.
 
+### Notes
+
+- **Markdown notes.** Notes with an optional course tag, opened from the notes icon in the top bar.
+  - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
+  - Edit and Preview modes with interactive checklists that can be ticked in Preview.
+  - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
+  - Autosave as you type with full undo and redo history in the editor.
+  - Recently deleted notes are kept in the trash for 30 days before permanent deletion, with instant restore.
+  - Share notes as plain text or export as `.md` files, and import `.md` or `.txt` files directly into Notes.
+  - Photos from the gallery are stored locally with thumbnail preview, full-screen viewing and automatic orphan cleanup.
+  - Notes are included in encrypted local backups, data export and cloud sync with conflict protection.
+  - Deleting a course keeps notes safe and cleanly detaches the course link.
+
 ### Timetable
 
 - Weekly and bi-weekly (**Week A** and **Week B**) schedules. Once you set the current week, reminders, the daily summary and the next-class card follow it.
@@ -130,7 +143,21 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 
 ## What's new
 
-### 3.2.0
+### 3.3.0
+
+- **Notes.** Markdown notes with an optional course tag, opened from the top bar.
+- **Editor with formatting toolbar.** Dedicated toolbar for headings, lists, tables, links, code, quotes and text styles, with automatic list continuation on Enter.
+- **Edit and Preview modes.** Toggle between editor and markdown preview with tables, web links, images and clickable checklists.
+- **Search, filter, pin and sort.** Find notes quickly by keyword, filter by course, pin notes to the top and sort by updated date, created date or title.
+- **Recently deleted.** Soft-deleted notes are kept in the trash for 30 days before permanent removal, with instant restore.
+- **Share and import.** Share notes as text or `.md` files, and import `.md` or `.txt` files directly into Notes.
+- **Images in notes.** Add photos from the device gallery, stored locally with thumbnail rendering, full-screen preview and automatic orphan cleanup.
+- **Backup and cloud sync.** Notes and images are included in encrypted local backups, and notes sync to the cloud with automatic conflict protection when signed in.
+
+The complete history is available in the [CHANGELOG](CHANGELOG.md).
+
+<details>
+<summary><b>Earlier changes</b></summary>
 
 - **Task checklists and calendar actions.** Edit checklist items from the task dialog, follow progress on cards and swipe calendar tasks to complete or undo them.
 - **Flexible snoozing.** Snooze from a task card or notification for 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM.
@@ -139,11 +166,6 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 - **Reminder diagnostics and recovery.** Check notification, exact-alarm and battery settings, fix detected issues, send a test reminder and receive a notice about reminders missed while the phone was off.
 - **Delete when done.** Optionally remove completed one-time My tasks after their completion day.
 - **Reliability.** Improved synchronisation, account-switch cleanup, reminder recovery and notification handling.
-
-The complete history is available in the [CHANGELOG](CHANGELOG.md).
-
-<details>
-<summary><b>Earlier changes</b></summary>
 
 - **Today home-screen widget.** Shows today's classes, upcoming tasks and the number of overdue tasks.
 - **Notification history.** View past notifications with unread counts and quick navigation. Daily summaries are readable from the history.
@@ -209,8 +231,8 @@ app/src/main/java/com/example/
   data/
     local/         Room entities, DAOs, migrations, repeat rules
     groups/        Group repository and models (Supabase realtime)
-    repository/    AppRepository for personal data
-  sync/            SupabaseSyncManager, SyncWorker, PeriodicSyncWorker, SyncScheduler
+    repository/    AppRepository for personal data, NoteRepository
+  sync/            SupabaseSyncManager, NoteSync, SyncWorker, PeriodicSyncWorker, SyncScheduler
   reminder/        Task, class, daily-summary, group and announcement alarms, snooze and receivers
   widget/          "UniTask Today" home-screen widget (Glance)
   ui/
@@ -258,8 +280,8 @@ Some phone manufacturers aggressively stop background applications. If reminders
 
 ## Privacy and permissions
 
-- Personal tasks, courses and the timetable are stored on the device and work without an account.
-- Signing in is optional and is needed only for cloud backup and groups.
+- Personal tasks, courses, the timetable and notes are stored on the device and work without an account.
+- Signing in is optional and is needed only for cloud backup, notes sync and groups. Notes are stored on the device and are uploaded only when signed in.
 - Local backups can be password-protected (encrypted). Restore only backups you trust.
 - **Report a problem** opens a form that is pre-filled with only the app version, Android version and phone model.
 
@@ -282,6 +304,8 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. They are not synchronised to the cloud, although **Delete when done** is kept in local backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.
+- Note images stay on the phone (they are in local backups but not in cloud sync).
+- Notes are limited to 100,000 characters and 10 images.
 
 ## Support
 

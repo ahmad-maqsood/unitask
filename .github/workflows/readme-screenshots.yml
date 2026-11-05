@@ -43,18 +43,18 @@ jobs:
       - name: Prepare fictional Supabase group and messages
         id: seed_demo
         env:
-          SCREENSHOT_DEMO_OWNER_EMAIL: \${{ secrets.SCREENSHOT_DEMO_OWNER_EMAIL }}
-          SCREENSHOT_DEMO_OWNER_PASSWORD: \${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
-          SCREENSHOT_DEMO_MEMBER_EMAIL: \${{ secrets.SCREENSHOT_DEMO_MEMBER_EMAIL }}
-          SCREENSHOT_DEMO_MEMBER_PASSWORD: \${{ secrets.SCREENSHOT_DEMO_MEMBER_PASSWORD }}
+          SCREENSHOT_DEMO_OWNER_EMAIL: ${{ secrets.SCREENSHOT_DEMO_OWNER_EMAIL }}
+          SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
+          SCREENSHOT_DEMO_MEMBER_EMAIL: ${{ secrets.SCREENSHOT_DEMO_MEMBER_EMAIL }}
+          SCREENSHOT_DEMO_MEMBER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_MEMBER_PASSWORD }}
         run: python3 .github/scripts/seed_screenshot_demo.py
 
       - name: Capture screens on an Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          SCREENSHOT_DEMO_OWNER_EMAIL: \${{ secrets.SCREENSHOT_DEMO_OWNER_EMAIL }}
-          SCREENSHOT_DEMO_OWNER_PASSWORD: \${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
-          SCREENSHOT_GROUP_ID: \${{ steps.seed_demo.outputs.group_id }}
+          SCREENSHOT_DEMO_OWNER_EMAIL: ${{ secrets.SCREENSHOT_DEMO_OWNER_EMAIL }}
+          SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
+          SCREENSHOT_GROUP_ID: ${{ steps.seed_demo.outputs.group_id }}
         with:
           api-level: 35
           target: google_apis
@@ -87,7 +87,7 @@ jobs:
       - name: Create pull request with refreshed screenshots
         uses: peter-evans/create-pull-request@v7
         with:
-          token: \${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: automation/update-readme-screenshots
           delete-branch: true
           add-paths: |

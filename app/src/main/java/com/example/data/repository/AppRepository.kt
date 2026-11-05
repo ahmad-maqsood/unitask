@@ -9,7 +9,6 @@ import com.example.data.local.LectureSlotDao
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.NoteDao
 import com.example.data.local.TaskAttachment
-import com.example.data.local.NoteDao
 import com.example.data.local.TaskAttachmentDao
 import com.example.data.local.TaskDao
 import com.example.data.local.startOfLocalDay

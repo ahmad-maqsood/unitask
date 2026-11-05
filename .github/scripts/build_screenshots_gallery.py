@@ -15,6 +15,8 @@ SCREENS = [
     ("group_chat", "Group chat", "A real conversation with fictional demo messages"),
     ("my_tasks", "My tasks", "Personal to-do list"),
     ("notes", "Notes", "Pinned and course-linked notes"),
+    ("note_preview", "Note preview", "Formatted Markdown preview"),
+    ("note_editor", "Note editor", "Markdown editing and formatting tools"),
     ("settings_menu", "Settings", "Settings overview"),
     ("settings_general", "General settings", "Theme and app preferences"),
     ("settings_notifications", "Notifications", "Reminder controls"),
@@ -69,7 +71,6 @@ def main():
         raise SystemExit("Could not locate the README Screenshots section.")
     readme_path.write_text(readme[:start] + section + readme[end + 1:], encoding="utf-8")
 
-    # Remove the former hand-maintained JPEG gallery after all PNGs are verified.
     for pattern in ("*.jpeg", "*.jpg"):
         for old in directory.glob(pattern):
             old.unlink()

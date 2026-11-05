@@ -70,7 +70,7 @@ class ReadmeScreenshotTest {
 
         val database = AppDatabase.getDatabase(context)
         database.clearAllTables()
-        seedLocalDemoData(database)
+        val noteId = seedLocalDemoData(database)
 
         val outputDir = File(context.getExternalFilesDir(null), "readme-screenshots")
         outputDir.mkdirs()
@@ -103,7 +103,7 @@ class ReadmeScreenshotTest {
         tap("top_bar_notes_button")
         waitForTag("notes_list")
         capture("notes")
-        composeRule.onNodeWithText("Week 6 study notes").assertExists().performClick()
+        tap("note_card_$noteId")
         waitForTag("note_preview_title")
         capture("note_preview")
         tap("note_mode_edit_button")
@@ -137,7 +137,7 @@ class ReadmeScreenshotTest {
         capture("settings_about")
     }
 
-    private suspend fun seedLocalDemoData(database: AppDatabase) {
+    private suspend fun seedLocalDemoData(database: AppDatabase): Long {
         val today = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -282,7 +282,7 @@ class ReadmeScreenshotTest {
             )
         )
 
-        database.noteDao().insert(
+        val noteId = database.noteDao().insert(
             Note(
                 title = "Week 6 study notes",
                 body = "# Week 6\n\n- Review linked lists\n- Practise SQL joins\n- Prepare the design assignment\n\n**Remember:** revise before Friday.",
@@ -299,6 +299,7 @@ class ReadmeScreenshotTest {
                 isSynced = true
             )
         )
+        return noteId
     }
 
     private fun tap(tag: String) {

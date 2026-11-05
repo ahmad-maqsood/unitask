@@ -19,6 +19,9 @@ All notable changes to UniTask are documented in this file.
 
 ### Improved
 - Course deletion keeps notes.
+- High priority reminders, for assignments, My Tasks and group tasks, and their snoozes, now use alarm-clock alarms so phones do not delay or drop them.
+- The high priority alarm hint now shows when adding assignments and group tasks too.
+- Group invites are shared as a tappable web link that opens UniTask.
 
 ## [3.2.0] - 04-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)

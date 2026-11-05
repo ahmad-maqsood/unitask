@@ -89,6 +89,12 @@ class GroupReminderScheduler(private val context: Context) {
         for (key in prefs.all.keys.toList()) {
             if (key.startsWith("$groupId|") && key !in wanted) cancelKey(key)
         }
+
+        // A snoozed reminder must not outlive its task (deleted, or done on another phone).
+        val openTaskIds = tasks.filter { it.id !in doneIds }.map { it.id }.toSet()
+        SnoozeStore.entries(context)
+            .filter { it.groupId == groupId && it.groupTaskId !in openTaskIds }
+            .forEach { SnoozeStore.clear(context, it.key, cancelAlarm = true) }
     }
 
     fun cancel(groupId: String, taskId: String) {

@@ -26,7 +26,18 @@ class QrCodeUtilTest {
         assertEquals("alice", parsed?.first)
         assertEquals("ABCD1234", parsed?.second)
     }
+    
+    @Test
+    fun testBuildAndParseGroupInviteWebLink() {
+        val link = QrCodeUtil.buildGroupInviteWebLink("alice", "ABCD1234")
+        assertTrue(link.startsWith("https://ahmad-maqsood.github.io/unitask/join/"))
 
+        val parsed = QrCodeUtil.parseGroupInvite(link)
+        assertNotNull(parsed)
+        assertEquals("alice", parsed?.first)
+        assertEquals("ABCD1234", parsed?.second)
+    }
+    
     @Test
     fun testParseGroupInvite_fallbackRegex() {
         val text = "Join my group! user=bob code=XYZ9876"

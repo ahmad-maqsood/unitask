@@ -37,12 +37,22 @@ def main():
     version_match = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
     version = version_match.group(1) if version_match else "current"
 
-    # Keep the repository lightweight: convert lossless emulator PNGs into high-quality JPEGs.\n    for name, _, _ in SCREENS:\n        source = directory / f"{name}.png"\n        target = directory / f"{name}.jpg"\n        with Image.open(source) as image:\n            image.convert("RGB").save(target, "JPEG", quality=88, optimize=True, progressive=True)\n\n    rows = []\n    for offset in range(0, len(SCREENS), 3):
+    # Compress emulator PNGs to high-quality JPEGs to keep repository growth modest.
+    for name, _, _ in SCREENS:
+        source = directory / f"{name}.png"
+        target = directory / f"{name}.jpg"
+        with Image.open(source) as image:
+            image.convert("RGB").save(
+                target, "JPEG", quality=88, optimize=True, progressive=True
+            )
+
+    rows = []
+    for offset in range(0, len(SCREENS), 3):
         cells = []
         for name, title, description in SCREENS[offset:offset + 3]:
             cells.append(
                 f'    <td align="center"><a href="docs/screenshots/{name}.jpg">'
-                f'<img src="docs/screenshots/{name}.png" width="220" alt="{title}" /></a>'
+                f'<img src="docs/screenshots/{name}.jpg" width="220" alt="{title}" /></a>'
                 f'<br/><sub><b>{title}</b><br/>{description}</sub></td>'
             )
         while len(cells) < 3:
@@ -51,7 +61,7 @@ def main():
 
     table = '<table align="center">\n' + "\n".join(rows) + "\n</table>"
     links = "Each screen is also available separately: " + " · ".join(
-        f'[**{title}**](docs/screenshots/{name}.png)'
+        f'[**{title}**](docs/screenshots/{name}.jpg)'
         for name, title, _ in SCREENS
     ) + "."
 
@@ -71,7 +81,11 @@ def main():
         raise SystemExit("Could not locate the README Screenshots section.")
     readme_path.write_text(readme[:start] + section + readme[end + 1:], encoding="utf-8")
 
-    for old in directory.glob("*.jpeg"):\n        old.unlink()\n    for old in directory.glob("*.png"):\n        old.unlink()\n
+    for old in directory.glob("*.jpeg"):
+        old.unlink()
+    for old in directory.glob("*.png"):
+        old.unlink()
+
     print(f"Updated the README screenshot gallery for UniTask {version}.")
 
 

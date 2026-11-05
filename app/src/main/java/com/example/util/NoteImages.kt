@@ -162,7 +162,8 @@ object NoteImages {
             var deletedCount = 0
             val files = dir.listFiles() ?: return@withContext 0
             for (file in files) {
-                if (file.isFile && file.name !in referencedNames) {
+                if (file.isFile && file.name !in referencedNames &&
+                    file.lastModified() < System.currentTimeMillis() - 60_000L) {
                     if (file.delete()) {
                         deletedCount++
                     }

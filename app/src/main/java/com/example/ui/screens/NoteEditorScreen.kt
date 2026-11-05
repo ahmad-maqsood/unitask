@@ -67,7 +67,6 @@ import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -171,6 +170,12 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
         private set
 
     private var autosaveJob: Job? = null
+    private var discarded = false
+
+    fun discardUnsaved() {
+        discarded = true
+        autosaveJob?.cancel()
+    }
     private val saveMutex = Mutex()
 
     val activeCourses: Flow<List<Course>> = database.courseDao().getAllCourses()
@@ -348,6 +353,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private suspend fun performSave(): Long = saveMutex.withLock {
+        if (discarded) return@withLock 0L
         val idToSave = currentId
         val t = title
         val b = bodyValue.text
@@ -658,6 +664,7 @@ fun NoteEditorScreen(
                                         viewModel.moveToTrash(idToDelete)
                                         onDeleted(idToDelete)
                                     } else {
+                                        viewModel.discardUnsaved()
                                         onClose()
                                     }
                                 }

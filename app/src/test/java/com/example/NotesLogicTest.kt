@@ -362,6 +362,6 @@ class NotesLogicTest {
         assertEquals(0, characterCount(""))
         assertEquals(5, characterCount("hello"))
         assertEquals(4, characterCount("a b\n"))
-        assertEquals(30, characterCount("128 words  |  742 characters"))
+        assertEquals(28, characterCount("128 words  |  742 characters"))
     }
 }

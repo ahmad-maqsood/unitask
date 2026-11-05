@@ -2,6 +2,7 @@ package com.example.util
 
 import android.content.Context
 import android.net.Uri
+import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -48,6 +49,10 @@ class LocalBackupNotesTest {
             .set(null, null)
         for (f in createdFiles) {
             if (f.exists()) f.delete()
+        }
+        val imageDir = File(context.filesDir, "note_images")
+        if (imageDir.exists()) {
+            imageDir.deleteRecursively()
         }
     }
 
@@ -261,6 +266,210 @@ class LocalBackupNotesTest {
         val allRestored = noteDao.getAllNotesSync()
         assertEquals(1, allRestored.size)
         assertEquals("Active Note", allRestored[0].title)
+    }
+
+    @Test
+    fun testNoteWithImageRoundTripsSuccessfully() = runBlocking {
+        val noteDao = db.noteDao()
+        val imageName = "roundtrip_photo_01.jpg"
+        val imageDir = File(context.filesDir, "note_images")
+        if (!imageDir.exists()) imageDir.mkdirs()
+        val imageFile = File(imageDir, imageName)
+        val fileBytes = byteArrayOf(11, 22, 33, 44, 55, 66, 77, 88)
+        imageFile.writeBytes(fileBytes)
+        createdFiles.add(imageFile)
+
+        val noteId = noteDao.insert(
+            Note(
+                title = "Photo Note",
+                body = "Here is an image: ![](unitask-image:$imageName)",
+                isPinned = false,
+                createdAt = 1700000000000L,
+                updatedAt = 1700000000000L
+            )
+        )
+        assertTrue(noteId > 0L)
+
+        val (_, uri) = createTempBackupFile("image_roundtrip_backup.json")
+        val exportResult = LocalBackupManager.export(context, uri, password = null)
+        assertTrue(exportResult is BackupResult.Success)
+        val exportCounts = (exportResult as BackupResult.Success).counts
+        assertEquals(1, exportCounts.notes)
+        assertEquals(1, exportCounts.images)
+        assertEquals(0, exportCounts.skippedImages)
+
+        // Delete the file on disk and wipe the database
+        assertTrue(imageFile.delete())
+        assertFalse(imageFile.exists())
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        assertEquals(0, noteDao.getActiveNotesSync().size)
+
+        // Restore backup
+        val restoreResult = LocalBackupManager.restore(context, uri, password = null)
+        assertTrue(restoreResult is BackupResult.Success)
+        val restoreCounts = (restoreResult as BackupResult.Success).counts
+        assertEquals(1, restoreCounts.notes)
+        assertEquals(1, restoreCounts.images)
+
+        // The file exists again with the exact same bytes
+        assertTrue("Restored image file must exist", imageFile.exists())
+        val restoredBytes = imageFile.readBytes()
+        assertTrue("Restored bytes must match original bytes", fileBytes.contentEquals(restoredBytes))
+    }
+
+    @Test
+    fun testEntryWithInvalidNameIsIgnored() = runBlocking {
+        val evilBytes = byteArrayOf(1, 2, 3)
+        val base64Data = Base64.encodeToString(evilBytes, Base64.NO_WRAP)
+        val evilData = JSONObject()
+            .put("courses", JSONArray())
+            .put("slots", JSONArray())
+            .put("tasks", JSONArray())
+            .put("notes", JSONArray())
+            .put(
+                "noteImages",
+                JSONArray().put(
+                    JSONObject()
+                        .put("name", "../evil.jpg")
+                        .put("data", base64Data)
+                )
+            )
+
+        val envelope = JSONObject()
+            .put("format", "unitask-backup")
+            .put("version", 1)
+            .put("app", "UniTask")
+            .put("exportedAt", System.currentTimeMillis())
+            .put("encrypted", false)
+            .put("data", evilData)
+
+        val (file, uri) = createTempBackupFile("evil_backup.json")
+        file.writeText(envelope.toString(2))
+
+        val restoreResult = LocalBackupManager.restore(context, uri, password = null)
+        assertTrue(restoreResult is BackupResult.Success)
+        val counts = (restoreResult as BackupResult.Success).counts
+        assertEquals(0, counts.images)
+
+        val evilFile = File(context.filesDir, "evil.jpg")
+        assertFalse(evilFile.exists())
+    }
+
+    @Test
+    fun testOversizedEntryIsIgnored() = runBlocking {
+        // Limit is 5 MB (5 * 1024 * 1024). 5 MB + 10 bytes exceeds it.
+        val oversizedBytes = ByteArray(5 * 1024 * 1024 + 10)
+        val base64Data = Base64.encodeToString(oversizedBytes, Base64.NO_WRAP)
+        val imageName = "oversized_image_12.jpg"
+
+        val data = JSONObject()
+            .put("courses", JSONArray())
+            .put("slots", JSONArray())
+            .put("tasks", JSONArray())
+            .put("notes", JSONArray())
+            .put(
+                "noteImages",
+                JSONArray().put(
+                    JSONObject()
+                        .put("name", imageName)
+                        .put("data", base64Data)
+                )
+            )
+
+        val envelope = JSONObject()
+            .put("format", "unitask-backup")
+            .put("version", 1)
+            .put("app", "UniTask")
+            .put("exportedAt", System.currentTimeMillis())
+            .put("encrypted", false)
+            .put("data", data)
+
+        val (file, uri) = createTempBackupFile("oversized_backup.json")
+        file.writeText(envelope.toString(2))
+
+        val restoreResult = LocalBackupManager.restore(context, uri, password = null)
+        assertTrue(restoreResult is BackupResult.Success)
+        val counts = (restoreResult as BackupResult.Success).counts
+        assertEquals(0, counts.images)
+
+        val targetFile = File(File(context.filesDir, "note_images"), imageName)
+        assertFalse(targetFile.exists())
+    }
+
+    @Test
+    fun testExportWithLoweredMaxImageBytesSkipsImagesAndReportsSkipped() = runBlocking {
+        val noteDao = db.noteDao()
+        val imageName = "capped_image_123.jpg"
+        val imageDir = File(context.filesDir, "note_images")
+        if (!imageDir.exists()) imageDir.mkdirs()
+        val imageFile = File(imageDir, imageName)
+        val sampleBytes = ByteArray(1500) { 7 }
+        imageFile.writeBytes(sampleBytes)
+        createdFiles.add(imageFile)
+
+        noteDao.insert(
+            Note(
+                title = "Note with Large Image",
+                body = "![](unitask-image:$imageName)",
+                isPinned = false,
+                createdAt = 1700000000000L
+            )
+        )
+
+        val (_, uri) = createTempBackupFile("capped_image_backup.json")
+        val exportResult = LocalBackupManager.export(
+            context,
+            uri,
+            password = null,
+            maxImageBytes = 500L
+        )
+        assertTrue(exportResult is BackupResult.Success)
+        val counts = (exportResult as BackupResult.Success).counts
+        assertEquals(1, counts.notes)
+        assertEquals(0, counts.images)
+        assertEquals(1, counts.skippedImages)
+    }
+
+    @Test
+    fun testOldBackupWithoutNoteImagesStillRestores() = runBlocking {
+        val noteDao = db.noteDao()
+
+        val noteObj = JSONObject()
+            .put("title", "Old Note")
+            .put("body", "Body without any images")
+            .put("courseCode", "")
+            .put("isPinned", false)
+            .put("createdAt", 1700000000000L)
+            .put("updatedAt", 1700000000000L)
+
+        // data contains notes but NO "noteImages"
+        val data = JSONObject()
+            .put("courses", JSONArray())
+            .put("slots", JSONArray())
+            .put("tasks", JSONArray())
+            .put("notes", JSONArray().put(noteObj))
+
+        val envelope = JSONObject()
+            .put("format", "unitask-backup")
+            .put("version", 1)
+            .put("app", "UniTask")
+            .put("exportedAt", System.currentTimeMillis())
+            .put("encrypted", false)
+            .put("data", data)
+
+        val (file, uri) = createTempBackupFile("old_no_images_backup.json")
+        file.writeText(envelope.toString(2))
+
+        val restoreResult = LocalBackupManager.restore(context, uri, password = null)
+        assertTrue(restoreResult is BackupResult.Success)
+        val counts = (restoreResult as BackupResult.Success).counts
+        assertEquals(1, counts.notes)
+        assertEquals(0, counts.images)
+        assertEquals(0, counts.skippedImages)
+
+        val activeNotes = noteDao.getActiveNotesSync()
+        assertEquals(1, activeNotes.size)
+        assertEquals("Old Note", activeNotes[0].title)
     }
 }
 

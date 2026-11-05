@@ -83,6 +83,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.example.BuildConfig
 import com.example.util.AppUser
+import com.example.util.NoteImages
+import com.example.util.markdown.referencedImageNames
 import com.example.ui.theme.StatusDoneBgDark
 import com.example.ui.theme.StatusDoneBgLight
 import com.example.ui.theme.StatusDoneFgDark
@@ -606,6 +608,14 @@ private fun exportUserData(
             val notes = db.noteDao().getActiveNotesSync()
             val courseCodeById = courses.associate { it.id to it.code }
 
+            val referencedImages = mutableSetOf<String>()
+            for (note in notes) {
+                referencedImages.addAll(referencedImageNames(note.body))
+            }
+            val noteImagesCount = referencedImages.count { name ->
+                NoteImages.isValidImageName(name) && NoteImages.imageFile(context, name)?.exists() == true
+            }
+
             val jsonObj = buildJsonObject {
                 put("exportedAt", java.time.Instant.now().toString())
                 put("appVersion", BuildConfig.VERSION_NAME)
@@ -613,6 +623,7 @@ private fun exportUserData(
                 put("tasksCount", tasks.size)
                 put("timetableSlotsCount", slots.size)
                 put("notesCount", notes.size)
+                put("noteImagesCount", noteImagesCount)
                 put("courses", Json.encodeToJsonElement(courses.map { mapOf("code" to it.code, "name" to it.name, "colorHex" to it.colorHex) }))
                 put("tasks", Json.encodeToJsonElement(tasks.map { 
                     mapOf(

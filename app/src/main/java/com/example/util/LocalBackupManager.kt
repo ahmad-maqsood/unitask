@@ -20,12 +20,14 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
+import com.example.util.markdown.referencedImageNames
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.security.GeneralSecurityException
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -39,7 +41,9 @@ data class BackupCounts(
     val slots: Int,
     val tasks: Int,
     val myTasks: Int = 0,
-    val notes: Int = 0
+    val notes: Int = 0,
+    val images: Int = 0,
+    val skippedImages: Int = 0
 )
 
 sealed class BackupResult {
@@ -63,6 +67,7 @@ object LocalBackupManager {
     private const val FORMAT = "unitask-backup"
     private const val FORMAT_VERSION = 1
     private const val MAX_FILE_BYTES = 20 * 1024 * 1024
+    const val MAX_BACKUP_IMAGE_BYTES: Long = 20L * 1024 * 1024
     private const val PBKDF2_ITERATIONS = 120_000
     private const val MIN_ITERATIONS = 10_000
     private const val MAX_ITERATIONS = 2_000_000
@@ -89,7 +94,12 @@ object LocalBackupManager {
 
     // ------------------------------------------------------------------ export
 
-    suspend fun export(context: Context, uri: Uri, password: String?): BackupResult =
+    suspend fun export(
+        context: Context,
+        uri: Uri,
+        password: String?,
+        maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES
+    ): BackupResult =
         withContext(Dispatchers.IO) {
             try {
                 val db = AppDatabase.getDatabase(context)
@@ -158,11 +168,49 @@ object LocalBackupManager {
                             .put("updatedAt", n.updatedAt)
                     )
                 }
+
+                val referencedNames = LinkedHashSet<String>()
+                for (n in notes) {
+                    referencedNames.addAll(referencedImageNames(n.body))
+                }
+
+                var totalImageBytes = 0L
+                var exportedImagesCount = 0
+                var skippedImagesCount = 0
+                val imageArray = JSONArray()
+
+                for (name in referencedNames) {
+                    if (!NoteImages.isValidImageName(name)) continue
+                    val file = NoteImages.imageFile(context, name) ?: continue
+                    if (!file.exists() || !file.isFile) continue
+
+                    val fileSize = file.length()
+                    if (totalImageBytes + fileSize > maxImageBytes) {
+                        skippedImagesCount++
+                        continue
+                    }
+
+                    val bytes = try {
+                        file.readBytes()
+                    } catch (_: Exception) {
+                        continue
+                    }
+
+                    imageArray.put(
+                        JSONObject()
+                            .put("name", name)
+                            .put("data", Base64.encodeToString(bytes, Base64.NO_WRAP))
+                    )
+                    totalImageBytes += fileSize
+                    exportedImagesCount++
+                }
+
                 val data = JSONObject()
                     .put("courses", courseArray)
                     .put("slots", slotArray)
                     .put("tasks", taskArray)
                     .put("notes", noteArray)
+                    .put("noteImages", imageArray)
 
                 val envelope = JSONObject()
                     .put("format", FORMAT)
@@ -196,7 +244,9 @@ object LocalBackupManager {
                         slots = slots.size,
                         tasks = exportedTasksCount,
                         myTasks = exportedMyTasksCount,
-                        notes = notes.size
+                        notes = notes.size,
+                        images = exportedImagesCount,
+                        skippedImages = skippedImagesCount
                     )
                 )
             } catch (e: Exception) {
@@ -499,6 +549,35 @@ object LocalBackupManager {
             }
         }
 
+        // ---- note images
+        var addedImages = 0
+        val imageArray = data.optJSONArray("noteImages") ?: JSONArray()
+        for (i in 0 until imageArray.length()) {
+            try {
+                val o = imageArray.optJSONObject(i) ?: continue
+                val name = o.optString("name")
+                if (!NoteImages.isValidImageName(name)) continue
+                val rawData = o.optString("data")
+                if (rawData.isEmpty()) continue
+                val decoded = try {
+                    Base64.decode(rawData, Base64.NO_WRAP)
+                } catch (_: Exception) {
+                    continue
+                }
+                if (decoded.size > 5 * 1024 * 1024) continue
+                val targetFile = NoteImages.imageFile(context, name) ?: continue
+                if (targetFile.exists()) continue
+                try {
+                    targetFile.writeBytes(decoded)
+                    addedImages++
+                } catch (_: Exception) {
+                    // skip writing on IO failure
+                }
+            } catch (_: Exception) {
+                // a bad image must never fail the whole restore
+            }
+        }
+
         // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
@@ -512,7 +591,8 @@ object LocalBackupManager {
             slots = addedSlots,
             tasks = addedTasks,
             myTasks = addedMyTasks,
-            notes = addedNotes
+            notes = addedNotes,
+            images = addedImages
         )
     }
 

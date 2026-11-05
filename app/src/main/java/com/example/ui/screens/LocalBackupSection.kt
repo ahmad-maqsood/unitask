@@ -58,6 +58,9 @@ private fun describe(counts: BackupCounts): String {
     if (counts.notes > 0) {
         result += ", ${counts.notes} notes"
     }
+    if (counts.images > 0) {
+        result += ", ${counts.images} images"
+    }
     return result
 }
 
@@ -99,7 +102,9 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     restorePasswordError = null
                     showResult(
                         "Backup restored",
-                        "Added ${describe(result.counts)}. Items that were already on this phone were kept."
+                        "Added ${describe(result.counts)}." +
+                            (if (result.counts.skippedImages > 0) " ${result.counts.skippedImages} images were too large to include." else "") +
+                            " Items that were already on this phone were kept."
                     )
                 }
                 is BackupResult.Failure -> {
@@ -129,7 +134,9 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 when (result) {
                     is BackupResult.Success -> showResult(
                         "Backup saved",
-                        "Saved ${describe(result.counts)}. Keep the file somewhere safe, such as Google Drive " +
+                        "Saved ${describe(result.counts)}." +
+                            (if (result.counts.skippedImages > 0) " ${result.counts.skippedImages} images were too large to include." else "") +
+                            " Keep the file somewhere safe, such as Google Drive " +
                             "or another phone. Attached files are not included."
                     )
                     is BackupResult.Failure -> showResult("Backup failed", result.message)

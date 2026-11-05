@@ -262,7 +262,8 @@ class ReadmeScreenshotTest {
                 description = "Add the architecture diagram and references.",
                 dueDateEpochMillis = dayOffset(2),
                 dueTimeHour = 18,
-                priority = Priority.HIGH
+                priority = Priority.HIGH,
+                isSynced = true
             )
         )
         database.taskDao().insertTask(
@@ -270,7 +271,8 @@ class ReadmeScreenshotTest {
                 courseId = myTasksCourseId,
                 title = "Buy stationery",
                 dueDateEpochMillis = dayOffset(4),
-                priority = Priority.LOW
+                priority = Priority.LOW,
+                isSynced = true
             )
         )
 

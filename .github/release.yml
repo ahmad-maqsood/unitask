@@ -1,0 +1,14 @@
+# Categories for GitHub's built-in release-note generator.
+# The release workflow also collects direct commits.
+changelog:
+  categories:
+    - title: New Features
+      labels: [feature]
+    - title: Improvements
+      labels: [improvement]
+    - title: Bug Fixes
+      labels: [bug]
+    - title: Other Changes
+      labels: [maintenance]
+  exclude:
+    labels: [skip-release-notes]

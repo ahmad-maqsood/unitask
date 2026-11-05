@@ -77,6 +77,7 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.util.HighPriorityAlarm
 import com.example.util.DateFormats
 import com.example.util.AttachmentManager
 import com.example.util.SavedAttachmentInfo
@@ -647,6 +648,24 @@ fun AddEditTaskDialog(
                                     .testTag("priority_chip_${p.name}")
                             )
                         }
+                    val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
+                    if (priority == Priority.HIGH) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (highAlarmOn) {
+                                "High priority tasks ring like an alarm."
+                            } else {
+                                "Turn on \"Alarm for high priority tasks\" in Settings to make this ring like an alarm."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (highAlarmOn) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
                     }
                 }
 

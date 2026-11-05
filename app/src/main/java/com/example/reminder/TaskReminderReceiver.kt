@@ -185,12 +185,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
         ) return
 
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, 0L)
-        val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Upcoming Assignment"
-        val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: "Course"
-        val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: "Due soon"
-        val reminderLabel = intent.getStringExtra(EXTRA_REMINDER_LABEL)
-        val reminderOption = intent.getStringExtra(EXTRA_REMINDER_OPTION)
-        val priority = intent.getStringExtra(EXTRA_PRIORITY)
         val groupId = intent.getStringExtra(EXTRA_GROUP_ID)
         val groupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID)
         val isGroupTask = !groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()
@@ -200,7 +194,39 @@ class TaskReminderReceiver : BroadcastReceiver() {
         // (they are checked when they sync), unless it is a snoozed reminder.
         val checkStillOpen = intent.getBooleanExtra(ReminderSnooze.EXTRA_SNOOZED, false) ||
             (!isGroupTask && taskId > 0L)
-        if (checkStillOpen && !ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)) return
+        if (checkStillOpen) {
+            // A snoozed group reminder asks the server, so wait off the main thread.
+            val pending = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // If the check fails, show the reminder: never lose one.
+                    val needed = try {
+                        ReminderSnooze.isStillNeeded(context, taskId, groupId, groupTaskId)
+                    } catch (_: Exception) {
+                        true
+                    }
+                    if (needed) showReminder(context, intent)
+                } finally {
+                    pending.finish()
+                }
+            }
+            return
+        }
+        showReminder(context, intent)
+    }
+
+    /** Builds and shows one reminder notification. Safe to call off the main thread. */
+    private fun showReminder(context: Context, intent: Intent) {
+        val taskId = intent.getLongExtra(EXTRA_TASK_ID, 0L)
+        val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Upcoming Assignment"
+        val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: "Course"
+        val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: "Due soon"
+        val reminderLabel = intent.getStringExtra(EXTRA_REMINDER_LABEL)
+        val reminderOption = intent.getStringExtra(EXTRA_REMINDER_OPTION)
+        val priority = intent.getStringExtra(EXTRA_PRIORITY)
+        val groupId = intent.getStringExtra(EXTRA_GROUP_ID)
+        val groupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID)
+        val isGroupTask = !groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()
         createNotificationChannel(context)
 
         val isMyTask = !isGroupTask && courseCode.trim().replace("\\s+".toRegex(), "").uppercase() == "MYTASKS"

@@ -88,7 +88,16 @@ object SupabaseSyncManager {
 
     private const val TAG = "SupabaseSyncManager"
     internal const val POSTGREST_PAGE_SIZE = 1000L
+    /** Fewer synced rows than this are always allowed to be deleted by the sync. */
+    private const val EMPTY_GUARD_MIN_ROWS = 3
 
+    /**
+     * An empty cloud list while several rows here are already synced is more likely a failed or
+     * unauthorised read than "everything was deleted on another phone". The sync then keeps the
+     * local rows instead of erasing them.
+     */
+    internal fun looksLikeEmptyCloudGlitch(cloudCount: Int, localSyncedCount: Int): Boolean =
+        cloudCount == 0 && localSyncedCount >= EMPTY_GUARD_MIN_ROWS
     internal suspend fun <T> fetchAllRows(
         table: String,
         userId: String,
@@ -814,12 +823,18 @@ object SupabaseSyncManager {
         val cloudCourseIds = cloudCourses
             .flatMap { listOf(it.docId, getCourseDocId(normalizeCode(it.code))) }
             .toSet()
-        for (c in courseDao.getAllCoursesList()) {
-            if (c.isDeleted || !c.isSynced || c.cloudId.isBlank() || c.cloudId in cloudCourseIds) continue
-            for (t in taskDao.getAnyTasksForCourseSync(c.id)) reminderScheduler.cancelReminder(t.id)
-            taskDao.deleteTasksForCourse(c.id)
-            slotDao.deleteSlotsForCourse(c.id)
-            courseDao.deleteCourseById(c.id)
+        val localSyncedCourses = courseDao.getAllCoursesList()
+            .filter { !it.isDeleted && it.isSynced && it.cloudId.isNotBlank() }
+        if (looksLikeEmptyCloudGlitch(cloudCourses.size, localSyncedCourses.size)) {
+            Log.w(TAG, "Cloud returned no courses but ${localSyncedCourses.size} are synced here; keeping them")
+        } else {
+            for (c in localSyncedCourses) {
+                if (c.cloudId in cloudCourseIds) continue
+                for (t in taskDao.getAnyTasksForCourseSync(c.id)) reminderScheduler.cancelReminder(t.id)
+                taskDao.deleteTasksForCourse(c.id)
+                slotDao.deleteSlotsForCourse(c.id)
+                courseDao.deleteCourseById(c.id)
+            }
         }
         return true
     }
@@ -1003,10 +1018,16 @@ object SupabaseSyncManager {
 
         // Reconcile tasks deleted on another device
         val cloudTaskIds = cloudTasks.map { it.docId }.toSet()
-        for (t in taskDao.getAllActiveTasksSync()) {
-            if (!t.isSynced || t.cloudId.isBlank() || t.cloudId in cloudTaskIds) continue
-            reminderScheduler.cancelReminder(t.id)
-            taskDao.deleteTaskById(t.id)
+        val localSyncedTasks = taskDao.getAllActiveTasksSync()
+            .filter { it.isSynced && it.cloudId.isNotBlank() }
+        if (looksLikeEmptyCloudGlitch(cloudTasks.size, localSyncedTasks.size)) {
+            Log.w(TAG, "Cloud returned no tasks but ${localSyncedTasks.size} are synced here; keeping them")
+        } else {
+            for (t in localSyncedTasks) {
+                if (t.cloudId in cloudTaskIds) continue
+                reminderScheduler.cancelReminder(t.id)
+                taskDao.deleteTaskById(t.id)
+            }
         }
 
         taskDao.deleteOrphanedTasks()
@@ -1115,9 +1136,15 @@ object SupabaseSyncManager {
 
         // Reconcile slots deleted on another device
         val cloudSlotIds = cloudSlots.map { it.docId }.toSet()
-        for (s in slotDao.getAllSlotsSync()) {
-            if (s.isDeleted || !s.isSynced || s.cloudId.isBlank() || s.cloudId in cloudSlotIds) continue
-            slotDao.deleteSlotById(s.id)
+        val localSyncedSlots = slotDao.getAllSlotsSync()
+            .filter { !it.isDeleted && it.isSynced && it.cloudId.isNotBlank() }
+        if (looksLikeEmptyCloudGlitch(cloudSlots.size, localSyncedSlots.size)) {
+            Log.w(TAG, "Cloud returned no slots but ${localSyncedSlots.size} are synced here; keeping them")
+        } else {
+            for (s in localSyncedSlots) {
+                if (s.cloudId in cloudSlotIds) continue
+                slotDao.deleteSlotById(s.id)
+            }
         }
 
         slotDao.deleteOrphanedSlots()

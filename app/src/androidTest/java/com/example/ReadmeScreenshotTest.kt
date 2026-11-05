@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.waitUntil
 import com.example.data.local.AppDatabase
@@ -103,6 +104,13 @@ class ReadmeScreenshotTest {
         tap("top_bar_notes_button")
         waitForTag("notes_list")
         capture("notes")
+        composeRule.onNodeWithText("Week 6 study notes").assertExists().performClick()
+        waitForTag("note_preview_title")
+        capture("note_preview")
+        tap("note_mode_edit_button")
+        waitForTag("note_body_input")
+        capture("note_editor")
+        pressBack()
 
         pressBack()
         waitForTag("top_bar_settings_button")

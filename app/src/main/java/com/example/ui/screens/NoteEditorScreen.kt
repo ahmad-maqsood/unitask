@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -117,6 +118,7 @@ import com.example.util.markdown.insertTable
 import com.example.util.markdown.toggleCheckboxAtLine
 import com.example.util.markdown.toggleLinePrefix
 import com.example.util.markdown.toggleWrap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -422,6 +424,22 @@ fun NoteEditorScreen(
     }
 
     var isImportingImage by remember { mutableStateOf(false) }
+    
+    fun applyEditing(transform: (EditorText) -> EditorText) {
+        viewModel.checkpointBeforeToolbar()
+        val current = EditorText(
+            text = viewModel.bodyValue.text,
+            selStart = viewModel.bodyValue.selection.min,
+            selEnd = viewModel.bodyValue.selection.max
+        )
+        val result = transform(current)
+        viewModel.updateBody(
+            TextFieldValue(
+                text = result.text,
+                selection = TextRange(result.selStart, result.selEnd)
+            )
+        )
+    }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -491,22 +509,6 @@ fun NoteEditorScreen(
                 Color(0xFF4F46E5)
             }
         } ?: Color(0xFF4F46E5)
-    }
-
-    fun applyEditing(transform: (EditorText) -> EditorText) {
-        viewModel.checkpointBeforeToolbar()
-        val current = EditorText(
-            text = viewModel.bodyValue.text,
-            selStart = viewModel.bodyValue.selection.min,
-            selEnd = viewModel.bodyValue.selection.max
-        )
-        val result = transform(current)
-        viewModel.updateBody(
-            TextFieldValue(
-                text = result.text,
-                selection = TextRange(result.selStart, result.selEnd)
-            )
-        )
     }
 
     Column(

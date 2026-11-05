@@ -64,6 +64,10 @@ jobs:
           script: |
             adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATIONS || true
             adb shell settings put system font_scale 1.0
+            mkdir -p "$HOME/.android"
+            if [ ! -f "$HOME/.android/debug.keystore" ]; then
+              keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+            fi
             ./gradlew connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=com.example.ReadmeScreenshotTest -Pandroid.testInstrumentationRunnerArguments.demoEmail="$SCREENSHOT_DEMO_OWNER_EMAIL" -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
             mkdir -p docs/screenshots
             adb pull /sdcard/Android/data/com.aistudio.unitask.zrvqk/files/readme-screenshots/. docs/screenshots/

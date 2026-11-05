@@ -61,8 +61,8 @@ fun MarkdownFileViewer(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    var isSaving by remember { mutableStateOf(false) }
-    var isSaved by remember { mutableStateOf(false) }
+    var isSaving by remember(state) { mutableStateOf(false) }
+    var isSaved by remember(state) { mutableStateOf(false) }
 
     val barTitle = when (state) {
         is MarkdownViewerState.Content -> {

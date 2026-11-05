@@ -509,8 +509,8 @@ class MarkdownParserTest {
 
     @Test
     fun nestingCappedAtDepthFour() {
-        // depth 0: bold, depth 1: italic, depth 2: strike, depth 3: link, depth 4: inside link bold stays plain
-        val md = "**_*~~[**plain**](https://test.com)~~*_**"
+        // depth 0: bold, depth 1: italic, depth 2: strike, depth 3: link, depth 4: inside link italic stays plain
+        val md = "**_~~[*plain*](https://test.com)~~_**"
         val inlines = parseInlines(md)
         assertEquals(1, inlines.size)
         val bold0 = inlines[0] as Inline.Bold
@@ -518,7 +518,7 @@ class MarkdownParserTest {
         val strike2 = italic1.children[0] as Inline.Strike
         val link3 = strike2.children[0] as Inline.Link
         assertEquals("https://test.com", link3.url)
-        assertEquals(listOf(Inline.Text("**plain**")), link3.children)
+        assertEquals(listOf(Inline.Text("*plain*")), link3.children)
     }
 
     @Test

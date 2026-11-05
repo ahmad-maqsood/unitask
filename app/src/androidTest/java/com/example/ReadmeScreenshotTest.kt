@@ -21,7 +21,6 @@ import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
-import com.example.data.local.ensureMyTasksCourse
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -254,7 +253,14 @@ class ReadmeScreenshotTest {
             )
         )
 
-        val myTasksCourseId = database.ensureMyTasksCourse()
+        val myTasksCourseId = database.courseDao().insertCourse(
+            Course(
+                name = "My tasks",
+                code = "MYTASKS",
+                colorHex = "#7C3AED",
+                isSynced = true
+            )
+        )
         database.taskDao().insertTask(
             TaskItem(
                 courseId = myTasksCourseId,

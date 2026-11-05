@@ -22,6 +22,7 @@ import com.example.data.local.repeat
 import com.example.data.local.resolveAnchorDay
 import android.util.Log
 import com.example.reminder.ReminderScheduler
+import com.example.reminder.SnoozeStore
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
 import com.example.sync.SupabaseSyncManager
@@ -240,6 +241,7 @@ class AppRepository(
 
         if (taskToUpdate.status == TaskStatus.COMPLETED) {
             reminderScheduler.cancelReminder(taskToUpdate.id)
+            SnoozeStore.clear(context, taskToUpdate.id, cancelAlarm = true)
         } else {
             val course = courseDao.getCourseByIdSync(taskToUpdate.courseId)
             val courseCode = course?.code ?: "Course"
@@ -255,6 +257,7 @@ class AppRepository(
         taskDao.updateStatusAndCompletedAt(taskId, newStatus, completedAt)
         if (newStatus == TaskStatus.COMPLETED) {
             reminderScheduler.cancelReminder(taskId)
+            SnoozeStore.clear(context, taskId, cancelAlarm = true)
         } else {
             val updated = taskDao.getTaskById(taskId)
             if (updated != null) {
@@ -344,7 +347,7 @@ class AppRepository(
 
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
         reminderScheduler.cancelReminder(task.id)
-
+        SnoozeStore.clear(context, task.id, cancelAlarm = true)
         // Soft-delete in Room first
         taskDao.softDeleteTask(task.id)
         SupabaseSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)

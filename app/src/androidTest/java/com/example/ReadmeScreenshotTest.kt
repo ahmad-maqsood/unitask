@@ -6,13 +6,12 @@ import android.view.KeyEvent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.waitUntil
+import androidx.compose.ui.test.assertIsDisplayed
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
@@ -302,7 +301,7 @@ class ReadmeScreenshotTest {
     }
 
     private fun tap(tag: String) {
-        composeRule.onNodeWithTag(tag).assertExists().performClick()
+        composeRule.onNodeWithTag(tag).assertIsDisplayed().performClick()
         composeRule.waitForIdle()
     }
 

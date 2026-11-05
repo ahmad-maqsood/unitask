@@ -3,7 +3,6 @@ package com.example.util
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +23,6 @@ sealed class UpdateResult {
  */
 object UpdateChecker {
 
-    private const val LATEST_URL =
-        "https://api.github.com/repos/ahmad-maqsood/unitask/releases/latest"
     private const val RELEASES_PAGE =
         "https://github.com/ahmad-maqsood/unitask/releases/latest"
 
@@ -39,26 +36,41 @@ object UpdateChecker {
         val current = currentVersion(context)
         var connection: HttpURLConnection? = null
         try {
-            connection = (URL(LATEST_URL).openConnection() as HttpURLConnection).apply {
+            // The web address of the latest release redirects to ".../releases/tag/<tag>".
+            // Reading that redirect needs no GitHub API call, so it is not hit by the API's
+            // small per-network limit (which showed up as error 403).
+            connection = (URL(RELEASES_PAGE).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10_000
                 readTimeout = 10_000
-                setRequestProperty("Accept", "application/vnd.github+json")
+                instanceFollowRedirects = false
+                requestMethod = "HEAD"
                 setRequestProperty("User-Agent", "UniTask-Android/$current")
             }
             val code = connection.responseCode
-            if (code == 200) {
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(body)
-                val tag = json.optString("tag_name")
+            if (code in 300..399) {
+                val location = connection.getHeaderField("Location").orEmpty()
+                val rawTag = location
+                    .substringAfter("/releases/tag/", "")
+                    .substringBefore('?')
+                    .substringBefore('#')
+                    .trim('/')
+                val tag = try {
+                    java.net.URLDecoder.decode(rawTag, "UTF-8")
+                } catch (_: Exception) {
+                    rawTag
+                }
                 if (tag.isBlank()) {
-                    UpdateResult.Failed("No release found on GitHub.")
+                    UpdateResult.Failed("No release has been published on GitHub yet.")
                 } else if (isNewer(tag, current)) {
-                    UpdateResult.Available(tag, json.optString("html_url").ifBlank { RELEASES_PAGE })
+                    val page = if (location.startsWith("http")) location else RELEASES_PAGE
+                    UpdateResult.Available(tag, page)
                 } else {
                     UpdateResult.UpToDate(current)
                 }
             } else if (code == 404) {
                 UpdateResult.Failed("No release has been published on GitHub yet.")
+            } else if (code == 403 || code == 429) {
+                UpdateResult.Failed("GitHub is limiting requests from your network right now. Try again in a little while.")
             } else {
                 UpdateResult.Failed("GitHub answered with error $code.")
             }

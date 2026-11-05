@@ -56,7 +56,9 @@ jobs:
           SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
           SCREENSHOT_GROUP_ID: ${{ steps.seed_demo.outputs.group_id }}
         with:
-          api-level: 35
+          # API 30 is substantially lighter to boot under software emulation
+          # on GitHub-hosted Linux runners, while remaining compatible with minSdk 24.
+          api-level: 30
           target: google_apis
           arch: x86_64
           profile: pixel_2

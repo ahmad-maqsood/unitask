@@ -2,6 +2,51 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [3.5.0] - 06-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.5.0)
+
+### Bug Fixes
+- [fixes: sync safety, private data cleanup, notes editor, date picker, tests, and no class alerts in the bell](https://github.com/ahmad-maqsood/unitask/pull/45) — What this changes
+- [fix: make README screenshot export reliable](https://github.com/ahmad-maqsood/unitask/pull/42) — Summary
+- [fix: resolve compose flowrow crash, group chat tab reset, and realtime websocket](https://github.com/ahmad-maqsood/unitask/pull/41)
+- [fix: diagnose screenshot demo group loading](https://github.com/ahmad-maqsood/unitask/pull/40) — Summary
+- [Refuse imported files that are too long for a note](https://github.com/ahmad-maqsood/unitask/commit/4bfdb250734bf03ec67e84a11680e2122de95077)
+- [generate debug keystore with valid keytool command](https://github.com/ahmad-maqsood/unitask/commit/11a319806a1f9a311666bca82aa398a78c712afa)
+- [fix: resolve Compose screenshot test compilation](https://github.com/ahmad-maqsood/unitask/pull/38) — Summary
+- [pass screenshot test arguments safely](https://github.com/ahmad-maqsood/unitask/commit/a83b76ded8b16e195115ee0d40e1a3fb686c0fc3)
+- [fix: use valid Android emulator device profile](https://github.com/ahmad-maqsood/unitask/pull/35) — Summary
+
+### Other Changes
+- [update: bump versioncode to 18 and versionname to 3.5.0](https://github.com/ahmad-maqsood/unitask/commit/92656b1dc69b9225420c75b48c21fd6808d8af82)
+- [docs: add automatically captured README screenshots](https://github.com/ahmad-maqsood/unitask/pull/44) — Summary
+- [docs: refresh automated README screenshots](https://github.com/ahmad-maqsood/unitask/pull/43) — Summary
+- [change audio of default sound_2](https://github.com/ahmad-maqsood/unitask/commit/c14324bc59ada76bb0170784fe6051f611d89b95)
+- [include unmerged semantics for screenshot selectors](https://github.com/ahmad-maqsood/unitask/commit/eb956e5ea421394705e26ff36f6ba85ad90481cb)
+- [return to home before capturing settings](https://github.com/ahmad-maqsood/unitask/commit/ec2eaa431ae8b9010e03e24803473b1d019f87e1)
+- [Don't purge trashed notes whose cloud copy still exists](https://github.com/ahmad-maqsood/unitask/commit/8c5f67c0b79dc3c549d2015dd6b95e3a92f72dab)
+- [Stop note watchers when the editor closes](https://github.com/ahmad-maqsood/unitask/commit/25cc979f63088b6a1aac81bed628561a59004930)
+- [Raise compileSdk to 37 for the OkHttp engine](https://github.com/ahmad-maqsood/unitask/commit/5df24c0333b7643617d7a2e85bf4219ad2e1bb1d)
+- [Fix editor state bugs, trash handling and note sync issues](https://github.com/ahmad-maqsood/unitask/pull/39) — Summary
+- [Use Ktor OkHttp engine so Supabase Realtime can use WebSockets](https://github.com/ahmad-maqsood/unitask/commit/68cfaaa99d98c9f35e9ce25342eb2f5818b7edda)
+- [Use Ktor OkHttp engine so Supabase Realtime can use WebSockets](https://github.com/ahmad-maqsood/unitask/commit/2da93954dd4c9e7483bf75929b1d5c83d4ebb6c2)
+- [preserve instrumentation reports when screenshot tests fail](https://github.com/ahmad-maqsood/unitask/commit/f1c57793a666cdb315d34271f246e6c6323f03e5)
+- [start adb before launching screenshot emulator](https://github.com/ahmad-maqsood/unitask/commit/b54f16a0ee85a1d2c5fab439f3fcd0e29933e1a6)
+- [enable KVM acceleration for screenshot emulator](https://github.com/ahmad-maqsood/unitask/commit/f902a205a49a2b361646662f1d01ac18722c099d)
+- [Add docIdsNeedingBody helper for lighter note sync](https://github.com/ahmad-maqsood/unitask/commit/47efe010f7446204190e13821d9f3f92c2ae2ef2)
+- [Bring a trashed note back when new text is saved into it](https://github.com/ahmad-maqsood/unitask/commit/f8b91dc8c1a71e474bc32eac5f39b645858e3ecf)
+- [Add observeNoteById query to NoteDao](https://github.com/ahmad-maqsood/unitask/commit/ececd57d54b7bc45a92474082eb3c62cb3c3bfbd)
+- [create debug keystore before prebuilding screenshots](https://github.com/ahmad-maqsood/unitask/commit/f65660981619c87bb5325f9b0b413f1859b375eb)
+- [reduce emulator resource pressure during screenshot tests](https://github.com/ahmad-maqsood/unitask/commit/40185c3732ccfd4f332cc900bc156650851d5179)
+- [give screenshot emulator explicit memory](https://github.com/ahmad-maqsood/unitask/commit/65268bca601ddfa7be61c3178107269fef0fb3d4)
+- [ci: run screenshot capture as standalone bash script](https://github.com/ahmad-maqsood/unitask/pull/37) — Summary
+- [avoid flaky emulator animation setup](https://github.com/ahmad-maqsood/unitask/commit/285ebb27e2c9db4a29ed968864a1cd4c47637570)
+- [use lighter Android emulator for screenshot workflow](https://github.com/ahmad-maqsood/unitask/commit/10d28c257828b40ad5c3cc72de34e89adf666c0e)
+- [ci: generate debug keystore for screenshot workflow](https://github.com/ahmad-maqsood/unitask/pull/36) — Summary
+- [ci: automate README screenshots from the Android app](https://github.com/ahmad-maqsood/unitask/pull/34) — Summary
+- [Fix invalid YAML in release APK workflow](https://github.com/ahmad-maqsood/unitask/pull/33) — Summary
+- [Fix release APK workflow registration](https://github.com/ahmad-maqsood/unitask/pull/32) — Summary
+- [Add automatic release summaries and changelog PRs](https://github.com/ahmad-maqsood/unitask/pull/31) — Summary
+
 ## [3.4.0] - 05-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.4.0)
 

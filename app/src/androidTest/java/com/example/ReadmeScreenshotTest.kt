@@ -108,10 +108,12 @@ class ReadmeScreenshotTest {
         tap("note_mode_edit_button")
         waitForTag("note_body_input")
         capture("note_editor")
-        // Return from the editor to the preview, then the notes list, then the main screen.
+        // Back closes the editor asynchronously after saving. Wait for the notes list
+        // before pressing Back again, then confirm the Notes overlay is actually gone.
         pressBack()
+        waitForTag("notes_list")
         pressBack()
-        pressBack()
+        waitForTagToDisappear("notes_list")
         waitForTag("top_bar_settings_button")
         tap("top_bar_settings_button")
         waitForTag("settings_section_general")
@@ -337,6 +339,12 @@ class ReadmeScreenshotTest {
     private fun waitForTag(tag: String, timeoutMillis: Long = 15_000) {
         composeRule.waitUntil(timeoutMillis) {
             composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun waitForTagToDisappear(tag: String, timeoutMillis: Long = 15_000) {
+        composeRule.waitUntil(timeoutMillis) {
+            composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
         }
     }
 

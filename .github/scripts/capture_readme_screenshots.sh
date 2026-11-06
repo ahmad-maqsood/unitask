@@ -38,8 +38,9 @@ adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATI
   -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
 
 # Resolve the app-specific external-files directory from the emulator instead of
-# assuming its package path. This also makes package-id changes non-breaking.
-SCREENSHOT_DIR="$(adb shell find /sdcard/Android/data -type d -name readme-screenshots -print -quit 2>/dev/null | tr -d '\\r')"
+# assuming the app package path. Use shell globbing supported by Android's shell
+# rather than relying on find options that vary between Android versions.
+SCREENSHOT_DIR="$(adb shell 'for dir in /sdcard/Android/data/*/files/readme-screenshots; do if [ -d "$dir" ]; then printf "%s\\n" "$dir"; break; fi; done' | tr -d '\r')"
 if [[ -z "$SCREENSHOT_DIR" ]]; then
   echo "Could not find the app's readme-screenshots directory on the emulator." >&2
   echo "Installed Unitask packages:" >&2

@@ -624,15 +624,20 @@ grant execute on function public.is_member(uuid), public.is_group_admin(uuid), p
 
 ### Block 6 of 8: live updates
 
-Lets the app receive group changes and chat messages instantly instead of only when it refreshes.
+Lets the app receive group, task, course and chat changes instantly instead of only when it refreshes.
 
 ```sql
 -- BLOCK 6 of 8: live updates (the app listens to these tables)
 alter publication supabase_realtime add table
-  public.courses, public.tasks, public.slots, public.group_members,
+  public.courses, public.tasks, public.slots, public.group_members, public.groups,
   public.group_tasks, public.group_courses, public.group_messages, public.group_done;
 ```
 
+If you already ran the earlier version of Block 6 (the one without `public.groups`), do **not** rerun the whole block. Run this one-time addition instead:
+
+```sql
+alter publication supabase_realtime add table public.groups;
+```
 ### Block 7 of 8 (optional): delete old chat automatically
 
 Keeps your free database small by deleting chat messages older than 30 days every night. Skip it if you want chat to be kept forever.
@@ -664,17 +669,17 @@ values ('Hello from my server', 'If you can read this, your database is connecte
 Run this one:
 
 ```sql
--- CHECK: expect 11 tables, 8 live tables and 12 functions
+-- CHECK: expect 11 tables, 9 live tables and 12 functions
 select
   (select count(*) from information_schema.tables
     where table_schema = 'public' and table_type = 'BASE TABLE')                as tables_expect_11,
   (select count(*) from pg_publication_tables
-    where pubname = 'supabase_realtime' and schemaname = 'public')               as live_tables_expect_8,
+    where pubname = 'supabase_realtime' and schemaname = 'public')               as live_tables_expect_9,
   (select count(*) from information_schema.routines
     where routine_schema = 'public')                                             as functions_expect_12;
 ```
 
-You should see `11`, `8` and `12`. Also open **Table Editor** in the left menu: you should see 11 tables.
+You should see `11`, `9` and `12`. Also open **Table Editor** in the left menu: you should see 11 tables.
 
 ### Later: adding your own announcements
 

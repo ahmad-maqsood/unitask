@@ -85,7 +85,7 @@ class ReadmeScreenshotTest {
         capture("courses")
 
         tap("tab_groups")
-        waitForTag("group_item_$groupId", timeoutMillis = 30_000)
+        waitForGroupCard(groupId, timeoutMillis = 30_000)
         capture("groups")
 
         tap("group_item_$groupId")
@@ -303,6 +303,33 @@ class ReadmeScreenshotTest {
     private fun tap(tag: String) {
         composeRule.onNodeWithTag(tag).assertIsDisplayed().performClick()
         composeRule.waitForIdle()
+    }
+
+    private fun waitForGroupCard(groupId: String, timeoutMillis: Long) {
+        val tag = "group_item_$groupId"
+        try {
+            composeRule.waitUntil(timeoutMillis) {
+                composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+            }
+        } catch (error: Exception) {
+            val noGroupsVisible = composeRule.onAllNodesWithText(
+                "No groups yet", substring = true
+            ).fetchSemanticsNodes().isNotEmpty()
+            val reconnectingVisible = composeRule.onAllNodesWithText(
+                "Reconnecting...", substring = true
+            ).fetchSemanticsNodes().isNotEmpty()
+            val screenState = when {
+                noGroupsVisible -> "The Groups screen is showing 'No groups yet'."
+                reconnectingVisible -> "The Groups screen is still showing 'Reconnecting...'."
+                else -> "The expected group card is absent and neither known state is visible."
+            }
+            throw AssertionError(
+                "Timed out waiting for demo group $groupId. $screenState " +
+                    "The seed preflight passed, so inspect app authentication and the " +
+                    "GroupRepository membership refresh path.",
+                error
+            )
+        }
     }
 
     private fun waitForTag(tag: String, timeoutMillis: Long = 15_000) {

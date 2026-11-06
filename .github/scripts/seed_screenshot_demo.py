@@ -7,9 +7,10 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 from pathlib import Path
 
@@ -60,6 +61,52 @@ def sign_in(base, anon, email, password):
         raise RuntimeError("Supabase sign-in did not return a valid demo session.")
     return result["access_token"], result["user"]["id"]
 
+
+
+def verify_membership(base, anon, token, user_id, group_id, expected_role, account_label):
+    # Match the app's membership query, including its embedded group details.
+    query = urlencode({
+        "select": "group_id,role,joined_at,groups(username,name)",
+        "user_id": f"eq.{user_id}",
+    })
+    last_reason = "no matching membership row was returned"
+    for attempt in range(5):
+        rows = request(
+            base, anon, "GET", f"/rest/v1/group_members?{query}", token
+        ) or []
+        membership = next(
+            (item for item in rows if item.get("group_id") == group_id), None
+        )
+        if membership:
+            if membership.get("role") != expected_role:
+                last_reason = (
+                    f"expected role {expected_role!r}, got {membership.get('role')!r}"
+                )
+            else:
+                group = membership.get("groups")
+                if isinstance(group, list):
+                    group = group[0] if group else None
+                if not isinstance(group, dict):
+                    last_reason = "the related group details were not readable"
+                elif (
+                    group.get("username") != GROUP_USERNAME
+                    or group.get("name") != GROUP_NAME
+                ):
+                    last_reason = "the related group details did not match the demo group"
+                else:
+                    print(
+                        f"Verified {account_label} can read the demo group membership "
+                        f"({expected_role}) using the app's membership query."
+                    )
+                    return
+        if attempt < 4:
+            time.sleep(2)
+
+    raise RuntimeError(
+        f"Demo group preflight failed for the {account_label} account: {last_reason}. "
+        "The screenshot emulator was not started. Check the create_group/join_group "
+        "results and Supabase group_members/groups SELECT policies."
+    )
 
 def main():
     names = (
@@ -118,6 +165,15 @@ def main():
         },
     )
 
+    # Fail before spending time on an emulator if either account cannot read
+    # the membership rows in the same shape the Android app requests.
+    verify_membership(
+        base, anon, owner_token, owner_id, group_id, "owner", "owner"
+    )
+    verify_membership(
+        base, anon, member_token, member_id, group_id, "member", "member"
+    )
+
     messages = [
         ("owner", "Hey everyone! Welcome to our study group."),
         ("member", "Thanks! I added our study plan for this week."),
@@ -153,7 +209,7 @@ def main():
     if output:
         with open(output, "a", encoding="utf-8") as stream:
             stream.write(f"group_id={group_id}\n")
-    print("Prepared the fictional UniTask Screenshot Demo group and chat messages.")
+    print("Prepared and verified the fictional UniTask Screenshot Demo group and chat messages.")
 
 
 if __name__ == "__main__":

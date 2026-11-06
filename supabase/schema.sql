@@ -332,7 +332,7 @@ CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (user_id, doc_id);
 -- =====================================================================
 -- PART A7: tables sent live to the app, publication supabase_realtime (query 7)
 -- =====================================================================
--- courses, tasks, slots, group_members, group_tasks, group_courses, group_messages, group_done
+-- courses, tasks, slots, group_members, groups, group_tasks, group_courses, group_messages, group_done
 
 -- =====================================================================
 -- PART A8: Foreign keys and check constraints 

@@ -80,6 +80,8 @@ jobs:
           disable-animations: false
           disable-spellchecker: true
           disable-linux-hw-accel: false
+          pre-emulator-launch-script: adb start-server
+          emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
 

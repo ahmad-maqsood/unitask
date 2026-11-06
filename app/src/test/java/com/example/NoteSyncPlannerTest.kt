@@ -2,6 +2,8 @@ package com.example
 
 import com.example.data.local.Note
 import com.example.sync.CloudNote
+import com.example.sync.CloudNoteHeader
+import com.example.sync.docIdsNeedingBody
 import com.example.sync.NoteSyncAction
 import com.example.sync.planNoteSync
 import org.junit.Assert.assertEquals
@@ -456,5 +458,21 @@ class NoteSyncPlannerTest {
         // A note cannot be both deleted locally and overwritten
         assertTrue(localIdsInDelete.intersect(localIdsInOverwrite).isEmpty())
     }
+    // -------------------------------------------------------------------------
+    // Which cloud notes need their text downloaded
+    // -------------------------------------------------------------------------
+    @Test
+    fun onlyNewOrChangedCloudNotesNeedTheirText() {
+        val unchanged = Note(id = 1L, cloudId = "same", cloudUpdatedAt = 500L, isSynced = true)
+        val changed = Note(id = 2L, cloudId = "newer", cloudUpdatedAt = 500L, isSynced = true)
+        val headers = listOf(
+            CloudNoteHeader("same", 500L),
+            CloudNoteHeader("newer", 900L),
+            CloudNoteHeader("brand-new", 100L)
+        )
+        assertEquals(
+            listOf("newer", "brand-new"),
+            docIdsNeedingBody(listOf(unchanged, changed), headers)
+        )
+    }
 }
-

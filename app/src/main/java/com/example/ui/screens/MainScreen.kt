@@ -904,7 +904,7 @@ fun MainScreen(
                 },
                 onOpenSavedNote = { noteId ->
                     viewModel.closeMarkdownViewer()
-                    viewerEditorSession++
+                    viewerEditorSession = NoteEditorSessions.next()
                     openedNoteIdFromViewer = noteId
                 }
             )

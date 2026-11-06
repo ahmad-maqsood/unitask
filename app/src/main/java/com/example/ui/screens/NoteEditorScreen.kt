@@ -135,6 +135,16 @@ import kotlinx.coroutines.withContext
 // Set this to false to always open existing notes in Edit mode.
 private const val OPEN_EXISTING_NOTES_IN_PREVIEW = true
 
+/**
+ * Hands out a new number every time any screen opens the note editor. It is shared by every
+ * screen that opens an editor, so two opens never get the same number while the app runs.
+ * (A counter inside one screen restarts at 0 when that screen is closed, and the editor
+ * ViewModel outlives the screen, so it would wrongly treat the next open as the same editor.)
+ */
+object NoteEditorSessions {
+    private val counter = java.util.concurrent.atomic.AtomicInteger(0)
+    fun next(): Int = counter.incrementAndGet()
+}
 class NoteEditorViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val repository = NoteRepository(database.noteDao())

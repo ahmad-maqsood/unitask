@@ -38,29 +38,29 @@ adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS || true
   -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
   -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
 
-# Instrumentation writes into the app's private files directory. Pull each
-# PNG directly with exec-out instead of depending on Android's tar utility.
-SCREENSHOT_DIR="files/readme-screenshots"
+# Instrumentation writes to app-specific external storage so ADB can pull
+# the PNGs as ordinary files without binary streaming through run-as.
+SCREENSHOT_DIR="/sdcard/Android/data/$APP_ID/files/readme-screenshots"
 expected=(deadlines timetable courses groups group_chat my_tasks notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
 
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.
 find docs/screenshots -maxdepth 1 -type f -delete
 
-echo "Checking the app-private screenshot directory."
-if ! adb exec-out run-as "$APP_ID" ls "$SCREENSHOT_DIR" >/dev/null; then
-  echo "Cannot access $SCREENSHOT_DIR inside $APP_ID." >&2
+echo "Checking the app-specific screenshot directory."
+if ! adb shell test -d "$SCREENSHOT_DIR"; then
+  echo "Cannot access $SCREENSHOT_DIR on the emulator." >&2
   echo "The instrumentation test may not have created its screenshot files." >&2
   exit 1
 fi
 
-echo "Exporting ${#expected[@]} screenshots individually."
-for name in "${expected[@]}"; do
+echo "Exporting \${#expected[@]} screenshots with adb pull."
+for name in "\${expected[@]}"; do
   source_file="$SCREENSHOT_DIR/$name.png"
   destination="docs/screenshots/$name.png"
 
-  if ! adb exec-out run-as "$APP_ID" cat "$source_file" > "$destination"; then
-    echo "Could not export $source_file from the app." >&2
+  if ! adb pull "$source_file" "$destination" >/dev/null; then
+    echo "Could not pull $source_file from the emulator." >&2
     exit 1
   fi
 
@@ -76,4 +76,4 @@ for name in "${expected[@]}"; do
   fi
 done
 
-echo "Successfully exported and validated all ${#expected[@]} screenshots."
+echo "Successfully exported and validated all \${#expected[@]} screenshots."

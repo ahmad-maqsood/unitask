@@ -111,6 +111,8 @@ fun MarkdownFileViewer(
                                                 if (result == SnackbarResult.ActionPerformed) {
                                                     onOpenSavedNote(newId)
                                                 }
+                                            } else if (newId < 0L) {
+                                                snackbarHostState.showSnackbar("File is too long for a note (limit 100,000 characters)")
                                             } else {
                                                 snackbarHostState.showSnackbar("Could not read that file")
                                             }

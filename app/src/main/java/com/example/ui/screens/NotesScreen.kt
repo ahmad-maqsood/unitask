@@ -660,6 +660,10 @@ private suspend fun importNoteFile(
         is MarkdownReadResult.Success -> {
             try {
                 val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult.text)
+                if (rawBody.length > NoteRepository.MAX_BODY) {
+                    snackbarHostState.showSnackbar("File is too long for a note (limit 100,000 characters)")
+                    return
+                }
                 val title = rawTitle.take(NoteRepository.MAX_TITLE)
                 val body = rawBody.take(NoteRepository.MAX_BODY)
                 val newId = viewModel.repository.saveNote(

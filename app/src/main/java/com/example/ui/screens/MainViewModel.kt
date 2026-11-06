@@ -611,6 +611,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun saveMarkdownToNotes(displayName: String, text: String): Long = withContext(Dispatchers.IO) {
         try {
             val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, text)
+            // Too long for a note: refuse instead of silently cutting the end off
+            if (rawBody.length > NoteRepository.MAX_BODY) return@withContext -1L
             val title = rawTitle.take(NoteRepository.MAX_TITLE)
             val body = rawBody.take(NoteRepository.MAX_BODY)
             val db = AppDatabase.getDatabase(getApplication())

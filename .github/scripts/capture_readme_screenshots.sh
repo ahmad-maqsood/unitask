@@ -37,5 +37,28 @@ adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATI
   -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
   -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
 
+# Resolve the app-specific external-files directory from the emulator instead of
+# assuming its package path. This also makes package-id changes non-breaking.
+SCREENSHOT_DIR="$(adb shell find /sdcard/Android/data -type d -name readme-screenshots -print -quit 2>/dev/null | tr -d '\\r')"
+if [[ -z "$SCREENSHOT_DIR" ]]; then
+  echo "Could not find the app's readme-screenshots directory on the emulator." >&2
+  echo "Installed Unitask packages:" >&2
+  adb shell pm list packages | grep -i unitask >&2 || true
+  echo "Available app-specific external-data directories:" >&2
+  adb shell ls -la /sdcard/Android/data >&2 || true
+  exit 1
+fi
+
 mkdir -p docs/screenshots
-adb pull /sdcard/Android/data/com.aistudio.unitask.zrvqk/files/readme-screenshots/. docs/screenshots/
+# Do not let old checked-in screenshots masquerade as a fresh capture.
+find docs/screenshots -maxdepth 1 -type f -delete
+echo "Pulling fresh screenshots from: $SCREENSHOT_DIR"
+adb pull "$SCREENSHOT_DIR/." docs/screenshots/
+
+expected=(deadlines timetable courses groups group_chat my_tasks notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
+for name in "${expected[@]}"; do
+  if [[ ! -s "docs/screenshots/$name.png" ]]; then
+    echo "Screenshot capture is incomplete; missing $name.png" >&2
+    exit 1
+  fi
+done

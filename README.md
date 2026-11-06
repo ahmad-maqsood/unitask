@@ -19,7 +19,7 @@ No advertising. No tracking.
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
 
 </div>
 
@@ -82,6 +82,16 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 
 > [!NOTE]
 > Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates** and must be installed manually.
+
+## Building from Source
+
+To build UniTask, install Android Studio with a JDK compatible with the project's Gradle configuration, then clone this repository and open it in Android Studio:
+
+```bash
+git clone https://github.com/ahmad-maqsood/unitask.git
+```
+
+Let Gradle sync before building. Cloud features that use Supabase or Google Sign-In require your own service configuration and credentials. Never commit secrets to the repository.
 
 ## Features
 

@@ -69,7 +69,7 @@ class ReadmeScreenshotTest {
         database.clearAllTables()
         val noteId = seedLocalDemoData(database)
 
-        val outputDir = File(context.filesDir, "readme-screenshots")
+        val outputDir = File(requireNotNull(context.getExternalFilesDir(null)) { "External app files directory is unavailable" }, "readme-screenshots")
         outputDir.mkdirs()
         outputDir.listFiles()?.forEach { it.delete() }
 

@@ -7,6 +7,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -27,6 +28,8 @@ fun NotesHost(
 ) {
     val context = LocalContext.current
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    // A new number every time the editor opens, so each open gets a fresh editor ViewModel
+    var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var inTrash by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -50,6 +53,7 @@ fun NotesHost(
         val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
         NoteEditorScreen(
             noteId = targetId,
+            viewModelKey = "notes_editor_$editorSession",
             onClose = { editorTarget = null },
             onDeleted = { deletedId ->
                 editorTarget = null
@@ -72,8 +76,14 @@ fun NotesHost(
         )
     } else {
         NotesScreen(
-            onOpenNote = { id -> editorTarget = id.toString() },
-            onNewNote = { editorTarget = "new" },
+            onOpenNote = { id ->
+                editorSession++
+                editorTarget = id.toString()
+            },
+            onNewNote = {
+                editorSession++
+                editorTarget = "new"
+            },
             onOpenTrash = { inTrash = true },
             onClose = onClose,
             viewModel = viewModel,

@@ -212,5 +212,33 @@ class NoteRepositoryTest {
         repo.deleteForever(id)
         assertNull(repo.getNote(id))
     }
-}
+    
+    @Test
+    fun typingAgainAfterClearingBringsNoteBackFromTrash() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Plan", body = "Old text", courseId = null)
 
+        // Clearing everything sends it to the trash
+        repo.saveNote(id = id, title = "", body = "", courseId = null)
+        assertTrue(repo.getNote(id)!!.isDeleted)
+
+        // Typing new text saves into the same note and brings it back
+        repo.saveNote(id = id, title = "", body = "New text", courseId = null)
+        val back = repo.getNote(id)!!
+        assertFalse(back.isDeleted)
+        assertEquals(0L, back.deletedAt)
+        assertEquals("New text", back.body)
+        assertFalse(back.isSynced)
+        assertEquals(1, repo.observeNotes().first().size)
+        assertTrue(repo.observeDeletedNotes().first().isEmpty())
+    }
+
+    @Test
+    fun retypingTheSameTextAfterClearingAlsoBringsNoteBack() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Plan", body = "Same text", courseId = null)
+        repo.saveNote(id = id, title = "", body = "", courseId = null)
+        assertTrue(repo.getNote(id)!!.isDeleted)
+
+        repo.saveNote(id = id, title = "Plan", body = "Same text", courseId = null)
+        assertFalse(repo.getNote(id)!!.isDeleted)
+    }
+}

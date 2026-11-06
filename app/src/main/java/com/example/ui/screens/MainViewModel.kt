@@ -156,7 +156,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             taskAttachmentDao = database.taskAttachmentDao(),
             lectureSlotDao = database.lectureSlotDao(),
             reminderScheduler = scheduler,
-            noteDao = database.noteDao()
+            noteDao = database.noteDao(),
+            database = database
         )
 
         val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager

@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -22,6 +23,9 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +33,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,9 +45,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.util.DateFormats
 import com.example.util.HighPriorityAlarm
@@ -54,12 +62,14 @@ import androidx.compose.material.icons.filled.Check
 import com.example.data.local.ReminderOption
 import com.example.data.local.encodeReminderOptions
 import com.example.reminder.GroupReminderScheduler
+import com.example.util.applyPickedDate
+import com.example.util.localMillisToPickerUtcMillis
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GroupTaskDialog(
     taskToEdit: GroupTask?,
@@ -80,6 +90,7 @@ fun GroupTaskDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
     var description by rememberSaveable { mutableStateOf(taskToEdit?.description ?: "") }
@@ -110,6 +121,7 @@ fun GroupTaskDialog(
                 ?: GroupReminderScheduler.DEFAULT_REMINDERS
         )
     }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var titleError by rememberSaveable { mutableStateOf(false) }
     // Empty assignedTo means @all. New tasks start as @all; editing keeps what was saved.
@@ -121,6 +133,36 @@ fun GroupTaskDialog(
         )
     ) { mutableStateOf<Set<String>>(taskToEdit?.assignedTo?.toSet() ?: emptySet()) }
     var tagError by rememberSaveable { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = localMillisToPickerUtcMillis(selectedDueDateMillis)
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { pickedUtc ->
+                            selectedDueDateMillis = applyPickedDate(selectedDueDateMillis, pickedUtc)
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePicker = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     if (showTimePicker) {
         Material3TimePickerDialog(
@@ -175,6 +217,8 @@ fun GroupTaskDialog(
                         { Text("Title is required") }
                     } else null,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("group_task_title_input")
@@ -229,6 +273,8 @@ fun GroupTaskDialog(
                         label = { Text("Course Code / Name") },
                         placeholder = { Text("e.g. CS 301, Physics Lab") },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("group_task_course_label_input")
@@ -266,19 +312,7 @@ fun GroupTaskDialog(
                             modifier = Modifier
                                 .weight(1.3f)
                                 .clickable {
-                                    val cal = Calendar.getInstance().apply { timeInMillis = selectedDueDateMillis }
-                                    DatePickerDialog(
-                                        context,
-                                        { _, year, month, dayOfMonth ->
-                                            cal.set(Calendar.YEAR, year)
-                                            cal.set(Calendar.MONTH, month)
-                                            cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                                            selectedDueDateMillis = cal.timeInMillis
-                                        },
-                                        cal.get(Calendar.YEAR),
-                                        cal.get(Calendar.MONTH),
-                                        cal.get(Calendar.DAY_OF_MONTH)
-                                    ).show()
+                                    showDatePicker = true
                                 }
                                 .testTag("group_task_date_picker_button"),
                             shape = RoundedCornerShape(12.dp)

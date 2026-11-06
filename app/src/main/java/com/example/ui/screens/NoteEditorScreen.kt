@@ -571,7 +571,10 @@ fun NoteEditorScreen(
                 }
             },
             navigationIcon = {
-                IconButton(onClick = handleClose) {
+                IconButton(
+                    onClick = handleClose,
+                    modifier = Modifier.testTag("note_editor_back_button")
+                ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back"

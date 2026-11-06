@@ -41,29 +41,37 @@ UniTask is a personal project, created to solve everyday planning problems for i
 
 <table align="center">
   <tr>
-    <td align="center"><img src="docs/screenshots/deadlines_top_nc.jpeg" width="240" alt="Deadlines: next class and statistics" /></td>
-    <td align="center"><img src="docs/screenshots/deadlines_bottom_cv.jpeg" width="240" alt="Deadlines: task list" /></td>
-    <td align="center"><img src="docs/screenshots/timetable.jpeg" width="240" alt="Timetable" /></td>
+    <td align="center"><a href="docs/screenshots/deadlines.jpg"><img src="docs/screenshots/deadlines.jpg" width="220" alt="Deadlines" /></a><br/><sub><b>Deadlines</b><br/>Upcoming work and daily overview</sub></td>
+    <td align="center"><a href="docs/screenshots/timetable.jpg"><img src="docs/screenshots/timetable.jpg" width="220" alt="Timetable" /></a><br/><sub><b>Timetable</b><br/>Weekly class schedule</sub></td>
+    <td align="center"><a href="docs/screenshots/courses.jpg"><img src="docs/screenshots/courses.jpg" width="220" alt="Courses" /></a><br/><sub><b>Courses</b><br/>Course list and colour coding</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub><b>Deadlines</b><br/>Next class and statistics</sub></td>
-    <td align="center"><sub><b>Deadlines</b><br/>Task list</sub></td>
-    <td align="center"><sub><b>Timetable</b><br/>Week A and Week B</sub></td>
+    <td align="center"><a href="docs/screenshots/groups.jpg"><img src="docs/screenshots/groups.jpg" width="220" alt="Study groups" /></a><br/><sub><b>Study groups</b><br/>Shared study spaces</sub></td>
+    <td align="center"><a href="docs/screenshots/group_chat.jpg"><img src="docs/screenshots/group_chat.jpg" width="220" alt="Group chat" /></a><br/><sub><b>Group chat</b><br/>A real conversation with fictional demo messages</sub></td>
+    <td align="center"><a href="docs/screenshots/my_tasks.jpg"><img src="docs/screenshots/my_tasks.jpg" width="220" alt="My tasks" /></a><br/><sub><b>My tasks</b><br/>Personal to-do list</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/courses.jpeg" width="240" alt="Courses" /></td>
-    <td align="center"><img src="docs/screenshots/settings.jpeg" width="240" alt="Settings" /></td>
-    <td align="center"><img src="docs/screenshots/group_chat.jpeg" width="240" alt="Group chat" /></td>
+    <td align="center"><a href="docs/screenshots/notes.jpg"><img src="docs/screenshots/notes.jpg" width="220" alt="Notes" /></a><br/><sub><b>Notes</b><br/>Pinned and course-linked notes</sub></td>
+    <td align="center"><a href="docs/screenshots/note_preview.jpg"><img src="docs/screenshots/note_preview.jpg" width="220" alt="Note preview" /></a><br/><sub><b>Note preview</b><br/>Formatted Markdown preview</sub></td>
+    <td align="center"><a href="docs/screenshots/note_editor.jpg"><img src="docs/screenshots/note_editor.jpg" width="220" alt="Note editor" /></a><br/><sub><b>Note editor</b><br/>Markdown editing and formatting tools</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub><b>Courses</b><br/>Modules and colour tags</sub></td>
-    <td align="center"><sub><b>Settings</b><br/>Themes, sounds and backup</sub></td>
-    <td align="center"><sub><b>Group chat</b><br/>Real-time study groups</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_menu.jpg"><img src="docs/screenshots/settings_menu.jpg" width="220" alt="Settings" /></a><br/><sub><b>Settings</b><br/>Settings overview</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_general.jpg"><img src="docs/screenshots/settings_general.jpg" width="220" alt="General settings" /></a><br/><sub><b>General settings</b><br/>Theme and app preferences</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_notifications.jpg"><img src="docs/screenshots/settings_notifications.jpg" width="220" alt="Notifications" /></a><br/><sub><b>Notifications</b><br/>Reminder controls</sub></td>
   </tr>
 </table>
 
-<p align="center"><sub>Screenshots are from version 3.1.0.</sub></p>
+<table align="center">
+  <tr>
+    <td align="center"><a href="docs/screenshots/settings_backup.jpg"><img src="docs/screenshots/settings_backup.jpg" width="220" alt="Backup and data" /></a><br/><sub><b>Backup and data</b><br/>Backup and data options</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_about.jpg"><img src="docs/screenshots/settings_about.jpg" width="220" alt="About and help" /></a><br/><sub><b>About and help</b><br/>App information and support</sub></td>
+  </tr>
+</table>
 
+<p align="center"><sub>Automatically captured from UniTask 3.4.0 using fictional demo data on an Android emulator.</sub></p>
+
+Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**Group chat**](docs/screenshots/group_chat.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg).
 ## Installation
 
 1. Open the [latest release](https://github.com/ahmad-maqsood/unitask/releases/latest).

@@ -12,6 +12,26 @@ data class CloudNote(
     val updatedAtMillis: Long
 )
 
+/** What the cloud says about a note without its text: used to decide which texts to download. */
+data class CloudNoteHeader(
+    val docId: String,
+    val updatedAtMillis: Long
+)
+
+/**
+ * Cloud notes whose full text must be downloaded: new on this phone, or changed in the
+ * cloud since this phone last synced them.
+ */
+fun docIdsNeedingBody(local: List<Note>, headers: List<CloudNoteHeader>): List<String> {
+    val localByCloudId = local.filter { it.cloudId.isNotBlank() }.associateBy { it.cloudId }
+    return headers
+        .filter { h ->
+            val match = localByCloudId[h.docId]
+            match == null || match.cloudUpdatedAt != h.updatedAtMillis
+        }
+        .map { it.docId }
+}
+
 sealed interface NoteSyncAction {
     data class InsertLocal(val cloud: CloudNote) : NoteSyncAction
     data class OverwriteLocal(val localId: Long, val cloud: CloudNote) : NoteSyncAction

@@ -107,8 +107,9 @@ class ReadmeScreenshotTest {
         tap("note_mode_edit_button")
         waitForTag("note_body_input")
         capture("note_editor")
+        // Return from the editor to the preview, then the notes list, then the main screen.
         pressBack()
-
+        pressBack()
         pressBack()
         waitForTag("top_bar_settings_button")
         tap("top_bar_settings_button")

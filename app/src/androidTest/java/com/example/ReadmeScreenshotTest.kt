@@ -302,7 +302,7 @@ class ReadmeScreenshotTest {
     }
 
     private fun tap(tag: String) {
-        composeRule.onNodeWithTag(tag).assertIsDisplayed().performClick()
+        composeRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed().performClick()
         composeRule.waitForIdle()
     }
 
@@ -310,7 +310,7 @@ class ReadmeScreenshotTest {
         val tag = "group_item_$groupId"
         try {
             composeRule.waitUntil(timeoutMillis) {
-                composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+                composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
             }
         } catch (error: Exception) {
             val noGroupsVisible = composeRule.onAllNodesWithText(
@@ -335,7 +335,7 @@ class ReadmeScreenshotTest {
 
     private fun waitForTag(tag: String, timeoutMillis: Long = 15_000) {
         composeRule.waitUntil(timeoutMillis) {
-            composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
     }
 

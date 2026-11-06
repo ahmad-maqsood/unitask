@@ -33,6 +33,7 @@ APP_ID="com.aistudio.unitask.zrvqk"
 adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS || true
 
 ./gradlew connectedDebugAndroidTest --no-daemon \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
   -Pandroid.testInstrumentationRunnerArguments.class=com.example.ReadmeScreenshotTest \
   -Pandroid.testInstrumentationRunnerArguments.demoEmail="$SCREENSHOT_DEMO_OWNER_EMAIL" \
   -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
@@ -54,8 +55,8 @@ if ! adb shell test -d "$SCREENSHOT_DIR"; then
   exit 1
 fi
 
-echo "Exporting \${#expected[@]} screenshots with adb pull."
-for name in "\${expected[@]}"; do
+echo "Exporting ${#expected[@]} screenshots with adb pull."
+for name in "${expected[@]}"; do
   source_file="$SCREENSHOT_DIR/$name.png"
   destination="docs/screenshots/$name.png"
 
@@ -76,4 +77,4 @@ for name in "\${expected[@]}"; do
   fi
 done
 
-echo "Successfully exported and validated all \${#expected[@]} screenshots."
+echo "Successfully exported and validated all ${#expected[@]} screenshots."

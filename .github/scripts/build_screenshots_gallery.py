@@ -46,20 +46,26 @@ def main():
                 target, "JPEG", quality=88, optimize=True, progressive=True
             )
 
-    rows = []
-    for offset in range(0, len(SCREENS), 3):
+    def build_row(items):
         cells = []
-        for name, title, description in SCREENS[offset:offset + 3]:
+        for name, title, description in items:
             cells.append(
                 f'    <td align="center"><a href="docs/screenshots/{name}.jpg">'
                 f'<img src="docs/screenshots/{name}.jpg" width="220" alt="{title}" /></a>'
                 f'<br/><sub><b>{title}</b><br/>{description}</sub></td>'
             )
-        while len(cells) < 3:
-            cells.append("    <td></td>")
-        rows.append("  <tr>\n" + "\n".join(cells) + "\n  </tr>")
+        return "  <tr>\n" + "\n".join(cells) + "\n  </tr>"
 
-    table = '<table align="center">\n' + "\n".join(rows) + "\n</table>"
+    # Full rows of 3 go in one table. Any leftover screens (14 screens leave 2)
+    # get their own centered table, so there is no empty cell on the right.
+    full_count = len(SCREENS) - len(SCREENS) % 3
+    full_rows = [build_row(SCREENS[i:i + 3]) for i in range(0, full_count, 3)]
+    table = '<table align="center">\n' + "\n".join(full_rows) + "\n</table>"
+    leftover = SCREENS[full_count:]
+    if leftover:
+        table += (
+            '\n\n<table align="center">\n' + build_row(leftover) + "\n</table>"
+        )
     links = "Each screen is also available separately: " + " · ".join(
         f'[**{title}**](docs/screenshots/{name}.jpg)'
         for name, title, _ in SCREENS

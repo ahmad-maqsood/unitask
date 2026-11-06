@@ -49,6 +49,19 @@ jobs:
           SCREENSHOT_DEMO_MEMBER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_MEMBER_PASSWORD }}
         run: python3 .github/scripts/seed_screenshot_demo.py
 
+      - name: Prepare Android debug signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          if [[ ! -f "$HOME/.android/debug.keystore" ]]; then
+            keytool -genkeypair -noprompt \\
+              -keystore "$HOME/.android/debug.keystore" \\
+              -storepass android \\
+              -alias androiddebugkey \\
+              -keypass android \\
+              -dname "CN=Android Debug,O=Android,C=US" \\
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
+
       - name: Build debug app and screenshot tests before emulator startup
         run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
 

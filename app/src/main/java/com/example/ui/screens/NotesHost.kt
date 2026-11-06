@@ -53,7 +53,7 @@ fun NotesHost(
         val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
         NoteEditorScreen(
             noteId = targetId,
-            viewModelKey = "notes_editor_$editorSession",
+            viewModelSession = editorSession,
             onClose = { editorTarget = null },
             onDeleted = { deletedId ->
                 editorTarget = null

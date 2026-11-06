@@ -175,7 +175,6 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     private var discarded = false
     @Volatile
     private var trashed = false
-    private var watchJob: Job? = null
 
     @Volatile
     private var ownVersions: List<Pair<String, String>> = emptyList()
@@ -208,7 +207,6 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                     selectedCourseId = note.courseId
                     isPinned = note.isPinned
                     rememberOwnVersion(note.title, note.body)
-                    watchForOutsideChanges(note.id)
                 }
                 editHistory.clear()
                 lastTypingTime = 0L
@@ -225,21 +223,20 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
      * Cloud sync can change this note while it is open. Show that newer text instead of
      * saving the old text over it on the next keystroke.
      */
-    private fun watchForOutsideChanges(id: Long) {
-        watchJob?.cancel()
-        watchJob = viewModelScope.launch {
-            repository.observeNote(id).collect { note ->
-                if (note == null || note.isDeleted || trashed || discarded) return@collect
-                if ((note.title to note.body) in ownVersions) return@collect
-                if (note.title == title && note.body == bodyValue.text) return@collect
-                autosaveJob?.cancel()
-                title = note.title
-                bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
-                editHistory.clear()
-                lastTypingTime = 0L
-                updateHistoryState()
-                rememberOwnVersion(note.title, note.body)
-            }
+    suspend fun watchForOutsideChanges() {
+        val id = currentId
+        if (id <= 0L) return
+        repository.observeNote(id).collect { note ->
+            if (note == null || note.isDeleted || trashed || discarded) return@collect
+            if ((note.title to note.body) in ownVersions) return@collect
+            if (note.title == title && note.body == bodyValue.text) return@collect
+            autosaveJob?.cancel()
+            title = note.title
+            bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
+            editHistory.clear()
+            lastTypingTime = 0L
+            updateHistoryState()
+            rememberOwnVersion(note.title, note.body)
         }
     }
     
@@ -453,6 +450,11 @@ fun NoteEditorScreen(
         viewModel.loadNote(noteId)
     }
 
+    // Watch the open note only while the editor is on screen
+    val editorLoaded = viewModel.isLoaded
+    LaunchedEffect(viewModel, editorLoaded, viewModel.currentId) {
+        if (editorLoaded) viewModel.watchForOutsideChanges()
+    }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle(emptyList())

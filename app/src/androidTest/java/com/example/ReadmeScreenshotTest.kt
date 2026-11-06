@@ -18,6 +18,7 @@ import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.util.Announcements
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -64,6 +65,11 @@ class ReadmeScreenshotTest {
             .putBoolean("notification_permission_prompted", true)
             .putBoolean("background_setup_prompted", true)
             .apply()
+
+        // Mark current announcements as already seen so the "Messages from UniTask"
+        // pop-up and the bell badge do not appear in the README screenshots.
+        Announcements.refresh(context)
+        Announcements.markSeen(context, Announcements.unseen(context))
 
         val database = AppDatabase.getDatabase(context)
         database.clearAllTables()

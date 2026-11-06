@@ -16,6 +16,7 @@ import com.example.data.local.computeDeadlineMillis
 import com.example.data.local.decodeReminderOptions
 import com.example.data.local.decodeRepeatRule
 import com.example.data.local.encodeReminderOptions
+import com.example.data.repository.NoteRepository
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.sync.SupabaseSyncManager
@@ -518,8 +519,9 @@ object LocalBackupManager {
                     null
                 }
 
-                val title = o.optString("title")
-                val body = o.optString("body")
+                // Same limits as the editor, so one oversized note cannot make a cloud batch fail
+                val title = o.optString("title").take(NoteRepository.MAX_TITLE)
+                val body = o.optString("body").take(NoteRepository.MAX_BODY)
                 val isPinned = o.optBoolean("isPinned", false)
                 val createdAt = o.optLong("createdAt", System.currentTimeMillis())
                 val updatedAt = o.optLong("updatedAt", createdAt)

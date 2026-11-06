@@ -40,7 +40,7 @@ TEST_APK="$(ls app/build/outputs/apk/androidTest/debug/*.apk | head -n 1)"
 echo "Installing $APP_APK and $TEST_APK"
 adb install -r -t "$APP_APK"
 adb install -r -t "$TEST_APK"
-adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS || true
+adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 
 RUNNER="$(adb shell pm list instrumentation | tr -d '\r' | grep "target=$APP_ID" | head -n 1 | sed -E 's/^instrumentation:([^ ]+).*/\1/')"
 if [[ -z "$RUNNER" ]]; then
@@ -67,29 +67,25 @@ if grep -q "^INSTRUMENTATION_STATUS_CODE: -[124]" /tmp/instrumentation-output.tx
   exit 1
 fi
 
-# Instrumentation writes to app-specific external storage so ADB can pull
-# the PNGs as ordinary files without binary streaming through run-as.
-SCREENSHOT_DIR="/sdcard/Android/data/$APP_ID/files/readme-screenshots"
+# The test saves PNGs in the app's internal files directory. The debug build is
+# debuggable, so run-as can read them, and exec-out keeps the PNG bytes intact.
+# (Android/data on external storage was not visible to adb on this emulator.)
+SCREENSHOT_DIR="files/readme-screenshots"
 expected=(deadlines timetable courses groups group_chat my_tasks notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
 
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.
 find docs/screenshots -maxdepth 1 -type f -delete
 
-echo "Checking the app-specific screenshot directory."
-if ! adb shell test -d "$SCREENSHOT_DIR"; then
-  echo "Cannot access $SCREENSHOT_DIR on the emulator." >&2
-  echo "The instrumentation test may not have created its screenshot files." >&2
-  exit 1
-fi
+echo "Files the test left in the app:"
+adb shell run-as "$APP_ID" ls -la "$SCREENSHOT_DIR" || true
 
-echo "Exporting ${#expected[@]} screenshots with adb pull."
+echo "Exporting ${#expected[@]} screenshots."
 for name in "${expected[@]}"; do
-  source_file="$SCREENSHOT_DIR/$name.png"
   destination="docs/screenshots/$name.png"
 
-  if ! adb pull "$source_file" "$destination" >/dev/null; then
-    echo "Could not pull $source_file from the emulator." >&2
+  if ! adb exec-out run-as "$APP_ID" cat "$SCREENSHOT_DIR/$name.png" > "$destination"; then
+    echo "Could not read $SCREENSHOT_DIR/$name.png from the app." >&2
     exit 1
   fi
 

@@ -71,6 +71,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,6 +100,7 @@ import com.example.data.local.computeDeadlineMillis
 @Composable
 fun GroupDetailScreen(
     currentUid: String,
+    groupId: String = groupDetail?.id ?: "",
     groupDetail: GroupDetail?,
     fallbackUsername: String,
     fallbackName: String,
@@ -133,7 +135,8 @@ fun GroupDetailScreen(
     onLoadEarlierMessages: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    var selectedSectionTab by remember(groupDetail?.id ?: fallbackUsername, startOnChat) {
+    val effectiveGroupId = groupId.ifBlank { groupDetail?.id ?: fallbackUsername }
+    var selectedSectionTab by rememberSaveable(effectiveGroupId, startOnChat) {
         mutableIntStateOf(if (startOnChat) 3 else 0)
     } // 0: Tasks, 1: Courses, 2: Members, 3: Chat
 

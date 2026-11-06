@@ -188,6 +188,7 @@ fun GroupsTab(
                 val isChatTarget = selectedGroupId == openChatGroupId || selectedGroupId == activeOpenChatGroupId
                 GroupDetailScreen(
                     currentUid = currentSupabaseUid() ?: effectiveUser.uid,
+                    groupId = selectedGroupId,
                     groupDetail = selectedGroupDetail,
                     fallbackUsername = activeMembership?.username ?: "",
                     fallbackName = activeMembership?.name ?: "",

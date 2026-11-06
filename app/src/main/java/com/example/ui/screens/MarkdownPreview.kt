@@ -46,6 +46,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -214,8 +215,10 @@ private fun RenderMarkdownBlock(
                     modifier = Modifier.size(36.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                val annotated = remember(block.inlines, primaryColor, codeBgColor) {
-                    buildAnnotatedInlines(block.inlines, primaryColor, codeBgColor)
+                val annotated = remember(block.inlines, primaryColor, codeBgColor, context) {
+                    buildAnnotatedInlines(block.inlines, primaryColor, codeBgColor) { url ->
+                        openLinkSafely(context, url)
+                    }
                 }
                 val checkStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = if (block.checked) {
@@ -225,19 +228,13 @@ private fun RenderMarkdownBlock(
                     },
                     textDecoration = if (block.checked) TextDecoration.LineThrough else TextDecoration.None
                 )
-                @Suppress("DEPRECATION")
-                ClickableText(
+                // Links open themselves; a tap anywhere else on the text ticks the item
+                Text(
                     text = annotated,
                     style = checkStyle,
-                    modifier = Modifier.weight(1f, fill = false),
-                    onClick = { offset ->
-                        val link = annotated.getStringAnnotations(tag = "URL", start = offset, end = offset).firstOrNull()
-                        if (link != null) {
-                            openLinkSafely(context, link.item)
-                        } else {
-                            onToggleChecklist(block.sourceLine)
-                        }
-                    }
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .clickable { onToggleChecklist(block.sourceLine) }
                 )
             }
         }
@@ -435,53 +432,50 @@ private fun RenderInlineText(
     context: Context,
     modifier: Modifier = Modifier
 ) {
-    val annotated = remember(inlines, primaryColor, codeBgColor) {
-        buildAnnotatedInlines(inlines, primaryColor, codeBgColor)
+    val annotated = remember(inlines, primaryColor, codeBgColor, context) {
+        buildAnnotatedInlines(inlines, primaryColor, codeBgColor) { url ->
+            openLinkSafely(context, url)
+        }
     }
 
-    @Suppress("DEPRECATION")
-    ClickableText(
+    Text(
         text = annotated,
         style = baseStyle,
-        modifier = modifier,
-        onClick = { offset ->
-            annotated.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                .firstOrNull()?.let { annotation ->
-                    openLinkSafely(context, annotation.item)
-                }
-        }
+        modifier = modifier
     )
 }
 
 private fun buildAnnotatedInlines(
     inlines: List<Inline>,
     primaryColor: Color,
-    codeBgColor: Color
+    codeBgColor: Color,
+    onLinkClick: (String) -> Unit
 ): AnnotatedString = buildAnnotatedString {
-    appendInlines(inlines, primaryColor, codeBgColor)
+    appendInlines(inlines, primaryColor, codeBgColor, onLinkClick)
 }
 
 private fun AnnotatedString.Builder.appendInlines(
     inlines: List<Inline>,
     primaryColor: Color,
-    codeBgColor: Color
+    codeBgColor: Color,
+    onLinkClick: (String) -> Unit
 ) {
     for (inline in inlines) {
         when (inline) {
             is Inline.Text -> append(inline.text)
             is Inline.Bold -> {
                 pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                appendInlines(inline.children, primaryColor, codeBgColor)
+                appendInlines(inline.children, primaryColor, codeBgColor, onLinkClick)
                 pop()
             }
             is Inline.Italic -> {
                 pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                appendInlines(inline.children, primaryColor, codeBgColor)
+                appendInlines(inline.children, primaryColor, codeBgColor, onLinkClick)
                 pop()
             }
             is Inline.Strike -> {
                 pushStyle(SpanStyle(textDecoration = TextDecoration.LineThrough))
-                appendInlines(inline.children, primaryColor, codeBgColor)
+                appendInlines(inline.children, primaryColor, codeBgColor, onLinkClick)
                 pop()
             }
             is Inline.Code -> {
@@ -495,14 +489,20 @@ private fun AnnotatedString.Builder.appendInlines(
                 pop()
             }
             is Inline.Link -> {
-                pushStringAnnotation(tag = "URL", annotation = inline.url)
+                // A real link, so TalkBack can find it; the safe-URL check stays in openLinkSafely
+                pushLink(
+                    LinkAnnotation.Clickable(
+                        tag = inline.url,
+                        linkInteractionListener = { onLinkClick(inline.url) }
+                    )
+                )
                 pushStyle(
                     SpanStyle(
                         color = primaryColor,
                         textDecoration = TextDecoration.Underline
                     )
                 )
-                appendInlines(inline.children, primaryColor, codeBgColor)
+                appendInlines(inline.children, primaryColor, codeBgColor, onLinkClick)
                 pop()
                 pop()
             }

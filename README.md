@@ -69,7 +69,7 @@ UniTask is a personal project, created to solve everyday planning problems for i
   </tr>
 </table>
 
-<p align="center"><sub>Automatically captured from UniTask 3.4.0 using fictional demo data on an Android emulator.</sub></p>
+<p align="center"><sub>Automatically captured from UniTask 3.5.0 using fictional demo data on an Android emulator.</sub></p>
 
 Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**Group chat**](docs/screenshots/group_chat.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg).
 ## Installation
@@ -152,6 +152,20 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 
 ## What's new
 
+### 3.5.0
+
+- **Safer synchronisation and data cleanup.** Improved sync safety and private-data cleanup to make account and local data handling more reliable.
+- **Notes reliability.** Fixed editor state, note synchronisation and trash-handling issues. Trashed notes with an existing cloud copy are preserved, and saving new text to a trashed note restores it.
+- **More stable group chat.** Fixed a Compose layout crash, a group chat tab-reset issue and the Realtime WebSocket connection.
+- **Safer note imports.** Files that exceed the supported note length are now rejected instead of being imported.
+- **Date picker and notification fixes.** Fixed date-picker issues and prevented class alerts from incorrectly appearing in the notification bell.
+- **More reliable app experience.** Includes additional fixes to reminder-related flows and release validation.
+
+The complete history is available in the [CHANGELOG](CHANGELOG.md).
+
+<details>
+<summary><b>Earlier changes</b></summary>
+
 ### 3.4.0
 
 - **Notes.** Markdown notes with an optional course tag, opened from the top bar.
@@ -164,10 +178,7 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 - **Images in notes.** Add photos from the device gallery, stored locally with thumbnail rendering, full-screen preview and automatic orphan cleanup.
 - **Backup and cloud sync.** Notes and images are included in encrypted local backups, and notes sync to the cloud with automatic conflict protection when signed in.
 
-The complete history is available in the [CHANGELOG](CHANGELOG.md).
-
-<details>
-<summary><b>Earlier changes</b></summary>
+### Previous releases
 
 - **Task checklists and calendar actions.** Edit checklist items from the task dialog, follow progress on cards and swipe calendar tasks to complete or undo them.
 - **Flexible snoozing.** Snooze from a task card or notification for 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM.

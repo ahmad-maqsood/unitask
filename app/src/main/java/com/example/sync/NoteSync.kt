@@ -7,6 +7,8 @@ import com.example.data.local.Note
 import com.example.data.repository.NoteRepository
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -23,40 +25,91 @@ internal data class NoteRow(
     @SerialName("updated_at_millis") val updatedAtMillis: Long = 0L
 )
 
+@Serializable
+internal data class NoteHeaderRow(
+    @SerialName("doc_id") val docId: String,
+    @SerialName("updated_at_millis") val updatedAtMillis: Long = 0L
+)
+
 object NoteSync {
 
     private const val TAG = "NoteSync"
+    private const val BODY_FETCH_CHUNK = 50
 
+    private suspend fun fetchHeaders(userId: String): List<CloudNoteHeader> {
+        return SupabaseSyncManager.fetchAllRows<NoteHeaderRow>("notes", userId) { from, to ->
+            SupabaseProvider.client.postgrest["notes"]
+                .select(columns = Columns.list("doc_id", "updated_at_millis")) {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                    order("doc_id", Order.ASCENDING)
+                    range(from, to)
+                }.decodeList<NoteHeaderRow>()
+        }.map { CloudNoteHeader(it.docId, it.updatedAtMillis) }
+    }
+
+    private suspend fun fetchRows(userId: String, docIds: List<String>): List<NoteRow> {
+        val rows = mutableListOf<NoteRow>()
+        for (chunk in docIds.chunked(BODY_FETCH_CHUNK)) {
+            rows += SupabaseProvider.client.postgrest["notes"]
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                        isIn("doc_id", chunk)
+                    }
+                }.decodeList<NoteRow>()
+        }
+        return rows
+    }
     suspend fun sync(context: Context, database: AppDatabase, userId: String) {
         val noteDao = database.noteDao()
         val courseDao = database.courseDao()
 
-        // 1. Fetch all cloud notes using internal paging helper
-        val cloudRows = try {
-            SupabaseSyncManager.fetchAllRows<NoteRow>("notes", userId)
+        // 1. Ask the cloud which notes exist and when they changed (no text yet), then
+        //    download the text only of notes that are new here or changed in the cloud
+        val (cloudNotes, localNotes) = try {
+            val headers = fetchHeaders(userId)
+            val wanted = docIdsNeedingBody(noteDao.getAllNotesSync(), headers)
+            val rowsByDocId = fetchRows(userId, wanted).associateBy { it.docId }
+
+            // Read local notes after the download, as before, so the plan sees fresh state
+            val freshLocal = noteDao.getAllNotesSync()
+
+            // A note changed while the download ran and now needs text we do not have:
+            // skip this pass, the next one picks it up
+            val stillMissing = docIdsNeedingBody(freshLocal, headers).any { it !in rowsByDocId }
+            if (stillMissing) return
+
+            // Notes that did not change get a stub with no text. The planner only reads
+            // docId and updatedAtMillis for them, and never overwrites anything from a stub.
+            val merged = headers.map { h ->
+                val row = rowsByDocId[h.docId]
+                if (row != null) {
+                    CloudNote(
+                        docId = row.docId,
+                        title = row.title,
+                        body = row.body,
+                        courseCode = row.courseCode,
+                        isPinned = row.isPinned,
+                        createdAtMillis = row.createdAtMillis,
+                        updatedAtMillis = row.updatedAtMillis
+                    )
+                } else {
+                    CloudNote(h.docId, "", "", "", false, 0L, h.updatedAtMillis)
+                }
+            }
+            merged to freshLocal
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w(TAG, "Failed to fetch notes from Supabase: ${e.message}")
             return
         }
 
-        val cloudNotes = cloudRows.map { row ->
-            CloudNote(
-                docId = row.docId,
-                title = row.title,
-                body = row.body,
-                courseCode = row.courseCode,
-                isPinned = row.isPinned,
-                createdAtMillis = row.createdAtMillis,
-                updatedAtMillis = row.updatedAtMillis
-            )
-        }
-
-        // 2. Fetch local notes and courses
+        // 2. Fetch courses
         val allCourses = courseDao.getAllCoursesList()
         val courseCodeById = allCourses.associate { it.id to SupabaseSyncManager.normalizeCode(it.code) }
         val courseCodeOf: (Long?) -> String = { id -> if (id != null) courseCodeById[id] ?: "" else "" }
-        val localNotes = noteDao.getAllNotesSync()
 
         // 3. Plan sync
         val plan = planNoteSync(localNotes, cloudNotes, courseCodeOf)
@@ -132,7 +185,11 @@ object NoteSync {
                 }
 
                 is NoteSyncAction.DeleteLocal -> {
-                    noteDao.deleteForever(action.localId)
+                    // Deleted on another phone: keep a recoverable copy in this phone's trash.
+                    // Marked synced so it is not sent back; restoring it pushes it again.
+                    val local = noteDao.getNoteById(action.localId) ?: continue
+                    noteDao.softDelete(local.id, System.currentTimeMillis())
+                    noteDao.markSynced(local.id, local.cloudId, 0L)
                 }
 
                 is NoteSyncAction.DeleteCloud -> {

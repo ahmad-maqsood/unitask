@@ -6,9 +6,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -60,9 +60,37 @@ class NotesFlowTest {
         }
     }
 
-    private fun openNewNote() {
-        composeRule.onNode(hasTestTag("notes_fab_new_note") or hasTestTag("notes_new_button")).performClick()
+    private fun tagExists(tag: String): Boolean =
+        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+
+    // Closing the editor saves on a background thread first and only then switches screen,
+    // and waitForIdle() does not wait for that thread. So wait for the list explicitly.
+    private fun waitForNotesList() {
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("notes_fab_new_note") }
+    }
+
+    private fun waitForCard(id: Long) {
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_card_$id") }
+    }
+
+    private fun openNote(id: Long) {
+        waitForCard(id)
+        composeRule.onNodeWithTag("note_card_$id").performClick()
         composeRule.waitForIdle()
+    }
+
+    private fun waitForPreviewTitle(title: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithTag("note_preview_title").fetchSemanticsNodes().isNotEmpty() &&
+                composeRule.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openNewNote() {
+        waitForNotesList()
+        composeRule.onNodeWithTag("notes_fab_new_note").performClick()
+        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_title_input") }
     }
 
     private fun typeTitle(text: String) {
@@ -78,6 +106,7 @@ class NotesFlowTest {
     private fun goBackFromEditor() {
         composeRule.onNodeWithTag("note_editor_back_button").performClick()
         composeRule.waitForIdle()
+        waitForNotesList()
     }
 
     private fun waitForNoteInDb(predicate: (List<Note>) -> Boolean) {
@@ -110,11 +139,10 @@ class NotesFlowTest {
         val noteId = insertNote("Alpha", "alpha body")
 
         // Open note A
-        composeRule.onNodeWithTag("note_card_$noteId").performClick()
-        composeRule.waitForIdle()
+        openNote(noteId)
 
         // Verify note A is open
-        composeRule.onNodeWithTag("note_preview_title").assertIsDisplayed()
+        waitForPreviewTitle("Alpha")
 
         // Go back to the notes list
         goBackFromEditor()
@@ -135,16 +163,16 @@ class NotesFlowTest {
         val idB = insertNote("Beta", "beta body")
 
         // Open note A
-        composeRule.onNodeWithTag("note_card_$idA").performClick()
-        composeRule.waitForIdle()
+        openNote(idA)
+        waitForPreviewTitle("Alpha")
         composeRule.onNodeWithTag("note_preview_title").assertTextEquals("Alpha")
 
         // Go back
         goBackFromEditor()
 
         // Open note B
-        composeRule.onNodeWithTag("note_card_$idB").performClick()
-        composeRule.waitForIdle()
+        openNote(idB)
+        waitForPreviewTitle("Beta")
 
         // Preview title shows B's title and never A's
         composeRule.onNodeWithTag("note_preview_title").assertTextEquals("Beta")
@@ -168,6 +196,9 @@ class NotesFlowTest {
         assertEquals("Body C", notes[0].body)
 
         // The list shows it
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText("Title C").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Title C").assertIsDisplayed()
     }
 
@@ -186,14 +217,15 @@ class NotesFlowTest {
         val idA = insertNote("Title E", "Body E")
 
         // Open note A
-        composeRule.onNodeWithTag("note_card_$idA").performClick()
-        composeRule.waitForIdle()
+        openNote(idA)
 
         // Existing notes open in preview mode; switch to edit mode
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_mode_edit_button") }
         composeRule.onNodeWithTag("note_mode_edit_button").performClick()
         composeRule.waitForIdle()
 
         // Append text to the body
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_body_input") }
         composeRule.onNodeWithTag("note_body_input").performTextInput(" and extra text")
         composeRule.waitForIdle()
 
@@ -201,10 +233,13 @@ class NotesFlowTest {
         goBackFromEditor()
 
         // Open note A again
-        composeRule.onNodeWithTag("note_card_$idA").performClick()
-        composeRule.waitForIdle()
+        openNote(idA)
 
         // The preview contains the appended text
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText("Body E and extra text", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Body E and extra text", substring = true).assertIsDisplayed()
     }
 
@@ -213,10 +248,10 @@ class NotesFlowTest {
         val idA = insertNote("Note F", "Body F")
 
         // Open note A
-        composeRule.onNodeWithTag("note_card_$idA").performClick()
-        composeRule.waitForIdle()
+        openNote(idA)
 
         // Open overflow menu
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_editor_overflow_button") }
         composeRule.onNodeWithTag("note_editor_overflow_button").performClick()
         composeRule.waitForIdle()
 
@@ -224,8 +259,9 @@ class NotesFlowTest {
         composeRule.onNodeWithText("Delete").performClick()
         composeRule.waitForIdle()
 
-        // List no longer shows it
-        composeRule.onNodeWithTag("note_card_$idA").assertDoesNotExist()
+        // List no longer shows it (the move to trash happens on a background thread first)
+        waitForNotesList()
+        composeRule.waitUntil(timeoutMillis = 5_000) { !tagExists("note_card_$idA") }
 
         // DAO says isDeleted = true
         waitForNoteInDb { notes ->
@@ -236,6 +272,9 @@ class NotesFlowTest {
         assertTrue(deletedNote?.isDeleted == true)
 
         // Tap Undo snackbar action
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText("Undo").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Undo").performClick()
         composeRule.waitForIdle()
 
@@ -248,6 +287,7 @@ class NotesFlowTest {
         assertTrue(restoredNote?.isDeleted == false)
 
         // List shows it again
+        waitForCard(idA)
         composeRule.onNodeWithTag("note_card_$idA").assertIsDisplayed()
     }
 }

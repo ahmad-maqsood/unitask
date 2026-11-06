@@ -85,6 +85,18 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
 
+      - name: Upload Android instrumentation test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unitask-android-test-reports
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/logs/
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Update README gallery
         run: python3 .github/scripts/build_screenshots_gallery.py
 

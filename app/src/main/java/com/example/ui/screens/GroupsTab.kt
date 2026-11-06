@@ -183,11 +183,14 @@ fun GroupsTab(
                 }
             } else if (selectedGroupId != null) {
                 // Detail screen for selected group
-                val activeMembership = memberships.find { it.groupId == selectedGroupId }
-                val currentChatInfo = chatInfo[selectedGroupId]
-                val isChatTarget = selectedGroupId == openChatGroupId || selectedGroupId == activeOpenChatGroupId
+                // Snapshot the delegated state value so Kotlin can treat it as a non-null String.
+                val groupId = selectedGroupId.orEmpty()
+                val activeMembership = memberships.find { it.groupId == groupId }
+                val currentChatInfo = chatInfo[groupId]
+                val isChatTarget = groupId == openChatGroupId || groupId == activeOpenChatGroupId
                 GroupDetailScreen(
                     currentUid = currentSupabaseUid() ?: effectiveUser.uid,
+                    groupId = groupId,
                     groupDetail = selectedGroupDetail,
                     fallbackUsername = activeMembership?.username ?: "",
                     fallbackName = activeMembership?.name ?: "",
@@ -244,7 +247,7 @@ fun GroupsTab(
                     onLoadEarlierMessages = { viewModel.loadEarlierMessages() },
                     chatUnreadCount = currentChatInfo?.unreadCount ?: 0,
                     chatLastReadMillis = currentChatInfo?.lastReadMillis,
-                    onChatRead = { upToMillis -> onChatRead(selectedGroupId ?: "", upToMillis) },
+                    onChatRead = { upToMillis -> onChatRead(groupId, upToMillis) },
                     startOnChat = isChatTarget
                 )
             } else {

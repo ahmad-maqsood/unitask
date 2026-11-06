@@ -59,6 +59,13 @@ jobs:
       - name: Build debug app and screenshot tests before emulator startup
         run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
 
+      - name: Enable KVM for hardware-accelerated Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
       - name: Capture screens on an Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -72,6 +79,7 @@ jobs:
           profile: pixel_2
           disable-animations: false
           disable-spellchecker: true
+          disable-linux-hw-accel: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
 

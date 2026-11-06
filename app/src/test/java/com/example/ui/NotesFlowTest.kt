@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.runtime.mutableStateOf
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Note
@@ -39,7 +40,7 @@ class NotesFlowTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var db: AppDatabase
-
+    private val notesVisible = mutableStateOf(true)
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -55,7 +56,9 @@ class NotesFlowTest {
 
         composeRule.setContent {
             MyApplicationTheme {
-                NotesHost(onClose = {})
+                if (notesVisible.value) {
+                    NotesHost(onClose = {})
+                }
             }
         }
     }
@@ -289,5 +292,24 @@ class NotesFlowTest {
         // List shows it again
         waitForCard(idA)
         composeRule.onNodeWithTag("note_card_$idA").assertIsDisplayed()
+    }
+    @Test
+    fun `reopening Notes after closing it shows the right note`() {
+        val idA = insertNote("Alpha", "alpha body")
+        val idB = insertNote("Beta", "beta body")
+
+        openNote(idA)
+        waitForPreviewTitle("Alpha")
+        goBackFromEditor()
+
+        // Close the whole Notes screen and open it again, like leaving Notes and returning.
+        composeRule.runOnUiThread { notesVisible.value = false }
+        composeRule.waitForIdle()
+        composeRule.runOnUiThread { notesVisible.value = true }
+        composeRule.waitForIdle()
+
+        openNote(idB)
+        waitForPreviewTitle("Beta")
+        composeRule.onNodeWithText("Alpha").assertDoesNotExist()
     }
 }

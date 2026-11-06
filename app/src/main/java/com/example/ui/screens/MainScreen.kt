@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import android.content.pm.PackageManager
 import android.os.Build
@@ -271,6 +272,8 @@ fun MainScreen(
     var isFabMenuExpanded by remember { mutableStateOf(false) }
     val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
     var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
+    // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
+    var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -901,6 +904,7 @@ fun MainScreen(
                 },
                 onOpenSavedNote = { noteId ->
                     viewModel.closeMarkdownViewer()
+                    viewerEditorSession++
                     openedNoteIdFromViewer = noteId
                 }
             )
@@ -911,6 +915,7 @@ fun MainScreen(
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NoteEditorScreen(
                 noteId = targetId,
+                viewModelKey = "viewer_editor_$viewerEditorSession",
                 onClose = { openedNoteIdFromViewer = null },
                 onDeleted = { openedNoteIdFromViewer = null }
             )

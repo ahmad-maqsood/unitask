@@ -173,7 +173,12 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
 
     private var autosaveJob: Job? = null
     private var discarded = false
+    @Volatile
+    private var trashed = false
+    private var watchJob: Job? = null
 
+    @Volatile
+    private var ownVersions: List<Pair<String, String>> = emptyList()
     fun discardUnsaved() {
         discarded = true
         autosaveJob?.cancel()
@@ -202,6 +207,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                     bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
                     selectedCourseId = note.courseId
                     isPinned = note.isPinned
+                    rememberOwnVersion(note.title, note.body)
+                    watchForOutsideChanges(note.id)
                 }
                 editHistory.clear()
                 lastTypingTime = 0L
@@ -210,7 +217,32 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
     }
+    private fun rememberOwnVersion(t: String, b: String) {
+        ownVersions = (ownVersions + (t to b)).takeLast(4)
+    }
 
+    /**
+     * Cloud sync can change this note while it is open. Show that newer text instead of
+     * saving the old text over it on the next keystroke.
+     */
+    private fun watchForOutsideChanges(id: Long) {
+        watchJob?.cancel()
+        watchJob = viewModelScope.launch {
+            repository.observeNote(id).collect { note ->
+                if (note == null || note.isDeleted || trashed || discarded) return@collect
+                if ((note.title to note.body) in ownVersions) return@collect
+                if (note.title == title && note.body == bodyValue.text) return@collect
+                autosaveJob?.cancel()
+                title = note.title
+                bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
+                editHistory.clear()
+                lastTypingTime = 0L
+                updateHistoryState()
+                rememberOwnVersion(note.title, note.body)
+            }
+        }
+    }
+    
     fun onBodyChange(newBody: TextFieldValue) {
         val before = EditorText(
             text = bodyValue.text,
@@ -355,12 +387,14 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private suspend fun performSave(): Long = saveMutex.withLock {
-        if (discarded) return@withLock 0L
+        if (discarded || trashed) return@withLock 0L
         val idToSave = currentId
         val t = title
         val b = bodyValue.text
         val cId = selectedCourseId
-
+        // Written before the save, so the database copy of our own text is not mistaken
+        // for an edit that came from another phone
+        rememberOwnVersion(t, b)
         val savedId = repository.saveNote(
             id = idToSave,
             title = t,
@@ -397,7 +431,11 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
 
     suspend fun moveToTrash(id: Long) = withContext(Dispatchers.IO) {
         cancelAutosave()
-        repository.moveToTrash(id)
+        // Under the save lock, so a save that is already running cannot bring the note back
+        saveMutex.withLock {
+            trashed = true
+            repository.moveToTrash(id)
+        }
         triggerSyncIfLoggedIn()
     }
 }
@@ -408,7 +446,8 @@ fun NoteEditorScreen(
     noteId: Long?,
     onClose: () -> Unit,
     onDeleted: (Long) -> Unit,
-    viewModel: NoteEditorViewModel = viewModel()
+    viewModelKey: String = "note_editor",
+    viewModel: NoteEditorViewModel = viewModel(key = viewModelKey)
 ) {
     LaunchedEffect(noteId) {
         viewModel.loadNote(noteId)

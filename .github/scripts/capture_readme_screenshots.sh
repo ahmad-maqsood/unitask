@@ -37,18 +37,19 @@ adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATI
   -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
   -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
 
-# The package ID is defined by app/build.gradle.kts. Access the exact
-# app-owned directory directly: Android 11 can deny listing /sdcard/Android/data,
-# even when the app's own external-files directory is readable by ADB.
-SCREENSHOT_DIR="/sdcard/Android/data/com.aistudio.unitask.zrvqk/files/readme-screenshots"
+# Instrumentation writes into the app's private files directory. Retrieve it
+# through run-as (the debug build is debuggable); external-storage paths are
+# not guaranteed to exist on every emulator/API level.
+APP_ID="com.aistudio.unitask.zrvqk"
+SCREENSHOT_DIR="files/readme-screenshots"
 
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.
 find docs/screenshots -maxdepth 1 -type f -delete
-echo "Pulling fresh screenshots from the app-owned directory: $SCREENSHOT_DIR"
-if ! adb pull "$SCREENSHOT_DIR/." docs/screenshots/; then
-  echo "Could not pull screenshots from the app-owned directory." >&2
-  echo "The instrumentation test completed, but its output directory was not accessible at the expected package path." >&2
+echo "Exporting fresh screenshots from the app's private files directory."
+if ! adb exec-out run-as "$APP_ID" tar -C "$SCREENSHOT_DIR" -cf - . | tar -xf - -C docs/screenshots; then
+  echo "Could not export screenshots from the app's private files directory." >&2
+  echo "Confirm that the debug app is debuggable and that the instrumentation test created its output directory." >&2
   exit 1
 fi
 

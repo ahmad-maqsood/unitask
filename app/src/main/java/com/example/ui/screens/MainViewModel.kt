@@ -244,6 +244,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         runCatching { com.example.reminder.ClassReminderScheduler(application).cancelAll() }
                                         runCatching { com.example.reminder.GroupReminderScheduler(application).cancelGroupsNotIn(emptySet()) }                                       
                                         database.clearAllTables()
+                                        com.example.util.PrivateDataCleaner.clearPersonalFiles(application)
                                         com.example.data.groups.GroupRepository.clearCache(application)
                                     } catch (e: Exception) {
                                         Log.w("MainViewModel", "Error resetting local tables: ${e.message}")

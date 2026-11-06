@@ -360,7 +360,7 @@ class ReadmeScreenshotTest {
             InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         ) { "Could not capture screenshot: $name" }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val dir = File(context.filesDir, "readme-screenshots")
+        val dir = File(requireNotNull(context.getExternalFilesDir(null)) { "External app files directory is unavailable" }, "readme-screenshots")
         dir.mkdirs()
         FileOutputStream(File(dir, "$name.png")).use {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)

@@ -38,6 +38,16 @@ Please include the app version, your phone model, your Android version, and the 
 
 Do not use a public issue. See [SECURITY.md](SECURITY.md).
 
+## Smoke test before a release
+
+Before publishing a new release, run the smoke test on an Android emulator:
+
+1. Open the **Actions** tab on GitHub.
+2. In the left sidebar, click **Smoke test on emulator**.
+3. Click the **Run workflow** dropdown, pick your branch, and click **Run workflow**.
+
+The workflow takes about 10 to 15 minutes to run. If the run fails (red status), do not release until the failure is investigated and fixed.
+
 ## Want your own version?
 
 The code is MIT licensed, so you are free to fork it. [SETUP_GUIDE.md](SETUP_GUIDE.md) explains how to run it with your own Supabase project.

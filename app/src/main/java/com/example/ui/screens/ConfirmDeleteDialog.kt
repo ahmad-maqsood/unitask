@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 
 /** One "are you sure" dialog for every delete button in the app. */
 @Composable
@@ -31,7 +32,8 @@ fun ConfirmDeleteDialog(
                 onClick = {
                     onDismiss()
                     onConfirm()
-                }
+                },
+                modifier = Modifier.testTag("confirm_delete_button")
             ) {
                 Text("Delete", color = MaterialTheme.colorScheme.error)
             }

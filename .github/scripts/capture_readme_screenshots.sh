@@ -30,14 +30,42 @@ if [[ ! -f "$HOME/.android/debug.keystore" ]]; then
 fi
 
 APP_ID="com.aistudio.unitask.zrvqk"
+
+# Run the instrumentation directly instead of through connectedDebugAndroidTest.
+# Gradle's connected task uninstalls the app when it finishes, which deletes the
+# app-specific storage folder holding the screenshots before we can pull them.
+# The APKs were already built by the earlier "Build debug app" workflow step.
+APP_APK="$(ls app/build/outputs/apk/debug/*.apk | head -n 1)"
+TEST_APK="$(ls app/build/outputs/apk/androidTest/debug/*.apk | head -n 1)"
+echo "Installing $APP_APK and $TEST_APK"
+adb install -r -t "$APP_APK"
+adb install -r -t "$TEST_APK"
 adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS || true
 
-./gradlew connectedDebugAndroidTest --no-daemon \
-  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.example.ReadmeScreenshotTest \
-  -Pandroid.testInstrumentationRunnerArguments.demoEmail="$SCREENSHOT_DEMO_OWNER_EMAIL" \
-  -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
-  -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
+RUNNER="$(adb shell pm list instrumentation | tr -d '\r' | grep "target=$APP_ID" | head -n 1 | sed -E 's/^instrumentation:([^ ]+).*/\1/')"
+if [[ -z "$RUNNER" ]]; then
+  echo "Could not find an instrumentation runner for $APP_ID." >&2
+  adb shell pm list instrumentation >&2
+  exit 1
+fi
+echo "Running instrumentation: $RUNNER"
+
+# -r prints the full result stream, so pass/fail and stack traces appear in the log.
+adb shell am instrument -w -r \
+  -e class com.example.ReadmeScreenshotTest \
+  -e demoEmail "$SCREENSHOT_DEMO_OWNER_EMAIL" \
+  -e demoPassword "$SCREENSHOT_DEMO_OWNER_PASSWORD" \
+  -e groupId "$SCREENSHOT_GROUP_ID" \
+  "$RUNNER" | tee /tmp/instrumentation-output.txt | grep -v -E "demoPassword|demoEmail" || true
+
+if ! grep -q "^INSTRUMENTATION_CODE: -1" /tmp/instrumentation-output.txt; then
+  echo "Instrumentation did not finish successfully. Output above has the reason." >&2
+  exit 1
+fi
+if grep -q "^INSTRUMENTATION_STATUS_CODE: -[124]" /tmp/instrumentation-output.txt; then
+  echo "At least one test failed or errored. Output above has the stack trace." >&2
+  exit 1
+fi
 
 # Instrumentation writes to app-specific external storage so ADB can pull
 # the PNGs as ordinary files without binary streaming through run-as.

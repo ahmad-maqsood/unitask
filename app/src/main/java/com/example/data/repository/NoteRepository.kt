@@ -23,7 +23,11 @@ class NoteRepository(private val noteDao: NoteDao) {
     fun observeDeletedNotes(): Flow<List<NoteListItem>> {
         return noteDao.observeDeletedNotes().flowOn(Dispatchers.IO)
     }
-
+    
+    fun observeNote(id: Long): Flow<Note?> {
+        return noteDao.observeNoteById(id).flowOn(Dispatchers.IO)
+    }
+    
     suspend fun getNote(id: Long): Note? = withContext(Dispatchers.IO) {
         noteDao.getNoteById(id)
     }
@@ -65,14 +69,22 @@ class NoteRepository(private val noteDao: NoteDao) {
                 )
                 return@withContext noteDao.insert(newNote)
             }
-            if (existing.title == trimmedTitle && existing.body == trimmedBody && existing.courseId == courseId) {
+            if (!existing.isDeleted &&
+                existing.title == trimmedTitle &&
+                existing.body == trimmedBody &&
+                existing.courseId == courseId
+            ) {
                 return@withContext id
             }
+            // The text is not blank here, so saving into a trashed note brings it back.
+            // This covers: clear a note, pause (it goes to the trash), then type again.
             val updated = existing.copy(
                 title = trimmedTitle,
                 body = trimmedBody,
                 courseId = courseId,
                 updatedAt = now,
+                isDeleted = false,
+                deletedAt = 0L,
                 isSynced = false
             )
             noteDao.update(updated)

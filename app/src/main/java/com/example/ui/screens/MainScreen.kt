@@ -904,7 +904,7 @@ fun MainScreen(
                 },
                 onOpenSavedNote = { noteId ->
                     viewModel.closeMarkdownViewer()
-                    viewerEditorSession++
+                    viewerEditorSession = NoteEditorSessions.next()
                     openedNoteIdFromViewer = noteId
                 }
             )
@@ -915,7 +915,7 @@ fun MainScreen(
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NoteEditorScreen(
                 noteId = targetId,
-                viewModelKey = "viewer_editor_$viewerEditorSession",
+                viewModelSession = viewerEditorSession,
                 onClose = { openedNoteIdFromViewer = null },
                 onDeleted = { openedNoteIdFromViewer = null }
             )

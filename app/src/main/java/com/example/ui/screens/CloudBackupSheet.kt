@@ -482,6 +482,7 @@ fun CloudBackupSheet(
                                 runCatching { androidx.work.WorkManager.getInstance(context).cancelAllWork() }
 
                                 runCatching { com.example.util.AttachmentManager.deleteAllAttachmentFiles(context) }
+                                runCatching { com.example.util.PrivateDataCleaner.clearPersonalFiles(context.applicationContext) }
                                 runCatching { com.example.data.groups.GroupRepository.clearCache(context) }
                                 runCatching { com.example.data.groups.GroupChatTracker(context).clearAll() }
                                 runCatching { com.example.reminder.GroupChatNotifier(context).clearAll() }

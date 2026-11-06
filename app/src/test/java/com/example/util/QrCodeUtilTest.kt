@@ -1,6 +1,10 @@
 package com.example.util
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -9,6 +13,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
+import java.io.FileOutputStream
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -70,6 +76,26 @@ class QrCodeUtilTest {
         val blankBitmap = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888)
         val decoded = QrCodeUtil.decodeQrFromBitmap(blankBitmap)
         assertNull(decoded)
+    }
+
+    @Test
+    fun testDecodeQrFromUri_roundTrip() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val content = "unitask://join?username=david&code=TEST1234"
+        val bitmap = QrCodeUtil.generateQrBitmap(content, sizePx = 300)
+        assertNotNull(bitmap)
+
+        val tempFile = File(context.cacheDir, "test_qr_temp.png")
+        FileOutputStream(tempFile).use { out ->
+            bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        try {
+            val uri = Uri.fromFile(tempFile)
+            val decoded = QrCodeUtil.decodeQrFromUri(context, uri)
+            assertEquals(content, decoded)
+        } finally {
+            tempFile.delete()
+        }
     }
 }
 

@@ -343,6 +343,7 @@ fun TaskCard(
                                         showMenu = false
                                         showDeleteConfirm = true
                                     },
+                                    modifier = Modifier.testTag("task_delete_menu_item"),
                                     leadingIcon = {
                                         Icon(
                                             Icons.Default.DeleteOutline,

@@ -28,7 +28,7 @@ class NotificationHistoryTest {
     fun newestFirstAndUnreadUntilMarked() {
         val now = System.currentTimeMillis()
         NotificationHistory.add(context, "Deadline", "First", "a", nowMillis = now - 1_000L)
-        NotificationHistory.add(context, "Class", "Second", "b", nowMillis = now)
+        NotificationHistory.add(context, "Group chat", "Second", "b", nowMillis = now)
         val items = NotificationHistory.items(context)
         assertEquals(listOf("Second", "First"), items.map { it.title })
         assertEquals(2, NotificationHistory.unreadCount(context))
@@ -81,5 +81,35 @@ class NotificationHistoryTest {
 
         NotificationHistory.clear(context)
         assertTrue(NotificationHistory.items(context).isEmpty())
+    }
+    @Test
+    fun classStartAlertsAreNotSaved() {
+        val now = System.currentTimeMillis()
+        NotificationHistory.add(
+            context, "Class", "Class in 10 min: CS101", "Room 1",
+            target = "tab:TIMETABLE", key = "n|1", nowMillis = now
+        )
+        assertTrue(NotificationHistory.items(context).isEmpty())
+        assertEquals(0, NotificationHistory.unreadCount(context))
+    }
+
+    @Test
+    fun classItemsSavedByAnOlderVersionAreHidden() {
+        val now = System.currentTimeMillis()
+        // Written the way the previous version stored it.
+        context.getSharedPreferences("notification_history", Context.MODE_PRIVATE)
+            .edit()
+            .putString(
+                "items_json",
+                """[{"id":${now - 1_000},"key":"n|1","kind":"Class","title":"Class in 10 min: CS101","body":"","target":"tab:TIMETABLE","unread":true}]"""
+            )
+            .commit()
+
+        assertTrue(NotificationHistory.items(context).isEmpty())
+        assertEquals(0, NotificationHistory.unreadCount(context))
+
+        // Other kinds still work next to it.
+        NotificationHistory.add(context, "Deadline", "Report due", "", nowMillis = now)
+        assertEquals(listOf("Report due"), NotificationHistory.items(context).map { it.title })
     }
 }

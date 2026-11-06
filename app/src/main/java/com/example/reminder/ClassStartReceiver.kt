@@ -267,15 +267,8 @@ class ClassStartReceiver : BroadcastReceiver() {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, notification)
 
-        com.example.util.NotificationHistory.add(
-            context,
-            kind = "Class",
-            title = "Class in $minutesLeft min: ${course.code}",
-            body = "${course.name}\n$details",
-            target = "tab:TIMETABLE",
-            key = "n|$notificationId"
-        )
-
+        // Class start alerts are not saved in the notification bell on purpose.
+        
         val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(PRIMARY_COLOR)

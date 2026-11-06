@@ -106,6 +106,12 @@ object NoteSync {
             return
         }
 
+        val sessionUserId = SupabaseSyncManager.getCurrentSessionUserId()
+        if (cloudNotes.isEmpty() && !SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId, userId)) {
+            Log.w(TAG, "Cloud returned no notes and session is untrusted for user $userId; skipping note sync")
+            return
+        }
+
         // 2. Fetch courses
         val allCourses = courseDao.getAllCoursesList()
         val courseCodeById = allCourses.associate { it.id to SupabaseSyncManager.normalizeCode(it.code) }

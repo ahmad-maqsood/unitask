@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,8 +38,11 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +53,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -65,8 +68,10 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,6 +86,8 @@ import com.example.util.HighPriorityAlarm
 import com.example.util.DateFormats
 import com.example.util.AttachmentManager
 import com.example.util.SavedAttachmentInfo
+import com.example.util.applyPickedDate
+import com.example.util.localMillisToPickerUtcMillis
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -97,7 +104,7 @@ import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditTaskDialog(
     courses: List<Course>,
@@ -121,6 +128,7 @@ fun AddEditTaskDialog(
     onNeedCreateCourse: () -> Unit
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
     // The saved description holds notes AND "- [ ] item" lines. In the dialog they are edited separately.
@@ -191,8 +199,39 @@ fun AddEditTaskDialog(
         )
     ) { mutableStateOf<List<SavedAttachmentInfo>>(emptyList()) }
     var isAttachingFile by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = localMillisToPickerUtcMillis(selectedDueDateMillis)
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { pickedUtc ->
+                            selectedDueDateMillis = applyPickedDate(selectedDueDateMillis, pickedUtc)
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePicker = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     if (showTimePicker) {
         Material3TimePickerDialog(
@@ -396,6 +435,8 @@ fun AddEditTaskDialog(
                         { Text("Title is required") }
                     } else null,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("task_title_input")
@@ -523,19 +564,7 @@ fun AddEditTaskDialog(
                             modifier = Modifier
                                 .weight(1.3f)
                                 .clickable {
-                                    val cal = Calendar.getInstance().apply { timeInMillis = selectedDueDateMillis }
-                                    DatePickerDialog(
-                                        context,
-                                        { _, year, month, dayOfMonth ->
-                                            cal.set(Calendar.YEAR, year)
-                                            cal.set(Calendar.MONTH, month)
-                                            cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                                            selectedDueDateMillis = cal.timeInMillis
-                                        },
-                                        cal.get(Calendar.YEAR),
-                                        cal.get(Calendar.MONTH),
-                                        cal.get(Calendar.DAY_OF_MONTH)
-                                    ).show()
+                                    showDatePicker = true
                                 }
                                 .testTag("due_date_picker_button"),
                             shape = RoundedCornerShape(12.dp)

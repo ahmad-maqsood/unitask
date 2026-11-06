@@ -98,6 +98,13 @@ object SupabaseSyncManager {
      */
     internal fun looksLikeEmptyCloudGlitch(cloudCount: Int, localSyncedCount: Int): Boolean =
         cloudCount == 0 && localSyncedCount >= EMPTY_GUARD_MIN_ROWS
+
+    /**
+     * An empty answer from a request that did not carry this user's session means "nothing visible",
+     * not "everything was deleted".
+     */
+    internal fun canTrustEmptyCloudList(sessionUserId: String?, expectedUserId: String): Boolean =
+        sessionUserId != null && sessionUserId == expectedUserId
     internal suspend fun <T> fetchAllRows(
         table: String,
         userId: String,
@@ -272,6 +279,14 @@ object SupabaseSyncManager {
     private fun getCurrentUserId(): String? {
         return try {
             SupabaseProvider.client.auth.currentUserOrNull()?.id
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    internal fun getCurrentSessionUserId(): String? {
+        return try {
+            SupabaseProvider.client.auth.currentSessionOrNull()?.user?.id
         } catch (_: Exception) {
             null
         }
@@ -834,7 +849,10 @@ object SupabaseSyncManager {
             .toSet()
         val localSyncedCourses = courseDao.getAllCoursesList()
             .filter { !it.isDeleted && it.isSynced && it.cloudId.isNotBlank() }
-        if (looksLikeEmptyCloudGlitch(cloudCourses.size, localSyncedCourses.size)) {
+        val currentSessionUserId = getCurrentSessionUserId()
+        if (cloudCourses.isEmpty() && !canTrustEmptyCloudList(currentSessionUserId, userId)) {
+            Log.w(TAG, "Cloud returned no courses and session is untrusted for user $userId; skipping deletions")
+        } else if (looksLikeEmptyCloudGlitch(cloudCourses.size, localSyncedCourses.size)) {
             Log.w(TAG, "Cloud returned no courses but ${localSyncedCourses.size} are synced here; keeping them")
         } else {
             for (c in localSyncedCourses) {
@@ -1030,7 +1048,10 @@ object SupabaseSyncManager {
         val cloudTaskIds = cloudTasks.map { it.docId }.toSet()
         val localSyncedTasks = taskDao.getAllActiveTasksSync()
             .filter { it.isSynced && it.cloudId.isNotBlank() }
-        if (looksLikeEmptyCloudGlitch(cloudTasks.size, localSyncedTasks.size)) {
+        val currentSessionUserId = getCurrentSessionUserId()
+        if (cloudTasks.isEmpty() && !canTrustEmptyCloudList(currentSessionUserId, userId)) {
+            Log.w(TAG, "Cloud returned no tasks and session is untrusted for user $userId; skipping deletions")
+        } else if (looksLikeEmptyCloudGlitch(cloudTasks.size, localSyncedTasks.size)) {
             Log.w(TAG, "Cloud returned no tasks but ${localSyncedTasks.size} are synced here; keeping them")
         } else {
             for (t in localSyncedTasks) {
@@ -1148,7 +1169,10 @@ object SupabaseSyncManager {
         val cloudSlotIds = cloudSlots.map { it.docId }.toSet()
         val localSyncedSlots = slotDao.getAllSlotsSync()
             .filter { !it.isDeleted && it.isSynced && it.cloudId.isNotBlank() }
-        if (looksLikeEmptyCloudGlitch(cloudSlots.size, localSyncedSlots.size)) {
+        val currentSessionUserId = getCurrentSessionUserId()
+        if (cloudSlots.isEmpty() && !canTrustEmptyCloudList(currentSessionUserId, userId)) {
+            Log.w(TAG, "Cloud returned no slots and session is untrusted for user $userId; skipping deletions")
+        } else if (looksLikeEmptyCloudGlitch(cloudSlots.size, localSyncedSlots.size)) {
             Log.w(TAG, "Cloud returned no slots but ${localSyncedSlots.size} are synced here; keeping them")
         } else {
             for (s in localSyncedSlots) {

@@ -161,6 +161,7 @@ fun CourseCard(
                                     showMenu = false
                                     showDeleteConfirm = true
                                 },
+                                modifier = Modifier.testTag("course_delete_menu_item"),
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.DeleteOutline,

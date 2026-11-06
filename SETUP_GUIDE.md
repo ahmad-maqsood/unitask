@@ -2,7 +2,7 @@
 
 This guide takes you from zero to your own copy of UniTask running on your phone, with **your own** database. You do not need to be an Android developer. Every step says exactly what to click or paste.
 
-**Last checked:** 4 November 2026, against UniTask v3.2.0. Dashboards change names now and then. If a button is not where this guide says, look for the same words nearby.
+**Last checked:** 6 November 2026, against UniTask v3.4.0. Dashboards change names now and then. If a button is not where this guide says, look for the same words nearby.
 
 ## What you will end up with
 
@@ -790,6 +790,8 @@ buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_YOUR_KEY\"")
 Keep the backslash-quote pairs (`\"`) exactly as they are. They are part of the syntax. Only replace the text between them.
 
 **Why change `applicationId`?** Android allows only one app per id on a phone. If you keep the original id and a friend already has the real UniTask installed, your build (signed with a different key) will refuse to install over it. Pick something unique like `com.yourname.unitask`. Use lowercase letters, numbers and dots, with at least two parts. **Use this exact id in the Android client in Step 6d.**
+
+If you change the `applicationId`, you must also change the package name inside `docs/join/index.html` (the line with `package=com.aistudio.unitask.zrvqk`), otherwise group invite links from the web page will not open your build.
 
 ### Change the links that point to the original project
 

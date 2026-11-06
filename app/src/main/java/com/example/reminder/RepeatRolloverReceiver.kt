@@ -87,7 +87,8 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 taskAttachmentDao = db.taskAttachmentDao(),
                 lectureSlotDao = db.lectureSlotDao(),
                 reminderScheduler = scheduler,
-                noteDao = db.noteDao()
+                noteDao = db.noteDao(),
+                database = db
             )
             if (repository.rolloverCompletedRepeatingTasks()) {
                 // Leaves every reminder in a consistent state after the tasks moved.

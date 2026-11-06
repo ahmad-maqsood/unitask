@@ -23,4 +23,24 @@ class SyncSafetyTest {
     fun aCloudListWithRowsIsNeverAGlitch() {
         assertFalse(SupabaseSyncManager.looksLikeEmptyCloudGlitch(cloudCount = 1, localSyncedCount = 50))
     }
+
+    @Test
+    fun nullOrDifferentSessionUserCannotBeTrustedForEmptyCloudList() {
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = null, expectedUserId = "user1"))
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = "user2", expectedUserId = "user1"))
+    }
+
+    @Test
+    fun matchingSessionUserCanBeTrustedForEmptyCloudList() {
+        assertTrue(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = "user1", expectedUserId = "user1"))
+    }
+
+    @Test
+    fun blankIdsOnlyMatchWhenIdenticalAndNonNull() {
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = null, expectedUserId = ""))
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = "", expectedUserId = "user1"))
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = "user1", expectedUserId = ""))
+        assertTrue(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = "", expectedUserId = ""))
+        assertFalse(SupabaseSyncManager.canTrustEmptyCloudList(sessionUserId = " ", expectedUserId = ""))
+    }
 }

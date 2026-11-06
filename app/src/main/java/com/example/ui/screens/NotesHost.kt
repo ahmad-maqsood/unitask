@@ -28,7 +28,7 @@ fun NotesHost(
 ) {
     val context = LocalContext.current
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
-    // A new number every time the editor opens, so each open gets a fresh editor ViewModel
+    // A new number every time the editor opens, so each open gets a fresh editor state
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var inTrash by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -53,7 +53,7 @@ fun NotesHost(
         val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
         NoteEditorScreen(
             noteId = targetId,
-            viewModelKey = "notes_editor_$editorSession",
+            viewModelSession = editorSession,
             onClose = { editorTarget = null },
             onDeleted = { deletedId ->
                 editorTarget = null
@@ -77,11 +77,11 @@ fun NotesHost(
     } else {
         NotesScreen(
             onOpenNote = { id ->
-                editorSession++
+                editorSession = NoteEditorSessions.next()
                 editorTarget = id.toString()
             },
             onNewNote = {
-                editorSession++
+                editorSession = NoteEditorSessions.next()
                 editorTarget = "new"
             },
             onOpenTrash = { inTrash = true },

@@ -156,7 +156,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             taskAttachmentDao = database.taskAttachmentDao(),
             lectureSlotDao = database.lectureSlotDao(),
             reminderScheduler = scheduler,
-            noteDao = database.noteDao()
+            noteDao = database.noteDao(),
+            database = database
         )
 
         val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
@@ -244,6 +245,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         runCatching { com.example.reminder.ClassReminderScheduler(application).cancelAll() }
                                         runCatching { com.example.reminder.GroupReminderScheduler(application).cancelGroupsNotIn(emptySet()) }                                       
                                         database.clearAllTables()
+                                        com.example.util.PrivateDataCleaner.clearPersonalFiles(application)
                                         com.example.data.groups.GroupRepository.clearCache(application)
                                     } catch (e: Exception) {
                                         Log.w("MainViewModel", "Error resetting local tables: ${e.message}")

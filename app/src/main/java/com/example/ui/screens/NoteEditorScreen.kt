@@ -128,12 +128,23 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 // When true, opening an existing note starts in Preview mode.
 // Set this to false to always open existing notes in Edit mode.
 private const val OPEN_EXISTING_NOTES_IN_PREVIEW = true
 
+/**
+ * Hands out a new number every time any screen opens the note editor. It is shared by every
+ * screen that opens an editor, so two opens never get the same number while the app runs.
+ * (A counter inside one screen restarts at 0 when that screen is closed, and the editor
+ * ViewModel outlives the screen, so it would wrongly treat the next open as the same editor.)
+ */
+object NoteEditorSessions {
+    private val counter = java.util.concurrent.atomic.AtomicInteger(0)
+    fun next(): Int = counter.incrementAndGet()
+}
 class NoteEditorViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val repository = NoteRepository(database.noteDao())
@@ -172,6 +183,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
         private set
 
     private var autosaveJob: Job? = null
+    private var loadJob: Job? = null
+    private var currentSession: Int = -1
     private var discarded = false
     @Volatile
     private var trashed = false
@@ -187,19 +200,38 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     val activeCourses: Flow<List<Course>> = database.courseDao().getAllCourses()
         .map { list -> list.filter { !it.isDeleted && !it.isMyTasksCourse() } }
 
-    fun loadNote(noteId: Long?) {
-        if (isLoaded) return
+    fun loadNote(noteId: Long?, session: Int) {
+        if (isLoaded && session == currentSession) return
+        currentSession = session
+        loadJob?.cancel()
+        loadJob = null
+        autosaveJob?.cancel()
+        autosaveJob = null
+
+        currentId = 0L
+        title = ""
+        bodyValue = TextFieldValue("")
+        selectedCourseId = null
+        isPinned = false
+        editHistory.clear()
+        updateHistoryState()
+        lastTypingTime = 0L
+        ownVersions = emptyList()
+        discarded = false
+        trashed = false
+        isLoaded = false
+
         if (noteId == null || noteId == 0L) {
-            currentId = 0L
-            editHistory.clear()
-            lastTypingTime = 0L
-            updateHistoryState()
             isLoaded = true
             return
         }
-        viewModelScope.launch(Dispatchers.IO) {
+
+        val targetSession = session
+        loadJob = viewModelScope.launch(Dispatchers.IO) {
             val note = repository.getNote(noteId)
+            if (!isActive || targetSession != currentSession) return@launch
             withContext(Dispatchers.Main) {
+                if (!isActive || targetSession != currentSession) return@withContext
                 if (note != null) {
                     currentId = note.id
                     title = note.title
@@ -226,7 +258,9 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     suspend fun watchForOutsideChanges() {
         val id = currentId
         if (id <= 0L) return
+        val watchSession = currentSession
         repository.observeNote(id).collect { note ->
+            if (watchSession != currentSession) return@collect
             if (note == null || note.isDeleted || trashed || discarded) return@collect
             if ((note.title to note.body) in ownVersions) return@collect
             if (note.title == title && note.body == bodyValue.text) return@collect
@@ -385,6 +419,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
 
     private suspend fun performSave(): Long = saveMutex.withLock {
         if (discarded || trashed) return@withLock 0L
+        val saveSession = currentSession
         val idToSave = currentId
         val t = title
         val b = bodyValue.text
@@ -398,9 +433,12 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             body = b,
             courseId = cId
         )
+        if (saveSession != currentSession) return@withLock savedId
         if (savedId > 0L && currentId == 0L) {
             withContext(Dispatchers.Main) {
-                currentId = savedId
+                if (saveSession == currentSession && currentId == 0L) {
+                    currentId = savedId
+                }
             }
         }
         if (savedId > 0L) {
@@ -443,11 +481,11 @@ fun NoteEditorScreen(
     noteId: Long?,
     onClose: () -> Unit,
     onDeleted: (Long) -> Unit,
-    viewModelKey: String = "note_editor",
-    viewModel: NoteEditorViewModel = viewModel(key = viewModelKey)
+    viewModelSession: Int = 0,
+    viewModel: NoteEditorViewModel = viewModel(key = "note_editor")
 ) {
-    LaunchedEffect(noteId) {
-        viewModel.loadNote(noteId)
+    LaunchedEffect(noteId, viewModelSession) {
+        viewModel.loadNote(noteId, viewModelSession)
     }
 
     // Watch the open note only while the editor is on screen

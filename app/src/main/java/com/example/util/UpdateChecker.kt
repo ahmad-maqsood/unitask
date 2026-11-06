@@ -74,7 +74,8 @@ object UpdateChecker {
             } else {
                 UpdateResult.Failed("GitHub answered with error $code.")
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             UpdateResult.Failed("Could not reach GitHub. Check your internet connection.")
         } finally {
             connection?.disconnect()

@@ -35,6 +35,7 @@ import com.example.util.currentSupabaseUid
 import com.example.util.toggleChecklistLine
 import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
+import androidx.room.withTransaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -54,8 +55,12 @@ class AppRepository(
     private val taskAttachmentDao: TaskAttachmentDao,
     private val lectureSlotDao: LectureSlotDao,
     private val reminderScheduler: ReminderScheduler,
-    private val noteDao: NoteDao? = null
+    private val noteDao: NoteDao? = null,
+    private val database: androidx.room.RoomDatabase? = null
 ) {
+
+    private suspend fun <T> inTransaction(block: suspend () -> T): T =
+        database?.withTransaction { block() } ?: block()
 
     val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
         .map { list ->
@@ -170,14 +175,16 @@ class AppRepository(
         //    the cloud and only then purges the rows, so the delete survives being offline or the
         //    app being killed. Slots must be soft-deleted too, or they come back when a course with
         //    the same code is added again.
-        for (cId in allIds) {
-            taskDao.softDeleteTasksForCourse(cId)
-            lectureSlotDao.softDeleteSlotsForCourse(cId)
-            courseDao.softDeleteCourse(cId)
-        }
+        inTransaction {
+            for (cId in allIds) {
+                taskDao.softDeleteTasksForCourse(cId)
+                lectureSlotDao.softDeleteSlotsForCourse(cId)
+                courseDao.softDeleteCourse(cId)
+            }
 
-        // Detach notes tagged with deleted courses without deleting the user's notes.
-        noteDao?.detachCourses(allIds)
+            // Detach notes tagged with deleted courses without deleting the user's notes.
+            noteDao?.detachCourses(allIds)
+        }
 
         // 5. Record in pending deletion guards
         SupabaseSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)

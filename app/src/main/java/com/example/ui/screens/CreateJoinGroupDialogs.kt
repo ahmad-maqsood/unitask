@@ -59,8 +59,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -189,6 +191,7 @@ fun JoinGroupDialog(
     initialJoinCode: String = ""
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var username by rememberSaveable { mutableStateOf(initialUsername) }
     var joinCode by rememberSaveable { mutableStateOf(initialJoinCode) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
@@ -221,12 +224,9 @@ fun JoinGroupDialog(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-                if (bitmap != null) {
-                    val decodedText = com.example.util.QrCodeUtil.decodeQrFromBitmap(bitmap)
+            coroutineScope.launch {
+                try {
+                    val decodedText = com.example.util.QrCodeUtil.decodeQrFromUri(context, uri)
                     if (decodedText != null) {
                         val parsed = com.example.util.QrCodeUtil.parseGroupInvite(decodedText)
                         if (parsed != null) {
@@ -239,9 +239,10 @@ fun JoinGroupDialog(
                     } else {
                         errorMessage = "Could not detect a QR code in that image."
                     }
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    errorMessage = "Failed to read QR image: ${e.message}"
                 }
-            } catch (e: Exception) {
-                errorMessage = "Failed to read QR image: ${e.message}"
             }
         }
     }

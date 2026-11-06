@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Narrow paths to only shared folders to prevent exposing private app files or databases. -->
 <paths>
     <files-path name="attachments" path="attachments/" />
-    <files-path name="internal_files" path="." />
-    <cache-path name="cache" path="." />
+    <cache-path name="exports" path="exports/" />
 </paths>

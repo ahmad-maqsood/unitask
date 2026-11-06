@@ -535,7 +535,11 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
 
     val icsContent = buildTimetableIcs(slots, anchorMillis)
 
-    val file = java.io.File(context.cacheDir, "unitask_timetable.ics")
+    val exportsDir = java.io.File(context.cacheDir, "exports")
+    if (!exportsDir.exists()) {
+        exportsDir.mkdirs()
+    }
+    val file = java.io.File(exportsDir, "unitask_timetable.ics")
     val uri = try {
         file.writeText(icsContent, Charsets.UTF_8)
         androidx.core.content.FileProvider.getUriForFile(

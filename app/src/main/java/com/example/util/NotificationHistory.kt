@@ -33,7 +33,11 @@ object NotificationHistory {
     private const val KEY_ITEMS = "items_json"
     private const val MAX_ITEMS = 100
     private const val MAX_AGE_MILLIS = 30L * 24 * 60 * 60 * 1000
-
+    /**
+     * Kinds that never appear in the bell. Class start alerts are only shown as phone
+     * notifications. Items of these kinds saved by older versions are hidden too.
+     */
+    private val HIDDEN_KINDS = setOf("Class")
     private val LOCK = Any()
 
     /** Saves one notification. Safe to call from a background thread. Never throws. */
@@ -46,6 +50,7 @@ object NotificationHistory {
         key: String = "",
         nowMillis: Long = System.currentTimeMillis()
     ) {
+        if (kind in HIDDEN_KINDS) return
         try {
             synchronized(LOCK) {
                 val kept = prune(load(context), nowMillis).filter { key.isEmpty() || it.key != key }
@@ -83,7 +88,7 @@ object NotificationHistory {
     }
 
     private fun prune(items: List<AppNotification>, nowMillis: Long): List<AppNotification> =
-        items.filter { nowMillis - it.id <= MAX_AGE_MILLIS }
+        items.filter { nowMillis - it.id <= MAX_AGE_MILLIS && it.kind !in HIDDEN_KINDS }
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

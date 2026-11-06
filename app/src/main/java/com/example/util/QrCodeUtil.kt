@@ -1,8 +1,13 @@
 package com.example.util
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.EncodeHintType
@@ -108,6 +113,45 @@ object QrCodeUtil {
         } catch (_: NotFoundException) {
             null
         } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /**
+     * Decodes a QR code from an image URI on a background thread with downsampling.
+     * 2000 pixels on the long edge is enough for a QR code and prevents high memory usage.
+     */
+    suspend fun decodeQrFromUri(
+        context: Context,
+        uri: Uri,
+        maxEdge: Int = 2000
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+            } ?: return@withContext null
+
+            if (options.outWidth <= 0 || options.outHeight <= 0) return@withContext null
+
+            val sampleSize = NoteImages.computeSampleSize(options.outWidth, options.outHeight, maxEdge)
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+            }
+            val bitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, decodeOptions)
+            } ?: return@withContext null
+
+            try {
+                decodeQrFromBitmap(bitmap)
+            } finally {
+                bitmap.recycle()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
             null
         }
     }

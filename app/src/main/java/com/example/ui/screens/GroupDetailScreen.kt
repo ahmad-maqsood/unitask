@@ -100,7 +100,6 @@ import com.example.data.local.computeDeadlineMillis
 @Composable
 fun GroupDetailScreen(
     currentUid: String,
-    groupId: String = groupDetail?.id ?: "",
     groupDetail: GroupDetail?,
     fallbackUsername: String,
     fallbackName: String,
@@ -132,7 +131,8 @@ fun GroupDetailScreen(
     onUpdateGroupProfile: ((String, String) -> Unit)? = null,
     onRegenerateGroupCode: (() -> Unit)? = null,
     onTransferOwnership: ((String) -> Unit)? = null,
-    onLoadEarlierMessages: (() -> Unit)? = null
+    onLoadEarlierMessages: (() -> Unit)? = null,
+    groupId: String = groupDetail?.id ?: ""
 ) {
     val context = LocalContext.current
     val effectiveGroupId = groupId.ifBlank { groupDetail?.id ?: fallbackUsername }

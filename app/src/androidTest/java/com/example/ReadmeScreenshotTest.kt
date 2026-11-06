@@ -2,7 +2,6 @@ package com.example
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.KeyEvent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -352,11 +351,6 @@ class ReadmeScreenshotTest {
         composeRule.waitUntil(timeoutMillis) {
             composeRule.onAllNodesWithText(value, substring = true).fetchSemanticsNodes().isNotEmpty()
         }
-    }
-
-    private fun pressBack() {
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-        composeRule.waitForIdle()
     }
 
     private fun capture(name: String) {

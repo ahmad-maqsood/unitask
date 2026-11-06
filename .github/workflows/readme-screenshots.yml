@@ -49,6 +49,9 @@ jobs:
           SCREENSHOT_DEMO_MEMBER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_MEMBER_PASSWORD }}
         run: python3 .github/scripts/seed_screenshot_demo.py
 
+      - name: Build debug app and screenshot tests before emulator startup
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+
       - name: Capture screens on an Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -62,7 +65,7 @@ jobs:
           profile: pixel_2
           disable-animations: false
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 2048 -cores 2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
 
       - name: Update README gallery

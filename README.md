@@ -19,7 +19,7 @@ No advertising. No tracking.
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Building from source](#building-from-source) · [Privacy](#privacy-and-permissions) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
 
 </div>
 
@@ -82,6 +82,16 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 
 > [!NOTE]
 > Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates** and must be installed manually.
+
+## Building from Source
+
+To build UniTask, install Android Studio with a JDK compatible with the project's Gradle configuration, then clone this repository and open it in Android Studio:
+
+```bash
+git clone https://github.com/ahmad-maqsood/unitask.git
+```
+
+Let Gradle sync before building. Cloud features that use Supabase or Google Sign-In require your own service configuration and credentials. Never commit secrets to the repository.
 
 ## Features
 
@@ -267,24 +277,6 @@ supabase/          schema.sql, a reference copy of the live database
 ```
 
 </details>
-
-## Building from source
-
-To run UniTask against your own database or to modify the code, follow the step-by-step **[Setup guide](SETUP_GUIDE.md)**. It is written for beginners and covers:
-
-- Creating a free [Supabase](https://supabase.com/) project and building the database with ready-to-paste SQL
-- Configuring Google sign-in
-- Creating a signing key
-- Building the APK on GitHub (no local installation required) or in Android Studio
-- Solutions to the most common problems
-
-If you only want to use the application, download it from [Releases](https://github.com/ahmad-maqsood/unitask/releases/latest). No setup is required.
-
-**Notes for developers**
-
-- The values to change are in `app/build.gradle.kts`: `applicationId`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (your publishable key) and `GOOGLE_WEB_CLIENT_ID`.
-- [`supabase/schema.sql`](supabase/schema.sql) documents the live database for reference. It is not a runnable script. The runnable SQL is in the [Setup guide](SETUP_GUIDE.md).
-- Use the same signing key for every release. Otherwise users cannot update over their existing installation.
 
 ## Reliable notifications
 

@@ -2,7 +2,6 @@ package com.example
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.KeyEvent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,6 +18,7 @@ import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.util.Announcements
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -66,11 +66,16 @@ class ReadmeScreenshotTest {
             .putBoolean("background_setup_prompted", true)
             .apply()
 
+        // Mark current announcements as already seen so the "Messages from UniTask"
+        // pop-up and the bell badge do not appear in the README screenshots.
+        Announcements.refresh(context)
+        Announcements.markSeen(context, Announcements.unseen(context))
+
         val database = AppDatabase.getDatabase(context)
         database.clearAllTables()
         val noteId = seedLocalDemoData(database)
 
-        val outputDir = File(context.getExternalFilesDir(null), "readme-screenshots")
+        val outputDir = File(context.filesDir, "readme-screenshots")
         outputDir.mkdirs()
         outputDir.listFiles()?.forEach { it.delete() }
 
@@ -108,10 +113,12 @@ class ReadmeScreenshotTest {
         tap("note_mode_edit_button")
         waitForTag("note_body_input")
         capture("note_editor")
-        // Return from the editor to the preview, then the notes list, then the main screen.
-        pressBack()
-        pressBack()
-        pressBack()
+        // Use the visible navigation controls so the emulator keyboard cannot consume
+        // a Back press, and wait for the asynchronous note save before leaving Notes.
+        tap("note_editor_back_button")
+        waitForTag("notes_list")
+        tap("notes_back_button")
+        waitForTagToDisappear("notes_list")
         waitForTag("top_bar_settings_button")
         tap("top_bar_settings_button")
         waitForTag("settings_section_general")
@@ -340,15 +347,16 @@ class ReadmeScreenshotTest {
         }
     }
 
+    private fun waitForTagToDisappear(tag: String, timeoutMillis: Long = 15_000) {
+        composeRule.waitUntil(timeoutMillis) {
+            composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+    }
+
     private fun waitForText(value: String, timeoutMillis: Long = 15_000) {
         composeRule.waitUntil(timeoutMillis) {
             composeRule.onAllNodesWithText(value, substring = true).fetchSemanticsNodes().isNotEmpty()
         }
-    }
-
-    private fun pressBack() {
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-        composeRule.waitForIdle()
     }
 
     private fun capture(name: String) {
@@ -358,7 +366,7 @@ class ReadmeScreenshotTest {
             InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         ) { "Could not capture screenshot: $name" }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val dir = File(context.getExternalFilesDir(null), "readme-screenshots")
+        val dir = File(context.filesDir, "readme-screenshots")
         dir.mkdirs()
         FileOutputStream(File(dir, "$name.png")).use {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)

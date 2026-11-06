@@ -29,7 +29,8 @@ if [[ ! -f "$HOME/.android/debug.keystore" ]]; then
     -keyalg RSA -keysize 2048 -validity 10000
 fi
 
-adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATIONS || true
+APP_ID="com.aistudio.unitask.zrvqk"
+adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS || true
 
 ./gradlew connectedDebugAndroidTest --no-daemon \
   -Pandroid.testInstrumentationRunnerArguments.class=com.example.ReadmeScreenshotTest \
@@ -37,26 +38,42 @@ adb shell pm grant com.aistudio.unitask.zrvqk android.permission.POST_NOTIFICATI
   -Pandroid.testInstrumentationRunnerArguments.demoPassword="$SCREENSHOT_DEMO_OWNER_PASSWORD" \
   -Pandroid.testInstrumentationRunnerArguments.groupId="$SCREENSHOT_GROUP_ID"
 
-# Instrumentation writes into the app's private files directory. Retrieve it
-# through run-as (the debug build is debuggable); external-storage paths are
-# not guaranteed to exist on every emulator/API level.
-APP_ID="com.aistudio.unitask.zrvqk"
+# Instrumentation writes into the app's private files directory. Pull each
+# PNG directly with exec-out instead of depending on Android's tar utility.
 SCREENSHOT_DIR="files/readme-screenshots"
+expected=(deadlines timetable courses groups group_chat my_tasks notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
 
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.
 find docs/screenshots -maxdepth 1 -type f -delete
-echo "Exporting fresh screenshots from the app's private files directory."
-if ! adb exec-out run-as "$APP_ID" tar -C "$SCREENSHOT_DIR" -cf - . | tar -xf - -C docs/screenshots; then
-  echo "Could not export screenshots from the app's private files directory." >&2
-  echo "Confirm that the debug app is debuggable and that the instrumentation test created its output directory." >&2
+
+echo "Checking the app-private screenshot directory."
+if ! adb exec-out run-as "$APP_ID" ls "$SCREENSHOT_DIR" >/dev/null; then
+  echo "Cannot access $SCREENSHOT_DIR inside $APP_ID." >&2
+  echo "The instrumentation test may not have created its screenshot files." >&2
   exit 1
 fi
 
-expected=(deadlines timetable courses groups group_chat my_tasks notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
+echo "Exporting ${#expected[@]} screenshots individually."
 for name in "${expected[@]}"; do
-  if [[ ! -s "docs/screenshots/$name.png" ]]; then
-    echo "Screenshot capture is incomplete; missing $name.png" >&2
+  source_file="$SCREENSHOT_DIR/$name.png"
+  destination="docs/screenshots/$name.png"
+
+  if ! adb exec-out run-as "$APP_ID" cat "$source_file" > "$destination"; then
+    echo "Could not export $source_file from the app." >&2
+    exit 1
+  fi
+
+  if [[ ! -s "$destination" ]]; then
+    echo "Exported screenshot is empty: $name.png" >&2
+    exit 1
+  fi
+
+  signature="$(od -An -tx1 -N8 "$destination" | tr -d ' \n')"
+  if [[ "$signature" != "89504e470d0a1a0a" ]]; then
+    echo "Exported file is not a valid PNG: $name.png" >&2
     exit 1
   fi
 done
+
+echo "Successfully exported and validated all ${#expected[@]} screenshots."

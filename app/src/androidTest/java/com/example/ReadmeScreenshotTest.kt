@@ -108,11 +108,11 @@ class ReadmeScreenshotTest {
         tap("note_mode_edit_button")
         waitForTag("note_body_input")
         capture("note_editor")
-        // Back closes the editor asynchronously after saving. Wait for the notes list
-        // before pressing Back again, then confirm the Notes overlay is actually gone.
-        pressBack()
+        // Use the visible navigation controls so the emulator keyboard cannot consume
+        // a Back press, and wait for the asynchronous note save before leaving Notes.
+        tap("note_editor_back_button")
         waitForTag("notes_list")
-        pressBack()
+        tap("notes_back_button")
         waitForTagToDisappear("notes_list")
         waitForTag("top_bar_settings_button")
         tap("top_bar_settings_button")

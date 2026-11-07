@@ -15,8 +15,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -209,6 +211,43 @@ class LocalBackupManagerTest {
         // Both pre-existing and restored tasks exist
         val allTasks = taskDao.getAllActiveTasksSync()
         assertTrue(allTasks.size >= 2)
+    }
+
+    @Test
+    fun testFileBackupJsonStructureUnchangedByRefactor() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+
+        val courseId = courseDao.insertCourse(
+            Course(name = "Testing Architecture", code = "CS 500", colorHex = "#4F46E5")
+        )
+        taskDao.insertTask(
+            TaskItem(courseId = courseId, title = "Task 1", dueDateEpochMillis = 1000L)
+        )
+
+        val (file, uri) = createTempBackupFile("envelope_test.json")
+        val exportResult = LocalBackupManager.export(context, uri, password = null)
+        assertTrue(exportResult is BackupResult.Success)
+
+        val text = file.readText()
+        val root = JSONObject(text)
+
+        assertEquals("unitask-backup", root.getString("format"))
+        assertEquals(1, root.getInt("version"))
+        assertEquals("UniTask", root.getString("app"))
+        assertFalse(root.getBoolean("encrypted"))
+        assertTrue(root.getLong("exportedAt") > 0L)
+
+        val data = root.getJSONObject("data")
+        assertTrue(data.has("courses"))
+        assertTrue(data.has("slots"))
+        assertTrue(data.has("tasks"))
+        assertTrue(data.has("notes"))
+        assertTrue(data.has("noteImages"))
+        assertFalse(data.has("noteImageNames"))
+
+        assertEquals(1, data.getJSONArray("courses").length())
+        assertEquals(1, data.getJSONArray("tasks").length())
     }
 }
 

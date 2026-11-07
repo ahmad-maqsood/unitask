@@ -158,6 +158,15 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
 - Themed icon on Android 13 and newer.
 - Notification sounds: the phone default, four built-in sounds or any ringtone on the phone. Each sound has its own notification channel, so Android remembers the volume you set.
 
+### Google Drive backup
+
+- **Private cloud backup.** Saves one hidden backup in the user's own Google Drive that only UniTask can see. It cannot see your other files.
+  - Includes courses, timetable, assignments with attachments, My tasks, notes with pictures and app settings.
+  - Back up on a tap or daily after the app opens (runs at most once a day and only when something has changed).
+  - Restore on a new phone with settings applied at once.
+  - Two rotating copies ensure a failed upload cannot destroy the last good one.
+  - Wi-Fi only and attachments switches to control mobile data and storage.
+
 ### Backup and data
 
 - Automatic Google cloud sync with multi-account isolation.
@@ -243,6 +252,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 
 - Personal tasks, courses, the timetable and notes are stored on the device and work without an account.
 - Signing in is optional and is needed only for cloud backup, notes sync and groups. Notes are stored on the device and are uploaded only when signed in.
+- Google Drive backup: the only permission asked is access to the app's own hidden folder in Google Drive (the appdata scope). The app cannot see other Drive files, and the user can remove access in their Google account settings.
 - Local backups can be password-protected (encrypted). Restore only backups you trust.
 - **Report a problem** opens a form that is pre-filled with only the app version, Android version and phone model.
 
@@ -260,6 +270,15 @@ Some phone manufacturers aggressively stop background applications. If reminders
 
 ## Known limitations
 
+- The Drive backup is a snapshot, not live sync between phones.
+- Only one backup (two rotating copies) is kept.
+- Restoring merges data and does not remove anything, but app settings from the backup replace the ones on the phone.
+- Note pictures larger than 20 MB and attachments larger than 25 MB are skipped.
+- Android permissions (notifications, alarms, battery) are not part of a backup, the app asks for them again.
+- A phone ringtone chosen as notification sound is restored as the system sound.
+- The backup file made in Settings (Backup file) does not include attachments or settings.
+- The Drive backup is not encrypted by UniTask and is stored in the user's own Google Drive.
+- The daily backup needs the app to be opened.
 - Chat notifications come from a background check, so Android battery limits can delay them. No external push service is used.
 - Group chat supports text only. Messages cannot be edited after sending, and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).

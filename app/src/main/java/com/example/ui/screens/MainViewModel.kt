@@ -216,6 +216,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.reminder.DailySummaryScheduler(application).reschedule()
             } catch (_: Exception) {
             }
+            try {
+                com.example.util.drive.DriveAutoBackup.onAppOpen(application)
+            } catch (_: Exception) {
+            }
         }
         // Schedule periodic sync
         com.example.sync.SyncScheduler.schedulePeriodicSync(application)

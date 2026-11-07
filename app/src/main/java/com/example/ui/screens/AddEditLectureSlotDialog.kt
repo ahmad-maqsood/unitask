@@ -204,7 +204,8 @@ fun AddEditLectureSlotDialog(
                                         }
                                         selectedCourseId = c.id
                                         courseDropdownExpanded = false
-                                    }
+                                    },
+                                    modifier = Modifier.testTag("slot_course_item_${c.id}")
                                 )
                             }
                         }

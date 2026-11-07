@@ -65,6 +65,7 @@ class ReadmeScreenshotTest {
             .putBoolean("notification_permission_prompted", true)
             .putBoolean("background_setup_prompted", true)
             .apply()
+        com.example.util.drive.DrivePrefs(context).restoreOfferDismissed = true
 
         // Mark current announcements as already seen so the "Messages from UniTask"
         // pop-up and the bell badge do not appear in the README screenshots.

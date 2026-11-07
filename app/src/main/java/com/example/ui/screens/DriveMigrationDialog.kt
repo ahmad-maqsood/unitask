@@ -1,0 +1,222 @@
+package com.example.ui.screens
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.util.drive.DriveMigrationPrompt
+import com.example.util.drive.DrivePrefs
+
+/**
+ * Migration prompt displayed to existing cloud sync users offering
+ * a seamless one-click switch to Google Drive backup.
+ */
+@Composable
+fun DriveMigrationDialog(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DriveBackupViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val prefs = remember { DrivePrefs(context) }
+    val state by viewModel.uiState.collectAsState()
+
+    var backupStarted by remember { mutableStateOf(false) }
+    var alsoDaily by remember { mutableStateOf(true) }
+
+    val consentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        viewModel.onConsentResult(result.data)
+    }
+
+    LaunchedEffect(state.consentRequest) {
+        state.consentRequest?.let { pendingIntent ->
+            consentLauncher.launch(IntentSenderRequest.Builder(pendingIntent).build())
+            viewModel.onConsentLaunched()
+        }
+    }
+
+    val backupSucceeded = backupStarted && state.busy == null && !state.isError && state.lastResultMessage != null
+
+    val onLater = {
+        val (newCount, nextAt) = DriveMigrationPrompt.afterLater(
+            prefs.migrationPromptCount,
+            System.currentTimeMillis()
+        )
+        prefs.migrationPromptCount = newCount
+        prefs.migrationNextPromptAt = nextAt
+        onDismiss()
+    }
+
+    val onNever = {
+        prefs.migrationPromptCount = DriveMigrationPrompt.afterNever(prefs.migrationPromptCount)
+        onDismiss()
+    }
+
+    val onDone = {
+        viewModel.setAuto(alsoDaily)
+        prefs.migrationPromptCount = DriveMigrationPrompt.afterNever()
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = {
+            if (backupSucceeded) {
+                onDone()
+            } else if (state.busy == null) {
+                onLater()
+            }
+        },
+        modifier = modifier.testTag("drive_migration_dialog"),
+        title = {
+            Text(text = "Back up to Google Drive")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (!backupSucceeded) {
+                    Text(
+                        text = "UniTask now backs up to your own Google Drive. In a future update, " +
+                            "your courses, tasks and notes will no longer be synced through UniTask's own cloud, " +
+                            "so please make a Drive backup now. Your data stays on this phone either way.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                if (state.busy != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Text(
+                            text = state.busy?.progressText ?: state.busy?.label ?: "Backing up...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else if (backupSucceeded) {
+                    Text(
+                        text = state.lastResultMessage ?: "Backup complete.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { alsoDaily = !alsoDaily }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = alsoDaily,
+                            onCheckedChange = { alsoDaily = it },
+                            modifier = Modifier.testTag("drive_migration_auto_checkbox")
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Also back up every day",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else if (backupStarted && state.isError) {
+                    Text(
+                        text = state.lastResultMessage ?: "Backup failed.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            when {
+                backupSucceeded -> {
+                    Button(
+                        onClick = onDone,
+                        modifier = Modifier.testTag("drive_migration_done_button")
+                    ) {
+                        Text("Done")
+                    }
+                }
+                state.busy != null -> {
+                    // No action while busy
+                }
+                backupStarted && state.isError -> {
+                    Button(
+                        onClick = { viewModel.startMigrationBackup() },
+                        modifier = Modifier.testTag("drive_migration_backup_button")
+                    ) {
+                        Text("Try again")
+                    }
+                }
+                else -> {
+                    Button(
+                        onClick = {
+                            backupStarted = true
+                            viewModel.startMigrationBackup()
+                        },
+                        modifier = Modifier.testTag("drive_migration_backup_button")
+                    ) {
+                        Text("Back up now")
+                    }
+                }
+            }
+        },
+        dismissButton = if (!backupSucceeded && state.busy == null) {
+            {
+                if (backupStarted && state.isError) {
+                    TextButton(
+                        onClick = onLater,
+                        modifier = Modifier.testTag("drive_migration_later_button")
+                    ) {
+                        Text("Remind me later")
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onNever) {
+                            Text("Don't ask again")
+                        }
+                        TextButton(
+                            onClick = onLater,
+                            modifier = Modifier.testTag("drive_migration_later_button")
+                        ) {
+                            Text("Remind me later")
+                        }
+                    }
+                }
+            }
+        } else {
+            null
+        }
+    )
+}

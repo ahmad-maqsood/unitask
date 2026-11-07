@@ -143,6 +143,10 @@ class DriveBackupSectionTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Your app has no data.", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Your app has no data. Backing up now would replace your Drive backup with an empty one.")

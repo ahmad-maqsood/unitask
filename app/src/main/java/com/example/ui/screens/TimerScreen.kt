@@ -112,7 +112,7 @@ fun TimerScreen(
             view.keepScreenOn = false
         }
     }
-    }
+
 
     // Manage system bars and sensor landscape orientation while in full-screen mode.
     DisposableEffect(fullscreen) {

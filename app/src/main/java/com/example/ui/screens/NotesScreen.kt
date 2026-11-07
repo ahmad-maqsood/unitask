@@ -140,13 +140,13 @@ fun NotesScreen(
                     if (isPdf) isWorking = true
                     try {
                         val ok = NoteShare.saveToUri(
-                            if (isPdf) isWorking = false
                             context = context,
                             uri = uri,
                             title = currentTitle,
                             body = currentBody,
                             format = format
                         )
+                        if (isPdf) isWorking = false
                         val message = if (ok) "Saved to your device" else "Could not save the file"
                         snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
                     } catch (_: Exception) {

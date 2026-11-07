@@ -285,7 +285,9 @@ class DriveBackupSectionTest {
 
         fakeStore.defaultException = DriveException(DriveException.Kind.AUTH, "Auth token expired")
         fakeStore.failOnMethod = "create"
-
+        
+        waitForResultText()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()
 

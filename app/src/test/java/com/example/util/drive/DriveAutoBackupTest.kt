@@ -306,8 +306,6 @@ class DriveAutoBackupTest {
         DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 4 * day)
         assertEquals(5, prefs.consecutiveFailures)
         assertEquals(1, NotificationHistory.items(context).size)
-        assertEquals(0L, prefs.firstFailureAt)
-        
         // Subsequent success: resets consecutiveFailures, failureNotified and the failure clock
         fakeStore.defaultException = DriveException(DriveException.Kind.SERVER, "none")
         fakeStore.failOnMethod = null
@@ -315,6 +313,7 @@ class DriveAutoBackupTest {
         assertEquals(DriveAutoBackup.Outcome.Done, successOutcome)
         assertEquals(0, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)
+        assertEquals(0L, prefs.firstFailureAt)
     }
 
     @Test

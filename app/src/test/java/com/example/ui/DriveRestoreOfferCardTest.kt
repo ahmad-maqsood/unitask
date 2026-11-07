@@ -11,6 +11,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -128,7 +130,7 @@ class DriveRestoreOfferCardTest {
     }
 
     @Test
-    fun showsOnEmptyApp_andNotWhenCourseTaskOrNoteExists() = runBlocking {
+    fun showsOnEmptyApp_andNotWhenCourseTaskOrNoteExists() = runBlocking<Unit> {
         setDeadlinesContent()
         composeRule.waitForIdle()
 
@@ -241,7 +243,7 @@ class DriveRestoreOfferCardTest {
     }
 
     @Test
-    fun accountWithNoBackup_showsNoBackupFoundText_cardStays() = runBlocking {
+    fun accountWithNoBackup_showsNoBackupFoundText_cardStays() = runBlocking<Unit> {
         fakeAuth.result = DriveAuthResult.Granted("token_empty", "empty@example.com")
         fakeStore.files.clear()
 
@@ -252,7 +254,7 @@ class DriveRestoreOfferCardTest {
         composeRule.onNodeWithTag("drive_offer_restore_button").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("No backup found in this Google account.").assertIsDisplayed()
+        composeRule.onAllNodesWithText("No backup found in this Google account.").onLast().assertIsDisplayed()
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
     }
 }

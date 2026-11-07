@@ -200,7 +200,7 @@ class DriveBackupSectionTest {
         composeRule.onNodeWithTag("drive_restore_button").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("No backup found in this Google account.").assertIsDisplayed()
+        composeRule.onAllNodesWithText("No backup found in this Google account.").onLast().assertIsDisplayed()
         composeRule.onNodeWithText("OK").performClick()
     }
 

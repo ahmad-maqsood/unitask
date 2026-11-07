@@ -198,6 +198,7 @@ class DriveBackupSectionTest {
         composeRule.waitForIdle()
         viewModel.backUpNow(allowEmpty = false)
         composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) { viewModel.uiState.value.latestBackupInfo != null }
 
         // Clear local database to simulate fresh app
         withContext(Dispatchers.IO) { db.clearAllTables() }
@@ -217,6 +218,9 @@ class DriveBackupSectionTest {
 
         composeRule.onNodeWithText("Restore").performClick()
         composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Restored", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
 
         // Restored items in DB
         assertEquals(1, courseDao.getAllCoursesList().size)
@@ -286,7 +290,9 @@ class DriveBackupSectionTest {
         fakeStore.defaultException = DriveException(DriveException.Kind.AUTH, "Auth token expired")
         fakeStore.failOnMethod = "create"
         
-        waitForResultText()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Reconnect").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()

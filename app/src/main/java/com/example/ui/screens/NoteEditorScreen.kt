@@ -552,7 +552,8 @@ fun NoteEditorScreen(
             }
         }
     }
-
+    
+    var pendingSaveFormat by rememberSaveable { mutableStateOf<String?>(null) }
     val saveDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
     ) { uri: Uri? ->
@@ -611,7 +612,6 @@ fun NoteEditorScreen(
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showShareDialog by rememberSaveable { mutableStateOf(false) }
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
-    var pendingSaveFormat by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
     val courseColor = remember(selectedCourse?.colorHex) {

@@ -47,6 +47,22 @@ data class BackupCounts(
     val skippedImages: Int = 0
 )
 
+/**
+ * In-memory representation of exported data ready to be packaged or uploaded.
+ */
+data class BuiltBackup(
+    val data: JSONObject,
+    val counts: BackupCounts,
+    val referencedImages: List<String>
+)
+
+/**
+ * Source for fetching external backup files during a restore.
+ */
+interface BackupFileSource {
+    suspend fun noteImage(name: String): ByteArray?
+}
+
 sealed class BackupResult {
     data class Success(val counts: BackupCounts) : BackupResult()
     data class Failure(val message: String, val wrongPassword: Boolean = false) : BackupResult()
@@ -93,98 +109,114 @@ object LocalBackupManager {
         }
     }
 
-    // ------------------------------------------------------------------ export
+    // ------------------------------------------------------------------ buildData
 
-    suspend fun export(
+    /**
+     * Reads database and constructs the data JSONObject and summary counts.
+     * With inlineImages = false, images are not embedded into the JSON and their names
+     * are stored under "noteImageNames".
+     */
+    suspend fun buildData(
         context: Context,
-        uri: Uri,
-        password: String?,
+        inlineImages: Boolean,
         maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES
-    ): BackupResult =
+    ): BuiltBackup =
         withContext(Dispatchers.IO) {
-            try {
-                val db = AppDatabase.getDatabase(context)
-                val courses = db.courseDao().getAllCoursesList().filter { !it.isDeleted }
-                val codeById = courses.associate { it.id to it.code }
-                val slots = db.lectureSlotDao().getAllSlotsSync()
-                    .filter { !it.isDeleted && it.courseId in codeById }
-                val tasks = db.taskDao().getAllActiveTasksSync()
-                    .filter { !it.isDeleted && it.courseId in codeById }
-                val notes = db.noteDao().getActiveNotesSync()
+            val db = AppDatabase.getDatabase(context)
+            val courses = db.courseDao().getAllCoursesList().filter { !it.isDeleted }
+            val codeById = courses.associate { it.id to it.code }
+            val slots = db.lectureSlotDao().getAllSlotsSync()
+                .filter { !it.isDeleted && it.courseId in codeById }
+            val tasks = db.taskDao().getAllActiveTasksSync()
+                .filter { !it.isDeleted && it.courseId in codeById }
+            val notes = db.noteDao().getActiveNotesSync()
 
-                val courseArray = JSONArray()
-                for (c in courses) {
-                    courseArray.put(
-                        JSONObject()
-                            .put("code", c.code)
-                            .put("name", c.name)
-                            .put("instructor", c.instructor)
-                            .put("colorHex", c.colorHex)
-                            .put("location", c.location)
-                    )
-                }
-                val slotArray = JSONArray()
-                for (s in slots) {
-                    slotArray.put(
-                        JSONObject()
-                            .put("courseCode", codeById[s.courseId] ?: "")
-                            .put("dayOfWeek", s.dayOfWeek)
-                            .put("startHour", s.startHour)
-                            .put("startMinute", s.startMinute)
-                            .put("endHour", s.endHour)
-                            .put("endMinute", s.endMinute)
-                            .put("classroom", s.classroom)
-                            .put("instructor", s.instructor)
-                    )
-                }
-                val taskArray = JSONArray()
-                for (t in tasks) {
-                    taskArray.put(
-                        JSONObject()
-                            .put("courseCode", codeById[t.courseId] ?: "")
-                            .put("title", t.title)
-                            .put("description", t.description)
-                            .put("dueDateEpochMillis", t.dueDateEpochMillis)
-                            .put("dueTimeHour", t.dueTimeHour)
-                            .put("dueTimeMinute", t.dueTimeMinute)
-                            .put("priority", t.priority.name)
-                            .put("status", t.status.name)
-                            .put("reminderOptions", encodeReminderOptions(t.reminderOptions))
-                            .put("createdAt", t.createdAt)
-                            .put("repeatRule", t.repeatRule)
-                            .put("completedAtMillis", t.completedAtMillis)
-                            .put("repeatAnchorDay", t.repeatAnchorDay)
-                            .put("autoDeleteWhenDone", t.autoDeleteWhenDone)
-                    )
-                }
-                val noteArray = JSONArray()
-                for (n in notes) {
-                    noteArray.put(
-                        JSONObject()
-                            .put("title", n.title)
-                            .put("body", n.body)
-                            .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
-                            .put("isPinned", n.isPinned)
-                            .put("createdAt", n.createdAt)
-                            .put("updatedAt", n.updatedAt)
-                    )
-                }
+            val courseArray = JSONArray()
+            for (c in courses) {
+                courseArray.put(
+                    JSONObject()
+                        .put("code", c.code)
+                        .put("name", c.name)
+                        .put("instructor", c.instructor)
+                        .put("colorHex", c.colorHex)
+                        .put("location", c.location)
+                )
+            }
+            val slotArray = JSONArray()
+            for (s in slots) {
+                slotArray.put(
+                    JSONObject()
+                        .put("courseCode", codeById[s.courseId] ?: "")
+                        .put("dayOfWeek", s.dayOfWeek)
+                        .put("startHour", s.startHour)
+                        .put("startMinute", s.startMinute)
+                        .put("endHour", s.endHour)
+                        .put("endMinute", s.endMinute)
+                        .put("classroom", s.classroom)
+                        .put("instructor", s.instructor)
+                )
+            }
+            val taskArray = JSONArray()
+            for (t in tasks) {
+                taskArray.put(
+                    JSONObject()
+                        .put("courseCode", codeById[t.courseId] ?: "")
+                        .put("title", t.title)
+                        .put("description", t.description)
+                        .put("dueDateEpochMillis", t.dueDateEpochMillis)
+                        .put("dueTimeHour", t.dueTimeHour)
+                        .put("dueTimeMinute", t.dueTimeMinute)
+                        .put("priority", t.priority.name)
+                        .put("status", t.status.name)
+                        .put("reminderOptions", encodeReminderOptions(t.reminderOptions))
+                        .put("createdAt", t.createdAt)
+                        .put("repeatRule", t.repeatRule)
+                        .put("completedAtMillis", t.completedAtMillis)
+                        .put("repeatAnchorDay", t.repeatAnchorDay)
+                        .put("autoDeleteWhenDone", t.autoDeleteWhenDone)
+                )
+            }
+            val noteArray = JSONArray()
+            for (n in notes) {
+                noteArray.put(
+                    JSONObject()
+                        .put("title", n.title)
+                        .put("body", n.body)
+                        .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
+                        .put("isPinned", n.isPinned)
+                        .put("createdAt", n.createdAt)
+                        .put("updatedAt", n.updatedAt)
+                )
+            }
 
-                val referencedNames = LinkedHashSet<String>()
-                for (n in notes) {
-                    referencedNames.addAll(referencedImageNames(n.body))
-                }
+            val referencedNames = LinkedHashSet<String>()
+            for (n in notes) {
+                referencedNames.addAll(referencedImageNames(n.body))
+            }
 
+            val existingImages = mutableListOf<String>()
+            for (name in referencedNames) {
+                if (!NoteImages.isValidImageName(name)) continue
+                val file = NoteImages.imageFile(context, name) ?: continue
+                if (file.exists() && file.isFile) {
+                    existingImages.add(name)
+                }
+            }
+
+            val data = JSONObject()
+                .put("courses", courseArray)
+                .put("slots", slotArray)
+                .put("tasks", taskArray)
+                .put("notes", noteArray)
+
+            var exportedImagesCount = 0
+            var skippedImagesCount = 0
+
+            if (inlineImages) {
                 var totalImageBytes = 0L
-                var exportedImagesCount = 0
-                var skippedImagesCount = 0
                 val imageArray = JSONArray()
-
-                for (name in referencedNames) {
-                    if (!NoteImages.isValidImageName(name)) continue
+                for (name in existingImages) {
                     val file = NoteImages.imageFile(context, name) ?: continue
-                    if (!file.exists() || !file.isFile) continue
-
                     val fileSize = file.length()
                     if (totalImageBytes + fileSize > maxImageBytes) {
                         skippedImagesCount++
@@ -205,13 +237,52 @@ object LocalBackupManager {
                     totalImageBytes += fileSize
                     exportedImagesCount++
                 }
+                data.put("noteImages", imageArray)
+            } else {
+                val namesArray = JSONArray()
+                for (name in existingImages) {
+                    namesArray.put(name)
+                }
+                data.put("noteImageNames", namesArray)
+                exportedImagesCount = existingImages.size
+                skippedImagesCount = 0
+            }
 
-                val data = JSONObject()
-                    .put("courses", courseArray)
-                    .put("slots", slotArray)
-                    .put("tasks", taskArray)
-                    .put("notes", noteArray)
-                    .put("noteImages", imageArray)
+            val exportedCoursesCount = courses.count {
+                SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
+            }
+            val exportedMyTasksCount = tasks.count {
+                val code = codeById[it.courseId] ?: ""
+                SupabaseSyncManager.normalizeCode(code) == MY_TASKS_COURSE_CODE
+            }
+            val exportedTasksCount = tasks.size - exportedMyTasksCount
+
+            BuiltBackup(
+                data = data,
+                counts = BackupCounts(
+                    courses = exportedCoursesCount,
+                    slots = slots.size,
+                    tasks = exportedTasksCount,
+                    myTasks = exportedMyTasksCount,
+                    notes = notes.size,
+                    images = exportedImagesCount,
+                    skippedImages = skippedImagesCount
+                ),
+                referencedImages = existingImages
+            )
+        }
+
+    // ------------------------------------------------------------------ export
+
+    suspend fun export(
+        context: Context,
+        uri: Uri,
+        password: String?,
+        maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES
+    ): BackupResult =
+        withContext(Dispatchers.IO) {
+            try {
+                val built = buildData(context, inlineImages = true, maxImageBytes = maxImageBytes)
 
                 val envelope = JSONObject()
                     .put("format", FORMAT)
@@ -220,36 +291,17 @@ object LocalBackupManager {
                     .put("exportedAt", System.currentTimeMillis())
                 if (password.isNullOrEmpty()) {
                     envelope.put("encrypted", false)
-                    envelope.put("data", data)
+                    envelope.put("data", built.data)
                 } else {
                     envelope.put("encrypted", true)
-                    encryptInto(envelope, data.toString(), password)
+                    encryptInto(envelope, built.data.toString(), password)
                 }
 
                 val stream = context.contentResolver.openOutputStream(uri, "wt")
                     ?: return@withContext BackupResult.Failure("Could not write to the chosen location.")
                 stream.use { it.write(envelope.toString(2).toByteArray(Charsets.UTF_8)) }
 
-                val exportedCoursesCount = courses.count {
-                    SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
-                }
-                val exportedMyTasksCount = tasks.count {
-                    val code = codeById[it.courseId] ?: ""
-                    SupabaseSyncManager.normalizeCode(code) == MY_TASKS_COURSE_CODE
-                }
-                val exportedTasksCount = tasks.size - exportedMyTasksCount
-
-                BackupResult.Success(
-                    BackupCounts(
-                        courses = exportedCoursesCount,
-                        slots = slots.size,
-                        tasks = exportedTasksCount,
-                        myTasks = exportedMyTasksCount,
-                        notes = notes.size,
-                        images = exportedImagesCount,
-                        skippedImages = skippedImagesCount
-                    )
-                )
+                BackupResult.Success(built.counts)
             } catch (e: Exception) {
                 BackupResult.Failure(e.message ?: "The backup could not be saved.")
             }
@@ -287,7 +339,7 @@ object LocalBackupManager {
                     root.getJSONObject("data")
                 }
 
-                val counts = applyBackup(context, data)
+                val counts = applyBackupData(context, data, source = null)
                 BackupResult.Success(counts)
             } catch (_: JSONException) {
                 BackupResult.Failure("The file is damaged or is not a UniTask backup.")
@@ -296,7 +348,17 @@ object LocalBackupManager {
             }
         }
 
-    private suspend fun applyBackup(context: Context, data: JSONObject): BackupCounts {
+    suspend fun applyBackupData(
+        context: Context,
+        data: JSONObject,
+        source: BackupFileSource? = null
+    ): BackupCounts = applyBackup(context, data, source)
+
+    private suspend fun applyBackup(
+        context: Context,
+        data: JSONObject,
+        source: BackupFileSource? = null
+    ): BackupCounts {
         val db = AppDatabase.getDatabase(context)
         val courseDao = db.courseDao()
         val slotDao = db.lectureSlotDao()
@@ -553,30 +615,72 @@ object LocalBackupManager {
 
         // ---- note images
         var addedImages = 0
-        val imageArray = data.optJSONArray("noteImages") ?: JSONArray()
-        for (i in 0 until imageArray.length()) {
-            try {
-                val o = imageArray.optJSONObject(i) ?: continue
-                val name = o.optString("name")
-                if (!NoteImages.isValidImageName(name)) continue
-                val rawData = o.optString("data")
-                if (rawData.isEmpty()) continue
-                val decoded = try {
-                    Base64.decode(rawData, Base64.NO_WRAP)
-                } catch (_: Exception) {
-                    continue
-                }
-                if (decoded.size > 5 * 1024 * 1024) continue
-                val targetFile = NoteImages.imageFile(context, name) ?: continue
-                if (targetFile.exists()) continue
+        var skippedImages = 0
+
+        val imageArray = data.optJSONArray("noteImages")
+        if (imageArray != null) {
+            for (i in 0 until imageArray.length()) {
                 try {
-                    targetFile.writeBytes(decoded)
-                    addedImages++
+                    val o = imageArray.optJSONObject(i) ?: continue
+                    val name = o.optString("name")
+                    if (!NoteImages.isValidImageName(name)) continue
+                    val rawData = o.optString("data")
+                    if (rawData.isEmpty()) continue
+                    val decoded = try {
+                        Base64.decode(rawData, Base64.NO_WRAP)
+                    } catch (_: Exception) {
+                        skippedImages++
+                        continue
+                    }
+                    if (decoded.size > 5 * 1024 * 1024) {
+                        skippedImages++
+                        continue
+                    }
+                    val targetFile = NoteImages.imageFile(context, name) ?: continue
+                    if (targetFile.exists()) continue
+                    try {
+                        targetFile.writeBytes(decoded)
+                        addedImages++
+                    } catch (_: Exception) {
+                        skippedImages++
+                    }
                 } catch (_: Exception) {
-                    // skip writing on IO failure
+                    skippedImages++
                 }
-            } catch (_: Exception) {
-                // a bad image must never fail the whole restore
+            }
+        }
+
+        val imageNamesArray = data.optJSONArray("noteImageNames")
+        if (imageNamesArray != null && source != null) {
+            for (i in 0 until imageNamesArray.length()) {
+                try {
+                    val name = imageNamesArray.optString(i)
+                    if (!NoteImages.isValidImageName(name)) continue
+                    val targetFile = NoteImages.imageFile(context, name) ?: continue
+                    if (targetFile.exists()) continue
+
+                    val bytes = try {
+                        source.noteImage(name)
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (bytes == null) {
+                        skippedImages++
+                        continue
+                    }
+                    if (bytes.size > 5 * 1024 * 1024) {
+                        skippedImages++
+                        continue
+                    }
+                    try {
+                        targetFile.writeBytes(bytes)
+                        addedImages++
+                    } catch (_: Exception) {
+                        skippedImages++
+                    }
+                } catch (_: Exception) {
+                    skippedImages++
+                }
             }
         }
 
@@ -594,7 +698,8 @@ object LocalBackupManager {
             tasks = addedTasks,
             myTasks = addedMyTasks,
             notes = addedNotes,
-            images = addedImages
+            images = addedImages,
+            skippedImages = skippedImages
         )
     }
 

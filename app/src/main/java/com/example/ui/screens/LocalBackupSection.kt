@@ -61,6 +61,14 @@ private fun describe(counts: BackupCounts): String {
     if (counts.images > 0) {
         result += ", ${counts.images} images"
     }
+    if (counts.attachments > 0) {
+        val word = if (counts.attachments == 1) "attachment restored" else "attachments restored"
+        result += ", ${counts.attachments} $word"
+    }
+    if (counts.skippedAttachments > 0) {
+        val word = if (counts.skippedAttachments == 1) "attachment could not be downloaded" else "attachments could not be downloaded"
+        result += ", ${counts.skippedAttachments} $word"
+    }
     return result
 }
 

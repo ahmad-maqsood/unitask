@@ -10,6 +10,7 @@ import com.example.data.local.LectureSlot
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.Note
 import com.example.data.local.Priority
+import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
@@ -44,7 +45,9 @@ data class BackupCounts(
     val myTasks: Int = 0,
     val notes: Int = 0,
     val images: Int = 0,
-    val skippedImages: Int = 0
+    val skippedImages: Int = 0,
+    val attachments: Int = 0,
+    val skippedAttachments: Int = 0
 )
 
 /**
@@ -53,7 +56,8 @@ data class BackupCounts(
 data class BuiltBackup(
     val data: JSONObject,
     val counts: BackupCounts,
-    val referencedImages: List<String>
+    val referencedImages: List<String>,
+    val referencedAttachments: List<String> = emptyList()
 )
 
 /**
@@ -61,6 +65,7 @@ data class BuiltBackup(
  */
 interface BackupFileSource {
     suspend fun noteImage(name: String): ByteArray?
+    suspend fun downloadAttachment(storedName: String, target: File): Boolean = false
 }
 
 sealed class BackupResult {
@@ -85,6 +90,13 @@ object LocalBackupManager {
     private const val FORMAT_VERSION = 1
     private const val MAX_FILE_BYTES = 20 * 1024 * 1024
     const val MAX_BACKUP_IMAGE_BYTES: Long = 20L * 1024 * 1024
+    const val MAX_ATTACHMENT_BYTES: Long = 25L * 1024 * 1024
+    private val ATTACHMENT_NAME_REGEX = Regex("^[A-Za-z0-9._-]{1,200}$")
+
+    fun isValidAttachmentName(name: String): Boolean {
+        return name.isNotEmpty() && !name.contains("..") && ATTACHMENT_NAME_REGEX.matches(name)
+    }
+
     private const val PBKDF2_ITERATIONS = 120_000
     private const val MIN_ITERATIONS = 10_000
     private const val MAX_ITERATIONS = 2_000_000
@@ -119,7 +131,8 @@ object LocalBackupManager {
     suspend fun buildData(
         context: Context,
         inlineImages: Boolean,
-        maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES
+        maxImageBytes: Long = MAX_BACKUP_IMAGE_BYTES,
+        includeAttachments: Boolean = false
     ): BuiltBackup =
         withContext(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(context)
@@ -257,6 +270,51 @@ object LocalBackupManager {
             }
             val exportedTasksCount = tasks.size - exportedMyTasksCount
 
+            val referencedAttachments = mutableListOf<String>()
+            var exportedAttachmentsCount = 0
+            var skippedAttachmentsCount = 0
+
+            if (includeAttachments) {
+                val attachmentsDir = File(context.filesDir, "attachments")
+                val canonicalDirPath = attachmentsDir.canonicalFile.path
+                val prefix = if (canonicalDirPath.endsWith(File.separator)) canonicalDirPath else canonicalDirPath + File.separator
+                val attDao = db.taskAttachmentDao()
+                val attachmentArray = JSONArray()
+
+                for ((taskIndex, task) in tasks.withIndex()) {
+                    val taskAtts = attDao.getAttachmentsForTaskSync(task.id)
+                    for (att in taskAtts) {
+                        val storedName = File(att.relativePath).name
+                        if (!isValidAttachmentName(storedName)) {
+                            skippedAttachmentsCount++
+                            continue
+                        }
+                        val file = File(attachmentsDir, storedName)
+                        if (!file.canonicalFile.path.startsWith(prefix) || !file.exists() || !file.isFile) {
+                            skippedAttachmentsCount++
+                            continue
+                        }
+                        val fileSize = file.length()
+                        if (fileSize <= 0L || fileSize > MAX_ATTACHMENT_BYTES) {
+                            skippedAttachmentsCount++
+                            continue
+                        }
+
+                        val entry = JSONObject()
+                            .put("taskIndex", taskIndex)
+                            .put("fileName", att.fileName)
+                            .put("storedName", storedName)
+                            .put("fileSize", fileSize)
+                            .put("mimeType", att.mimeType)
+                            .put("createdAt", att.createdAt)
+                        attachmentArray.put(entry)
+                        referencedAttachments.add(storedName)
+                        exportedAttachmentsCount++
+                    }
+                }
+                data.put("attachments", attachmentArray)
+            }
+
             BuiltBackup(
                 data = data,
                 counts = BackupCounts(
@@ -266,9 +324,12 @@ object LocalBackupManager {
                     myTasks = exportedMyTasksCount,
                     notes = notes.size,
                     images = exportedImagesCount,
-                    skippedImages = skippedImagesCount
+                    skippedImages = skippedImagesCount,
+                    attachments = exportedAttachmentsCount,
+                    skippedAttachments = skippedAttachmentsCount
                 ),
-                referencedImages = existingImages
+                referencedImages = existingImages,
+                referencedAttachments = referencedAttachments
             )
         }
 
@@ -483,6 +544,7 @@ object LocalBackupManager {
             // ---- assignments
             val knownByCourse = HashMap<Long, List<TaskItem>>()
             val taskArray = data.optJSONArray("tasks") ?: JSONArray()
+            val taskIdByIndex = HashMap<Int, Long>()
             for (i in 0 until taskArray.length()) {
                 val o = taskArray.optJSONObject(i) ?: continue
                 val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
@@ -545,6 +607,7 @@ object LocalBackupManager {
                     )
                     val toInsert = base.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(base))
                     val newId = taskDao.insertTask(toInsert)
+                    taskIdByIndex[i] = newId
                     knownByCourse[courseId] = known + toInsert.copy(id = newId)
                     if (isMyTask) addedMyTasks++ else addedTasks++
                 } else if (match.isDeleted) {
@@ -563,8 +626,11 @@ object LocalBackupManager {
                     taskDao.updateTask(
                         revived.copy(reminderEpochMillis = reminderScheduler.calculateReminderMillis(revived))
                     )
+                    taskIdByIndex[i] = match.id
                     knownByCourse[courseId] = known.map { if (it.id == match.id) revived else it }
                     if (isMyTask) addedMyTasks++ else addedTasks++
+                } else {
+                    taskIdByIndex[i] = match.id
                 }
             }
 
@@ -684,6 +750,102 @@ object LocalBackupManager {
             }
         }
 
+        // ---- assignment attachments
+        var addedAttachments = 0
+        var skippedAttachments = 0
+
+        val attachmentArray = data.optJSONArray("attachments")
+        if (attachmentArray != null && source != null) {
+            val attachmentsDir = File(context.filesDir, "attachments")
+            if (!attachmentsDir.exists()) {
+                attachmentsDir.mkdirs()
+            }
+            val canonicalDirPath = attachmentsDir.canonicalFile.path
+            val prefix = if (canonicalDirPath.endsWith(File.separator)) canonicalDirPath else canonicalDirPath + File.separator
+            val taskAttachmentDao = db.taskAttachmentDao()
+
+            for (i in 0 until attachmentArray.length()) {
+                try {
+                    val o = attachmentArray.optJSONObject(i)
+                    if (o == null) {
+                        skippedAttachments++
+                        continue
+                    }
+                    val taskIndex = o.optInt("taskIndex", -1)
+                    val taskId = taskIdByIndex[taskIndex]
+                    if (taskId == null) {
+                        skippedAttachments++
+                        continue
+                    }
+
+                    val storedName = o.optString("storedName")
+                    if (!isValidAttachmentName(storedName)) {
+                        skippedAttachments++
+                        continue
+                    }
+
+                    val fileName = o.optString("fileName").trim().ifEmpty { storedName }
+                    val fileSize = o.optLong("fileSize", -1L)
+                    if (fileSize <= 0L || fileSize > MAX_ATTACHMENT_BYTES) {
+                        skippedAttachments++
+                        continue
+                    }
+                    val mimeType = o.optString("mimeType", "*/*").ifEmpty { "*/*" }
+                    val createdAt = o.optLong("createdAt", System.currentTimeMillis())
+
+                    val existingTaskAtts = taskAttachmentDao.getAttachmentsForTaskSync(taskId)
+                    if (existingTaskAtts.any { it.fileName == fileName && it.fileSize == fileSize }) {
+                        continue
+                    }
+
+                    var destName = storedName
+                    var destFile = File(attachmentsDir, destName)
+                    if (destFile.exists()) {
+                        var counter = 1
+                        destName = "restored_${System.currentTimeMillis()}_$storedName"
+                        destFile = File(attachmentsDir, destName)
+                        while (destFile.exists()) {
+                            destName = "restored_${System.currentTimeMillis()}_${counter}_$storedName"
+                            destFile = File(attachmentsDir, destName)
+                            counter++
+                        }
+                    }
+
+                    if (!destFile.canonicalFile.path.startsWith(prefix)) {
+                        skippedAttachments++
+                        continue
+                    }
+
+                    val downloaded = try {
+                        source.downloadAttachment(storedName, destFile)
+                    } catch (_: Exception) {
+                        false
+                    }
+
+                    if (!downloaded || !destFile.exists() || destFile.length() != fileSize || destFile.length() > MAX_ATTACHMENT_BYTES) {
+                        try {
+                            if (destFile.exists()) destFile.delete()
+                        } catch (_: Exception) {}
+                        skippedAttachments++
+                        continue
+                    }
+
+                    val attachment = TaskAttachment(
+                        taskId = taskId,
+                        fileName = fileName,
+                        relativePath = "attachments/$destName",
+                        fileSize = destFile.length(),
+                        mimeType = mimeType,
+                        createdAt = createdAt
+                    )
+                    taskAttachmentDao.insertAttachment(attachment)
+                    addedAttachments++
+                } catch (_: Exception) {
+                    skippedAttachments++
+                }
+            }
+        }
+
         // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
@@ -699,7 +861,9 @@ object LocalBackupManager {
             myTasks = addedMyTasks,
             notes = addedNotes,
             images = addedImages,
-            skippedImages = skippedImages
+            skippedImages = skippedImages,
+            attachments = addedAttachments,
+            skippedAttachments = skippedAttachments
         )
     }
 

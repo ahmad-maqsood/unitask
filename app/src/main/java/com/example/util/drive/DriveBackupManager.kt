@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
 import java.security.MessageDigest
 
 /**
@@ -30,7 +31,8 @@ data class DriveBackupInfo(
     val images: Int,
     val appVersion: String,
     val formatVersion: Int,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val attachments: Int = 0
 )
 
 /**
@@ -62,16 +64,34 @@ object DriveBackupManager {
     private const val SLOT_1_NAME = "unitask-backup-1.json"
     private const val SLOT_2_NAME = "unitask-backup-2.json"
     private const val IMAGE_PREFIX = "img-"
+    private const val ATTACHMENT_PREFIX = "att-"
     private const val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000L
 
     private val mutex = Mutex()
 
     /**
      * Lists all Drive file names that the given backup data references.
-     * Steps 3 and 4 will extend this to include attachments and settings.
+     * Step 4 will extend this to include settings.
      */
     fun referencedDriveFileNames(built: BuiltBackup): Set<String> {
-        return built.referencedImages.map { "$IMAGE_PREFIX$it" }.toSet()
+        val names = mutableSetOf<String>()
+        for (img in built.referencedImages) {
+            names.add("$IMAGE_PREFIX$img")
+        }
+        val attArray = built.data.optJSONArray("attachments")
+        if (attArray != null) {
+            for (i in 0 until attArray.length()) {
+                val o = attArray.optJSONObject(i) ?: continue
+                val storedName = o.optString("storedName")
+                if (storedName.isNotEmpty()) {
+                    names.add("$ATTACHMENT_PREFIX$storedName")
+                }
+            }
+        }
+        for (att in built.referencedAttachments) {
+            names.add("$ATTACHMENT_PREFIX$att")
+        }
+        return names
     }
 
     /**
@@ -108,7 +128,12 @@ object DriveBackupManager {
             }
 
             // (b) Build data without inline images and compute hash
-            val built = LocalBackupManager.buildData(context, inlineImages = false)
+            val prefs = DrivePrefs(context)
+            val built = LocalBackupManager.buildData(
+                context = context,
+                inlineImages = false,
+                includeAttachments = prefs.includeAttachments
+            )
             val dataString = built.data.toString()
             val dataHash = sha256Hex(dataString)
 
@@ -134,23 +159,44 @@ object DriveBackupManager {
                 if (latestHash != null && latestHash == dataHash) {
                     val info = infoFromSlot(latestSlot)
                     if (info != null) {
-                        val prefs = DrivePrefs(context)
                         prefs.lastAttemptAt = System.currentTimeMillis()
                         return DriveBackupResult.Unchanged(info)
                     }
                 }
             }
 
-            // (e) Upload new images
+            // (e) Upload new images and attachments
             val existingDriveImageNames = folderFiles
                 .filter { it.name.startsWith(IMAGE_PREFIX) }
                 .map { it.name.removePrefix(IMAGE_PREFIX) }
                 .toSet()
 
             val imagesToUpload = built.referencedImages.filter { it !in existingDriveImageNames }
+
+            val attachmentsDir = File(context.filesDir, "attachments")
+            val existingDriveAttachmentsByName = folderFiles
+                .filter { it.name.startsWith(ATTACHMENT_PREFIX) }
+                .associateBy { it.name }
+
+            val distinctAttachmentNames = built.referencedAttachments.distinct()
+            val attachmentsToUpload = mutableListOf<Pair<String, String?>>()
+            for (storedName in distinctAttachmentNames) {
+                val localFile = File(attachmentsDir, storedName)
+                if (!localFile.exists() || !localFile.isFile) continue
+                val driveFileName = "$ATTACHMENT_PREFIX$storedName"
+                val existingDrive = existingDriveAttachmentsByName[driveFileName]
+                if (existingDrive == null) {
+                    attachmentsToUpload.add(Pair(storedName, null))
+                } else if (existingDrive.size != localFile.length()) {
+                    attachmentsToUpload.add(Pair(storedName, existingDrive.id))
+                }
+            }
+
             var uploadedFilesCount = 0
-            val skippedFilesCount = built.referencedImages.size - imagesToUpload.size
-            val totalWork = imagesToUpload.size + 1
+            val skippedImagesCount = built.referencedImages.size - imagesToUpload.size
+            val skippedAttachmentsCount = distinctAttachmentNames.size - attachmentsToUpload.size
+            val skippedFilesCount = skippedImagesCount + skippedAttachmentsCount
+            val totalWork = imagesToUpload.size + attachmentsToUpload.size + 1
 
             onProgress?.invoke(0, totalWork)
 
@@ -159,6 +205,16 @@ object DriveBackupManager {
                 if (file != null && file.exists()) {
                     val created = store.create("$IMAGE_PREFIX$imageName")
                     store.uploadFile(created.id, file)
+                    uploadedFilesCount++
+                    onProgress?.invoke(uploadedFilesCount, totalWork)
+                }
+            }
+
+            for ((storedName, existingFileId) in attachmentsToUpload) {
+                val localFile = File(attachmentsDir, storedName)
+                if (localFile.exists() && localFile.isFile) {
+                    val fileId = existingFileId ?: store.create("$ATTACHMENT_PREFIX$storedName").id
+                    store.uploadFile(fileId, localFile)
                     uploadedFilesCount++
                     onProgress?.invoke(uploadedFilesCount, totalWork)
                 }
@@ -187,16 +243,18 @@ object DriveBackupManager {
                 "tasks" to built.counts.tasks.toString(),
                 "notes" to built.counts.notes.toString(),
                 "images" to built.referencedImages.size.toString(),
+                "attachments" to built.counts.attachments.toString(),
                 "appVersion" to BuildConfig.VERSION_NAME,
                 "formatVersion" to "1",
                 "dataHash" to dataHash
             )
             val finalizedSlot = store.setProps(targetSlot.id, props)
 
-            // (h) Prune unreferenced images older than 30 days
+            // (h) Prune unreferenced images and attachments older than 30 days
             val referencedDriveNames = referencedDriveFileNames(built)
             for (f in folderFiles) {
-                if (f.name.startsWith(IMAGE_PREFIX) && f.name !in referencedDriveNames) {
+                val isImageOrAttachment = f.name.startsWith(IMAGE_PREFIX) || f.name.startsWith(ATTACHMENT_PREFIX)
+                if (isImageOrAttachment && f.name !in referencedDriveNames) {
                     val age = now - f.createdTimeMillis
                     if (age > THIRTY_DAYS_MS) {
                         try {
@@ -209,11 +267,18 @@ object DriveBackupManager {
             }
 
             // (i) Update DrivePrefs
-            val prefs = DrivePrefs(context)
             prefs.lastSuccessAt = now
             prefs.lastAttemptAt = now
             prefs.lastHash = dataHash
-            prefs.lastCounts = "${built.counts.courses} courses, ${built.counts.tasks} tasks, ${built.counts.notes} notes"
+            val countsParts = mutableListOf(
+                "${built.counts.courses} courses",
+                "${built.counts.tasks} tasks",
+                "${built.counts.notes} notes"
+            )
+            if (built.counts.attachments > 0) {
+                countsParts.add("${built.counts.attachments} attachments")
+            }
+            prefs.lastCounts = countsParts.joinToString(", ")
             prefs.lastError = null
             prefs.consecutiveFailures = 0
             prefs.failureNotified = false
@@ -228,7 +293,8 @@ object DriveBackupManager {
                 images = built.referencedImages.size,
                 appVersion = BuildConfig.VERSION_NAME,
                 formatVersion = 1,
-                sizeBytes = envelopeBytes.size.toLong()
+                sizeBytes = envelopeBytes.size.toLong(),
+                attachments = built.counts.attachments
             )
 
             DriveBackupResult.Success(
@@ -308,6 +374,10 @@ object DriveBackupManager {
                 .filter { it.name.startsWith(IMAGE_PREFIX) }
                 .associate { it.name.removePrefix(IMAGE_PREFIX) to it.id }
 
+            val attachmentIdByName = files
+                .filter { it.name.startsWith(ATTACHMENT_PREFIX) }
+                .associate { it.name.removePrefix(ATTACHMENT_PREFIX) to it.id }
+
             val source = object : BackupFileSource {
                 override suspend fun noteImage(name: String): ByteArray? {
                     val fileId = imageIdByName[name] ?: return null
@@ -315,6 +385,16 @@ object DriveBackupManager {
                         store.download(fileId)
                     } catch (_: Exception) {
                         null
+                    }
+                }
+
+                override suspend fun downloadAttachment(storedName: String, target: File): Boolean {
+                    val fileId = attachmentIdByName[storedName] ?: return false
+                    return try {
+                        store.downloadToFile(fileId, target)
+                        true
+                    } catch (_: Exception) {
+                        false
                     }
                 }
             }
@@ -386,6 +466,7 @@ object DriveBackupManager {
         val tasks = file.props["tasks"]?.toIntOrNull() ?: 0
         val notes = file.props["notes"]?.toIntOrNull() ?: 0
         val images = file.props["images"]?.toIntOrNull() ?: 0
+        val attachments = file.props["attachments"]?.toIntOrNull() ?: 0
         val appVersion = file.props["appVersion"] ?: ""
         return DriveBackupInfo(
             slotFileId = file.id,
@@ -397,7 +478,8 @@ object DriveBackupManager {
             images = images,
             appVersion = appVersion,
             formatVersion = formatVersion,
-            sizeBytes = file.size
+            sizeBytes = file.size,
+            attachments = attachments
         )
     }
 

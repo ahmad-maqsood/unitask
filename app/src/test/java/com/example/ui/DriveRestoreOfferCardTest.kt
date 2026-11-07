@@ -248,6 +248,11 @@ class DriveRestoreOfferCardTest {
         composeRule.waitForIdle()
 
         // Confirm dialog shows the merge and settings sentences
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Items already on this phone are kept.", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.waitForIdle()
         composeRule.onNodeWithText(
             "Items already on this phone are kept. Missing items are added. Items you deleted after this backup was made will come back. App settings from the backup replace the settings on this phone.",
             substring = true

@@ -289,12 +289,11 @@ class DriveBackupSectionTest {
 
         fakeStore.defaultException = DriveException(DriveException.Kind.AUTH, "Auth token expired")
         fakeStore.failOnMethod = "create"
-        
+
+        composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithText("Reconnect").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Google Drive access was lost.").assertIsDisplayed()

@@ -140,6 +140,10 @@ object FeatureGuide {
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "schedule", 150,
             "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick 15, 25, 45 or 60 minutes, or tap Custom to type your own.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active.\n7. When a countdown ends you get a notification, even if the app is closed."
+        ),
+        AppFeature(
+            "Google Drive backup", "Back up everything to your own Google Drive and restore it on any phone.", "backup", 160,
+            "1. Open Settings, then Backup & data.\n2. Tap Connect Google Drive and allow access. UniTask can only see its own hidden folder, not your other files.\n3. Tap Back up now. The backup includes courses, timetable, assignments with their attachments, My tasks, notes with pictures and your app settings.\n4. Turn on Back up every day to save automatically. It runs when you open the app, at most once a day, only when something changed. Wi-Fi only is on by default because attachments can be large.\n5. On a new phone, install UniTask, then tap Restore from Google Drive on the Deadlines tab or in Settings. Your settings come back too and are active at once.\n6. Restoring keeps what is already on the phone and adds what is missing. Things you deleted after the backup was made will come back. App settings from the backup replace the ones on the phone.\n7. Tap Disconnect to stop. Your backup stays in Google Drive until you delete it in Google Drive settings, Manage apps."
         )
     ).sortedBy { it.sortOrder }
 }

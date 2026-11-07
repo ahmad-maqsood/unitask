@@ -75,6 +75,7 @@ class DriveBackupViewModel(
 
     private var lastToken: String? = null
     private var pendingRestoreAfterConsent: Boolean = false
+    private var pendingBackupAfterConsent: Boolean = false
 
     private val tokenProvider: suspend (forceRefresh: Boolean) -> String = { forceRefresh ->
         if (forceRefresh && lastToken != null) {
@@ -188,6 +189,9 @@ class DriveBackupViewModel(
                     if (pendingRestoreAfterConsent) {
                         pendingRestoreAfterConsent = false
                         checkLatestAndPromptRestore()
+                    } else if (pendingBackupAfterConsent) {
+                        pendingBackupAfterConsent = false
+                        backUpNow(allowEmpty = false)
                     } else {
                         refreshInfoInternal()
                     }
@@ -197,6 +201,7 @@ class DriveBackupViewModel(
                 }
                 is DriveAuthResult.Failed -> {
                     pendingRestoreAfterConsent = false
+                    pendingBackupAfterConsent = false
                     _uiState.update {
                         it.copy(
                             connection = DriveConnectionState.NotConnected,
@@ -389,6 +394,45 @@ class DriveBackupViewModel(
                 }
             } else {
                 checkLatestAndPromptRestore()
+            }
+        }
+    }
+
+    /**
+     * Connects to Google Drive (prompting for consent if needed) and runs an initial
+     * backup for existing users migrating from cloud sync.
+     */
+    fun startMigrationBackup() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(busy = DriveBusyState("Backing up"), lastResultMessage = null, isError = false) }
+            val isConn = prefs.isConnected
+            if (!isConn) {
+                when (val res = auth.authorize()) {
+                    is DriveAuthResult.Granted -> {
+                        lastToken = res.accessToken
+                        val email = res.accountEmail ?: "Connected"
+                        prefs.connectedEmail = email
+                        _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
+                        backUpNow(allowEmpty = false)
+                    }
+                    is DriveAuthResult.NeedsConsent -> {
+                        pendingBackupAfterConsent = true
+                        _uiState.update { it.copy(busy = null, consentRequest = res.pendingIntent) }
+                    }
+                    is DriveAuthResult.Failed -> {
+                        pendingBackupAfterConsent = false
+                        _uiState.update {
+                            it.copy(
+                                connection = DriveConnectionState.NotConnected,
+                                busy = null,
+                                lastResultMessage = res.message,
+                                isError = true
+                            )
+                        }
+                    }
+                }
+            } else {
+                backUpNow(allowEmpty = false)
             }
         }
     }

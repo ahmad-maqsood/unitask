@@ -100,12 +100,18 @@ import androidx.compose.ui.res.painterResource
 import com.example.R
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
+import com.example.data.local.AppDatabase
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.data.local.isMyTasksCourse
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
+import com.example.util.AuthStorage
 import com.example.util.BackgroundAccess
+import com.example.util.drive.DriveMigrationPrompt
+import com.example.util.drive.DrivePrefs
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import androidx.compose.animation.core.tween
@@ -283,6 +289,23 @@ fun MainScreen(
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
+
+    val db = remember { AppDatabase.getDatabase(context) }
+    val activeNotes by db.noteDao().observeNotes().collectAsState(initial = emptyList())
+    var hasShownMigrationDialogThisSession by rememberSaveable { mutableStateOf(false) }
+    val drivePrefs = remember { DrivePrefs(context) }
+    val usedCloudSync = !AuthStorage.getLastUid(context).isNullOrBlank()
+    val hasMigrationData = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() } ||
+        allTasksWithCourse.any { !it.task.isDeleted } ||
+        activeNotes.any { !it.note.isDeleted }
+    val shouldShowDriveMigration = !hasShownMigrationDialogThisSession && DriveMigrationPrompt.shouldPrompt(
+        hasData = hasMigrationData,
+        usedCloudSync = usedCloudSync,
+        driveConnected = drivePrefs.isConnected,
+        promptCount = drivePrefs.migrationPromptCount,
+        nextPromptAt = drivePrefs.migrationNextPromptAt,
+        now = System.currentTimeMillis()
+    )
 
     // Observe timer state to show an active indicator dot on the Tools button.
     // The state flow only changes on start, pause, resume, reset, and finish,
@@ -848,6 +871,23 @@ fun MainScreen(
     if (showBackgroundSetupDialog) {
         BackgroundSetupDialog(
             onDismiss = { showBackgroundSetupDialog = false }
+        )
+    }
+
+    if (shouldShowDriveMigration &&
+        announcements.popup.isEmpty() &&
+        !showBackgroundSetupDialog &&
+        !isCloudBackupSheetOpen &&
+        !isAddEditTaskDialogOpen &&
+        !isAddEditCourseDialogOpen &&
+        !isAddEditSlotDialogOpen &&
+        !isMyTaskDialogOpen &&
+        !showNotes &&
+        !showTools &&
+        !showTimer
+    ) {
+        DriveMigrationDialog(
+            onDismiss = { hasShownMigrationDialogThisSession = true }
         )
     }
 

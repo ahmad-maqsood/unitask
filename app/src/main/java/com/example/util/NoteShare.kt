@@ -16,7 +16,8 @@ enum class NoteExportFormat(
     val mimeType: String
 ) {
     TXT("Text file (.txt)", "txt", "text/plain"),
-    MD("Markdown file (.md)", "md", "text/markdown")
+    MD("Markdown file (.md)", "md", "text/markdown"),
+    PDF("PDF document (.pdf)", "pdf", "application/pdf")
 }
 
 object NoteShare {
@@ -37,6 +38,9 @@ object NoteShare {
                     body
                 }
             }
+            NoteExportFormat.PDF -> {
+                throw IllegalArgumentException("PDF is not a plain text format")
+            }
         }
     }
 
@@ -44,8 +48,6 @@ object NoteShare {
         "${safeFileName(title)}.${format.extension}"
 
     fun shareAsFile(context: Context, title: String, body: String, format: NoteExportFormat) {
-        val content = exportText(title, body, format)
-
         val exportsDir = File(context.cacheDir, "exports")
         if (!exportsDir.exists()) {
             exportsDir.mkdirs()
@@ -55,7 +57,15 @@ object NoteShare {
 
         val fileName = fileNameFor(title, format)
         val file = File(exportsDir, fileName)
-        file.writeText(content, Charsets.UTF_8)
+        if (format == NoteExportFormat.PDF) {
+            file.outputStream().use { os ->
+                NotePdf.write(context, title, body, os)
+                os.flush()
+            }
+        } else {
+            val content = exportText(title, body, format)
+            file.writeText(content, Charsets.UTF_8)
+        }
 
         val uri = FileProvider.getUriForFile(
             context,
@@ -81,6 +91,57 @@ object NoteShare {
         }
     }
 
+    suspend fun shareAsFileAsync(
+        context: Context,
+        title: String,
+        body: String,
+        format: NoteExportFormat
+    ) = withContext(Dispatchers.IO) {
+        val exportsDir = File(context.cacheDir, "exports")
+        if (!exportsDir.exists()) {
+            exportsDir.mkdirs()
+        } else {
+            exportsDir.listFiles()?.forEach { it.delete() }
+        }
+
+        val fileName = fileNameFor(title, format)
+        val file = File(exportsDir, fileName)
+        if (format == NoteExportFormat.PDF) {
+            file.outputStream().use { os ->
+                NotePdf.write(context, title, body, os)
+                os.flush()
+            }
+        } else {
+            val content = exportText(title, body, format)
+            file.writeText(content, Charsets.UTF_8)
+        }
+
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = format.mimeType
+            clipData = ClipData.newRawUri("", uri)
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val chooser = Intent.createChooser(sendIntent, "Share note")
+        if (context !is Activity) {
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        withContext(Dispatchers.Main) {
+            try {
+                context.startActivity(chooser)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     suspend fun saveToUri(
         context: Context,
         uri: Uri,
@@ -95,6 +156,14 @@ object NoteShare {
                     val outputStream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
                     outputStream.use { os ->
                         os.write(text.toByteArray(Charsets.UTF_8))
+                        os.flush()
+                    }
+                    true
+                }
+                NoteExportFormat.PDF -> {
+                    val outputStream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
+                    outputStream.use { os ->
+                        NotePdf.write(context, title, body, os)
                         os.flush()
                     }
                     true

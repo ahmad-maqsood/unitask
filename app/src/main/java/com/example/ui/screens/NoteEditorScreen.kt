@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -553,6 +554,7 @@ fun NoteEditorScreen(
         }
     }
     
+    var isWorking by remember { mutableStateOf(false) }
     var pendingSaveFormat by rememberSaveable { mutableStateOf<String?>(null) }
     val saveDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
@@ -566,16 +568,26 @@ fun NoteEditorScreen(
                 null
             }
             if (format != null) {
+                val currentTitle = viewModel.title
+                val currentBody = viewModel.bodyValue.text
+                val isPdf = (format == NoteExportFormat.PDF)
                 coroutineScope.launch {
-                    val ok = NoteShare.saveToUri(
-                        context = context,
-                        uri = uri,
-                        title = viewModel.title,
-                        body = viewModel.bodyValue.text,
-                        format = format
-                    )
-                    val message = if (ok) "Saved to your device" else "Could not save the file"
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    if (isPdf) isWorking = true
+                    try {
+                        val ok = NoteShare.saveToUri(
+                            context = context,
+                            uri = uri,
+                            title = currentTitle,
+                            body = currentBody,
+                            format = format
+                        )
+                        val message = if (ok) "Saved to your device" else "Could not save the file"
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        if (isPdf) isWorking = false
+                    }
                 }
             } else {
                 Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
@@ -1038,12 +1050,24 @@ fun NoteEditorScreen(
             title = "Share as",
             onPick = { format ->
                 showShareDialog = false
-                NoteShare.shareAsFile(
-                    context = context,
-                    title = viewModel.title,
-                    body = viewModel.bodyValue.text,
-                    format = format
-                )
+                val currentTitle = viewModel.title
+                val currentBody = viewModel.bodyValue.text
+                val isPdf = (format == NoteExportFormat.PDF)
+                coroutineScope.launch {
+                    if (isPdf) isWorking = true
+                    try {
+                        NoteShare.shareAsFileAsync(
+                            context = context,
+                            title = currentTitle,
+                            body = currentBody,
+                            format = format
+                        )
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Could not share the file", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        if (isPdf) isWorking = false
+                    }
+                }
             },
             onDismiss = { showShareDialog = false }
         )
@@ -1059,6 +1083,23 @@ fun NoteEditorScreen(
                 saveDocumentLauncher.launch(suggestedName)
             },
             onDismiss = { showSaveDialog = false }
+        )
+    }
+
+    if (isWorking) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Please wait") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    Text("Creating PDF...")
+                }
+            }
         )
     }
 }

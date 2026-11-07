@@ -40,7 +40,7 @@ fun NoteExportDialog(
             ) {
                 for (format in NoteExportFormat.entries) {
                     val icon = when (format) {
-                        NoteExportFormat.TXT, NoteExportFormat.MD -> Icons.Default.Description
+                        NoteExportFormat.TXT, NoteExportFormat.MD, NoteExportFormat.PDF -> Icons.Default.Description
                     }
                     Row(
                         modifier = Modifier

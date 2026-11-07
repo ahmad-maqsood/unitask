@@ -46,9 +46,11 @@ import java.io.ByteArrayOutputStream
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -112,6 +114,7 @@ fun NotesScreen(
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     var showListOverflowMenu by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var isWorking by remember { mutableStateOf(false) }
     var saveRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var saveRequestFormat by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -132,16 +135,25 @@ fun NotesScreen(
             snackbarJob?.cancel()
             snackbarJob = coroutineScope.launch {
                 if (targetNote != null && format != null) {
-                    val titleToUse = if (targetNote.title.isNotBlank()) targetNote.title else noteDisplayTitle(targetNote)
-                    val ok = NoteShare.saveToUri(
-                        context = context,
-                        uri = uri,
-                        title = titleToUse,
-                        body = targetNote.body,
-                        format = format
-                    )
-                    val message = if (ok) "Saved to your device" else "Could not save the file"
-                    snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+                    val currentTitle = if (targetNote.title.isNotBlank()) targetNote.title else noteDisplayTitle(targetNote)
+                    val currentBody = targetNote.body
+                    val isPdf = (format == NoteExportFormat.PDF)
+                    if (isPdf) isWorking = true
+                    try {
+                        val ok = NoteShare.saveToUri(
+                            context = context,
+                            uri = uri,
+                            title = currentTitle,
+                            body = currentBody,
+                            format = format
+                        )
+                        val message = if (ok) "Saved to your device" else "Could not save the file"
+                        snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+                    } catch (_: Exception) {
+                        snackbarHostState.showSnackbar("Could not save the file", duration = SnackbarDuration.Short)
+                    } finally {
+                        if (isPdf) isWorking = false
+                    }
                 } else {
                     snackbarHostState.showSnackbar("Could not save the file", duration = SnackbarDuration.Short)
                 }
@@ -528,6 +540,23 @@ fun NotesScreen(
             onDismiss = {
                 saveRequestNoteId = null
                 saveRequestFormat = null
+            }
+        )
+    }
+
+    if (isWorking) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Please wait") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    Text("Creating PDF...")
+                }
             }
         )
     }

@@ -155,6 +155,11 @@ class NoteShareTest {
         assertEquals("   ", NoteShare.exportText("   ", "   ", NoteExportFormat.TXT))
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun exportTextThrowsForPdf() {
+        NoteShare.exportText("Title", "Body", NoteExportFormat.PDF)
+    }
+
     // -------------------------------------------------------------------------
     // fileNameFor tests
     // -------------------------------------------------------------------------
@@ -163,6 +168,7 @@ class NoteShareTest {
     fun fileNameForBothFormatsIncludesExtension() {
         assertEquals("Weekly Note.txt", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.TXT))
         assertEquals("Weekly Note.md", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.MD))
+        assertEquals("Weekly Note.pdf", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.PDF))
     }
 
     @Test
@@ -170,6 +176,7 @@ class NoteShareTest {
         val input = "Meeting: 2026/11/05? [Draft]*"
         assertEquals("Meeting_ 2026_11_05_ _Draft__.txt", NoteShare.fileNameFor(input, NoteExportFormat.TXT))
         assertEquals("Meeting_ 2026_11_05_ _Draft__.md", NoteShare.fileNameFor(input, NoteExportFormat.MD))
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.pdf", NoteShare.fileNameFor(input, NoteExportFormat.PDF))
     }
 
     @Test
@@ -178,6 +185,8 @@ class NoteShareTest {
         assertEquals("note.txt", NoteShare.fileNameFor("   ", NoteExportFormat.TXT))
         assertEquals("note.md", NoteShare.fileNameFor("", NoteExportFormat.MD))
         assertEquals("note.md", NoteShare.fileNameFor("   ", NoteExportFormat.MD))
+        assertEquals("note.pdf", NoteShare.fileNameFor("", NoteExportFormat.PDF))
+        assertEquals("note.pdf", NoteShare.fileNameFor("   ", NoteExportFormat.PDF))
     }
 
     // -------------------------------------------------------------------------
@@ -231,5 +240,20 @@ class NoteShareTest {
         val result = NoteShare.saveToUri(context, invalidUri, "Title", "Body", NoteExportFormat.TXT)
 
         assertFalse(result)
+    }
+
+    @Test
+    fun saveToUriWritesPdfStartingWithMagicBytes() = runBlocking<Unit> {
+        val tempFile = File.createTempFile("save_pdf", ".pdf")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "Pdf Note", "Some note text", NoteExportFormat.PDF)
+
+        assertTrue(result)
+        val bytes = tempFile.readBytes()
+        assertTrue(bytes.size > 100)
+        assertEquals("%PDF", String(bytes.take(4).toByteArray(), Charsets.US_ASCII))
+        tempFile.delete()
     }
 }

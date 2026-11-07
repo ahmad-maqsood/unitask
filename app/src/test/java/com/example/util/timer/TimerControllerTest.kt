@@ -156,4 +156,80 @@ class TimerControllerTest {
         assertFalse(TimerLogic.isRunning(controllerB2.state.value))
         assertEquals(60_000L, controllerB2.state.value.accumulatedMillis)
     }
+
+    private class RecordingOngoingHook : TimerOngoingHook {
+        val updates = mutableListOf<TimerState>()
+        var cancelCount = 0
+
+        override fun update(state: TimerState, now: Long) {
+            updates.add(state)
+        }
+
+        override fun cancel() {
+            cancelCount++
+        }
+    }
+
+    @Test
+    fun ongoingNotificationFollowsStartPauseResumeAndStop() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = TimerStore(context)
+        store.save(TimerState())
+        var currentTime = 10_000L
+        val ongoing = RecordingOngoingHook()
+        val controller = TimerController(store = store, clock = { currentTime }, ongoing = ongoing)
+
+        controller.start()
+        assertEquals(1, ongoing.updates.size)
+        assertTrue(TimerLogic.isRunning(ongoing.updates.last()))
+
+        currentTime = 20_000L
+        controller.pause()
+        assertEquals(2, ongoing.updates.size)
+        assertTrue(TimerLogic.isPaused(ongoing.updates.last()))
+
+        controller.start()
+        assertEquals(3, ongoing.updates.size)
+        assertTrue(TimerLogic.isRunning(ongoing.updates.last()))
+
+        assertEquals(0, ongoing.cancelCount)
+        controller.reset()
+        assertEquals(1, ongoing.cancelCount)
+    }
+
+    @Test
+    fun ongoingNotificationIsRemovedWhenCountdownFinishes() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = TimerStore(context)
+        store.save(TimerState())
+        var currentTime = 10_000L
+        val ongoing = RecordingOngoingHook()
+        val controller = TimerController(store = store, clock = { currentTime }, ongoing = ongoing)
+
+        controller.setMode(TimerMode.COUNTDOWN)
+        controller.setCountdownMinutes(1)
+        controller.start()
+        assertEquals(0, ongoing.cancelCount)
+
+        currentTime = 70_000L
+        assertTrue(controller.markFinishedIfDue())
+        assertEquals(1, ongoing.cancelCount)
+    }
+
+    @Test
+    fun ongoingNotificationIsShownAgainAfterReboot() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = TimerStore(context)
+        store.save(TimerState())
+        var currentTime = 10_000L
+        val first = TimerController(store = store, clock = { currentTime })
+        first.start()
+
+        currentTime = 30_000L
+        val ongoing = RecordingOngoingHook()
+        val afterReboot = TimerController(store = store, clock = { currentTime }, ongoing = ongoing)
+        afterReboot.restoreAfterReboot()
+        assertEquals(1, ongoing.updates.size)
+        assertTrue(TimerLogic.isRunning(ongoing.updates.last()))
+    }
 }

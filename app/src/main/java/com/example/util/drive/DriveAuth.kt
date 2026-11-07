@@ -12,6 +12,8 @@ import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.IOException
 import kotlin.coroutines.resume
@@ -98,6 +100,7 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
                 }
             }
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             mapAuthException(e)
         }
     }

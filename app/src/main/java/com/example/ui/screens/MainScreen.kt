@@ -291,7 +291,7 @@ fun MainScreen(
     var showTimer by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
-    val activeNotes by db.noteDao().observeNotes().collectAsState(initial = emptyList())
+    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
     var hasShownMigrationDialogThisSession by rememberSaveable { mutableStateOf(false) }
     val drivePrefs = remember { DrivePrefs(context) }
     val usedCloudSync = !AuthStorage.getLastUid(context).isNullOrBlank()

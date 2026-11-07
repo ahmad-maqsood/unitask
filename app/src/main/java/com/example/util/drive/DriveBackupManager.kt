@@ -11,6 +11,8 @@ import com.example.util.BuiltBackup
 import com.example.util.LocalBackupManager
 import com.example.util.NoteImages
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -307,6 +309,7 @@ object DriveBackupManager {
                 skippedFiles = skippedFilesCount
             )
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             val prefs = DrivePrefs(context)
             prefs.lastAttemptAt = System.currentTimeMillis()
             prefs.lastError = e.message ?: "Backup failed"
@@ -414,6 +417,7 @@ object DriveBackupManager {
             }
             BackupResult.Failure(message)
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             BackupResult.Failure(e.message ?: "Google Drive had a problem. Try again later.")
         }
     }

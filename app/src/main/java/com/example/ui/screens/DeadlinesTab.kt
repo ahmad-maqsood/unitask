@@ -146,9 +146,9 @@ fun DeadlinesTab(
 
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
-    val activeNotes by db.noteDao().observeNotes().collectAsState(initial = emptyList())
-    val activeTasks by db.taskDao().getAllTasksWithCourse().collectAsState(initial = emptyList())
-    val activeCourses by db.courseDao().getAllCourses().collectAsState(initial = emptyList())
+    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
+    val activeTasks by remember(db) { db.taskDao().getAllTasksWithCourse() }.collectAsState(initial = emptyList())
+    val activeCourses by remember(db) { db.courseDao().getAllCourses() }.collectAsState(initial = emptyList())
 
     var restoreOfferDismissed by rememberSaveable {
         mutableStateOf(DrivePrefs(context).restoreOfferDismissed)

@@ -149,7 +149,7 @@ object SettingsSnapshot {
         }
         if (settings.has("dailySummaryHour")) {
             val raw = settings.opt("dailySummaryHour")
-            if (raw is Number && raw !is Boolean) {
+            if (raw is Number) {
                 val hour = raw.toInt()
                 if (hour in 0..23) {
                     DailySummaryScheduler.setTime(context, hour, DailySummaryScheduler.minute(context))
@@ -160,7 +160,7 @@ object SettingsSnapshot {
         }
         if (settings.has("dailySummaryMinute")) {
             val raw = settings.opt("dailySummaryMinute")
-            if (raw is Number && raw !is Boolean) {
+            if (raw is Number) {
                 val minute = raw.toInt()
                 if (minute in 0..59) {
                     DailySummaryScheduler.setTime(context, DailySummaryScheduler.hour(context), minute)
@@ -215,7 +215,7 @@ object SettingsSnapshot {
         val timerStore = TimerStore(context)
         if (settings.has("timerLastCountdownMinutes")) {
             val raw = settings.opt("timerLastCountdownMinutes")
-            if (raw is Number && raw !is Boolean) {
+            if (raw is Number) {
                 val minutes = raw.toInt()
                 if (minutes in TimerLogic.MIN_COUNTDOWN_MINUTES..TimerLogic.MAX_COUNTDOWN_MINUTES) {
                     timerStore.setLastCountdownMinutes(minutes)

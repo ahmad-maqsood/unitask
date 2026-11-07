@@ -339,6 +339,7 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
+        waitForResultText()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_result_text").assertIsDisplayed()

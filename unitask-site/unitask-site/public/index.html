@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UniTask - deadlines, timetable and notes for students</title>
+<meta name="description" content="UniTask is a free Android app that helps students keep track of courses, assignments, deadlines, class timetable and notes.">
+<style>
+  :root { --bg:#f7f6fb; --card:#ffffff; --text:#1d1b26; --muted:#5d5a6b; --accent:#5b3fd1; --line:#e3e0ee; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14121c; --card:#1d1a29; --text:#efedf7; --muted:#a9a5ba; --accent:#a893ff; --line:#2d2940; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:48px 16px 32px; }
+  h1 { font-size:2.2rem; margin:0 0 8px; }
+  h2 { font-size:1.25rem; margin:32px 0 8px; }
+  p { margin:0 0 12px; }
+  .lead { font-size:1.15rem; color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-top:24px; }
+  ul { padding-left:20px; margin:0; }
+  li { margin:6px 0; }
+  a { color:var(--accent); }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:10px 18px; border-radius:10px; font-weight:600; }
+  @media (prefers-color-scheme: dark) { .btn { color:#14121c; } }
+  footer { margin-top:40px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; }
+  footer a { margin-right:16px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>UniTask</h1>
+  <p class="lead">A free Android app that helps students keep track of courses, assignments, deadlines, their class timetable and notes, all in one place.</p>
+
+  <p style="margin-top:20px"><a class="btn" href="https://github.com/ahmad-maqsood/unitask/releases">Download for Android</a></p>
+
+  <div class="card">
+    <h2 style="margin-top:0">What UniTask does</h2>
+    <ul>
+      <li>Keeps your courses, weekly timetable (including Week A and Week B) and assignments together.</li>
+      <li>Shows upcoming deadlines and sends reminders before they are due.</li>
+      <li>Lets you write notes with pictures and attach files to assignments.</li>
+      <li>Lets study groups share tasks and chat after signing in with Google.</li>
+      <li>Includes a timer and countdown for study sessions.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Backup to your own Google Drive</h2>
+    <p>UniTask can back up your data to your own Google Drive, similar to WhatsApp. The backup is stored in a hidden folder that only UniTask can open. UniTask cannot see your other Google Drive files, and the developer cannot see your backup. To use it you sign in with Google and allow the "Drive app data" access, which is the only Drive permission the app asks for. You can turn it off or disconnect at any time.</p>
+    <p>Read the <a href="/privacy.html">privacy policy</a> for the full details.</p>
+  </div>
+
+  <footer>
+    <a href="/privacy.html">Privacy policy</a>
+    <a href="https://github.com/ahmad-maqsood/unitask">Source and releases</a>
+    <p style="margin-top:12px">Contact: <a href="mailto:am9566222@gmail.com">am9566222@gmail.com</a></p>
+  </footer>
+</main>
+</body>
+</html>

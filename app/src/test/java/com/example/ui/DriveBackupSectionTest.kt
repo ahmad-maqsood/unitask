@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -105,6 +108,12 @@ class DriveBackupSectionTest {
         }
     }
 
+    private fun waitForResultText() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("drive_result_text").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     @Test
     fun notConnected_showsConnectButton() {
         setUiContent()
@@ -158,7 +167,8 @@ class DriveBackupSectionTest {
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()
-
+        
+        waitForResultText()
         composeRule.onNodeWithTag("drive_result_text").assertIsDisplayed()
         composeRule.onNodeWithText("Backup complete: 1 courses, 1 tasks, 0 notes.").assertIsDisplayed()
     }
@@ -210,6 +220,7 @@ class DriveBackupSectionTest {
 
         // Restored items in DB
         assertEquals(1, courseDao.getAllCoursesList().size)
+        waitForResultText()
         composeRule.onNodeWithTag("drive_result_text").assertIsDisplayed()
     }
 
@@ -255,7 +266,7 @@ class DriveBackupSectionTest {
         composeRule.onNodeWithText("Your backup stays in your Google Drive. To delete it: Google Drive settings, Manage apps, UniTask, Delete hidden app data.")
             .assertIsDisplayed()
 
-        composeRule.onNodeWithText("Disconnect").performClick()
+        composeRule.onAllNodesWithText("Disconnect").onLast().performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_connect_button").assertIsDisplayed()

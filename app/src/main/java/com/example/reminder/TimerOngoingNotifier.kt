@@ -69,7 +69,7 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
                 .setChronometerCountDown(countdown)
                 .setWhen(whenMillis)
                 .setContentText(if (countdown) "$totalMinutes minute countdown" else "Running")
-            builder.addAction(0, "Pause", actionIntent(TimerActionReceiver.ACTION_PAUSE))
+            builder.addAction(R.drawable.ic_timer_pause, "Pause", actionIntent(TimerActionReceiver.ACTION_PAUSE))
         } else {
             val shown = if (countdown) {
                 TimerLogic.formatClock(TimerLogic.remainingMillis(state, now), roundUp = true)
@@ -79,9 +79,9 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             builder.setShowWhen(false)
                 .setUsesChronometer(false)
                 .setContentText("Paused at $shown")
-            builder.addAction(0, "Resume", actionIntent(TimerActionReceiver.ACTION_RESUME))
+            builder.addAction(R.drawable.ic_timer_play, "Resume", actionIntent(TimerActionReceiver.ACTION_RESUME))
         }
-        builder.addAction(0, "Stop", actionIntent(TimerActionReceiver.ACTION_STOP))
+        builder.addAction(R.drawable.ic_timer_stop, "Stop", actionIntent(TimerActionReceiver.ACTION_STOP))
 
         nm.notify(NOTIFICATION_ID, builder.build())
     }

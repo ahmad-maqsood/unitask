@@ -36,7 +36,7 @@ class CountdownReceiverTest {
         context = ApplicationProvider.getApplicationContext()
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         shadowNotificationManager = Shadows.shadowOf(nm)
-        shadowNotificationManager.cancelAll()
+        nm.cancelAll()
 
         store = TimerStore(context)
         store.save(TimerState())

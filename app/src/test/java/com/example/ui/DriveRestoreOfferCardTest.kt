@@ -13,6 +13,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.onAllNodesWithTag
+import kotlinx.coroutines.withContext
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -99,33 +103,45 @@ class DriveRestoreOfferCardTest {
             .commit()
     }
 
+    // Changing this value rebuilds the Deadlines screen from scratch (simulates a recreated screen).
+    private val screenKey = mutableStateOf(0)
+
     private fun setDeadlinesContent() {
         composeRule.setContent {
             MyApplicationTheme {
-                val tasks by db.taskDao().getAllTasksWithCourse().collectAsState(initial = emptyList())
-                val courses by db.courseDao().getAllCourses().collectAsState(initial = emptyList())
-                DeadlinesTab(
-                    tasks = tasks,
-                    courses = courses,
-                    searchQuery = "",
-                    onSearchChange = {},
-                    statusFilter = null,
-                    onStatusFilterSelect = {},
-                    sourceFilter = null,
-                    onSourceFilterSelect = {},
-                    courseFilter = null,
-                    onCourseFilterSelect = {},
-                    sortOption = TaskSortOption.DUE_DATE_ASC,
-                    onSortOptionSelect = {},
-                    pendingCount = tasks.count { it.task.status != TaskStatus.COMPLETED },
-                    completedCount = tasks.count { it.task.status == TaskStatus.COMPLETED },
-                    onStatusCycle = {},
-                    onEditTask = {},
-                    onDeleteTask = {},
-                    onAddTaskClick = {},
-                    driveBackupViewModel = viewModel
-                )
+                key(screenKey.value) {
+                    val tasks by db.taskDao().getAllTasksWithCourse().collectAsState(initial = emptyList())
+                    val courses by db.courseDao().getAllCourses().collectAsState(initial = emptyList())
+                    DeadlinesTab(
+                        tasks = tasks,
+                        courses = courses,
+                        searchQuery = "",
+                        onSearchChange = {},
+                        statusFilter = null,
+                        onStatusFilterSelect = {},
+                        sourceFilter = null,
+                        onSourceFilterSelect = {},
+                        courseFilter = null,
+                        onCourseFilterSelect = {},
+                        sortOption = TaskSortOption.DUE_DATE_ASC,
+                        onSortOptionSelect = {},
+                        pendingCount = tasks.count { it.task.status != TaskStatus.COMPLETED },
+                        completedCount = tasks.count { it.task.status == TaskStatus.COMPLETED },
+                        onStatusCycle = {},
+                        onEditTask = {},
+                        onDeleteTask = {},
+                        onAddTaskClick = {},
+                        driveBackupViewModel = viewModel
+                    )
+                }
             }
+        }
+    }
+
+    private fun waitForOfferCard(visible: Boolean) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("drive_restore_offer_card")
+                .fetchSemanticsNodes().isNotEmpty() == visible
         }
     }
 
@@ -144,17 +160,20 @@ class DriveRestoreOfferCardTest {
         val myTasksCourse = Course(name = "My tasks", code = MY_TASKS_COURSE_CODE, colorHex = "#888888")
         val myTasksId = db.courseDao().insertCourse(myTasksCourse)
         composeRule.waitForIdle()
+        waitForOfferCard(true)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
 
         // 3. Regular course added: card must disappear
         val physicsCourse = Course(name = "Physics", code = "PHYS 101", colorHex = "#123456")
         val physicsId = db.courseDao().insertCourse(physicsCourse)
         composeRule.waitForIdle()
+        waitForOfferCard(false)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertDoesNotExist()
 
         // Remove regular course: card appears again
         db.courseDao().deleteCourse(physicsCourse.copy(id = physicsId))
         composeRule.waitForIdle()
+        waitForOfferCard(true)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
 
         // 4. Task added: card must disappear
@@ -162,21 +181,25 @@ class DriveRestoreOfferCardTest {
             TaskItem(courseId = myTasksId, title = "Task 1", dueDateEpochMillis = 2000L)
         )
         composeRule.waitForIdle()
+        waitForOfferCard(false)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertDoesNotExist()
 
         // Remove task: card appears again
         db.taskDao().deleteTaskById(taskId)
         composeRule.waitForIdle()
+        waitForOfferCard(true)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
 
         // 5. Note added: card must disappear
         val noteId = db.noteDao().insert(Note(title = "Shopping", body = "Milk", updatedAt = 2000L))
         composeRule.waitForIdle()
+        waitForOfferCard(false)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertDoesNotExist()
 
         // Remove note: card appears again
         db.noteDao().deleteForever(noteId)
         composeRule.waitForIdle()
+        waitForOfferCard(true)
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
     }
 
@@ -193,8 +216,8 @@ class DriveRestoreOfferCardTest {
         composeRule.onNodeWithTag("drive_restore_offer_card").assertDoesNotExist()
         assertTrue(prefs.restoreOfferDismissed)
 
-        // Recreate the screen: card must stay hidden
-        setDeadlinesContent()
+        // Recreate the screen (new composition): card must stay hidden
+        composeRule.runOnIdle { screenKey.value += 1 }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("drive_restore_offer_card").assertDoesNotExist()
     }
@@ -208,10 +231,12 @@ class DriveRestoreOfferCardTest {
         taskDao.insertTask(TaskItem(courseId = cId, title = "Read Chapter 1", dueDateEpochMillis = 5000L))
 
         viewModel.connect()
+        composeRule.waitForIdle()
         viewModel.backUpNow(allowEmpty = false)
+        composeRule.waitUntil(timeoutMillis = 10_000) { viewModel.uiState.value.latestBackupInfo != null }
 
         // Clear local database so it is a fresh phone
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
         assertEquals(0, courseDao.getAllCoursesList().size)
         prefs.autoEnabled = false
 
@@ -228,7 +253,13 @@ class DriveRestoreOfferCardTest {
             substring = true
         ).assertIsDisplayed()
 
-        composeRule.onNodeWithText("Restore").performClick()
+        composeRule.onAllNodesWithText("Restore").onLast().performClick()
+        composeRule.waitForIdle()
+
+        // Restoring runs in the background: wait until the restored task shows up
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Read Chapter 1").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         // Restored items in DB and displayed in list

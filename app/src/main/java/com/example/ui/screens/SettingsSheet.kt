@@ -298,7 +298,7 @@ fun SettingsButton(
                             SettingsSectionRow(
                                 icon = Icons.Default.Backup,
                                 title = "Backup & data",
-                                summary = "Save or restore a backup file",
+                                summary = "Google Drive backup and backup file",
                                 onClick = { page = SettingsPage.Backup },
                                 testTag = "settings_section_backup"
                             )
@@ -549,7 +549,9 @@ fun SettingsButton(
                                     )
                                 }
                                 SettingsPage.Backup -> {
-                                    LocalBackupSection(showHeading = false)
+                                    DriveBackupSection()
+                                    Spacer(Modifier.height(16.dp))
+                                    LocalBackupSection(showHeading = true)
                                 }
                                 SettingsPage.About -> {
                                     SettingsRow(

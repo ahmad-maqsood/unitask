@@ -52,7 +52,7 @@ import java.util.Locale
 
 private const val MIN_PASSWORD_LENGTH = 6
 
-private fun describe(counts: BackupCounts): String {
+internal fun describe(counts: BackupCounts): String {
     val base = "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
     var result = if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
     if (counts.notes > 0) {
@@ -181,7 +181,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (showHeading) {
             Text(
-                text = "Offline backup",
+                text = "Backup file",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary

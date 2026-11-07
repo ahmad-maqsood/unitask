@@ -418,7 +418,7 @@ object DriveBackupManager {
         }
     }
 
-    private suspend fun isDatabaseEmpty(context: Context): Boolean = withContext(Dispatchers.IO) {
+    internal suspend fun isDatabaseEmpty(context: Context): Boolean = withContext(Dispatchers.IO) {
         val db = AppDatabase.getDatabase(context)
         val courses = db.courseDao().getAllCoursesList().filter {
             !it.isDeleted && SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE

@@ -19,7 +19,7 @@ No advertising. No tracking.
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [What's new](#whats-new) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
 
 </div>
 
@@ -123,6 +123,10 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
   - Notes are included in encrypted local backups, data export and cloud sync with conflict protection.
   - Deleting a course keeps notes safe and cleanly detaches the course link.
 
+### Study timer
+
+- **Stopwatch and countdown.** Track study sessions with a stopwatch or a 15, 25, 45 or 60-minute countdown, or set a custom duration. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the Tools button.
+
 ### Timetable
 
 - Weekly and bi-weekly (**Week A** and **Week B**) schedules. Once you set the current week, reminders, the daily summary and the next-class card follow it.
@@ -145,6 +149,7 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
 - **Check reminders** in Settings tests notifications, exact alarms and battery settings, can fix detected problems and can send a test reminder.
 - Optional alarm-style ringing for high-priority tasks, class reminders and a daily morning summary.
 - Notifications are grouped by type to keep the notification shade readable.
+- **Notification history.** Review past alerts, see unread counts and jump back to the relevant item; daily summaries remain available in the history.
 - The **UniTask Today** home-screen widget shows today's classes and tasks. Tapping a row opens the app.
 
 ### Personalisation
@@ -159,63 +164,6 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
 - Password-protected offline backups and a JSON export of your data.
 - Complete account and cloud data deletion.
 - A GitHub release updater, an announcements bell and a built-in **Learn to use the app** guide.
-
-## What's new
-
-### 3.5.0
-
-- **Safer synchronisation and data cleanup.** Improved sync safety and private-data cleanup to make account and local data handling more reliable.
-- **Notes reliability.** Fixed editor state, note synchronisation and trash-handling issues. Trashed notes with an existing cloud copy are preserved, and saving new text to a trashed note restores it.
-- **More stable group chat.** Fixed a Compose layout crash, a group chat tab-reset issue and the Realtime WebSocket connection.
-- **Safer note imports.** Files that exceed the supported note length are now rejected instead of being imported.
-- **Date picker and notification fixes.** Fixed date-picker issues and prevented class alerts from incorrectly appearing in the notification bell.
-- **More reliable app experience.** Includes additional fixes to reminder-related flows and release validation.
-
-The complete history is available in the [CHANGELOG](CHANGELOG.md).
-
-<details>
-<summary><b>Earlier changes</b></summary>
-
-### 3.4.0
-
-- **Notes.** Markdown notes with an optional course tag, opened from the Tools menu in the top bar.
-- **Editor with formatting toolbar.** Dedicated toolbar for headings, lists, tables, links, code, quotes and text styles, with automatic list continuation on Enter.
-- **Edit and Preview modes.** Toggle between editor and markdown preview with tables, web links, images and clickable checklists.
-- **Search, filter, pin and sort.** Find notes quickly by keyword, filter by course, pin notes to the top and sort by updated date, created date or title.
-- **Recently deleted.** Soft-deleted notes are kept in the trash for 30 days before permanent removal, with instant restore.
-- **Share and import.** Share notes as text or `.md` files, and import `.md` or `.txt` files directly into Notes.
-- **Open files from other apps.** Tap a `.md` file in WhatsApp, Files or Gmail and choose UniTask to read it as formatted text, then save it to Notes if you want to keep it.
-- **Images in notes.** Add photos from the device gallery, stored locally with thumbnail rendering, full-screen preview and automatic orphan cleanup.
-- **Backup and cloud sync.** Notes and images are included in encrypted local backups, and notes sync to the cloud with automatic conflict protection when signed in.
-
-### Previous releases
-
-- **Task checklists and calendar actions.** Edit checklist items from the task dialog, follow progress on cards and swipe calendar tasks to complete or undo them.
-- **Flexible snoozing.** Snooze from a task card or notification for 30 minutes, 1 hour, 3 hours or tomorrow at 8:00 AM.
-- **Smarter repeating tasks.** Monthly and yearly tasks keep their original day across shorter months and leap years. Missed repeats roll forward and reset their checklists.
-- **Update alerts.** An in-app prompt and a notification bell card announce new stable releases.
-- **Reminder diagnostics and recovery.** Check notification, exact-alarm and battery settings, fix detected issues, send a test reminder and receive a notice about reminders missed while the phone was off.
-- **Delete when done.** Optionally remove completed one-time My tasks after their completion day.
-- **Reliability.** Improved synchronisation, account-switch cleanup, reminder recovery and notification handling.
-
-- **Today home-screen widget.** Shows today's classes, upcoming tasks and the number of overdue tasks.
-- **Notification history.** View past notifications with unread counts and quick navigation. Daily summaries are readable from the history.
-- **Six accent colour themes.**
-- **Checklist editor.** Each item is a row with a checkbox, a text box and a remove button. Older checklists open as rows and continue to work in task cards, backups and cloud sync.
-- **Week A and Week B.** Choose the current week in Settings (**This week is**) or from the Timetable tab. Class reminders, the daily summary and the next-class card count only the classes that meet this week, and a Week A class and a Week B class at the same time no longer count as a clash.
-- **Joining a group with the camera.** Use **Scan with camera**, **From image** or **Paste Link**. Scanning only fills in the form and never joins automatically.
-- **Improved notifications.** Group chat notifications read like a conversation, the daily summary mentions overdue tasks on days without classes, high-priority alarm notifications remain until dismissed, and Settings has a switch for alarm-style ringing.
-- **Stable group screens** when the phone is locked and unlocked.
-- **Calmer sync messages.** Status messages replace each other and disappear sooner. The group refresh runs only while the app is open on a usable connection.
-- **No duplicate chat messages** when a message is sent as the chat opens or the connection returns.
-- **Undo keeps attachments.** Undoing a task deletion also restores its files.
-- **Batch mode.** **Done** always marks tasks as done, **Delete** asks for confirmation and the selection survives screen rotation.
-- **Real files when sharing.** Timetable export shares an `.ics` file and **Export my data** shares a `.json` file.
-- **Update check.** Beta users are offered the final release of the same version.
-- **Smaller fixes.** Back inside a group returns to Tasks first, pressing Back twice on the home screen exits, the time picker follows the 12 or 24 hour setting, classes that end after midnight are handled and local backups keep the completion time of repeating tasks.
-- **Account deletion** also cancels reminders and removes attachments and cached group data from the phone.
-
-</details>
 
 ## Architecture
 

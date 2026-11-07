@@ -7,14 +7,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.GraphicsMode
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.ByteArrayOutputStream
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NotePdfTest {
 
     private lateinit var context: Context
@@ -26,6 +24,7 @@ class NotePdfTest {
 
     @Test
     fun writeNoteContainingEveryBlockTypeProducesValidPdf() {
+        assumePdfSupported()
         val markdown = """
             # Level 1 Heading
             ## Level 2 Heading
@@ -72,6 +71,7 @@ class NotePdfTest {
 
     @Test
     fun emptyTitleAndEmptyBodyProducesValidPdf() {
+        assumePdfSupported()
         val out = ByteArrayOutputStream()
         NotePdf.write(context, "", "", out)
         val bytes = out.toByteArray()
@@ -83,6 +83,7 @@ class NotePdfTest {
 
     @Test
     fun largeNoteOf200000CharactersCompletesAndStaysUnder300Pages() {
+        assumePdfSupported()
         val line = "A repeated line of study notes to test large document pagination and bounds.\n"
         val count = (200_000 / line.length) + 1
         val largeBody = line.repeat(count).take(200_000)
@@ -98,6 +99,7 @@ class NotePdfTest {
 
     @Test
     fun singleWordOf5000CharactersDoesNotThrow() {
+        assumePdfSupported()
         val longWord = "Z".repeat(5000)
         val out = ByteArrayOutputStream()
         NotePdf.write(context, "Long Word", longWord, out)

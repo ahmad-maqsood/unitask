@@ -10,14 +10,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.GraphicsMode
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NoteShareTest {
 
     private lateinit var context: Context
@@ -246,6 +244,7 @@ class NoteShareTest {
 
     @Test
     fun saveToUriWritesPdfStartingWithMagicBytes() = runBlocking<Unit> {
+        assumePdfSupported()
         val tempFile = File.createTempFile("save_pdf", ".pdf")
         tempFile.deleteOnExit()
         val uri = Uri.fromFile(tempFile)

@@ -100,5 +100,63 @@ class NoteShareTest {
         assertEquals("Only Title", title)
         assertEquals("", body)
     }
-}
 
+    // -------------------------------------------------------------------------
+    // exportText tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun exportTextMarkdownFormatsCorrectly() {
+        // title and body
+        assertEquals("# Title\n\nBody", NoteShare.exportText("Title", "Body", NoteExportFormat.MD))
+        // blank title
+        assertEquals("Body", NoteShare.exportText("", "Body", NoteExportFormat.MD))
+        assertEquals("Body", NoteShare.exportText("   ", "Body", NoteExportFormat.MD))
+        // blank body
+        assertEquals("# Title", NoteShare.exportText("Title", "", NoteExportFormat.MD))
+        assertEquals("# Title", NoteShare.exportText("Title", "   ", NoteExportFormat.MD))
+        // both blank
+        assertEquals("", NoteShare.exportText("", "", NoteExportFormat.MD))
+        assertEquals("   ", NoteShare.exportText("   ", "   ", NoteExportFormat.MD))
+    }
+
+    @Test
+    fun exportTextPlainTextFormatsCorrectly() {
+        // title and body (without '# ')
+        assertEquals("Title\n\nBody", NoteShare.exportText("Title", "Body", NoteExportFormat.TXT))
+        // blank title
+        assertEquals("Body", NoteShare.exportText("", "Body", NoteExportFormat.TXT))
+        assertEquals("Body", NoteShare.exportText("   ", "Body", NoteExportFormat.TXT))
+        // blank body
+        assertEquals("Title", NoteShare.exportText("Title", "", NoteExportFormat.TXT))
+        assertEquals("Title", NoteShare.exportText("Title", "   ", NoteExportFormat.TXT))
+        // both blank
+        assertEquals("", NoteShare.exportText("", "", NoteExportFormat.TXT))
+        assertEquals("   ", NoteShare.exportText("   ", "   ", NoteExportFormat.TXT))
+    }
+
+    // -------------------------------------------------------------------------
+    // fileNameFor tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun fileNameForBothFormatsIncludesExtension() {
+        assertEquals("Weekly Note.txt", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.TXT))
+        assertEquals("Weekly Note.md", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.MD))
+    }
+
+    @Test
+    fun fileNameForSanitizesIllegalCharacters() {
+        val input = "Meeting: 2026/11/05? [Draft]*"
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.txt", NoteShare.fileNameFor(input, NoteExportFormat.TXT))
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.md", NoteShare.fileNameFor(input, NoteExportFormat.MD))
+    }
+
+    @Test
+    fun fileNameForWithEmptyTitleUsesDefaultNoteName() {
+        assertEquals("note.txt", NoteShare.fileNameFor("", NoteExportFormat.TXT))
+        assertEquals("note.txt", NoteShare.fileNameFor("   ", NoteExportFormat.TXT))
+        assertEquals("note.md", NoteShare.fileNameFor("", NoteExportFormat.MD))
+        assertEquals("note.md", NoteShare.fileNameFor("   ", NoteExportFormat.MD))
+    }
+}

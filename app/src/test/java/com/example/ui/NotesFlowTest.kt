@@ -19,6 +19,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Note
 import com.example.ui.screens.NotesHost
 import com.example.ui.theme.MyApplicationTheme
+import com.example.util.NoteExportFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -293,6 +294,33 @@ class NotesFlowTest {
         waitForCard(idA)
         composeRule.onNodeWithTag("note_card_$idA").assertIsDisplayed()
     }
+    @Test
+    fun `share from editor opens format dialog with format rows and cancel closes it`() {
+        val id = insertNote("Share Title", "Share Body")
+        openNote(id)
+
+        // Open overflow menu
+        composeRule.waitUntil(timeoutMillis = 5_000) { tagExists("note_editor_overflow_button") }
+        composeRule.onNodeWithTag("note_editor_overflow_button").performClick()
+        composeRule.waitForIdle()
+
+        // Tap Share menu item
+        composeRule.onNodeWithTag("note_menu_share").performClick()
+        composeRule.waitForIdle()
+
+        // Export dialog is displayed with a row per format
+        composeRule.onNodeWithTag("note_export_dialog").assertIsDisplayed()
+        for (format in NoteExportFormat.entries) {
+            composeRule.onNodeWithTag("note_export_format_" + format.extension).assertIsDisplayed()
+        }
+
+        // Cancel closes the dialog
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("note_export_dialog").assertDoesNotExist()
+    }
+
     @Test
     fun `reopening Notes after closing it shows the right note`() {
         val idA = insertNote("Alpha", "alpha body")

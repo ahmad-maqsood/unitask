@@ -578,6 +578,7 @@ fun NoteEditorScreen(
 
     var showCoursePicker by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showShareDialog by rememberSaveable { mutableStateOf(false) }
 
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
     val courseColor = remember(selectedCourse?.colorHex) {
@@ -697,7 +698,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Share as text") },
+                            text = { Text("Share") },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Share,
@@ -705,31 +706,10 @@ fun NoteEditorScreen(
                                 )
                             },
                             enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            modifier = Modifier.testTag("note_menu_share"),
                             onClick = {
                                 showOverflowMenu = false
-                                NoteShare.shareAsText(
-                                    context = context,
-                                    title = viewModel.title,
-                                    body = viewModel.bodyValue.text
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Share as .md file") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Description,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
-                            onClick = {
-                                showOverflowMenu = false
-                                NoteShare.shareAsMarkdownFile(
-                                    context = context,
-                                    title = viewModel.title,
-                                    body = viewModel.bodyValue.text
-                                )
+                                showShareDialog = true
                             }
                         )
                         DropdownMenuItem(
@@ -1003,6 +983,22 @@ fun NoteEditorScreen(
                 }
             }
         }
+    }
+
+    if (showShareDialog) {
+        NoteExportDialog(
+            title = "Share as",
+            onPick = { format ->
+                showShareDialog = false
+                NoteShare.shareAsFile(
+                    context = context,
+                    title = viewModel.title,
+                    body = viewModel.bodyValue.text,
+                    format = format
+                )
+            },
+            onDismiss = { showShareDialog = false }
+        )
     }
 }
 

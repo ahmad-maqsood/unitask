@@ -4,16 +4,17 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.ConnectTimeoutException
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.SocketTimeoutException
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
+import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -24,6 +25,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -321,14 +323,14 @@ class DriveRestClient(
                         throw DriveException(DriveException.Kind.OTHER, "HTTP error ${e.statusCode}")
                     }
                 }
-            } catch (e: IOException) {
-                throw DriveException(DriveException.Kind.NETWORK, "Network error: ${e.message}")
             } catch (e: HttpRequestTimeoutException) {
                 throw DriveException(DriveException.Kind.NETWORK, "Request timeout")
             } catch (e: ConnectTimeoutException) {
                 throw DriveException(DriveException.Kind.NETWORK, "Connection timeout")
             } catch (e: SocketTimeoutException) {
                 throw DriveException(DriveException.Kind.NETWORK, "Socket timeout")
+            } catch (e: IOException) {
+                throw DriveException(DriveException.Kind.NETWORK, "Network error: ${e.message}")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: DriveException) {

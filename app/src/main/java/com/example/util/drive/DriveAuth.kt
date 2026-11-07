@@ -6,6 +6,7 @@ import android.content.Intent
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
@@ -149,10 +150,10 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
                 CommonStatusCodes.TIMEOUT -> {
                     DriveAuthResult.Failed("Network error during authorization", retryable = true)
                 }
-                CommonStatusCodes.SERVICE_MISSING,
-                CommonStatusCodes.SERVICE_VERSION_UPDATE_REQUIRED,
-                CommonStatusCodes.SERVICE_DISABLED,
-                CommonStatusCodes.SERVICE_INVALID -> {
+                ConnectionResult.SERVICE_MISSING,
+                ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED,
+                ConnectionResult.SERVICE_DISABLED,
+                ConnectionResult.SERVICE_INVALID -> {
                     DriveAuthResult.Failed("Google Play services is unavailable or needs update", retryable = false)
                 }
                 else -> {

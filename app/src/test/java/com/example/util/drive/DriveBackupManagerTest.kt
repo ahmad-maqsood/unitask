@@ -189,7 +189,7 @@ class DriveBackupManagerTest {
         imgFile.writeBytes(byteArrayOf(1, 2, 3, 4, 5))
 
         val noteId = noteDao.insert(
-            Note(title = "Title", body = "Photo: ![test](unitask://$imgName)", createdAt = 1000L, updatedAt = 1000L)
+            Note(title = "Title", body = "Photo: ![test](unitask-image:$imgName)", createdAt = 1000L, updatedAt = 1000L)
         )
         assertTrue(noteId > 0)
 
@@ -269,7 +269,7 @@ class DriveBackupManagerTest {
         val imgFile = NoteImages.imageFile(context, imgName)!!
         imgFile.writeBytes(byteArrayOf(9, 8, 7, 6))
 
-        noteDao.insert(Note(title = "Cells", body = "Look: ![cell](unitask://$imgName)", createdAt = 1000L, updatedAt = 1000L))
+        noteDao.insert(Note(title = "Cells", body = "Look: ![cell](unitask-image:$imgName)", createdAt = 1000L, updatedAt = 1000L))
 
         val backupRes = DriveBackupManager.backUp(context, fakeStore)
         assertTrue(backupRes is DriveBackupResult.Success)
@@ -352,7 +352,7 @@ class DriveBackupManagerTest {
         val imgName = "missing_image.jpg"
         val imgFile = NoteImages.imageFile(context, imgName)!!
         imgFile.writeBytes(byteArrayOf(1, 2, 3))
-        noteDao.insert(Note(title = "Note", body = "![missing](unitask://$imgName)", createdAt = 1000L, updatedAt = 1000L))
+        noteDao.insert(Note(title = "Note", body = "![missing](unitask-image:$imgName)", createdAt = 1000L, updatedAt = 1000L))
 
         DriveBackupManager.backUp(context, fakeStore)
 

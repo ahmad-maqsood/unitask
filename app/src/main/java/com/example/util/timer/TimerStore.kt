@@ -85,6 +85,22 @@ class TimerStore(context: Context) {
             // Never throw on preference save failures.
         }
     }
+    
+    fun keepScreenOnInFullscreen(): Boolean {
+        return try {
+            prefs.getBoolean(KEY_KEEP_SCREEN_ON_FULLSCREEN, true)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    fun setKeepScreenOnInFullscreen(value: Boolean) {
+        try {
+            prefs.edit().putBoolean(KEY_KEEP_SCREEN_ON_FULLSCREEN, value).apply()
+        } catch (_: Exception) {
+            // Never throw on preference save failures.
+        }
+    }
 
     companion object {
         private const val PREFS_NAME = "tools_timer_prefs"
@@ -93,6 +109,7 @@ class TimerStore(context: Context) {
         private const val KEY_ACCUMULATED_MILLIS = "accumulated_millis"
         private const val KEY_RUNNING_SINCE_MILLIS = "running_since_millis"
         private const val KEY_LAST_COUNTDOWN_MINUTES = "last_countdown_minutes"
+        private const val KEY_KEEP_SCREEN_ON_FULLSCREEN = "keep_screen_on_fullscreen"
         private const val DEFAULT_COUNTDOWN_MINUTES = 25
     }
 }

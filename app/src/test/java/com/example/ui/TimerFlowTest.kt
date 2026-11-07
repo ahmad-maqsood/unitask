@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -215,5 +216,18 @@ class TimerFlowTest {
         // Reset returns to Start and time to 00:00
         composeRule.onNodeWithTag("timer_start_button").assertIsDisplayed()
         composeRule.onNodeWithTag("timer_time_text").assertTextEquals("00:00")
+    }
+    
+    @Test
+    fun keepScreenOnToggleInFullscreenSwitchesAndIsRemembered() {
+        composeRule.onNodeWithTag("timer_fullscreen_button").performClick()
+
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: on")
+
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: off")
+        org.junit.Assert.assertFalse(controller.keepScreenOnInFullscreen())
     }
 }

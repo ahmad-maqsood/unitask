@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -87,6 +88,7 @@ fun TimerScreen(
 ) {
     val state by controller.state.collectAsStateWithLifecycle()
     var fullscreen by rememberSaveable { mutableStateOf(false) }
+    var keepAwakeInFullscreen by rememberSaveable { mutableStateOf(controller.keepScreenOnInFullscreen()) }
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
 
     // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
@@ -100,13 +102,16 @@ fun TimerScreen(
     val context = LocalContext.current
     val view = LocalView.current
 
-    // Keep the screen awake while the timer is actively counting.
+    // Keep the screen awake while the timer is counting, and in full screen when the user
+    // left the "keep screen on" toggle on. Cleared again when this screen is left.
     val isRunning = TimerLogic.isRunning(state)
-    DisposableEffect(isRunning) {
-        view.keepScreenOn = isRunning
+    val keepScreenOn = isRunning || (fullscreen && keepAwakeInFullscreen)
+    DisposableEffect(keepScreenOn) {
+        view.keepScreenOn = keepScreenOn
         onDispose {
             view.keepScreenOn = false
         }
+    }
     }
 
     // Manage system bars and sensor landscape orientation while in full-screen mode.
@@ -165,17 +170,37 @@ fun TimerScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .testTag("timer_screen")
         ) {
-            IconButton(
-                onClick = { fullscreen = false },
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
-                    .testTag("timer_exit_fullscreen_button")
             ) {
-                Icon(
-                    imageVector = Icons.Default.FullscreenExit,
-                    contentDescription = "Exit full screen"
-                )
+                IconButton(
+                    onClick = {
+                        keepAwakeInFullscreen = !keepAwakeInFullscreen
+                        controller.setKeepScreenOnInFullscreen(keepAwakeInFullscreen)
+                    },
+                    modifier = Modifier.testTag("timer_keep_awake_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lightbulb,
+                        contentDescription = if (keepAwakeInFullscreen) "Keep screen on: on" else "Keep screen on: off",
+                        tint = if (keepAwakeInFullscreen) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        }
+                    )
+                }
+                IconButton(
+                    onClick = { fullscreen = false },
+                    modifier = Modifier.testTag("timer_exit_fullscreen_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FullscreenExit,
+                        contentDescription = "Exit full screen"
+                    )
+                }
             }
 
             BoxWithConstraints(

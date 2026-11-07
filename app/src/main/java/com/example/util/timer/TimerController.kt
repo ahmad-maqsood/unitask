@@ -103,6 +103,10 @@ class TimerController(
         }
         return false
     }
+    
+    fun keepScreenOnInFullscreen(): Boolean = store.keepScreenOnInFullscreen()
+
+    fun setKeepScreenOnInFullscreen(value: Boolean) = store.setKeepScreenOnInFullscreen(value)
 
     fun restoreAfterReboot(): Boolean {
         val current = _state.value

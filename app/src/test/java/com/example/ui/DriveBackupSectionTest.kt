@@ -133,9 +133,9 @@ class DriveBackupSectionTest {
         setUiContent()
         composeRule.onNodeWithTag("drive_connect_button").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithTag("drive_connect_button").performClick()
-        composeRule.waitForIdle()
         waitForConnectedUi()
+
+
 
         composeRule.onNodeWithText("student@example.com").assertIsDisplayed()
         composeRule.onNodeWithText("student@example.com").assertIsDisplayed()
@@ -214,7 +214,7 @@ class DriveBackupSectionTest {
         // First do backup to populate Drive
         viewModel.connect()
         composeRule.waitForIdle()
-        waitForConnectedUi()
+
         viewModel.backUpNow(allowEmpty = false)
         composeRule.waitForIdle()
         composeRule.waitUntil(timeoutMillis = 10_000) { viewModel.uiState.value.latestBackupInfo != null }
@@ -225,7 +225,8 @@ class DriveBackupSectionTest {
 
         setUiContent()
         composeRule.waitForIdle()
-
+        waitForConnectedUi()
+        
         composeRule.onNodeWithTag("drive_restore_button").performClick()
         composeRule.waitForIdle()
 

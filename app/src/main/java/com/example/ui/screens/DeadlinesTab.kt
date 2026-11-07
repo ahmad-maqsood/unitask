@@ -323,7 +323,10 @@ fun DeadlinesTab(
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { onSearchChange("") }) {
+                            IconButton(
+                                onClick = { onSearchChange("") },
+                                modifier = Modifier.testTag("task_search_clear_button")
+                            ) {
                                 Icon(Icons.Default.Clear, contentDescription = "Clear search")
                             }
                         }

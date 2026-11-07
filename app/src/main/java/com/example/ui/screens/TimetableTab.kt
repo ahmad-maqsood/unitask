@@ -713,7 +713,9 @@ fun TimetableSlotCard(
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier
+                                .size(28.dp)
+                                .testTag("timetable_slot_menu_${slot.id}")
                         ) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Slot actions")
                         }
@@ -736,6 +738,7 @@ fun TimetableSlotCard(
                                     showMenu = false
                                     onDeleteClick()
                                 },
+                                modifier = Modifier.testTag("timetable_slot_delete_item_${slot.id}"),
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.DeleteOutline,

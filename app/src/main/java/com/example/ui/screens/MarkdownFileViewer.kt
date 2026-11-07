@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.data.repository.NoteRepository
 import com.example.util.NoteShare
 import kotlinx.coroutines.launch
 
@@ -112,7 +113,7 @@ fun MarkdownFileViewer(
                                                     onOpenSavedNote(newId)
                                                 }
                                             } else if (newId < 0L) {
-                                                snackbarHostState.showSnackbar("File is too long for a note (limit 100,000 characters)")
+                                                snackbarHostState.showSnackbar("File is too long for a note (limit ${String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)} characters)")
                                             } else {
                                                 snackbarHostState.showSnackbar("Could not read that file")
                                             }

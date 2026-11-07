@@ -664,7 +664,7 @@ private suspend fun importNoteFile(
             try {
                 val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult.text)
                 if (rawBody.length > NoteRepository.MAX_BODY) {
-                    snackbarHostState.showSnackbar("File is too long for a note (limit 100,000 characters)")
+                    snackbarHostState.showSnackbar("File is too long for a note (limit ${String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)} characters)")
                     return
                 }
                 val title = rawTitle.take(NoteRepository.MAX_TITLE)

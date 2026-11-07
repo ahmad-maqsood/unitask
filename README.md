@@ -318,7 +318,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. They are not synchronised to the cloud, although **Delete when done** is kept in local backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.
 - Note images stay on the phone (they are in local backups but not in cloud sync).
-- Notes are limited to 100,000 characters and 10 images.
+- Notes are limited to 200,000 characters and 10 images.
 
 ## Support
 

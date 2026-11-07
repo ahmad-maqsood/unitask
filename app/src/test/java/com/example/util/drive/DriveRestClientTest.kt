@@ -3,6 +3,7 @@ package com.example.util.drive
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -143,7 +144,7 @@ class DriveRestClientTest {
                 HttpMethod.Patch -> {
                     assertTrue(request.url.toString().contains("/upload/drive/v3/files/new_file_id"))
                     assertEquals("media", request.url.parameters["uploadType"])
-                    assertEquals("application/octet-stream", request.headers[HttpHeaders.ContentType])
+                    assertEquals(ContentType.Application.OctetStream, request.body.contentType)
                     val payload = request.body.toByteArray()
                     assertTrue(payload.contentEquals(byteArrayOf(1, 2, 3, 4)))
                     uploadedBytes = true

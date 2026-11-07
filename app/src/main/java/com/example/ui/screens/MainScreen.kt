@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
@@ -279,6 +280,7 @@ fun MainScreen(
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
+    var showTimer by rememberSaveable { mutableStateOf(false) }
 
     val tools = listOf(
         ToolEntry(
@@ -287,6 +289,13 @@ fun MainScreen(
             icon = Icons.Default.EditNote,
             testTag = "tools_tile_notes",
             onClick = { showNotes = true }
+        ),
+        ToolEntry(
+            label = "Timer",
+            description = "Stopwatch and countdown",
+            icon = Icons.Default.Timer,
+            testTag = "tools_tile_timer",
+            onClick = { showTimer = true }
         )
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
@@ -916,6 +925,12 @@ fun MainScreen(
     if (showNotes) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NotesHost(onClose = { showNotes = false })
+        }
+    }
+
+    if (showTimer) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            TimerScreen(onClose = { showTimer = false })
         }
     }
 

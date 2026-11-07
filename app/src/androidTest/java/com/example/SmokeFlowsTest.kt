@@ -313,4 +313,24 @@ class SmokeFlowsTest {
         waitForTag("my_tasks_quick_add_input")
         composeRule.onNodeWithTag("my_tasks_quick_add_input", useUnmergedTree = true).assertIsDisplayed()
     }
+
+    @Test
+    fun timer_flow() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        waitForTag("top_bar_tools_button")
+        tap("top_bar_tools_button")
+        waitForTag("tools_tile_timer")
+        tap("tools_tile_timer")
+        waitForTag("timer_screen")
+        tap("timer_start_button")
+        waitForTag("timer_pause_button")
+        tap("timer_pause_button")
+        waitForTag("timer_resume_button")
+        tap("timer_reset_button")
+        waitForTag("timer_start_button")
+        tap("timer_mode_countdown")
+        waitForTag("timer_preset_15")
+        tap("timer_preset_15")
+        waitForText("15:00")
+    }
 }

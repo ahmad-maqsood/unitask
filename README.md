@@ -123,6 +123,10 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
   - Notes are included in encrypted local backups, data export and cloud sync with conflict protection.
   - Deleting a course keeps notes safe and cleanly detaches the course link.
 
+### Study timer
+
+- **Stopwatch and countdown.** Track study sessions with a stopwatch or a 15, 25, 45 or 60-minute countdown, or set a custom duration. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the Tools button.
+
 ### Timetable
 
 - Weekly and bi-weekly (**Week A** and **Week B**) schedules. Once you set the current week, reminders, the daily summary and the next-class card follow it.

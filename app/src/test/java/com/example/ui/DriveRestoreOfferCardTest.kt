@@ -13,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -61,7 +63,7 @@ class FakeOfferTestDriveAuth(
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], qualifiers = "w411dp-h1600dp")
 class DriveRestoreOfferCardTest {
 
     @get:Rule
@@ -244,15 +246,35 @@ class DriveRestoreOfferCardTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
+
+        // The button is disabled while the earlier connect/backup is still finishing,
+        // and a click on a disabled button does nothing: wait until it is enabled.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasTestTag("drive_offer_restore_button") and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("drive_offer_restore_button").performClick()
         composeRule.waitForIdle()
 
-        // Confirm dialog shows the merge and settings sentences
+        // Wait until the app has looked at Drive and decided to ask for confirmation.
+        // On a timeout, report the app's real state so we can see what went wrong.
+        try {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                val s = viewModel.uiState.value
+                s.showRestoreConfirm || s.showNoBackupDialog
+            }
+        } catch (e: Throwable) {
+            throw AssertionError("Restore dialog never opened. State: ${viewModel.uiState.value}", e)
+        }
+        assertTrue("Wrong dialog. State: ${viewModel.uiState.value}", viewModel.uiState.value.showRestoreConfirm)
+
+        // The dialog's Cancel button only exists while the dialog is open
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Items already on this phone are kept.", substring = true)
-                .fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Cancel").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.waitForIdle()
+
+        // Confirm dialog shows the merge and settings sentences
         composeRule.onNodeWithText(
             "Items already on this phone are kept. Missing items are added. Items you deleted after this backup was made will come back. App settings from the backup replace the settings on this phone.",
             substring = true

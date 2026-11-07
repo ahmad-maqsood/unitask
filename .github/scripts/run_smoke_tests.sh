@@ -27,4 +27,30 @@ fi
 
 adb shell pm grant "$APP_ID" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 
-./gradlew connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=com.example.SmokeFlowsTest
+status=0
+./gradlew connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=com.example.SmokeFlowsTest || status=$?
+
+# Gradle only says "There were failing tests". Print each failing test and its
+# first stack-trace lines here so the cause is visible in the job log.
+if [[ "$status" -ne 0 ]]; then
+  echo "::group::Failing smoke tests"
+  python3 - <<'PY'
+import glob
+import xml.etree.ElementTree as ET
+
+files = glob.glob("app/build/outputs/androidTest-results/**/*.xml", recursive=True)
+if not files:
+    print("No test result XML files were found.")
+for path in files:
+    for case in ET.parse(path).getroot().iter("testcase"):
+        for kind in ("failure", "error"):
+            node = case.find(kind)
+            if node is not None:
+                text = (node.get("message") or "") + "\n" + (node.text or "")
+                print(f"FAILED {case.get('classname')}.{case.get('name')}")
+                print("\n".join(text.strip().splitlines()[:15]))
+                print("---")
+PY
+  echo "::endgroup::"
+fi
+exit "$status"

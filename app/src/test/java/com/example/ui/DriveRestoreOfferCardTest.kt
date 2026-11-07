@@ -15,6 +15,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.Note
+import com.example.data.local.TaskStatus
 import com.example.data.local.TaskItem
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.ui.screens.DeadlinesTab

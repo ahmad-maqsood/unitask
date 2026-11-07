@@ -139,6 +139,7 @@ class TimerControllerTest {
 
         // Case B: Running countdown whose time expired while device was off
         val storeB = TimerStore(context)
+        storeB.save(TimerState())
         var currentTimeB = 10_000L
         val hookB = RecordingAlarmHook()
         val controllerB1 = TimerController(store = storeB, clock = { currentTimeB }, alarm = hookB)

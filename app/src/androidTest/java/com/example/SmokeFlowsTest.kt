@@ -47,6 +47,8 @@ class SmokeFlowsTest {
             .putBoolean("background_setup_prompted", true)
             .apply()
 
+        com.example.util.drive.DrivePrefs(context).restoreOfferDismissed = true
+
         try {
             runBlocking(Dispatchers.IO) {
                 Announcements.refresh(context)

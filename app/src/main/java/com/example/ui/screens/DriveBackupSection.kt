@@ -51,8 +51,6 @@ fun DriveBackupSection(
     val scope = rememberCoroutineScope()
 
     var showEmptyWarningDialog by remember { mutableStateOf(false) }
-    var showNoBackupFoundDialog by remember { mutableStateOf(false) }
-    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showDisconnectDialog by remember { mutableStateOf(false) }
 
     val consentLauncher = rememberLauncherForActivityResult(
@@ -211,13 +209,7 @@ fun DriveBackupSection(
                     }
 
                     OutlinedButton(
-                        onClick = {
-                            if (state.latestBackupInfo == null && state.offlineBackupText == null) {
-                                showNoBackupFoundDialog = true
-                            } else {
-                                showRestoreConfirmDialog = true
-                            }
-                        },
+                        onClick = { viewModel.requestRestore() },
                         enabled = isNotBusy,
                         modifier = Modifier
                             .weight(1f)
@@ -317,56 +309,7 @@ fun DriveBackupSection(
         )
     }
 
-    if (showNoBackupFoundDialog) {
-        AlertDialog(
-            onDismissRequest = { showNoBackupFoundDialog = false },
-            title = { Text("Restore from Google Drive") },
-            text = { Text("No backup found in this Google account.") },
-            confirmButton = {
-                TextButton(onClick = { showNoBackupFoundDialog = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    if (showRestoreConfirmDialog) {
-        val details = when {
-            state.latestBackupInfo != null -> {
-                val info = state.latestBackupInfo!!
-                "${DriveBackupViewModel.formatBackupTime(info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(info)}"
-            }
-            !state.offlineBackupText.isNullOrBlank() -> state.offlineBackupText!!
-            else -> ""
-        }
-        AlertDialog(
-            onDismissRequest = { showRestoreConfirmDialog = false },
-            title = { Text("Restore from Google Drive") },
-            text = {
-                Text(
-                    (if (details.isNotBlank()) "$details\n\n" else "") +
-                        "Items already on this phone are kept. Missing items are added. " +
-                        "Items you deleted after this backup was made will come back. " +
-                        "App settings from the backup replace the settings on this phone."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRestoreConfirmDialog = false
-                        viewModel.restoreFromDrive()
-                    }
-                ) {
-                    Text("Restore")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRestoreConfirmDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+    DriveRestoreDialogs(viewModel = viewModel)
 
     if (showDisconnectDialog) {
         AlertDialog(

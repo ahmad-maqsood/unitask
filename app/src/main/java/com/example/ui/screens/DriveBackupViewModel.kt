@@ -54,7 +54,9 @@ data class DriveUiState(
     val autoEnabled: Boolean = false,
     val wifiOnly: Boolean = true,
     val includeAttachments: Boolean = true,
-    val consentRequest: PendingIntent? = null
+    val consentRequest: PendingIntent? = null,
+    val showRestoreConfirm: Boolean = false,
+    val showNoBackupDialog: Boolean = false
 )
 
 class DriveBackupViewModel(
@@ -72,6 +74,7 @@ class DriveBackupViewModel(
     )
 
     private var lastToken: String? = null
+    private var pendingRestoreAfterConsent: Boolean = false
 
     private val tokenProvider: suspend (forceRefresh: Boolean) -> String = { forceRefresh ->
         if (forceRefresh && lastToken != null) {
@@ -182,12 +185,18 @@ class DriveBackupViewModel(
                             isError = false
                         )
                     }
-                    refreshInfoInternal()
+                    if (pendingRestoreAfterConsent) {
+                        pendingRestoreAfterConsent = false
+                        checkLatestAndPromptRestore()
+                    } else {
+                        refreshInfoInternal()
+                    }
                 }
                 is DriveAuthResult.NeedsConsent -> {
                     _uiState.update { it.copy(busy = null, consentRequest = res.pendingIntent) }
                 }
                 is DriveAuthResult.Failed -> {
+                    pendingRestoreAfterConsent = false
                     _uiState.update {
                         it.copy(
                             connection = DriveConnectionState.NotConnected,
@@ -346,6 +355,113 @@ class DriveBackupViewModel(
         }
     }
 
+    /**
+     * Initiates the full restore flow: authorizes silently or requests consent if not connected,
+     * inspects Drive for existing backup slots, and prompts confirmation or reports absence.
+     */
+    fun requestRestore() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(busy = DriveBusyState("Checking for backup"), lastResultMessage = null, isError = false) }
+            val isConn = prefs.isConnected
+            if (!isConn) {
+                when (val res = auth.authorize()) {
+                    is DriveAuthResult.Granted -> {
+                        lastToken = res.accessToken
+                        val email = res.accountEmail ?: "Connected"
+                        prefs.connectedEmail = email
+                        _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
+                        checkLatestAndPromptRestore()
+                    }
+                    is DriveAuthResult.NeedsConsent -> {
+                        pendingRestoreAfterConsent = true
+                        _uiState.update { it.copy(busy = null, consentRequest = res.pendingIntent) }
+                    }
+                    is DriveAuthResult.Failed -> {
+                        _uiState.update {
+                            it.copy(
+                                connection = DriveConnectionState.NotConnected,
+                                busy = null,
+                                lastResultMessage = res.message,
+                                isError = true
+                            )
+                        }
+                    }
+                }
+            } else {
+                checkLatestAndPromptRestore()
+            }
+        }
+    }
+
+    private suspend fun checkLatestAndPromptRestore() {
+        _uiState.update { it.copy(busy = DriveBusyState("Checking for backup")) }
+        try {
+            val store = storeFactory(tokenProvider)
+            val info = DriveBackupManager.latestInfo(store)
+            if (info != null) {
+                val countsText = buildCountsText(info)
+                val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                _uiState.update {
+                    it.copy(
+                        latestBackupInfo = info,
+                        offlineBackupText = offlineText,
+                        busy = null,
+                        showRestoreConfirm = true,
+                        showNoBackupDialog = false
+                    )
+                }
+            } else if (!uiState.value.offlineBackupText.isNullOrBlank()) {
+                _uiState.update {
+                    it.copy(
+                        busy = null,
+                        showRestoreConfirm = true,
+                        showNoBackupDialog = false
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        busy = null,
+                        showRestoreConfirm = false,
+                        showNoBackupDialog = true,
+                        lastResultMessage = "No backup found in this Google account.",
+                        isError = false
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            val isAuth = e is DriveException && e.kind == DriveException.Kind.AUTH
+            val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
+            val conn = if (isAuth) DriveConnectionState.NeedsReconnect else _uiState.value.connection
+            val msg = when {
+                isQuota -> "Your Google Drive is full."
+                isAuth -> "Google Drive access was lost."
+                else -> e.message ?: "Failed to check backup"
+            }
+            _uiState.update {
+                it.copy(
+                    connection = conn,
+                    busy = null,
+                    lastResultMessage = msg,
+                    isError = true
+                )
+            }
+        }
+    }
+
+    fun dismissRestoreConfirm() {
+        _uiState.update { it.copy(showRestoreConfirm = false) }
+    }
+
+    fun dismissNoBackupDialog() {
+        _uiState.update { it.copy(showNoBackupDialog = false) }
+    }
+
+    fun confirmRestore() {
+        dismissRestoreConfirm()
+        restoreFromDrive()
+    }
+
     fun setAuto(enabled: Boolean) {
         prefs.autoEnabled = enabled
         _uiState.update { it.copy(autoEnabled = enabled) }
@@ -392,7 +508,9 @@ class DriveBackupViewModel(
                     offlineBackupText = null,
                     lastResultMessage = null,
                     isError = false,
-                    autoEnabled = false
+                    autoEnabled = false,
+                    showRestoreConfirm = false,
+                    showNoBackupDialog = false
                 )
             }
         }

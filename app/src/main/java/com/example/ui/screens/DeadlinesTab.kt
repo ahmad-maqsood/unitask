@@ -99,6 +99,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.local.AppDatabase
+import com.example.data.local.isMyTasksCourse
+import com.example.util.drive.DrivePrefs
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeadlinesTab(
@@ -129,12 +135,32 @@ fun DeadlinesTab(
     isLoading: Boolean = false,
     snackbarHostState: SnackbarHostState? = null,
     modifier: Modifier = Modifier,
-    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
+    onChecklistToggle: ((TaskItem, Int) -> Unit)? = null,
+    isAppEmpty: Boolean? = null,
+    driveBackupViewModel: DriveBackupViewModel = viewModel()
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var isCalendarView by rememberSaveable { mutableStateOf(false) }
     var isBatchMode by rememberSaveable { mutableStateOf(false) }
     var showBatchDeleteConfirmDialog by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val db = remember { AppDatabase.getDatabase(context) }
+    val activeNotes by db.noteDao().observeNotes().collectAsState(initial = emptyList())
+    val activeTasks by db.taskDao().getAllTasksWithCourse().collectAsState(initial = emptyList())
+    val activeCourses by db.courseDao().getAllCourses().collectAsState(initial = emptyList())
+
+    var restoreOfferDismissed by rememberSaveable {
+        mutableStateOf(DrivePrefs(context).restoreOfferDismissed)
+    }
+
+    val computedAppEmpty = isAppEmpty ?: (
+        activeCourses.none { !it.isDeleted && !it.isMyTasksCourse() } &&
+        activeTasks.none { !it.task.isDeleted } &&
+        activeNotes.none { !it.note.isDeleted }
+    )
+
+    val showRestoreOffer = computedAppEmpty && !restoreOfferDismissed
     val selectedTaskIds = rememberSaveable(
         saver = listSaver(
             save = { it.toList() },
@@ -644,6 +670,15 @@ fun DeadlinesTab(
         } else if (tasks.isEmpty() && isLoading) {
             // Still reading the database: show nothing instead of the empty message.
         } else if (tasks.isEmpty()) {
+            if (showRestoreOffer) {
+                item(key = "drive_restore_offer_card") {
+                    DriveRestoreOfferCard(
+                        onDismiss = { restoreOfferDismissed = true },
+                        viewModel = driveBackupViewModel
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
             item(key = "empty_tasks_card") {
                 Card(
                     modifier = Modifier

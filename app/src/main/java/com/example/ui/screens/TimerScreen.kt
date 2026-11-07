@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
+import com.example.reminder.CountdownNotifier
 import kotlinx.coroutines.delay
 
 /**
@@ -133,7 +134,9 @@ fun TimerScreen(
 
     // When returning to the app, check if a running countdown completed while paused or in the background.
     LifecycleResumeEffect(Unit) {
-        controller.markFinishedIfDue()
+        if (controller.markFinishedIfDue()) {
+            CountdownNotifier.notifyFinished(context, controller.state.value.countdownTotalMillis)
+        }
         onPauseOrDispose { }
     }
 
@@ -512,6 +515,7 @@ private fun TimerControlButtons(
  */
 @Composable
 private fun rememberNow(running: Boolean, controller: TimerController): State<Long> {
+    val context = LocalContext.current
     val nowState = remember { mutableStateOf(controller.now()) }
     LaunchedEffect(running) {
         if (running) {
@@ -520,7 +524,9 @@ private fun rememberNow(running: Boolean, controller: TimerController): State<Lo
                 nowState.value = current
                 val state = controller.state.value
                 if (state.mode == TimerMode.COUNTDOWN && TimerLogic.remainingMillis(state, current) == 0L) {
-                    controller.markFinishedIfDue()
+                    if (controller.markFinishedIfDue()) {
+                        CountdownNotifier.notifyFinished(context, controller.state.value.countdownTotalMillis)
+                    }
                 }
                 val millisIntoSecond = (current % 1000L).toInt()
                 val delayMillis = (1000 - millisIntoSecond + 20).toLong()

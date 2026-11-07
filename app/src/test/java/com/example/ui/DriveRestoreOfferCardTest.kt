@@ -95,9 +95,8 @@ class DriveRestoreOfferCardTest {
 
     @After
     fun tearDown() {
-        // DeadlinesTab collects Room flows. Dispose its composition before closing
-        // the shared database so no active observer can access a closed connection.
-        composeRule.setContent {}
+        // Finish the activity to destroy the Compose composition and cancel Room Flow collectors.
+        composeRule.activity.finish()
         composeRule.waitForIdle()
 
         db.close()

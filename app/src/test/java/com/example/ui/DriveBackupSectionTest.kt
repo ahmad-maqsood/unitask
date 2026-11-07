@@ -27,6 +27,7 @@ import com.example.util.drive.FakeDriveStore
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -54,7 +55,7 @@ class FakeTestDriveAuth(
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], qualifiers = "w411dp-h1600dp")
 class DriveBackupSectionTest {
 
     @get:Rule
@@ -189,7 +190,7 @@ class DriveBackupSectionTest {
         composeRule.waitForIdle()
 
         // Clear local database to simulate fresh app
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
         assertEquals(0, courseDao.getAllCoursesList().size)
 
         setUiContent()

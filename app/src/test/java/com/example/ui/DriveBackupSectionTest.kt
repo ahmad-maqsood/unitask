@@ -113,6 +113,13 @@ class DriveBackupSectionTest {
             composeRule.onAllNodesWithTag("drive_result_text").fetchSemanticsNodes().isNotEmpty()
         }
     }
+    
+    private fun waitForConnectedUi() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("drive_backup_now_button").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.waitForIdle()
+    }
 
     @Test
     fun notConnected_showsConnectButton() {
@@ -126,7 +133,11 @@ class DriveBackupSectionTest {
         setUiContent()
         composeRule.onNodeWithTag("drive_connect_button").performClick()
         composeRule.waitForIdle()
+        composeRule.onNodeWithTag("drive_connect_button").performClick()
+        composeRule.waitForIdle()
+        waitForConnectedUi()
 
+        composeRule.onNodeWithText("student@example.com").assertIsDisplayed()
         composeRule.onNodeWithText("student@example.com").assertIsDisplayed()
         composeRule.onNodeWithTag("drive_backup_now_button").assertIsDisplayed()
         composeRule.onNodeWithTag("drive_restore_button").assertIsDisplayed()
@@ -141,6 +152,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -168,6 +180,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()
@@ -182,6 +195,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_restore_button").performClick()
         composeRule.waitForIdle()
@@ -200,6 +214,7 @@ class DriveBackupSectionTest {
         // First do backup to populate Drive
         viewModel.connect()
         composeRule.waitForIdle()
+        waitForConnectedUi()
         viewModel.backUpNow(allowEmpty = false)
         composeRule.waitForIdle()
         composeRule.waitUntil(timeoutMillis = 10_000) { viewModel.uiState.value.latestBackupInfo != null }
@@ -237,6 +252,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         // Defaults
         composeRule.onNodeWithTag("drive_auto_switch").assertIsOff()
@@ -267,6 +283,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_disconnect_button").performClick()
         composeRule.waitForIdle()
@@ -290,6 +307,7 @@ class DriveBackupSectionTest {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         fakeStore.defaultException = DriveException(DriveException.Kind.AUTH, "Auth token expired")
         fakeStore.failOnMethod = "create"
@@ -317,6 +335,7 @@ class DriveBackupSectionTest {
 
         setUiContent()
         composeRule.waitForIdle()
+        waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
         composeRule.waitForIdle()

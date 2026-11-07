@@ -12,6 +12,7 @@ import com.example.util.BackupCounts
 import com.example.util.BackupResult
 import com.example.util.drive.DriveAuthApi
 import com.example.util.drive.DriveAuthResult
+import com.example.util.drive.DriveAutoBackup
 import com.example.util.drive.DriveBackupInfo
 import com.example.util.drive.DriveBackupManager
 import com.example.util.drive.DriveBackupResult
@@ -348,34 +349,42 @@ class DriveBackupViewModel(
     fun setAuto(enabled: Boolean) {
         prefs.autoEnabled = enabled
         _uiState.update { it.copy(autoEnabled = enabled) }
-        if (enabled && prefs.lastSuccessAt == 0L && _uiState.value.latestBackupInfo == null) {
-            viewModelScope.launch(Dispatchers.IO) {
-                if (!DriveBackupManager.isDatabaseEmpty(getApplication())) {
-                    backUpNow(allowEmpty = false)
+        if (enabled) {
+            DriveAutoBackup.onAppOpen(getApplication())
+            if (prefs.lastSuccessAt == 0L && _uiState.value.latestBackupInfo == null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    if (!DriveBackupManager.isDatabaseEmpty(getApplication())) {
+                        backUpNow(allowEmpty = false)
+                    }
                 }
             }
+        } else {
+            DriveAutoBackup.cancel(getApplication())
         }
     }
 
     fun setWifiOnly(enabled: Boolean) {
         prefs.wifiOnly = enabled
         _uiState.update { it.copy(wifiOnly = enabled) }
+        DriveAutoBackup.onAppOpen(getApplication())
     }
 
     fun setIncludeAttachments(enabled: Boolean) {
         prefs.includeAttachments = enabled
         _uiState.update { it.copy(includeAttachments = enabled) }
+        DriveAutoBackup.onAppOpen(getApplication())
     }
 
     fun disconnect() {
         prefs.forgetAccount()
+        DriveAutoBackup.cancel(getApplication())
         viewModelScope.launch(Dispatchers.IO) {
             val token = lastToken
             if (!token.isNullOrBlank()) {
                 auth.clearToken(token)
             }
             lastToken = null
-            // TODO: Step 6 will cancel unique daily backup work here
+            DriveAutoBackup.cancel(getApplication())
             _uiState.update {
                 it.copy(
                     connection = DriveConnectionState.NotConnected,

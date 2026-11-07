@@ -487,7 +487,18 @@ object DriveBackupManager {
         )
     }
 
-    private fun sha256Hex(text: String): String {
+    internal suspend fun computeLocalDataHash(context: Context): String {
+        val prefs = DrivePrefs(context)
+        val built = LocalBackupManager.buildData(
+            context = context,
+            inlineImages = false,
+            includeAttachments = prefs.includeAttachments
+        )
+        built.data.put("settings", SettingsSnapshot.capture(context))
+        return sha256Hex(built.data.toString())
+    }
+
+    internal fun sha256Hex(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")
         val digest = md.digest(text.toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it) }

@@ -95,6 +95,11 @@ class DriveRestoreOfferCardTest {
 
     @After
     fun tearDown() {
+        // DeadlinesTab collects Room flows. Dispose its composition before closing
+        // the shared database so no active observer can access a closed connection.
+        composeRule.setContent {}
+        composeRule.waitForIdle()
+
         db.close()
         AppDatabase::class.java.getDeclaredField("INSTANCE")
             .apply { isAccessible = true }

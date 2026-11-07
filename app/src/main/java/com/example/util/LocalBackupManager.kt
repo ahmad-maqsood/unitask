@@ -434,6 +434,7 @@ object LocalBackupManager {
         var addedTasks = 0
         var addedMyTasks = 0
         var addedNotes = 0
+        val taskIdByIndex = HashMap<Int, Long>()
 
         // One transaction: either everything is restored or nothing is changed.
         db.withTransaction {
@@ -546,7 +547,7 @@ object LocalBackupManager {
             // ---- assignments
             val knownByCourse = HashMap<Long, List<TaskItem>>()
             val taskArray = data.optJSONArray("tasks") ?: JSONArray()
-            val taskIdByIndex = HashMap<Int, Long>()
+
             for (i in 0 until taskArray.length()) {
                 val o = taskArray.optJSONObject(i) ?: continue
                 val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))

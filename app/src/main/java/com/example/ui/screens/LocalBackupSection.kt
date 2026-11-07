@@ -69,6 +69,9 @@ private fun describe(counts: BackupCounts): String {
         val word = if (counts.skippedAttachments == 1) "attachment could not be downloaded" else "attachments could not be downloaded"
         result += ", ${counts.skippedAttachments} $word"
     }
+    if (counts.settingsApplied > 0) {
+        result += ", app settings restored"
+    }
     return result
 }
 

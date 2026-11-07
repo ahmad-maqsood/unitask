@@ -127,13 +127,17 @@ object DriveBackupManager {
                 return DriveBackupResult.EmptyBlocked
             }
 
-            // (b) Build data without inline images and compute hash
+            // (b) Build data without inline images, attach app settings, and compute hash
             val prefs = DrivePrefs(context)
             val built = LocalBackupManager.buildData(
                 context = context,
                 inlineImages = false,
                 includeAttachments = prefs.includeAttachments
             )
+
+            // Settings are always included in Drive backups
+            built.data.put("settings", SettingsSnapshot.capture(context))
+
             val dataString = built.data.toString()
             val dataHash = sha256Hex(dataString)
 

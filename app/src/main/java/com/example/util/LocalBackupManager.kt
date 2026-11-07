@@ -22,6 +22,7 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.sync.SupabaseSyncManager
 import com.example.sync.SyncScheduler
+import com.example.util.drive.SettingsSnapshot
 import com.example.util.markdown.referencedImageNames
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,7 +48,8 @@ data class BackupCounts(
     val images: Int = 0,
     val skippedImages: Int = 0,
     val attachments: Int = 0,
-    val skippedAttachments: Int = 0
+    val skippedAttachments: Int = 0,
+    val settingsApplied: Int = 0
 )
 
 /**
@@ -846,6 +848,13 @@ object LocalBackupManager {
             }
         }
 
+        // ---- app settings
+        val settingsApplied = if (data.has("settings")) {
+            SettingsSnapshot.apply(context, data.optJSONObject("settings"))
+        } else {
+            0
+        }
+
         // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
@@ -863,7 +872,8 @@ object LocalBackupManager {
             images = addedImages,
             skippedImages = skippedImages,
             attachments = addedAttachments,
-            skippedAttachments = skippedAttachments
+            skippedAttachments = skippedAttachments,
+            settingsApplied = settingsApplied
         )
     }
 

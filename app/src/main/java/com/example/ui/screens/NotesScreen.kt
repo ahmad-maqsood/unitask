@@ -132,8 +132,7 @@ fun NotesScreen(
                 null
             }
             val targetNote = notes.firstOrNull { it.note.id == noteId }?.note
-            snackbarJob?.cancel()
-            snackbarJob = coroutineScope.launch {
+            coroutineScope.launch {
                 if (targetNote != null && format != null) {
                     val currentTitle = if (targetNote.title.isNotBlank()) targetNote.title else noteDisplayTitle(targetNote)
                     val currentBody = targetNote.body
@@ -141,6 +140,7 @@ fun NotesScreen(
                     if (isPdf) isWorking = true
                     try {
                         val ok = NoteShare.saveToUri(
+                            if (isPdf) isWorking = false
                             context = context,
                             uri = uri,
                             title = currentTitle,

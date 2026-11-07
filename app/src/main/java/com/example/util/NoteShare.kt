@@ -47,50 +47,6 @@ object NoteShare {
     fun fileNameFor(title: String, format: NoteExportFormat): String =
         "${safeFileName(title)}.${format.extension}"
 
-    fun shareAsFile(context: Context, title: String, body: String, format: NoteExportFormat) {
-        val exportsDir = File(context.cacheDir, "exports")
-        if (!exportsDir.exists()) {
-            exportsDir.mkdirs()
-        } else {
-            exportsDir.listFiles()?.forEach { it.delete() }
-        }
-
-        val fileName = fileNameFor(title, format)
-        val file = File(exportsDir, fileName)
-        if (format == NoteExportFormat.PDF) {
-            file.outputStream().use { os ->
-                NotePdf.write(context, title, body, os)
-                os.flush()
-            }
-        } else {
-            val content = exportText(title, body, format)
-            file.writeText(content, Charsets.UTF_8)
-        }
-
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = format.mimeType
-            clipData = ClipData.newRawUri("", uri)
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, title)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        val chooser = Intent.createChooser(sendIntent, "Share note")
-        if (context !is Activity) {
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        try {
-            context.startActivity(chooser)
-        } catch (_: Exception) {
-        }
-    }
-
     suspend fun shareAsFileAsync(
         context: Context,
         title: String,

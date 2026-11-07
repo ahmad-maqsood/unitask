@@ -1,9 +1,29 @@
 package com.example.util
 
+import android.content.Context
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.io.File
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
 class NoteShareTest {
+
+    private lateinit var context: Context
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext<Context>()
+    }
 
     // -------------------------------------------------------------------------
     // safeFileName tests
@@ -158,5 +178,58 @@ class NoteShareTest {
         assertEquals("note.txt", NoteShare.fileNameFor("   ", NoteExportFormat.TXT))
         assertEquals("note.md", NoteShare.fileNameFor("", NoteExportFormat.MD))
         assertEquals("note.md", NoteShare.fileNameFor("   ", NoteExportFormat.MD))
+    }
+
+    // -------------------------------------------------------------------------
+    // saveToUri tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun saveToUriWritesExactTextForTxt() = runBlocking {
+        val tempFile = File.createTempFile("save_txt", ".txt")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "My Note", "Body content", NoteExportFormat.TXT)
+
+        assertTrue(result)
+        assertEquals("My Note\n\nBody content", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriWritesExactTextForMd() = runBlocking {
+        val tempFile = File.createTempFile("save_md", ".md")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "My Note", "Body content", NoteExportFormat.MD)
+
+        assertTrue(result)
+        assertEquals("# My Note\n\nBody content", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriOverwritesLongerOldFileCompletely() = runBlocking {
+        val tempFile = File.createTempFile("save_truncate", ".txt")
+        tempFile.deleteOnExit()
+        tempFile.writeText("A very long previous content that should be completely truncated and replaced.")
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "Short", "New", NoteExportFormat.TXT)
+
+        assertTrue(result)
+        assertEquals("Short\n\nNew", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriReturnsFalseForUriThatCannotBeOpened() = runBlocking {
+        val invalidUri = Uri.parse("content://nonexistent.authority/invalid/path")
+
+        val result = NoteShare.saveToUri(context, invalidUri, "Title", "Body", NoteExportFormat.TXT)
+
+        assertFalse(result)
     }
 }

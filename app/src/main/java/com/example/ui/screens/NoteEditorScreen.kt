@@ -43,7 +43,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
+import com.example.util.NoteExportFormat
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.asImageBitmap
@@ -551,6 +553,35 @@ fun NoteEditorScreen(
         }
     }
 
+    val saveDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri: Uri? ->
+        val formatName = pendingSaveFormat
+        pendingSaveFormat = null
+        if (uri != null && formatName != null) {
+            val format = try {
+                NoteExportFormat.valueOf(formatName)
+            } catch (_: Exception) {
+                null
+            }
+            if (format != null) {
+                coroutineScope.launch {
+                    val ok = NoteShare.saveToUri(
+                        context = context,
+                        uri = uri,
+                        title = viewModel.title,
+                        body = viewModel.bodyValue.text,
+                        format = format
+                    )
+                    val message = if (ok) "Saved to your device" else "Could not save the file"
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -579,6 +610,8 @@ fun NoteEditorScreen(
     var showCoursePicker by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showShareDialog by rememberSaveable { mutableStateOf(false) }
+    var showSaveDialog by rememberSaveable { mutableStateOf(false) }
+    var pendingSaveFormat by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
     val courseColor = remember(selectedCourse?.colorHex) {
@@ -710,6 +743,21 @@ fun NoteEditorScreen(
                             onClick = {
                                 showOverflowMenu = false
                                 showShareDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Save to device") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Save,
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            modifier = Modifier.testTag("note_menu_save"),
+                            onClick = {
+                                showOverflowMenu = false
+                                showSaveDialog = true
                             }
                         )
                         DropdownMenuItem(
@@ -998,6 +1046,19 @@ fun NoteEditorScreen(
                 )
             },
             onDismiss = { showShareDialog = false }
+        )
+    }
+
+    if (showSaveDialog) {
+        NoteExportDialog(
+            title = "Save as",
+            onPick = { format ->
+                showSaveDialog = false
+                pendingSaveFormat = format.name
+                val suggestedName = NoteShare.fileNameFor(viewModel.title, format)
+                saveDocumentLauncher.launch(suggestedName)
+            },
+            onDismiss = { showSaveDialog = false }
         )
     }
 }

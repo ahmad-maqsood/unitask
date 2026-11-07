@@ -31,11 +31,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
+import com.example.util.NoteExportFormat
 import com.example.util.NoteShare
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -109,6 +112,42 @@ fun NotesScreen(
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     var showListOverflowMenu by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var saveRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var saveRequestFormat by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val saveDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri: Uri? ->
+        val noteId = saveRequestNoteId
+        val formatName = saveRequestFormat
+        saveRequestNoteId = null
+        saveRequestFormat = null
+        if (uri != null && noteId != null && formatName != null) {
+            val format = try {
+                NoteExportFormat.valueOf(formatName)
+            } catch (_: Exception) {
+                null
+            }
+            val targetNote = notes.firstOrNull { it.note.id == noteId }?.note
+            snackbarJob?.cancel()
+            snackbarJob = coroutineScope.launch {
+                if (targetNote != null && format != null) {
+                    val titleToUse = if (targetNote.title.isNotBlank()) targetNote.title else noteDisplayTitle(targetNote)
+                    val ok = NoteShare.saveToUri(
+                        context = context,
+                        uri = uri,
+                        title = titleToUse,
+                        body = targetNote.body,
+                        format = format
+                    )
+                    val message = if (ok) "Saved to your device" else "Could not save the file"
+                    snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+                } else {
+                    snackbarHostState.showSnackbar("Could not save the file", duration = SnackbarDuration.Short)
+                }
+            }
+        }
+    }
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -451,6 +490,7 @@ fun NotesScreen(
                             item = item,
                             onClick = { onOpenNote(item.note.id) },
                             onTogglePin = { viewModel.setPinned(item.note.id, !item.note.isPinned) },
+                            onSave = { saveRequestNoteId = item.note.id },
                             onDelete = {
                                 val noteId = item.note.id
                                 viewModel.moveToTrash(noteId)
@@ -472,6 +512,25 @@ fun NotesScreen(
             }
         }
     }
+
+    if (saveRequestNoteId != null && saveRequestFormat == null) {
+        val targetId = saveRequestNoteId
+        val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
+        NoteExportDialog(
+            title = "Save as",
+            onPick = { format ->
+                saveRequestFormat = format.name
+                val realTitle = targetNote?.title.orEmpty()
+                val titleForName = if (realTitle.isNotBlank()) realTitle else (targetNote?.let { noteDisplayTitle(it) } ?: "Note")
+                val suggestedName = NoteShare.fileNameFor(titleForName, format)
+                saveDocumentLauncher.launch(suggestedName)
+            },
+            onDismiss = {
+                saveRequestNoteId = null
+                saveRequestFormat = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -479,6 +538,7 @@ private fun NoteCard(
     item: NoteListItem,
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
+    onSave: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -571,6 +631,20 @@ private fun NoteCard(
                             onClick = {
                                 showMenu = false
                                 onTogglePin()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Save to device") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Save,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.testTag("note_card_menu_save"),
+                            onClick = {
+                                showMenu = false
+                                onSave()
                             }
                         )
                         DropdownMenuItem(

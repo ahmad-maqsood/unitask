@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 enum class NoteExportFormat(
@@ -75,6 +78,30 @@ object NoteShare {
         try {
             context.startActivity(chooser)
         } catch (_: Exception) {
+        }
+    }
+
+    suspend fun saveToUri(
+        context: Context,
+        uri: Uri,
+        title: String,
+        body: String,
+        format: NoteExportFormat
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            when (format) {
+                NoteExportFormat.TXT, NoteExportFormat.MD -> {
+                    val text = exportText(title, body, format)
+                    val outputStream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
+                    outputStream.use { os ->
+                        os.write(text.toByteArray(Charsets.UTF_8))
+                        os.flush()
+                    }
+                    true
+                }
+            }
+        } catch (_: Exception) {
+            false
         }
     }
 

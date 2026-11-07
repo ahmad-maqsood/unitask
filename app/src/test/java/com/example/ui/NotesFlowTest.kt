@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -339,5 +340,32 @@ class NotesFlowTest {
         openNote(idB)
         waitForPreviewTitle("Beta")
         composeRule.onNodeWithText("Alpha").assertDoesNotExist()
+    }
+
+    @Test
+    fun `save to device in note card menu shows format dialog and cancel closes it`() {
+        val id = insertNote("Card Save Note", "Some content")
+        waitForCard(id)
+
+        // Open card actions menu
+        composeRule.onNodeWithContentDescription("Note actions").performClick()
+        composeRule.waitForIdle()
+
+        // Card menu shows "Save to device"
+        composeRule.onNodeWithTag("note_card_menu_save").assertIsDisplayed()
+        composeRule.onNodeWithTag("note_card_menu_save").performClick()
+        composeRule.waitForIdle()
+
+        // Export dialog is displayed with format options
+        composeRule.onNodeWithTag("note_export_dialog").assertIsDisplayed()
+        for (format in NoteExportFormat.entries) {
+            composeRule.onNodeWithTag("note_export_format_" + format.extension).assertIsDisplayed()
+        }
+
+        // Cancel closes the dialog
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("note_export_dialog").assertDoesNotExist()
     }
 }

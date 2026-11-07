@@ -2,6 +2,7 @@ package com.example.util.timer
 
 import android.content.Context
 import com.example.reminder.CountdownAlarm
+import com.example.reminder.TimerOngoingNotifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,8 @@ object NoCountdownAlarm : CountdownAlarmHook {
 class TimerController(
     private val store: TimerStore,
     private val clock: () -> Long = { System.currentTimeMillis() },
-    private val alarm: CountdownAlarmHook = NoCountdownAlarm
+    private val alarm: CountdownAlarmHook = NoCountdownAlarm,
+    private val ongoing: TimerOngoingHook = NoTimerOngoing
 ) {
 
     private val _state = MutableStateFlow(store.load())
@@ -46,6 +48,7 @@ class TimerController(
                     alarm.schedule(end)
                 }
             }
+            ongoing.update(updated, currentTime)
         }
     }
 
@@ -57,6 +60,7 @@ class TimerController(
             store.save(updated)
             _state.value = updated
             alarm.cancel()
+            ongoing.update(updated, currentTime)
         }
     }
 
@@ -67,6 +71,7 @@ class TimerController(
             store.save(updated)
             _state.value = updated
             alarm.cancel()
+            ongoing.cancel()
         }
     }
 
@@ -98,6 +103,7 @@ class TimerController(
                 store.save(updated)
                 _state.value = updated
                 alarm.cancel()
+                ongoing.cancel()
                 return true
             }
         }
@@ -110,6 +116,8 @@ class TimerController(
 
     fun restoreAfterReboot(): Boolean {
         val current = _state.value
+        // A reboot clears notifications, so show the running or paused timer again.
+        ongoing.update(current, now())
         if (current.mode == TimerMode.COUNTDOWN && TimerLogic.isRunning(current)) {
             val currentTime = now()
             val remaining = TimerLogic.remainingMillis(current, currentTime)
@@ -135,7 +143,8 @@ class TimerController(
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: TimerController(
                     store = TimerStore(appContext),
-                    alarm = CountdownAlarm(appContext)
+                    alarm = CountdownAlarm(appContext),
+                    ongoing = TimerOngoingNotifier(appContext)
                 ).also { INSTANCE = it }
             }
         }

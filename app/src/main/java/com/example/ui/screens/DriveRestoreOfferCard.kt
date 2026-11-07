@@ -101,6 +101,13 @@ fun DriveRestoreOfferCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            Text(
+                text = "UniTask can only open its own hidden backup folder. " +
+                    "It cannot see or change any of your other Google Drive files.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
             if (state.busy != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

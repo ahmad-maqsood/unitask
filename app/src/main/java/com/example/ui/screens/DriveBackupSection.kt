@@ -93,6 +93,12 @@ fun DriveBackupSection(
 
         when (val conn = state.connection) {
             is DriveConnectionState.NotConnected -> {
+                Text(
+                    text = "Google will ask you to allow UniTask to use its own data in your Drive. " +
+                        "That is only the hidden backup folder, nothing else.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Button(
                     onClick = { viewModel.connect() },
                     enabled = isNotBusy,

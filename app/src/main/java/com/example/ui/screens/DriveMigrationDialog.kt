@@ -112,6 +112,13 @@ fun DriveMigrationDialog(
                             "so please make a Drive backup now. Your data stays on this phone either way.",
                         style = MaterialTheme.typography.bodyMedium
                     )
+                    
+                    Text(
+                        text = "UniTask can only open its own hidden backup folder. " +
+                            "It cannot see or change any of your other Google Drive files.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 if (state.busy != null) {

@@ -1,6 +1,7 @@
 package com.example.util.timer
 
 import android.content.Context
+import com.example.reminder.CountdownAlarm
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -103,7 +104,7 @@ class TimerController(
         return false
     }
 
-    fun restoreAfterReboot() {
+    fun restoreAfterReboot(): Boolean {
         val current = _state.value
         if (current.mode == TimerMode.COUNTDOWN && TimerLogic.isRunning(current)) {
             val currentTime = now()
@@ -113,10 +114,12 @@ class TimerController(
                 if (end != null) {
                     alarm.schedule(end)
                 }
+                return false
             } else {
-                markFinishedIfDue()
+                return markFinishedIfDue()
             }
         }
+        return false
     }
 
     companion object {
@@ -124,9 +127,11 @@ class TimerController(
         private var INSTANCE: TimerController? = null
 
         fun get(context: Context): TimerController {
+            val appContext = context.applicationContext
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: TimerController(
-                    store = TimerStore(context.applicationContext)
+                    store = TimerStore(appContext),
+                    alarm = CountdownAlarm(appContext)
                 ).also { INSTANCE = it }
             }
         }

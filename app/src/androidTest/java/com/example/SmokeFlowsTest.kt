@@ -473,7 +473,7 @@ class SmokeFlowsTest {
         var slotId = 0L
         composeRule.waitUntil(10_000) {
             runBlocking(Dispatchers.IO) {
-                val slots = db.lectureSlotDao().getAllSlotsForCourseSync(courseId)
+                val slots = db.lectureSlotDao().getSlotsForCourseSync(courseId).filter { !it.isDeleted }
                 if (slots.isNotEmpty()) {
                     slotId = slots[0].id
                     true
@@ -489,7 +489,7 @@ class SmokeFlowsTest {
 
         waitForTagToDisappear("timetable_slot_$slotId")
         val remaining = runBlocking(Dispatchers.IO) {
-            db.lectureSlotDao().getAllSlotsForCourseSync(courseId)
+            db.lectureSlotDao().getSlotsForCourseSync(courseId).filter { !it.isDeleted }
         }
         assertTrue(remaining.isEmpty())
     }
@@ -703,7 +703,7 @@ class SmokeFlowsTest {
         val taskRepeat = TaskItem(
             courseId = courseId,
             title = "Repeating homework",
-            status = TaskStatus.TODO,
+            status = TaskStatus.PENDING,
             dueDateEpochMillis = 1760000000000L,
             repeatRule = "DAILY"
         )
@@ -730,7 +730,7 @@ class SmokeFlowsTest {
         val attBytes = ByteArray(300 * 1024) { (it % 256).toByte() }
         attFile.writeBytes(attBytes)
 
-        db.taskAttachmentDao().insert(
+        db.taskAttachmentDao().insertAttachment(
             TaskAttachment(
                 taskId = repeatTaskId,
                 fileName = "large.bin",
@@ -780,7 +780,7 @@ class SmokeFlowsTest {
         assertNotNull(restoredCourse)
         assertEquals("Roundtrip Course", restoredCourse!!.name)
 
-        val restoredSlots = db.lectureSlotDao().getAllSlotsForCourseSync(restoredCourse.id)
+        val restoredSlots = db.lectureSlotDao().getSlotsForCourseSync(restoredCourse.id).filter { !it.isDeleted }
         assertEquals(1, restoredSlots.size)
         assertEquals(1, restoredSlots[0].dayOfWeek)
         assertEquals("Hall A", restoredSlots[0].classroom)

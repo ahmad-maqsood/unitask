@@ -2,6 +2,7 @@ package com.example.ui
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
@@ -153,5 +154,64 @@ class TimerFlowTest {
         composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
         // Length remains default 25:00
         composeRule.onNodeWithTag("timer_time_text").assertTextEquals("25:00")
+    }
+
+    @Test
+    fun fullscreenModeHidesModeSwitchAndPresetsAndShowsExitButton() {
+        // Switch to countdown mode so presets are initially displayed
+        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.onNodeWithTag("timer_preset_15").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_fullscreen_button").assertIsDisplayed()
+
+        // Enter fullscreen mode
+        composeRule.onNodeWithTag("timer_fullscreen_button").performClick()
+
+        // Mode switch, presets, and fullscreen toggle button should no longer exist in the composition
+        composeRule.onNodeWithTag("timer_mode_stopwatch").assertDoesNotExist()
+        composeRule.onNodeWithTag("timer_mode_countdown").assertDoesNotExist()
+        composeRule.onNodeWithTag("timer_preset_15").assertDoesNotExist()
+        composeRule.onNodeWithTag("timer_fullscreen_button").assertDoesNotExist()
+
+        // Exit fullscreen button and clock are displayed
+        composeRule.onNodeWithTag("timer_exit_fullscreen_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_time_text").assertIsDisplayed()
+
+        // Tapping exit fullscreen button restores normal mode
+        composeRule.onNodeWithTag("timer_exit_fullscreen_button").performClick()
+
+        composeRule.onNodeWithTag("timer_exit_fullscreen_button").assertDoesNotExist()
+        composeRule.onNodeWithTag("timer_fullscreen_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_mode_stopwatch").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_mode_countdown").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_preset_15").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_time_text").assertIsDisplayed()
+    }
+
+    @Test
+    fun controlsWorkInFullscreenMode() {
+        // Enter fullscreen mode
+        composeRule.onNodeWithTag("timer_fullscreen_button").performClick()
+        composeRule.onNodeWithTag("timer_exit_fullscreen_button").assertIsDisplayed()
+
+        // Start shows Pause
+        composeRule.onNodeWithTag("timer_start_button").performClick()
+        composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
+
+        // Pause shows Resume and Reset
+        composeRule.onNodeWithTag("timer_pause_button").performClick()
+        composeRule.onNodeWithTag("timer_resume_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_reset_button").assertIsDisplayed()
+
+        // Resume works
+        composeRule.onNodeWithTag("timer_resume_button").performClick()
+        composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
+
+        // Pause again and Reset
+        composeRule.onNodeWithTag("timer_pause_button").performClick()
+        composeRule.onNodeWithTag("timer_reset_button").performClick()
+
+        // Reset returns to Start and time to 00:00
+        composeRule.onNodeWithTag("timer_start_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_time_text").assertTextEquals("00:00")
     }
 }

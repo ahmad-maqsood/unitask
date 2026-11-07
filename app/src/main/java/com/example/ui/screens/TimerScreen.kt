@@ -1,21 +1,33 @@
 package com.example.ui.screens
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +64,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.timer.TimerController
@@ -70,20 +85,49 @@ fun TimerScreen(
     controller: TimerController = TimerController.get(LocalContext.current)
 ) {
     val state by controller.state.collectAsStateWithLifecycle()
+    var fullscreen by rememberSaveable { mutableStateOf(false) }
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
 
-    // Intercept back presses while this overlay is open without stopping the timer.
-    BackHandler {
+    // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
+    BackHandler(enabled = !fullscreen) {
         onClose()
     }
+    BackHandler(enabled = fullscreen) {
+        fullscreen = false
+    }
+
+    val context = LocalContext.current
+    val view = LocalView.current
 
     // Keep the screen awake while the timer is actively counting.
-    val view = LocalView.current
     val isRunning = TimerLogic.isRunning(state)
     DisposableEffect(isRunning) {
         view.keepScreenOn = isRunning
         onDispose {
             view.keepScreenOn = false
+        }
+    }
+
+    // Manage system bars and sensor landscape orientation while in full-screen mode.
+    DisposableEffect(fullscreen) {
+        if (!fullscreen) return@DisposableEffect onDispose { }
+
+        val activity = context.findActivity()
+        val window = activity?.window
+        val insetsController = if (window != null) WindowCompat.getInsetsController(window, view) else null
+
+        insetsController?.let { c ->
+            c.hide(WindowInsetsCompat.Type.systemBars())
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+        onDispose {
+            // Restore system bars and orientation on every exit path: exit button, Back,
+            // closing the timer screen, or when the screen leaves composition.
+            // This ensures landscape orientation and hidden bars never stay stuck.
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 
@@ -108,79 +152,36 @@ fun TimerScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("timer_screen"),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Timer",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.testTag("timer_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
-    ) { innerPadding ->
-        Column(
+    if (fullscreen) {
+        // Full screen mode: shows only the time, Time is up text, compact controls, and exit button.
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.displayCutout)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .testTag("timer_screen")
         ) {
-            // Mode switch: Stopwatch vs Countdown. Disabled while the timer is in progress.
-            SingleChoiceSegmentedButtonRow(
+            IconButton(
+                onClick = { fullscreen = false },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .testTag("timer_exit_fullscreen_button")
             ) {
-                SegmentedButton(
-                    selected = state.mode == TimerMode.STOPWATCH,
-                    onClick = { controller.setMode(TimerMode.STOPWATCH) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    enabled = isIdle,
-                    modifier = Modifier.testTag("timer_mode_stopwatch")
-                ) {
-                    Text("Stopwatch")
-                }
-                SegmentedButton(
-                    selected = state.mode == TimerMode.COUNTDOWN,
-                    onClick = { controller.setMode(TimerMode.COUNTDOWN) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    enabled = isIdle,
-                    modifier = Modifier.testTag("timer_mode_countdown")
-                ) {
-                    Text("Countdown")
-                }
+                Icon(
+                    imageVector = Icons.Default.FullscreenExit,
+                    contentDescription = "Exit full screen"
+                )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Large monospace clock display.
             BoxWithConstraints(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                val fontSize = (maxWidth.value * 0.22f).coerceIn(48f, 96f).sp
+                val fontSize = minOf(maxWidth.value * 0.25f, maxHeight.value * 0.45f).coerceIn(48f, 160f).sp
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -194,7 +195,7 @@ fun TimerScreen(
                         modifier = Modifier.testTag("timer_time_text")
                     )
                     if (state.mode == TimerMode.COUNTDOWN && isFinished) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Time is up",
                             style = MaterialTheme.typography.titleMedium,
@@ -202,101 +203,177 @@ fun TimerScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            // Preset duration chips for Countdown mode. Disabled unless idle.
-            if (state.mode == TimerMode.COUNTDOWN) {
-                val presetMinutes = listOf(15, 25, 45, 60)
-                val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    presetMinutes.forEach { minutes ->
-                        FilterChip(
-                            selected = state.countdownTotalMillis == minutes * 60_000L,
-                            onClick = { controller.setCountdownMinutes(minutes) },
-                            label = { Text("$minutes min") },
-                            enabled = isIdle,
-                            modifier = Modifier.testTag("timer_preset_$minutes")
-                        )
-                    }
-
-                    FilterChip(
-                        selected = isCustomSelected,
-                        onClick = { showCustomDialog = true },
-                        label = { Text("Custom") },
-                        enabled = isIdle,
-                        modifier = Modifier.testTag("timer_preset_custom")
+                    TimerControlButtons(
+                        isIdle = isIdle,
+                        isRunning = isRunning,
+                        isPaused = isPaused,
+                        onStart = { controller.start() },
+                        onPause = { controller.pause() },
+                        onResume = { controller.start() },
+                        onReset = { controller.reset() }
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action controls: Start, Pause, Resume, and Reset.
-            Row(
+        }
+    } else {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("timer_screen"),
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Timer",
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onClose,
+                            modifier = Modifier.testTag("timer_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { fullscreen = true },
+                            modifier = Modifier.testTag("timer_fullscreen_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Fullscreen,
+                                contentDescription = "Full screen"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (!isIdle) {
-                    OutlinedButton(
-                        onClick = { controller.reset() },
-                        modifier = Modifier
-                            .defaultMinSize(minWidth = 120.dp)
-                            .height(52.dp)
-                            .testTag("timer_reset_button")
+                // Mode switch: Stopwatch vs Countdown. Disabled while the timer is in progress.
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    SegmentedButton(
+                        selected = state.mode == TimerMode.STOPWATCH,
+                        onClick = { controller.setMode(TimerMode.STOPWATCH) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        enabled = isIdle,
+                        modifier = Modifier.testTag("timer_mode_stopwatch")
                     ) {
-                        Text("Reset")
+                        Text("Stopwatch")
+                    }
+                    SegmentedButton(
+                        selected = state.mode == TimerMode.COUNTDOWN,
+                        onClick = { controller.setMode(TimerMode.COUNTDOWN) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        enabled = isIdle,
+                        modifier = Modifier.testTag("timer_mode_countdown")
+                    ) {
+                        Text("Countdown")
                     }
                 }
 
-                when {
-                    isIdle -> {
-                        Button(
-                            onClick = { controller.start() },
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 140.dp)
-                                .height(52.dp)
-                                .testTag("timer_start_button")
-                        ) {
-                            Text("Start")
-                        }
-                    }
-                    isRunning -> {
-                        Button(
-                            onClick = { controller.pause() },
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 140.dp)
-                                .height(52.dp)
-                                .testTag("timer_pause_button")
-                        ) {
-                            Text("Pause")
-                        }
-                    }
-                    isPaused -> {
-                        Button(
-                            onClick = { controller.start() },
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 140.dp)
-                                .height(52.dp)
-                                .testTag("timer_resume_button")
-                        ) {
-                            Text("Resume")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Large monospace clock display.
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val fontSize = (maxWidth.value * 0.22f).coerceIn(48f, 96f).sp
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = timeText,
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            modifier = Modifier.testTag("timer_time_text")
+                        )
+                        if (state.mode == TimerMode.COUNTDOWN && isFinished) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Time is up",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Preset duration chips for Countdown mode. Disabled unless idle.
+                if (state.mode == TimerMode.COUNTDOWN) {
+                    val presetMinutes = listOf(15, 25, 45, 60)
+                    val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        presetMinutes.forEach { minutes ->
+                            FilterChip(
+                                selected = state.countdownTotalMillis == minutes * 60_000L,
+                                onClick = { controller.setCountdownMinutes(minutes) },
+                                label = { Text("$minutes min") },
+                                enabled = isIdle,
+                                modifier = Modifier.testTag("timer_preset_$minutes")
+                            )
+                        }
+
+                        FilterChip(
+                            selected = isCustomSelected,
+                            onClick = { showCustomDialog = true },
+                            label = { Text("Custom") },
+                            enabled = isIdle,
+                            modifier = Modifier.testTag("timer_preset_custom")
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Action controls: Start, Pause, Resume, and Reset.
+                TimerControlButtons(
+                    isIdle = isIdle,
+                    isRunning = isRunning,
+                    isPaused = isPaused,
+                    onStart = { controller.start() },
+                    onPause = { controller.pause() },
+                    onResume = { controller.start() },
+                    onReset = { controller.reset() }
+                )
             }
         }
     }
@@ -363,6 +440,73 @@ fun TimerScreen(
     }
 }
 
+@Composable
+private fun TimerControlButtons(
+    isIdle: Boolean,
+    isRunning: Boolean,
+    isPaused: Boolean,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onReset: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (!isIdle) {
+            OutlinedButton(
+                onClick = onReset,
+                modifier = Modifier
+                    .defaultMinSize(minWidth = 120.dp)
+                    .height(52.dp)
+                    .testTag("timer_reset_button")
+            ) {
+                Text("Reset")
+            }
+        }
+
+        when {
+            isIdle -> {
+                Button(
+                    onClick = onStart,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 140.dp)
+                        .height(52.dp)
+                        .testTag("timer_start_button")
+                ) {
+                    Text("Start")
+                }
+            }
+            isRunning -> {
+                Button(
+                    onClick = onPause,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 140.dp)
+                        .height(52.dp)
+                        .testTag("timer_pause_button")
+                ) {
+                    Text("Pause")
+                }
+            }
+            isPaused -> {
+                Button(
+                    onClick = onResume,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 140.dp)
+                        .height(52.dp)
+                        .testTag("timer_resume_button")
+                ) {
+                    Text("Resume")
+                }
+            }
+        }
+    }
+}
+
 /**
  * Returns a State holding wall-clock timestamps aligned to second boundaries while running.
  */
@@ -387,4 +531,10 @@ private fun rememberNow(running: Boolean, controller: TimerController): State<Lo
         }
     }
     return nowState
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

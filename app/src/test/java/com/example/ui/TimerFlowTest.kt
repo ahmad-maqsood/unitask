@@ -82,6 +82,7 @@ class TimerFlowTest {
         composeRule.onNodeWithTag("timer_start_button").performClick()
         composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
 
+        currentTime += 5_000L
         // Pause shows Resume and Reset
         composeRule.onNodeWithTag("timer_pause_button").performClick()
         composeRule.onNodeWithTag("timer_resume_button").assertIsDisplayed()
@@ -196,6 +197,7 @@ class TimerFlowTest {
         composeRule.onNodeWithTag("timer_start_button").performClick()
         composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
 
+        currentTime += 5_000L
         // Pause shows Resume and Reset
         composeRule.onNodeWithTag("timer_pause_button").performClick()
         composeRule.onNodeWithTag("timer_resume_button").assertIsDisplayed()
@@ -204,7 +206,8 @@ class TimerFlowTest {
         // Resume works
         composeRule.onNodeWithTag("timer_resume_button").performClick()
         composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
-
+        
+        currentTime += 5_000L
         // Pause again and Reset
         composeRule.onNodeWithTag("timer_pause_button").performClick()
         composeRule.onNodeWithTag("timer_reset_button").performClick()

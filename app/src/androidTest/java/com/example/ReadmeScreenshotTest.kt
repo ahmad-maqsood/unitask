@@ -105,6 +105,17 @@ class ReadmeScreenshotTest {
         tap("tab_mytasks")
         capture("my_tasks")
 
+        // Study timer: open it from the Tools sheet and show a 25 minute countdown.
+        tap("top_bar_tools_button")
+        tap("tools_tile_timer")
+        waitForTag("timer_screen")
+        tap("timer_mode_countdown")
+        tap("timer_preset_25")
+        waitForText("25:00")
+        capture("timer")
+        tap("timer_back_button")
+        waitForTagToDisappear("timer_screen")
+
         openNotes()
         waitForTag("notes_list")
         capture("notes")

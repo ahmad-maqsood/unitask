@@ -11,6 +11,7 @@ import com.example.util.BackupResult
 import com.example.util.LocalBackupManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -116,7 +117,7 @@ class DriveAttachmentTest {
         assertNotNull(fakeStore.files.values.firstOrNull { it.name == "att-1003_image.png" })
 
         // Fresh database and empty attachments folder
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
         attachmentsDir.deleteRecursively()
         attachmentsDir.mkdirs()
 

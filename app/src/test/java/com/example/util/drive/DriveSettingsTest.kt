@@ -48,6 +48,7 @@ class DriveSettingsTest {
         db = AppDatabase.getDatabase(context)
         runBlocking(Dispatchers.IO) { db.clearAllTables() }
         clearAllPrefs()
+        NotificationSound.choice(context) // run the one-time fresh-install check now, so it can't wipe a restored choice later
     }
 
     @After

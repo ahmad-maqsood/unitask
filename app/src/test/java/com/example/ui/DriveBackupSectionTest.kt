@@ -145,7 +145,7 @@ class DriveBackupSectionTest {
     }
 
     @Test
-    fun backupNowWithData_showsSuccessTextWithCounts() = runBlocking {
+    fun backupNowWithData_showsSuccessTextWithCounts() = runBlocking<Unit> {
         val courseDao = db.courseDao()
         val taskDao = db.taskDao()
         val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
@@ -163,7 +163,7 @@ class DriveBackupSectionTest {
     }
 
     @Test
-    fun restoreWithNoBackup_showsNoBackupFoundText() = runBlocking {
+    fun restoreWithNoBackup_showsNoBackupFoundText() = runBlocking<Unit> {
         viewModel.connect()
         setUiContent()
         composeRule.waitForIdle()
@@ -176,7 +176,7 @@ class DriveBackupSectionTest {
     }
 
     @Test
-    fun restoreWithBackup_showsConfirmDialog_andRestores() = runBlocking {
+    fun restoreWithBackup_showsConfirmDialog_andRestores() = runBlocking<Unit> {
         val courseDao = db.courseDao()
         val taskDao = db.taskDao()
         val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
@@ -262,7 +262,7 @@ class DriveBackupSectionTest {
     }
 
     @Test
-    fun authFailure_showsReconnect() = runBlocking {
+    fun authFailure_showsReconnect() = runBlocking<Unit> {
         val courseDao = db.courseDao()
         val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
         db.taskDao().insertTask(TaskItem(courseId = cId, title = "Task 1", dueDateEpochMillis = 1000L))
@@ -282,7 +282,7 @@ class DriveBackupSectionTest {
     }
 
     @Test
-    fun quotaFailure_showsYourGoogleDriveIsFull() = runBlocking {
+    fun quotaFailure_showsYourGoogleDriveIsFull() = runBlocking<Unit> {
         val courseDao = db.courseDao()
         val taskDao = db.taskDao()
         val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))

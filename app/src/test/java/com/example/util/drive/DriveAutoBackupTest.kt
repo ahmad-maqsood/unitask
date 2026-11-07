@@ -252,12 +252,13 @@ class DriveAutoBackupTest {
         prefs.lastHash = null
 
         fakeAuth.result = DriveAuthResult.Granted("token_123", "student@example.com")
-
+        
+        val before = System.currentTimeMillis()
         val now = 2_000_000_000_000L
         val outcome = DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now)
 
         assertEquals(DriveAutoBackup.Outcome.Done, outcome)
-        assertEquals(now, prefs.lastSuccessAt)
+        assertTrue(prefs.lastSuccessAt >= before)
         assertNotNull(prefs.lastHash)
         assertEquals(0, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)

@@ -75,6 +75,11 @@ class DrivePrefs(context: Context) {
         get() = prefs.getInt(KEY_CONSECUTIVE_FAILURES, 0)
         set(value) = prefs.edit().putInt(KEY_CONSECUTIVE_FAILURES, value).apply()
 
+    /** Epoch millis of the first failure in the current failure streak. 0 means no streak. */
+    var firstFailureAt: Long
+        get() = prefs.getLong(KEY_FIRST_FAILURE_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_FIRST_FAILURE_AT, value).apply()
+        
     /** Whether the user has been notified about persistent backup failures. */
     var failureNotified: Boolean
         get() = prefs.getBoolean(KEY_FAILURE_NOTIFIED, false)
@@ -115,6 +120,7 @@ class DrivePrefs(context: Context) {
             .remove(KEY_LAST_HASH)
             .remove(KEY_LAST_ERROR)
             .remove(KEY_CONSECUTIVE_FAILURES)
+            .remove(KEY_FIRST_FAILURE_AT)
             .remove(KEY_FAILURE_NOTIFIED)
             .apply()
     }
@@ -130,6 +136,7 @@ class DrivePrefs(context: Context) {
         private const val KEY_LAST_ERROR = "last_error"
         private const val KEY_LAST_HASH = "last_hash"
         private const val KEY_CONSECUTIVE_FAILURES = "consecutive_failures"
+        private const val KEY_FIRST_FAILURE_AT = "first_failure_at"
         private const val KEY_FAILURE_NOTIFIED = "failure_notified"
         private const val KEY_RESTORE_OFFER_DISMISSED = "restore_offer_dismissed"
         private const val KEY_MIGRATION_PROMPT_COUNT = "migration_prompt_count"

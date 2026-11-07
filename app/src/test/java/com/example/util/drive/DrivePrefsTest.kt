@@ -61,6 +61,7 @@ class DrivePrefsTest {
         prefs.lastHash = "hash123"
         prefs.consecutiveFailures = 2
         prefs.failureNotified = true
+        prefs.firstFailureAt = 5000L
         prefs.restoreOfferDismissed = true
         prefs.migrationPromptCount = 3
         prefs.migrationNextPromptAt = 5000L
@@ -79,6 +80,7 @@ class DrivePrefsTest {
         assertNull(prefs.lastError)
         assertEquals(0, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)
+        assertEquals(0L, prefs.firstFailureAt)
 
         // General settings and prompt records must be preserved
         assertFalse(prefs.wifiOnly)

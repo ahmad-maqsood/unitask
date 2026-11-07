@@ -288,7 +288,8 @@ object DriveBackupManager {
             prefs.lastError = null
             prefs.consecutiveFailures = 0
             prefs.failureNotified = false
-
+            prefs.firstFailureAt = 0L
+            
             val info = DriveBackupInfo(
                 slotFileId = finalizedSlot.id,
                 seq = newSeq,

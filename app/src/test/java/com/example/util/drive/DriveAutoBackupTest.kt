@@ -274,36 +274,44 @@ class DriveAutoBackupTest {
         fakeStore.failOnMethod = "create"
 
         val now = 2_000_000_000_000L
+        val day = 24L * 60 * 60 * 1000L
 
-        // Attempt 1 failure
+        // Attempt 1 failure: starts the failure clock
         DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now)
         assertEquals(1, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)
         assertEquals(0, NotificationHistory.items(context).size)
 
         // Attempt 2 failure
-        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now)
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + day)
         assertEquals(2, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)
         assertEquals(0, NotificationHistory.items(context).size)
 
-        // Attempt 3 failure: triggers in-app bell notification
-        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now)
+        // Attempt 3 failure after only 2 days: 3 failures but not 3 days yet, so no notification
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 2 * day)
         assertEquals(3, prefs.consecutiveFailures)
+        assertFalse(prefs.failureNotified)
+        assertEquals(0, NotificationHistory.items(context).size)
+
+        // Attempt 4 failure, 3 days after the first: triggers in-app bell notification
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 3 * day)
+        assertEquals(4, prefs.consecutiveFailures)
         assertTrue(prefs.failureNotified)
         val items = NotificationHistory.items(context)
         assertEquals(1, items.size)
         assertEquals("Google Drive backup has not worked for 3 days. Open Settings, Backup & data.", items[0].body)
 
-        // Attempt 4 failure: does not add another notification
-        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now)
-        assertEquals(4, prefs.consecutiveFailures)
+        // Attempt 5 failure: does not add another notification
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 4 * day)
+        assertEquals(5, prefs.consecutiveFailures)
         assertEquals(1, NotificationHistory.items(context).size)
-
-        // Subsequent success: resets consecutiveFailures and clears failureNotified
+        assertEquals(0L, prefs.firstFailureAt)
+        
+        // Subsequent success: resets consecutiveFailures, failureNotified and the failure clock
         fakeStore.defaultException = DriveException(DriveException.Kind.SERVER, "none")
         fakeStore.failOnMethod = null
-        val successOutcome = DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 5000L)
+        val successOutcome = DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 5 * day)
         assertEquals(DriveAutoBackup.Outcome.Done, successOutcome)
         assertEquals(0, prefs.consecutiveFailures)
         assertFalse(prefs.failureNotified)

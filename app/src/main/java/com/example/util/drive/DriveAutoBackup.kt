@@ -22,7 +22,8 @@ object DriveAutoBackup {
 
     private const val ONE_HOUR_MS = 60 * 60 * 1000L
     private const val ONE_MINUTE_MS = 60 * 1000L
-
+    private const val THREE_DAYS_MS = 3L * 24 * 60 * 60 * 1000L
+    
     enum class Outcome {
         Done,
         Unchanged,
@@ -133,13 +134,13 @@ object DriveAutoBackup {
             is DriveAuthResult.NeedsConsent -> {
                 prefs.lastError = "Google Drive access was lost. Reconnect in Settings."
                 prefs.consecutiveFailures += 1
-                checkNotification(context, prefs)
+                checkNotification(context, prefs, now)
                 return Outcome.NeedsReconnect
             }
             is DriveAuthResult.Failed -> {
                 prefs.lastError = authRes.message
                 prefs.consecutiveFailures += 1
-                checkNotification(context, prefs)
+                checkNotification(context, prefs, now)
                 return if (authRes.retryable) Outcome.Retry else Outcome.Failed
             }
         }
@@ -180,7 +181,7 @@ object DriveAutoBackup {
                 Outcome.Unchanged
             }
             is DriveBackupResult.Failure -> {
-                checkNotification(context, prefs)
+                checkNotification(context, prefs, now)
                 when (backupResult.kind) {
                     DriveException.Kind.NETWORK, DriveException.Kind.SERVER -> Outcome.Retry
                     DriveException.Kind.AUTH -> {
@@ -193,8 +194,13 @@ object DriveAutoBackup {
         }
     }
 
-    private fun checkNotification(context: Context, prefs: DrivePrefs) {
-        if (prefs.consecutiveFailures >= 3 && !prefs.failureNotified) {
+    private fun checkNotification(context: Context, prefs: DrivePrefs, now: Long) {
+        // Start the failure clock on the first failure of a streak.
+        if (prefs.firstFailureAt == 0L || prefs.firstFailureAt > now) {
+            prefs.firstFailureAt = now
+        }
+        val failingForMs = now - prefs.firstFailureAt
+        if (prefs.consecutiveFailures >= 3 && failingForMs >= THREE_DAYS_MS && !prefs.failureNotified) {
             NotificationHistory.add(
                 context = context,
                 kind = "Backup",

@@ -185,7 +185,7 @@ class NoteShareTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun saveToUriWritesExactTextForTxt() = runBlocking {
+    fun saveToUriWritesExactTextForTxt() = runBlocking<Unit> {
         val tempFile = File.createTempFile("save_txt", ".txt")
         tempFile.deleteOnExit()
         val uri = Uri.fromFile(tempFile)
@@ -198,7 +198,7 @@ class NoteShareTest {
     }
 
     @Test
-    fun saveToUriWritesExactTextForMd() = runBlocking {
+    fun saveToUriWritesExactTextForMd() = runBlocking<Unit> {
         val tempFile = File.createTempFile("save_md", ".md")
         tempFile.deleteOnExit()
         val uri = Uri.fromFile(tempFile)
@@ -211,7 +211,7 @@ class NoteShareTest {
     }
 
     @Test
-    fun saveToUriOverwritesLongerOldFileCompletely() = runBlocking {
+    fun saveToUriOverwritesLongerOldFileCompletely() = runBlocking<Unit> {
         val tempFile = File.createTempFile("save_truncate", ".txt")
         tempFile.deleteOnExit()
         tempFile.writeText("A very long previous content that should be completely truncated and replaced.")
@@ -225,7 +225,7 @@ class NoteShareTest {
     }
 
     @Test
-    fun saveToUriReturnsFalseForUriThatCannotBeOpened() = runBlocking {
+    fun saveToUriReturnsFalseForUriThatCannotBeOpened() = runBlocking<Unit> {
         val invalidUri = Uri.parse("content://nonexistent.authority/invalid/path")
 
         val result = NoteShare.saveToUri(context, invalidUri, "Title", "Body", NoteExportFormat.TXT)

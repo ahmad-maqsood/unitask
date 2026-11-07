@@ -6,12 +6,16 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -32,7 +36,6 @@ import com.example.ui.theme.AccentTheme
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
 import com.example.util.Announcements
-import com.example.util.AuthStorage
 import com.example.util.BackupResult
 import com.example.util.WeekParity
 import com.example.util.drive.DriveBackupManager
@@ -143,6 +146,14 @@ class SmokeFlowsTest {
         composeRule.waitUntil(timeoutMillis) {
             composeRule.onAllNodesWithText(value, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
         }
+    }
+
+    /** Scrolls the Deadlines list until a node matching [matcher] is composed. */
+    private fun scrollDeadlinesTo(matcher: androidx.compose.ui.test.SemanticsMatcher) {
+        waitForTag("deadlines_list")
+        composeRule.onNodeWithTag("deadlines_list", useUnmergedTree = true)
+            .performScrollToNode(matcher)
+        composeRule.waitForIdle()
     }
 
     private fun tap(tag: String) {
@@ -416,6 +427,10 @@ class SmokeFlowsTest {
         val taskId = activeTasks[0].id
         tap("task_status_toggle_$taskId")
         waitForText("Done")
+        // Completed tasks move into the Done section, which starts collapsed.
+        composeRule.onNodeWithContentDescription("Expand Done section", useUnmergedTree = true).performClick()
+        composeRule.waitForIdle()
+        waitForTag("task_item_$taskId")
 
         val completedInDb = runBlocking(Dispatchers.IO) {
             db.taskDao().getTaskById(taskId)
@@ -516,17 +531,24 @@ class SmokeFlowsTest {
         waitForTag("tab_deadlines")
 
         tap("tab_deadlines")
+        scrollDeadlinesTo(hasText("Alpha report", substring = true))
         waitForText("Alpha report")
+        scrollDeadlinesTo(hasText("Beta quiz", substring = true))
         waitForText("Beta quiz")
 
+        scrollDeadlinesTo(hasTestTag("task_search_input"))
         type("task_search_input", "Alpha")
+        scrollDeadlinesTo(hasText("Alpha report", substring = true))
         waitForText("Alpha report")
         waitForTextToDisappear("Beta quiz")
 
+        scrollDeadlinesTo(hasTestTag("task_search_input"))
         composeRule.onNodeWithTag("task_search_input", useUnmergedTree = true).performTextClearance()
         composeRule.waitForIdle()
 
+        scrollDeadlinesTo(hasText("Alpha report", substring = true))
         waitForText("Alpha report")
+        scrollDeadlinesTo(hasText("Beta quiz", substring = true))
         waitForText("Beta quiz")
     }
 
@@ -564,7 +586,7 @@ class SmokeFlowsTest {
         waitForTag("theme_chip_DARK")
         composeRule.onNodeWithTag("theme_chip_DARK", useUnmergedTree = true).assertIsSelected()
         composeRule.onNodeWithTag("accent_chip_FOREST", useUnmergedTree = true)
-            .assertContentDescriptionEquals("Forest, selected")
+            .assertContentDescriptionEquals("Forest green, selected")
         tap("settings_back_button")
 
         waitForTag("settings_section_notifications")
@@ -632,37 +654,26 @@ class SmokeFlowsTest {
         scenario?.close()
         scenario = null
 
-        // (c) Existing user with data and cloud sync shows drive_migration_dialog
+        // (c) The migration prompt is only for users who signed in to cloud sync. The app
+        // clears the saved cloud user whenever there is no Supabase session, which is
+        // always the case on the emulator, so with data but no cloud user it must stay hidden.
+        // The prompt rules themselves are covered by DriveMigrationPromptTest.
         runBlocking(Dispatchers.IO) {
             db.courseDao().insertCourse(
                 Course(name = "Existing User Course", code = "EUC101", colorHex = "#123456")
             )
         }
-        AuthStorage.setLastUid(context, "smoke-user")
         prefs.migrationPromptCount = 0
         prefs.migrationNextPromptAt = 0L
 
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        waitForTag("drive_migration_dialog")
-        composeRule.onNodeWithTag("drive_migration_dialog", useUnmergedTree = true).assertIsDisplayed()
-
-        tap("drive_migration_later_button")
-        waitForTagToDisappear("drive_migration_dialog")
-
-        scenario?.close()
-        scenario = null
-
-        scenario = ActivityScenario.launch(MainActivity::class.java)
         waitForTag("tab_deadlines")
         composeRule.waitForIdle()
-        assertTrue(prefs.migrationPromptCount > 0)
-        assertTrue(prefs.migrationNextPromptAt > System.currentTimeMillis())
         assertTrue(
             composeRule.onAllNodesWithTag("drive_migration_dialog", useUnmergedTree = true)
                 .fetchSemanticsNodes().isEmpty()
         )
-
-        AuthStorage.setLastUid(context, null)
+        assertEquals(0, prefs.migrationPromptCount)
     }
 
     @Test
@@ -754,6 +765,10 @@ class SmokeFlowsTest {
         val backupResult = DriveBackupManager.backUp(context, fake, allowEmpty = false)
         assertTrue(backupResult is DriveBackupResult.Success)
 
+        // Backing up again with nothing changed must not upload a new copy.
+        val repeatBackup = DriveBackupManager.backUp(context, fake, allowEmpty = false, force = false)
+        assertTrue("Expected Unchanged but was $repeatBackup", repeatBackup is DriveBackupResult.Unchanged)
+
         // Wipe everything
         db.clearAllTables()
         File(context.filesDir, "note_images").deleteRecursively()
@@ -823,9 +838,5 @@ class SmokeFlowsTest {
         waitForText("RTC101")
         scenario?.close()
         scenario = null
-
-        // Finally call backUp again without force and assert Unchanged
-        val secondBackup = DriveBackupManager.backUp(context, fake, allowEmpty = false, force = false)
-        assertTrue("Expected Unchanged but was $secondBackup", secondBackup is DriveBackupResult.Unchanged)
     }
 }

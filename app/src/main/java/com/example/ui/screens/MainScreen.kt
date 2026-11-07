@@ -106,6 +106,8 @@ import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import com.example.util.BackgroundAccess
+import com.example.util.timer.TimerController
+import com.example.util.timer.TimerLogic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -282,6 +284,12 @@ fun MainScreen(
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
 
+    // Observe timer state to show an active indicator dot on the Tools button.
+    // The state flow only changes on start, pause, resume, reset, and finish,
+    // so the top bar does NOT recompose every second. No ticking value is observed here.
+    val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
+    val timerActive = !TimerLogic.isIdle(timerState)
+
     val tools = listOf(
         ToolEntry(
             label = "Notes",
@@ -374,19 +382,10 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    FilledTonalIconButton(
-                        onClick = { showTools = true },
-                        modifier = Modifier.testTag("top_bar_tools_button"),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Apps,
-                            contentDescription = "Tools"
-                        )
-                    }
+                    ToolsButton(
+                        timerActive = timerActive,
+                        onClick = { showTools = true }
+                    )
                     AnnouncementBell(
                         announcements,
                         openRequest = openBellRequest,

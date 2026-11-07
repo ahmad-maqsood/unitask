@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,10 +52,12 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -275,6 +278,17 @@ fun MainScreen(
     // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
+    var showTools by rememberSaveable { mutableStateOf(false) }
+
+    val tools = listOf(
+        ToolEntry(
+            label = "Notes",
+            description = "Lecture notes and summaries",
+            icon = Icons.Default.EditNote,
+            testTag = "tools_tile_notes",
+            onClick = { showNotes = true }
+        )
+    )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
     // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
@@ -351,13 +365,17 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { showNotes = true },
-                        modifier = Modifier.testTag("top_bar_notes_button")
+                    FilledTonalIconButton(
+                        onClick = { showTools = true },
+                        modifier = Modifier.testTag("top_bar_tools_button"),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.EditNote,
-                            contentDescription = "Notes"
+                            imageVector = Icons.Default.Apps,
+                            contentDescription = "Tools"
                         )
                     }
                     AnnouncementBell(
@@ -885,6 +903,13 @@ fun MainScreen(
             onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat, autoDelete ->
                 viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit, autoDelete)
             }
+        )
+    }
+
+    if (showTools) {
+        ToolsSheet(
+            tools = tools,
+            onDismiss = { showTools = false }
         )
     }
 

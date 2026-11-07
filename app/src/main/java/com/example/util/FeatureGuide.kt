@@ -127,7 +127,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Notes", "Capture lecture notes, ideas, and revision summaries with course tags and search.", "assignment", 135,
-            "1. Tap the notes icon in the top bar to open Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin or Delete it.\n7. Open the top-right menu and choose Recently deleted to view or restore deleted notes."
+            "1. Tap the Tools icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin or Delete it.\n7. Open the top-right menu and choose Recently deleted to view or restore deleted notes."
         ),
         AppFeature(
             "Markdown in Notes", "Format text with headings, checklists, tables, links and gallery images.", "assignment", 140,

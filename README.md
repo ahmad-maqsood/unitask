@@ -111,7 +111,7 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
 
 ### Notes
 
-- **Markdown notes.** Notes with an optional course tag, opened from the notes icon in the top bar.
+- **Markdown notes.** Notes with an optional course tag, opened from the Tools menu in the top bar.
   - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
   - Edit and Preview modes with interactive checklists that can be ticked in Preview.
   - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
@@ -178,7 +178,7 @@ The complete history is available in the [CHANGELOG](CHANGELOG.md).
 
 ### 3.4.0
 
-- **Notes.** Markdown notes with an optional course tag, opened from the top bar.
+- **Notes.** Markdown notes with an optional course tag, opened from the Tools menu in the top bar.
 - **Editor with formatting toolbar.** Dedicated toolbar for headings, lists, tables, links, code, quotes and text styles, with automatic list continuation on Enter.
 - **Edit and Preview modes.** Toggle between editor and markdown preview with tables, web links, images and clickable checklists.
 - **Search, filter, pin and sort.** Find notes quickly by keyword, filter by course, pin notes to the top and sort by updated date, created date or title.
@@ -318,7 +318,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. They are not synchronised to the cloud, although **Delete when done** is kept in local backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.
 - Note images stay on the phone (they are in local backups but not in cloud sync).
-- Notes are limited to 100,000 characters and 10 images.
+- Notes are limited to 200,000 characters and 10 images.
 
 ## Support
 

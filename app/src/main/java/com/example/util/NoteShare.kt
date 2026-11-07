@@ -4,39 +4,55 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
+
+enum class NoteExportFormat(
+    val label: String,
+    val extension: String,
+    val mimeType: String
+) {
+    TXT("Text file (.txt)", "txt", "text/plain"),
+    MD("Markdown file (.md)", "md", "text/markdown"),
+    PDF("PDF document (.pdf)", "pdf", "application/pdf")
+}
 
 object NoteShare {
 
-    fun shareAsText(context: Context, title: String, body: String) {
-        val text = if (title.isNotBlank()) {
-            if (body.isNotBlank()) "$title\n\n$body" else title
-        } else {
-            body
-        }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, title)
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        val chooser = Intent.createChooser(intent, "Share note")
-        if (context !is Activity) {
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        try {
-            context.startActivity(chooser)
-        } catch (_: Exception) {
+    fun exportText(title: String, body: String, format: NoteExportFormat): String {
+        return when (format) {
+            NoteExportFormat.MD -> {
+                if (title.isNotBlank()) {
+                    if (body.isNotBlank()) "# $title\n\n$body" else "# $title"
+                } else {
+                    body
+                }
+            }
+            NoteExportFormat.TXT -> {
+                if (title.isNotBlank()) {
+                    if (body.isNotBlank()) "$title\n\n$body" else title
+                } else {
+                    body
+                }
+            }
+            NoteExportFormat.PDF -> {
+                throw IllegalArgumentException("PDF is not a plain text format")
+            }
         }
     }
 
-    fun shareAsMarkdownFile(context: Context, title: String, body: String) {
-        val content = if (title.isNotBlank()) {
-            if (body.isNotBlank()) "# $title\n\n$body" else "# $title"
-        } else {
-            body
-        }
+    fun fileNameFor(title: String, format: NoteExportFormat): String =
+        "${safeFileName(title)}.${format.extension}"
 
+    suspend fun shareAsFileAsync(
+        context: Context,
+        title: String,
+        body: String,
+        format: NoteExportFormat
+    ) = withContext(Dispatchers.IO) {
         val exportsDir = File(context.cacheDir, "exports")
         if (!exportsDir.exists()) {
             exportsDir.mkdirs()
@@ -44,9 +60,17 @@ object NoteShare {
             exportsDir.listFiles()?.forEach { it.delete() }
         }
 
-        val safeName = safeFileName(title)
-        val file = File(exportsDir, "$safeName.md")
-        file.writeText(content, Charsets.UTF_8)
+        val fileName = fileNameFor(title, format)
+        val file = File(exportsDir, fileName)
+        if (format == NoteExportFormat.PDF) {
+            file.outputStream().use { os ->
+                NotePdf.write(context, title, body, os)
+                os.flush()
+            }
+        } else {
+            val content = exportText(title, body, format)
+            file.writeText(content, Charsets.UTF_8)
+        }
 
         val uri = FileProvider.getUriForFile(
             context,
@@ -55,7 +79,7 @@ object NoteShare {
         )
 
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/markdown"
+            type = format.mimeType
             clipData = ClipData.newRawUri("", uri)
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(Intent.EXTRA_SUBJECT, title)
@@ -66,9 +90,43 @@ object NoteShare {
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        withContext(Dispatchers.Main) {
+            try {
+                context.startActivity(chooser)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    suspend fun saveToUri(
+        context: Context,
+        uri: Uri,
+        title: String,
+        body: String,
+        format: NoteExportFormat
+    ): Boolean = withContext(Dispatchers.IO) {
         try {
-            context.startActivity(chooser)
+            when (format) {
+                NoteExportFormat.TXT, NoteExportFormat.MD -> {
+                    val text = exportText(title, body, format)
+                    val outputStream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
+                    outputStream.use { os ->
+                        os.write(text.toByteArray(Charsets.UTF_8))
+                        os.flush()
+                    }
+                    true
+                }
+                NoteExportFormat.PDF -> {
+                    val outputStream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
+                    outputStream.use { os ->
+                        NotePdf.write(context, title, body, os)
+                        os.flush()
+                    }
+                    true
+                }
+            }
         } catch (_: Exception) {
+            false
         }
     }
 
@@ -110,4 +168,3 @@ object NoteShare {
         return baseName to text
     }
 }
-

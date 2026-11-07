@@ -109,6 +109,9 @@
             android:name=".reminder.DailySummaryReceiver"
             android:exported="false" />
         <receiver
+            android:name=".reminder.CountdownReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".reminder.RepeatRolloverReceiver"
             android:exported="false" />
         <receiver

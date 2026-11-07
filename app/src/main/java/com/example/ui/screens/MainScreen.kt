@@ -35,8 +35,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
@@ -51,10 +53,12 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -102,6 +106,8 @@ import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import com.example.util.BackgroundAccess
+import com.example.util.timer.TimerController
+import com.example.util.timer.TimerLogic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -275,6 +281,31 @@ fun MainScreen(
     // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
+    var showTools by rememberSaveable { mutableStateOf(false) }
+    var showTimer by rememberSaveable { mutableStateOf(false) }
+
+    // Observe timer state to show an active indicator dot on the Tools button.
+    // The state flow only changes on start, pause, resume, reset, and finish,
+    // so the top bar does NOT recompose every second. No ticking value is observed here.
+    val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
+    val timerActive = !TimerLogic.isIdle(timerState)
+
+    val tools = listOf(
+        ToolEntry(
+            label = "Notes",
+            description = "Lecture notes and summaries",
+            icon = Icons.Default.EditNote,
+            testTag = "tools_tile_notes",
+            onClick = { showNotes = true }
+        ),
+        ToolEntry(
+            label = "Timer",
+            description = "Stopwatch and countdown",
+            icon = Icons.Default.Timer,
+            testTag = "tools_tile_timer",
+            onClick = { showTimer = true }
+        )
+    )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
     // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
@@ -351,15 +382,10 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { showNotes = true },
-                        modifier = Modifier.testTag("top_bar_notes_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.EditNote,
-                            contentDescription = "Notes"
-                        )
-                    }
+                    ToolsButton(
+                        timerActive = timerActive,
+                        onClick = { showTools = true }
+                    )
                     AnnouncementBell(
                         announcements,
                         openRequest = openBellRequest,
@@ -888,9 +914,22 @@ fun MainScreen(
         )
     }
 
+    if (showTools) {
+        ToolsSheet(
+            tools = tools,
+            onDismiss = { showTools = false }
+        )
+    }
+
     if (showNotes) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NotesHost(onClose = { showNotes = false })
+        }
+    }
+
+    if (showTimer) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            TimerScreen(onClose = { showTimer = false })
         }
     }
 

@@ -1,9 +1,29 @@
 package com.example.util
 
+import android.content.Context
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.io.File
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
 class NoteShareTest {
+
+    private lateinit var context: Context
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext<Context>()
+    }
 
     // -------------------------------------------------------------------------
     // safeFileName tests
@@ -100,5 +120,141 @@ class NoteShareTest {
         assertEquals("Only Title", title)
         assertEquals("", body)
     }
-}
 
+    // -------------------------------------------------------------------------
+    // exportText tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun exportTextMarkdownFormatsCorrectly() {
+        // title and body
+        assertEquals("# Title\n\nBody", NoteShare.exportText("Title", "Body", NoteExportFormat.MD))
+        // blank title
+        assertEquals("Body", NoteShare.exportText("", "Body", NoteExportFormat.MD))
+        assertEquals("Body", NoteShare.exportText("   ", "Body", NoteExportFormat.MD))
+        // blank body
+        assertEquals("# Title", NoteShare.exportText("Title", "", NoteExportFormat.MD))
+        assertEquals("# Title", NoteShare.exportText("Title", "   ", NoteExportFormat.MD))
+        // both blank
+        assertEquals("", NoteShare.exportText("", "", NoteExportFormat.MD))
+        assertEquals("   ", NoteShare.exportText("   ", "   ", NoteExportFormat.MD))
+    }
+
+    @Test
+    fun exportTextPlainTextFormatsCorrectly() {
+        // title and body (without '# ')
+        assertEquals("Title\n\nBody", NoteShare.exportText("Title", "Body", NoteExportFormat.TXT))
+        // blank title
+        assertEquals("Body", NoteShare.exportText("", "Body", NoteExportFormat.TXT))
+        assertEquals("Body", NoteShare.exportText("   ", "Body", NoteExportFormat.TXT))
+        // blank body
+        assertEquals("Title", NoteShare.exportText("Title", "", NoteExportFormat.TXT))
+        assertEquals("Title", NoteShare.exportText("Title", "   ", NoteExportFormat.TXT))
+        // both blank
+        assertEquals("", NoteShare.exportText("", "", NoteExportFormat.TXT))
+        assertEquals("   ", NoteShare.exportText("   ", "   ", NoteExportFormat.TXT))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun exportTextThrowsForPdf() {
+        NoteShare.exportText("Title", "Body", NoteExportFormat.PDF)
+    }
+
+    // -------------------------------------------------------------------------
+    // fileNameFor tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun fileNameForBothFormatsIncludesExtension() {
+        assertEquals("Weekly Note.txt", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.TXT))
+        assertEquals("Weekly Note.md", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.MD))
+        assertEquals("Weekly Note.pdf", NoteShare.fileNameFor("Weekly Note", NoteExportFormat.PDF))
+    }
+
+    @Test
+    fun fileNameForSanitizesIllegalCharacters() {
+        val input = "Meeting: 2026/11/05? [Draft]*"
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.txt", NoteShare.fileNameFor(input, NoteExportFormat.TXT))
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.md", NoteShare.fileNameFor(input, NoteExportFormat.MD))
+        assertEquals("Meeting_ 2026_11_05_ _Draft__.pdf", NoteShare.fileNameFor(input, NoteExportFormat.PDF))
+    }
+
+    @Test
+    fun fileNameForWithEmptyTitleUsesDefaultNoteName() {
+        assertEquals("note.txt", NoteShare.fileNameFor("", NoteExportFormat.TXT))
+        assertEquals("note.txt", NoteShare.fileNameFor("   ", NoteExportFormat.TXT))
+        assertEquals("note.md", NoteShare.fileNameFor("", NoteExportFormat.MD))
+        assertEquals("note.md", NoteShare.fileNameFor("   ", NoteExportFormat.MD))
+        assertEquals("note.pdf", NoteShare.fileNameFor("", NoteExportFormat.PDF))
+        assertEquals("note.pdf", NoteShare.fileNameFor("   ", NoteExportFormat.PDF))
+    }
+
+    // -------------------------------------------------------------------------
+    // saveToUri tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun saveToUriWritesExactTextForTxt() = runBlocking<Unit> {
+        val tempFile = File.createTempFile("save_txt", ".txt")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "My Note", "Body content", NoteExportFormat.TXT)
+
+        assertTrue(result)
+        assertEquals("My Note\n\nBody content", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriWritesExactTextForMd() = runBlocking<Unit> {
+        val tempFile = File.createTempFile("save_md", ".md")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "My Note", "Body content", NoteExportFormat.MD)
+
+        assertTrue(result)
+        assertEquals("# My Note\n\nBody content", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriOverwritesLongerOldFileCompletely() = runBlocking<Unit> {
+        val tempFile = File.createTempFile("save_truncate", ".txt")
+        tempFile.deleteOnExit()
+        tempFile.writeText("A very long previous content that should be completely truncated and replaced.")
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "Short", "New", NoteExportFormat.TXT)
+
+        assertTrue(result)
+        assertEquals("Short\n\nNew", tempFile.readText(Charsets.UTF_8))
+        tempFile.delete()
+    }
+
+    @Test
+    fun saveToUriReturnsFalseForUriThatCannotBeOpened() = runBlocking<Unit> {
+        val invalidUri = Uri.parse("content://nonexistent.authority/invalid/path")
+
+        val result = NoteShare.saveToUri(context, invalidUri, "Title", "Body", NoteExportFormat.TXT)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun saveToUriWritesPdfStartingWithMagicBytes() = runBlocking<Unit> {
+        assumePdfSupported()
+        val tempFile = File.createTempFile("save_pdf", ".pdf")
+        tempFile.deleteOnExit()
+        val uri = Uri.fromFile(tempFile)
+
+        val result = NoteShare.saveToUri(context, uri, "Pdf Note", "Some note text", NoteExportFormat.PDF)
+
+        assertTrue(result)
+        val bytes = tempFile.readBytes()
+        assertTrue(bytes.size > 100)
+        assertEquals("%PDF", String(bytes.take(4).toByteArray(), Charsets.US_ASCII))
+        tempFile.delete()
+    }
+}

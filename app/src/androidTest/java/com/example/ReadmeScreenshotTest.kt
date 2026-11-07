@@ -104,7 +104,7 @@ class ReadmeScreenshotTest {
         tap("tab_mytasks")
         capture("my_tasks")
 
-        tap("top_bar_notes_button")
+        openNotes()
         waitForTag("notes_list")
         capture("notes")
         tap("note_card_$noteId")
@@ -307,6 +307,11 @@ class ReadmeScreenshotTest {
             )
         )
         return noteId
+    }
+
+    private fun openNotes() {
+        tap("top_bar_tools_button")
+        tap("tools_tile_notes")
     }
 
     private fun tap(tag: String) {

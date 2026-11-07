@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.example.data.local.AppDatabase
+import com.example.util.timer.TimerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,6 +46,13 @@ class BootReceiver : BroadcastReceiver() {
                 step("snoozed reminders") { SnoozeStore.restoreAll(appContext) }
                 step("daily summary") { DailySummaryScheduler(appContext).reschedule() }
                 step("repeat rollover") { RepeatRolloverReceiver.rolloverAndReschedule(appContext) }
+                step("countdown timer") {
+                    val controller = TimerController.get(appContext)
+                    val endedWhileOff = controller.restoreAfterReboot()
+                    if (endedWhileOff) {
+                        CountdownNotifier.notifyFinished(appContext, controller.state.value.countdownTotalMillis)
+                    }
+                }
             } finally {
                 pending.finish()
             }

@@ -43,7 +43,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
+import com.example.util.NoteExportFormat
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.asImageBitmap
@@ -66,6 +68,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -550,6 +553,47 @@ fun NoteEditorScreen(
             }
         }
     }
+    
+    var isWorking by remember { mutableStateOf(false) }
+    var pendingSaveFormat by rememberSaveable { mutableStateOf<String?>(null) }
+    val saveDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri: Uri? ->
+        val formatName = pendingSaveFormat
+        pendingSaveFormat = null
+        if (uri != null && formatName != null) {
+            val format = try {
+                NoteExportFormat.valueOf(formatName)
+            } catch (_: Exception) {
+                null
+            }
+            if (format != null) {
+                val currentTitle = viewModel.title
+                val currentBody = viewModel.bodyValue.text
+                val isPdf = (format == NoteExportFormat.PDF)
+                coroutineScope.launch {
+                    if (isPdf) isWorking = true
+                    try {
+                        val ok = NoteShare.saveToUri(
+                            context = context,
+                            uri = uri,
+                            title = currentTitle,
+                            body = currentBody,
+                            format = format
+                        )
+                        val message = if (ok) "Saved to your device" else "Could not save the file"
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        if (isPdf) isWorking = false
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -578,6 +622,8 @@ fun NoteEditorScreen(
 
     var showCoursePicker by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showShareDialog by rememberSaveable { mutableStateOf(false) }
+    var showSaveDialog by rememberSaveable { mutableStateOf(false) }
 
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
     val courseColor = remember(selectedCourse?.colorHex) {
@@ -697,7 +743,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Share as text") },
+                            text = { Text("Share") },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Share,
@@ -705,31 +751,25 @@ fun NoteEditorScreen(
                                 )
                             },
                             enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            modifier = Modifier.testTag("note_menu_share"),
                             onClick = {
                                 showOverflowMenu = false
-                                NoteShare.shareAsText(
-                                    context = context,
-                                    title = viewModel.title,
-                                    body = viewModel.bodyValue.text
-                                )
+                                showShareDialog = true
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Share as .md file") },
+                            text = { Text("Save to device") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Description,
+                                    imageVector = Icons.Default.Save,
                                     contentDescription = null
                                 )
                             },
                             enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                            modifier = Modifier.testTag("note_menu_save"),
                             onClick = {
                                 showOverflowMenu = false
-                                NoteShare.shareAsMarkdownFile(
-                                    context = context,
-                                    title = viewModel.title,
-                                    body = viewModel.bodyValue.text
-                                )
+                                showSaveDialog = true
                             }
                         )
                         DropdownMenuItem(
@@ -1003,6 +1043,64 @@ fun NoteEditorScreen(
                 }
             }
         }
+    }
+
+    if (showShareDialog) {
+        NoteExportDialog(
+            title = "Share as",
+            onPick = { format ->
+                showShareDialog = false
+                val currentTitle = viewModel.title
+                val currentBody = viewModel.bodyValue.text
+                val isPdf = (format == NoteExportFormat.PDF)
+                coroutineScope.launch {
+                    if (isPdf) isWorking = true
+                    try {
+                        NoteShare.shareAsFileAsync(
+                            context = context,
+                            title = currentTitle,
+                            body = currentBody,
+                            format = format
+                        )
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Could not share the file", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        if (isPdf) isWorking = false
+                    }
+                }
+            },
+            onDismiss = { showShareDialog = false }
+        )
+    }
+
+    if (showSaveDialog) {
+        NoteExportDialog(
+            title = "Save as",
+            onPick = { format ->
+                showSaveDialog = false
+                pendingSaveFormat = format.name
+                val suggestedName = NoteShare.fileNameFor(viewModel.title, format)
+                saveDocumentLauncher.launch(suggestedName)
+            },
+            onDismiss = { showSaveDialog = false }
+        )
+    }
+
+    if (isWorking) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Please wait") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    Text("Creating PDF...")
+                }
+            }
+        )
     }
 }
 

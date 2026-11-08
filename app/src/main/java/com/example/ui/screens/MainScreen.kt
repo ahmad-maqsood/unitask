@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
 
@@ -119,6 +120,35 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.Crossfade
+/** Builds the list of tool tiles available in the Tools sheet. */
+fun buildToolsList(
+    onOpenNotes: () -> Unit,
+    onOpenTimer: () -> Unit,
+    onOpenRecentlyDeleted: () -> Unit
+): List<ToolEntry> = listOf(
+    ToolEntry(
+        label = "Notes",
+        description = "Lecture notes and summaries",
+        icon = Icons.Default.EditNote,
+        testTag = "tools_tile_notes",
+        onClick = onOpenNotes
+    ),
+    ToolEntry(
+        label = "Timer",
+        description = "Stopwatch and countdown",
+        icon = Icons.Default.Timer,
+        testTag = "tools_tile_timer",
+        onClick = onOpenTimer
+    ),
+    ToolEntry(
+        label = "Recently deleted",
+        description = "Restore tasks and notes",
+        icon = Icons.Default.DeleteSweep,
+        testTag = "tools_tile_recently_deleted",
+        onClick = onOpenRecentlyDeleted
+    )
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -290,6 +320,7 @@ fun MainScreen(
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
+    var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -314,21 +345,10 @@ fun MainScreen(
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
     val timerActive = !TimerLogic.isIdle(timerState)
 
-    val tools = listOf(
-        ToolEntry(
-            label = "Notes",
-            description = "Lecture notes and summaries",
-            icon = Icons.Default.EditNote,
-            testTag = "tools_tile_notes",
-            onClick = { showNotes = true }
-        ),
-        ToolEntry(
-            label = "Timer",
-            description = "Stopwatch and countdown",
-            icon = Icons.Default.Timer,
-            testTag = "tools_tile_timer",
-            onClick = { showTimer = true }
-        )
+    val tools = buildToolsList(
+        onOpenNotes = { showNotes = true },
+        onOpenTimer = { showTimer = true },
+        onOpenRecentlyDeleted = { showRecentlyDeleted = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -885,7 +905,8 @@ fun MainScreen(
         !isMyTaskDialogOpen &&
         !showNotes &&
         !showTools &&
-        !showTimer
+        !showTimer &&
+        !showRecentlyDeleted
     ) {
         DriveMigrationDialog(
             onDismiss = { hasShownMigrationDialogThisSession = true }
@@ -971,6 +992,12 @@ fun MainScreen(
     if (showTimer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             TimerScreen(onClose = { showTimer = false })
+        }
+    }
+
+    if (showRecentlyDeleted) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            RecentlyDeletedScreen(onClose = { showRecentlyDeleted = false })
         }
     }
 

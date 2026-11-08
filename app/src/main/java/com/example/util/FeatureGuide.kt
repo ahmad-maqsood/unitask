@@ -118,8 +118,8 @@ object FeatureGuide {
             "1. Open Settings, then Notifications & reminders.\n2. Tap Check reminders.\n3. Tap Fix this next to any line with a warning.\n4. Tap Send test reminder, lock the screen and wait about 10 seconds.\n5. If a reminder was due while your phone was off, you get one 'Missed reminder' notification when it starts again."
         ),
         AppFeature(
-            "Delete When Done", "Let finished one-time tasks in My tasks remove themselves.", "assignment", 23,
-            "1. In My tasks, add a task or edit one.\n2. Leave Repeat on 'Does not repeat'.\n3. Switch on 'Delete when done' and save.\n4. Tick the task done. It is deleted after that day, so you can still undo it the same day."
+            "Delete When Done", "Let finished one-time tasks in My tasks move to Recently deleted.", "assignment", 23,
+            "1. In My tasks, add a task or edit one.\n2. Leave Repeat on 'Does not repeat'.\n3. Switch on 'Delete when done' and save.\n4. Tick the task done. It moves to Recently deleted after that day, where you can still restore it."
         ),
         AppFeature(
             "Accent Colours", "Choose one of six accent colours for the app.", "star", 95,
@@ -127,7 +127,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Notes", "Capture lecture notes, ideas, and revision summaries with course tags and search.", "assignment", 135,
-            "1. Tap the Tools icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin, Save to device or Delete it.\n7. Open the top-right menu and choose Recently deleted to view or restore deleted notes.\n8. Use Save to device in the note menu to keep a note as a file in any folder you choose.\n9. Share or Save to device can also make a PDF that looks like the preview, with headings, lists, tables and images."
+            "1. Tap the Tools icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin, Save to device or Delete it.\n7. Tap Tools in the top bar, then Recently deleted to view or restore deleted notes.\n8. Use Save to device in the note menu to keep a note as a file in any folder you choose.\n9. Share or Save to device can also make a PDF that looks like the preview, with headings, lists, tables and images."
         ),
         AppFeature(
             "Markdown in Notes", "Format text with headings, checklists, tables, links and gallery images.", "assignment", 140,
@@ -140,6 +140,10 @@ object FeatureGuide {
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "schedule", 150,
             "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick 15, 25, 45 or 60 minutes, or tap Custom to type your own.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active.\n7. When a countdown ends you get a notification, even if the app is closed."
+        ),
+        AppFeature(
+            "Recently deleted", "Restore deleted tasks and notes, or remove them forever.", "assignment", 155,
+            "1. Tap the Tools icon in the top bar, then tap Recently deleted.\n2. Switch between the Tasks and Notes tabs to see your deleted items.\n3. Tap Restore on any item to put it back where it was.\n4. Tap Delete forever (or Empty trash) to remove items permanently.\n5. Items left in the trash are automatically removed for good after 30 days."
         ),
         AppFeature(
             "Google Drive backup", "Back up everything to your own Google Drive and restore it on any phone.", "backup", 160,

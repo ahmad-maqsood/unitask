@@ -11,7 +11,6 @@ import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
 import com.example.util.timer.TimerState
-import com.example.util.HighPriorityAlarm
 import com.example.util.timer.TimerStore
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -192,6 +191,23 @@ class CountdownReceiverTest {
         val notifications = shadowNotificationManager.allNotifications
         assertEquals(1, notifications.size)
         val notif = notifications[0]
-        assertEquals(HighPriorityAlarm.CHANNEL_ID_SILENCED, notif.channelId)
+        assertEquals(CountdownNotifier.CHANNEL_ID_SILENT, notif.channelId)
+    }
+    
+    @Test
+    fun silenceAlarmDoesNotRepostAfterNotificationWasOpened() {
+        CountdownNotifier.notifyFinished(context, 60_000L, ring = true)
+        assertEquals(1, shadowNotificationManager.allNotifications.size)
+
+        // Tapping the notification body removes it without running the Stop action.
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+
+        val silence = Intent(context, TimerActionReceiver::class.java).apply {
+            action = TimerActionReceiver.ACTION_SILENCE_COUNTDOWN
+            putExtra(CountdownNotifier.EXTRA_TOTAL_MILLIS, 60_000L)
+        }
+        TimerActionReceiver().onReceive(context, silence)
+
+        assertEquals(0, shadowNotificationManager.allNotifications.size)
     }
 }

@@ -29,8 +29,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -147,15 +146,7 @@ fun TimerScreen(
 
     // When returning to the app, check if a running countdown completed while paused or in the background.
     LifecycleResumeEffect(Unit) {
-        val stateBefore = controller.state.value
-        val ring = !TimerLogic.isAlarmLate(stateBefore, controller.now())
-        if (controller.markFinishedIfDue()) {
-            CountdownNotifier.notifyFinished(
-                context,
-                controller.state.value.countdownTotalMillis,
-                ring = ring
-            )
-        }
+        CountdownNotifier.finishIfDue(context, controller)
         onPauseOrDispose { }
     }
 
@@ -347,11 +338,10 @@ fun TimerScreen(
                 ) {
                     val fontSize = (maxWidth.value * 0.22f).coerceIn(48f, 96f).sp
                     val isClockTappable = state.mode == TimerMode.COUNTDOWN && isIdle
-                    val clockModifier = if (state.mode == TimerMode.COUNTDOWN) {
+                    val clockModifier = if (isClockTappable) {
                         Modifier
                             .testTag("timer_clock_edit")
-                            .semantics { contentDescription = "Change countdown length" }
-                            .clickable(enabled = isClockTappable) {
+                            .clickable(onClickLabel = "Change countdown length", role = Role.Button) {
                                 showCustomDialog = true
                             }
                     } else {
@@ -530,50 +520,21 @@ fun TimerScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val newTotal = TimerLogic.addMinutes(totalMinutes, 5)
-                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
-                                hoursText = if (newH > 0) newH.toString() else ""
-                                minutesText = newM.toString()
-                            },
-                            label = { Text("+5 min") },
-                            modifier = Modifier.testTag("timer_quick_add_5")
-                        )
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val newTotal = TimerLogic.addMinutes(totalMinutes, 10)
-                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
-                                hoursText = if (newH > 0) newH.toString() else ""
-                                minutesText = newM.toString()
-                            },
-                            label = { Text("+10 min") },
-                            modifier = Modifier.testTag("timer_quick_add_10")
-                        )
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val newTotal = TimerLogic.addMinutes(totalMinutes, 30)
-                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
-                                hoursText = if (newH > 0) newH.toString() else ""
-                                minutesText = newM.toString()
-                            },
-                            label = { Text("+30 min") },
-                            modifier = Modifier.testTag("timer_quick_add_30")
-                        )
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val newTotal = TimerLogic.addMinutes(totalMinutes, 60)
-                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
-                                hoursText = if (newH > 0) newH.toString() else ""
-                                minutesText = newM.toString()
-                            },
-                            label = { Text("+1 h") },
-                            modifier = Modifier.testTag("timer_quick_add_60")
-                        )
+                        listOf(5 to "+5 min", 10 to "+10 min", 30 to "+30 min", 60 to "+1 h")
+                            .forEach { (delta, label) ->
+                                FilterChip(
+                                    selected = false,
+                                    onClick = {
+                                        val (newH, newM) = TimerLogic.splitHoursAndMinutes(
+                                            TimerLogic.addMinutes(totalMinutes, delta)
+                                        )
+                                        hoursText = if (newH > 0) newH.toString() else ""
+                                        minutesText = newM.toString()
+                                    },
+                                    label = { Text(label) },
+                                    modifier = Modifier.testTag("timer_quick_add_$delta")
+                                )
+                            }
                     }
                 }
             },
@@ -684,14 +645,7 @@ private fun rememberNow(running: Boolean, controller: TimerController): State<Lo
                 nowState.value = current
                 val state = controller.state.value
                 if (state.mode == TimerMode.COUNTDOWN && TimerLogic.remainingMillis(state, current) == 0L) {
-                    val ring = !TimerLogic.isAlarmLate(state, current)
-                    if (controller.markFinishedIfDue()) {
-                        CountdownNotifier.notifyFinished(
-                            context,
-                            controller.state.value.countdownTotalMillis,
-                            ring = ring
-                        )
-                    }
+                    CountdownNotifier.finishIfDue(context, controller)
                 }
                 val millisIntoSecond = (current % 1000L).toInt()
                 val delayMillis = (1000 - millisIntoSecond + 20).toLong()

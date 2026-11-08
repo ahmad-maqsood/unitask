@@ -17,6 +17,8 @@ import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
 import com.example.util.HighPriorityAlarm
+import com.example.util.timer.TimerController
+import com.example.util.timer.TimerLogic
 
 /**
  * Delivers and cancels the notification shown when a countdown timer ends.
@@ -29,6 +31,7 @@ object CountdownNotifier {
     private const val REQUEST_CODE_SILENCE = 9924
     private const val REQUEST_CODE_STOP = 9925
     const val EXTRA_TOTAL_MILLIS = "extra_countdown_total_millis"
+    const val CHANNEL_ID_SILENT = "unitask_countdown_finished_silent_v1"
 
     private fun ensureChannel(nm: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
@@ -49,6 +52,22 @@ object CountdownNotifier {
             }
             nm.createNotificationChannel(channel)
             nm.deleteNotificationChannel(OLD_CHANNEL_ID)
+        }
+    }
+
+    private fun ensureSilentChannel(nm: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID_SILENT) == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID_SILENT,
+                "Countdown finished (silent)",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shown when a countdown ended while the phone was off or the alarm was very late."
+                enableVibration(false)
+                setSound(null, null)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
+            nm.createNotificationChannel(channel)
         }
     }
 
@@ -114,8 +133,8 @@ object CountdownNotifier {
             CHANNEL_ID
         } else {
             cancelSilenceAlarm(context)
-            HighPriorityAlarm.ensureChannel(context)
-            HighPriorityAlarm.CHANNEL_ID_SILENCED
+            ensureSilentChannel(nm)
+            CHANNEL_ID_SILENT
         }
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
@@ -172,9 +191,24 @@ object CountdownNotifier {
         nm.notify(NOTIFICATION_ID, notification)
     }
 
+    /** Marks a due countdown as finished and posts the alert. Rings only if the alarm is not late. */
+    fun finishIfDue(context: Context, controller: TimerController, toleranceMillis: Long = 0L): Boolean {
+        val before = controller.state.value
+        val ring = !TimerLogic.isAlarmLate(before, controller.now())
+        if (!controller.markFinishedIfDue(toleranceMillis)) return false
+        notifyFinished(context, before.countdownTotalMillis, ring)
+        return true
+    }
+
     fun cancelFinished(context: Context) {
         cancelSilenceAlarm(context)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         nm?.cancel(NOTIFICATION_ID)
+    }
+
+    fun isFinishedNotificationShowing(context: Context): Boolean {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: return false
+        return nm.activeNotifications.any { it.id == NOTIFICATION_ID }
     }
 }

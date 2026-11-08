@@ -509,13 +509,21 @@ fun NoteEditorScreen(
         )
     }
 
+    val showImageLimitToast = {
+        Toast.makeText(
+            context,
+            "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
             if (!NoteImages.canAddImage(count)) {
-                Toast.makeText(context, "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images", Toast.LENGTH_SHORT).show()
+                showImageLimitToast()
                 return@rememberLauncherForActivityResult
             }
             isImportingImage = true
@@ -1007,7 +1015,7 @@ fun NoteEditorScreen(
                         onClick = {
                             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
                             if (!NoteImages.canAddImage(count)) {
-                                Toast.makeText(context, "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images", Toast.LENGTH_SHORT).show()
+                                showImageLimitToast()
                             } else {
                                 pickImageLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)

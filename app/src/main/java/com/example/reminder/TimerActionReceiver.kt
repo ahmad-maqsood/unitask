@@ -17,6 +17,8 @@ class TimerActionReceiver : BroadcastReceiver() {
             ACTION_STOP -> TimerController.get(context).reset()
             ACTION_STOP_COUNTDOWN -> CountdownNotifier.cancelFinished(context)
             ACTION_SILENCE_COUNTDOWN -> {
+                // The user may already have opened or dismissed it during the 60 s of ringing.
+                if (!CountdownNotifier.isFinishedNotificationShowing(context)) return
                 val totalMillis = intent.getLongExtra(CountdownNotifier.EXTRA_TOTAL_MILLIS, 0L)
                 CountdownNotifier.notifyFinished(context, totalMillis, ring = false)
             }

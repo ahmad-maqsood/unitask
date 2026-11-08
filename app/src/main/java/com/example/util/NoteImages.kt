@@ -20,10 +20,10 @@ object NoteImages {
 
     const val PREFIX = "unitask-image:"
     const val MAX_IMAGES_PER_NOTE = 50
-
-    fun canAddImage(currentCount: Int): Boolean = currentCount < MAX_IMAGES_PER_NOTE
     const val MAX_EDGE_PX = 1600
     const val JPEG_QUALITY = 80
+
+    fun canAddImage(currentCount: Int): Boolean = currentCount < MAX_IMAGES_PER_NOTE
 
     private val VALID_NAME_REGEX = Regex("""^[A-Za-z0-9_-]{8,64}\.jpg$""")
 

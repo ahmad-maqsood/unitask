@@ -40,7 +40,7 @@ class TimerOngoingNotifierTest {
     fun ongoingNotificationHasPublicVisibilityAndActionsWhenRunningAndPaused() {
         val runningState = TimerState(
             mode = TimerMode.STOPWATCH,
-            runningSince = 10_000L,
+            runningSinceMillis = 10_000L,
             accumulatedMillis = 0L
         )
         val now = 15_000L
@@ -57,7 +57,7 @@ class TimerOngoingNotifierTest {
 
         val pausedState = TimerState(
             mode = TimerMode.STOPWATCH,
-            runningSince = null,
+            runningSinceMillis = null,
             accumulatedMillis = 5_000L
         )
         notifier.update(pausedState, now)

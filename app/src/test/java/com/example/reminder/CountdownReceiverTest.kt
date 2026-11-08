@@ -11,6 +11,7 @@ import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
 import com.example.util.timer.TimerState
+import com.example.util.HighPriorityAlarm
 import com.example.util.timer.TimerStore
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -145,5 +146,52 @@ class CountdownReceiverTest {
 
         assertFalse(TimerLogic.isRunning(controller.state.value))
         assertEquals(1, shadowNotificationManager.allNotifications.size)
+    }
+
+    @Test
+    fun finishedAlarmHasPublicVisibilityAndStopAction() {
+        val controller = TimerController.get(context)
+        controller.setMode(TimerMode.COUNTDOWN)
+        controller.setCountdownMinutes(1)
+        controller.start()
+
+        currentTime = 61_000L
+        val receiver = CountdownReceiver()
+        receiver.onReceive(context, Intent())
+
+        val notifications = shadowNotificationManager.allNotifications
+        assertEquals(1, notifications.size)
+        val notif = notifications[0]
+        assertEquals(CountdownNotifier.CHANNEL_ID, notif.channelId)
+        assertEquals(Notification.VISIBILITY_PUBLIC, notif.visibility)
+        assertEquals(1, notif.actions.size)
+        assertEquals("Stop", notif.actions[0].title.toString())
+
+        // Stop action intent cancels the notification
+        val actionReceiver = TimerActionReceiver()
+        val stopIntent = Intent(context, TimerActionReceiver::class.java).apply {
+            action = TimerActionReceiver.ACTION_STOP_COUNTDOWN
+        }
+        actionReceiver.onReceive(context, stopIntent)
+        assertEquals(0, shadowNotificationManager.allNotifications.size)
+    }
+
+    @Test
+    fun lateAlarmEndingMoreThanTwoMinutesAgoPostsSilencedNotification() {
+        val controller = TimerController.get(context)
+        controller.setMode(TimerMode.COUNTDOWN)
+        controller.setCountdownMinutes(1) // due at 61_000L
+        controller.start()
+
+        // 3 minutes after due time (more than 2 minutes late)
+        currentTime = 61_000L + 180_000L
+
+        val receiver = CountdownReceiver()
+        receiver.onReceive(context, Intent())
+
+        val notifications = shadowNotificationManager.allNotifications
+        assertEquals(1, notifications.size)
+        val notif = notifications[0]
+        assertEquals(HighPriorityAlarm.CHANNEL_ID_SILENCED, notif.channelId)
     }
 }

@@ -144,17 +144,41 @@ class TimerFlowTest {
         // Custom duration dialog is open
         composeRule.onNodeWithTag("timer_custom_input").performTextClearance()
         composeRule.onNodeWithTag("timer_custom_input").performTextInput("0")
-        composeRule.onNodeWithText("Enter a duration between 1 and 600 minutes").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose between 1 minute and 10 hours").assertIsDisplayed()
         composeRule.onNodeWithTag("timer_custom_set_button").assertIsNotEnabled()
 
-        composeRule.onNodeWithTag("timer_custom_input").performTextClearance()
-        composeRule.onNodeWithTag("timer_custom_input").performTextInput("601")
-        composeRule.onNodeWithText("Enter a duration between 1 and 600 minutes").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_custom_hours_input").performTextClearance()
+        composeRule.onNodeWithTag("timer_custom_hours_input").performTextInput("11")
+        composeRule.onNodeWithText("Choose between 1 minute and 10 hours").assertIsDisplayed()
         composeRule.onNodeWithTag("timer_custom_set_button").assertIsNotEnabled()
 
         composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
         // Length remains default 25:00
         composeRule.onNodeWithTag("timer_time_text").assertTextEquals("25:00")
+    }
+
+    @Test
+    fun customDurationQuickAddAndSetUpdatesLengthAndCustomChipLabel() {
+        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.onNodeWithTag("timer_preset_custom").performClick()
+
+        composeRule.onNodeWithTag("timer_custom_hours_input").performTextClearance()
+        composeRule.onNodeWithTag("timer_custom_input").performTextClearance()
+        composeRule.onNodeWithTag("timer_quick_add_60").performClick()
+        composeRule.onNodeWithTag("timer_quick_add_30").performClick()
+        composeRule.onNodeWithText("Total: 1 h 30 min").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("timer_custom_set_button").performClick()
+        composeRule.onNodeWithTag("timer_time_text").assertTextEquals("1:30:00")
+        composeRule.onNodeWithText("1 h 30 min").assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingClockWhileIdleInCountdownModeOpensCustomDialog() {
+        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.onNodeWithTag("timer_clock_edit").performClick()
+        composeRule.onNodeWithTag("timer_custom_input").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
     }
 
     @Test

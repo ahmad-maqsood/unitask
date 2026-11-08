@@ -21,10 +21,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
@@ -140,8 +147,14 @@ fun TimerScreen(
 
     // When returning to the app, check if a running countdown completed while paused or in the background.
     LifecycleResumeEffect(Unit) {
+        val stateBefore = controller.state.value
+        val ring = !TimerLogic.isAlarmLate(stateBefore, controller.now())
         if (controller.markFinishedIfDue()) {
-            CountdownNotifier.notifyFinished(context, controller.state.value.countdownTotalMillis)
+            CountdownNotifier.notifyFinished(
+                context,
+                controller.state.value.countdownTotalMillis,
+                ring = ring
+            )
         }
         onPauseOrDispose { }
     }
@@ -333,9 +346,21 @@ fun TimerScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     val fontSize = (maxWidth.value * 0.22f).coerceIn(48f, 96f).sp
+                    val isClockTappable = state.mode == TimerMode.COUNTDOWN && isIdle
+                    val clockModifier = if (state.mode == TimerMode.COUNTDOWN) {
+                        Modifier
+                            .testTag("timer_clock_edit")
+                            .semantics { contentDescription = "Change countdown length" }
+                            .clickable(enabled = isClockTappable) {
+                                showCustomDialog = true
+                            }
+                    } else {
+                        Modifier
+                    }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = clockModifier
                     ) {
                         Text(
                             text = timeText,
@@ -363,6 +388,8 @@ fun TimerScreen(
                 if (state.mode == TimerMode.COUNTDOWN) {
                     val presetMinutes = listOf(15, 25, 45, 60)
                     val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
+                    val currentTotalMinutes = (state.countdownTotalMillis / 60_000L).toInt()
+                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes) else "Custom"
 
                     Row(
                         modifier = Modifier
@@ -385,7 +412,7 @@ fun TimerScreen(
                         FilterChip(
                             selected = isCustomSelected,
                             onClick = { showCustomDialog = true },
-                            label = { Text("Custom") },
+                            label = { Text(customLabel) },
                             enabled = isIdle,
                             modifier = Modifier.testTag("timer_preset_custom")
                         )
@@ -409,37 +436,143 @@ fun TimerScreen(
     }
 
     if (showCustomDialog) {
-        var inputMinutes by rememberSaveable {
-            mutableStateOf((state.countdownTotalMillis / 60_000L).toString())
+        val initialTotal = (state.countdownTotalMillis / 60_000L).toInt()
+        val (initH, initM) = TimerLogic.splitHoursAndMinutes(initialTotal)
+        var hoursText by rememberSaveable {
+            mutableStateOf(if (initH > 0) initH.toString() else "")
         }
-        val parsed = inputMinutes.toIntOrNull()
-        val isError = parsed == null || parsed !in TimerLogic.MIN_COUNTDOWN_MINUTES..TimerLogic.MAX_COUNTDOWN_MINUTES
+        var minutesText by rememberSaveable {
+            mutableStateOf(initM.toString())
+        }
+        val minutesFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            minutesFocusRequester.requestFocus()
+        }
+
+        val h = hoursText.toIntOrNull() ?: 0
+        val m = minutesText.toIntOrNull() ?: 0
+        val totalMinutes = TimerLogic.combineHoursAndMinutes(h, m)
+        val isValid = totalMinutes in TimerLogic.MIN_COUNTDOWN_MINUTES..TimerLogic.MAX_COUNTDOWN_MINUTES
 
         AlertDialog(
             onDismissRequest = { showCustomDialog = false },
-            title = { Text("Custom duration") },
+            title = { Text("Countdown length") },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedTextField(
-                        value = inputMinutes,
-                        onValueChange = { newValue ->
-                            if (newValue.all { it.isDigit() }) {
-                                inputMinutes = newValue
-                            }
-                        },
-                        label = { Text("Minutes (1 to 600)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        isError = isError,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("timer_custom_input")
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = hoursText,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                    hoursText = newValue
+                                }
+                            },
+                            label = { Text("Hours") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("timer_custom_hours_input")
+                        )
+                        OutlinedTextField(
+                            value = minutesText,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                    minutesText = newValue
+                                }
+                            },
+                            label = { Text("Minutes") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    if (isValid) {
+                                        controller.setCountdownMinutes(totalMinutes)
+                                        showCustomDialog = false
+                                    }
+                                }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(minutesFocusRequester)
+                                .testTag("timer_custom_input")
+                        )
+                    }
+
+                    Text(
+                        text = "Total: ${TimerLogic.formatDuration(totalMinutes)}",
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                    if (isError) {
+
+                    if (!isValid) {
                         Text(
-                            text = "Enter a duration between 1 and 600 minutes",
+                            text = "Choose between 1 minute and 10 hours",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val newTotal = TimerLogic.addMinutes(totalMinutes, 5)
+                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
+                                hoursText = if (newH > 0) newH.toString() else ""
+                                minutesText = newM.toString()
+                            },
+                            label = { Text("+5 min") },
+                            modifier = Modifier.testTag("timer_quick_add_5")
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val newTotal = TimerLogic.addMinutes(totalMinutes, 10)
+                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
+                                hoursText = if (newH > 0) newH.toString() else ""
+                                minutesText = newM.toString()
+                            },
+                            label = { Text("+10 min") },
+                            modifier = Modifier.testTag("timer_quick_add_10")
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val newTotal = TimerLogic.addMinutes(totalMinutes, 30)
+                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
+                                hoursText = if (newH > 0) newH.toString() else ""
+                                minutesText = newM.toString()
+                            },
+                            label = { Text("+30 min") },
+                            modifier = Modifier.testTag("timer_quick_add_30")
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val newTotal = TimerLogic.addMinutes(totalMinutes, 60)
+                                val (newH, newM) = TimerLogic.splitHoursAndMinutes(newTotal)
+                                hoursText = if (newH > 0) newH.toString() else ""
+                                minutesText = newM.toString()
+                            },
+                            label = { Text("+1 h") },
+                            modifier = Modifier.testTag("timer_quick_add_60")
                         )
                     }
                 }
@@ -447,12 +580,12 @@ fun TimerScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (!isError && parsed != null) {
-                            controller.setCountdownMinutes(parsed)
+                        if (isValid) {
+                            controller.setCountdownMinutes(totalMinutes)
                             showCustomDialog = false
                         }
                     },
-                    enabled = !isError,
+                    enabled = isValid,
                     modifier = Modifier.testTag("timer_custom_set_button")
                 ) {
                     Text("Set")
@@ -551,8 +684,13 @@ private fun rememberNow(running: Boolean, controller: TimerController): State<Lo
                 nowState.value = current
                 val state = controller.state.value
                 if (state.mode == TimerMode.COUNTDOWN && TimerLogic.remainingMillis(state, current) == 0L) {
+                    val ring = !TimerLogic.isAlarmLate(state, current)
                     if (controller.markFinishedIfDue()) {
-                        CountdownNotifier.notifyFinished(context, controller.state.value.countdownTotalMillis)
+                        CountdownNotifier.notifyFinished(
+                            context,
+                            controller.state.value.countdownTotalMillis,
+                            ring = ring
+                        )
                     }
                 }
                 val millisIntoSecond = (current % 1000L).toInt()

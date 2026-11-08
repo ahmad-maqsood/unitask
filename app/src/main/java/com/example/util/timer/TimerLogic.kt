@@ -27,6 +27,7 @@ object TimerLogic {
     const val MAX_STOPWATCH_MILLIS = 99 * 3_600_000L + 59 * 60_000L + 59_000L
     const val MIN_COUNTDOWN_MINUTES = 1
     const val MAX_COUNTDOWN_MINUTES = 600
+    const val LATE_ALARM_THRESHOLD_MILLIS = 2 * 60_000L
 
     fun elapsedMillis(s: TimerState, now: Long): Long {
         val runningElapsed = if (s.runningSinceMillis != null) {
@@ -138,5 +139,42 @@ object TimerLogic {
         } else {
             String.format(Locale.US, "%02d:%02d", m, sec)
         }
+    }
+
+    fun combineHoursAndMinutes(hours: Int, minutes: Int): Int {
+        return maxOf(0, hours) * 60 + maxOf(0, minutes)
+    }
+
+    fun splitHoursAndMinutes(totalMinutes: Int): Pair<Int, Int> {
+        val nonNegative = maxOf(0, totalMinutes)
+        return Pair(nonNegative / 60, nonNegative % 60)
+    }
+
+    fun addMinutes(currentTotal: Int, delta: Int): Int {
+        return (currentTotal + delta).coerceIn(MIN_COUNTDOWN_MINUTES, MAX_COUNTDOWN_MINUTES)
+    }
+
+    fun formatDuration(totalMinutes: Int): String {
+        val (h, m) = splitHoursAndMinutes(totalMinutes)
+        return when {
+            h > 0 && m > 0 -> "$h h $m min"
+            h > 0 -> "$h h"
+            else -> "$m min"
+        }
+    }
+
+    fun scheduledEndTimeMillis(s: TimerState): Long? {
+        if (s.mode != TimerMode.COUNTDOWN || s.runningSinceMillis == null) return null
+        val remainingWhenStarted = maxOf(0L, s.countdownTotalMillis - s.accumulatedMillis)
+        return s.runningSinceMillis + remainingWhenStarted
+    }
+
+    fun isAlarmLate(
+        s: TimerState,
+        now: Long,
+        lateThresholdMillis: Long = LATE_ALARM_THRESHOLD_MILLIS
+    ): Boolean {
+        val end = scheduledEndTimeMillis(s) ?: return false
+        return (now - end) > lateThresholdMillis
     }
 }

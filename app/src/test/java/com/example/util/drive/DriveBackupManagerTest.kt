@@ -498,7 +498,7 @@ class DriveBackupManagerTest {
         assertTrue("Slot must be re-uploaded", fakeStore.callLog.any { it == "upload" })
 
         // Check that slot now has myTasks prop
-        val updatedSlot = fakeStore.files.values.first { it.name == (reuploadRes as DriveBackupResult.Success).info.slotFileId }
+        val updatedSlot = fakeStore.files.values.first { it.id == (reuploadRes as DriveBackupResult.Success).info.slotFileId }
         assertTrue(updatedSlot.props.containsKey("myTasks"))
 
         // Second run without force: slot now has myTasks prop and data is unchanged -> Unchanged

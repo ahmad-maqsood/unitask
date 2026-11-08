@@ -17,8 +17,8 @@ MAX_PATCH_CHARS = 5000
 MAX_CONTEXT_CHARS = 100000
 
 
-def request_json(url, headers=None, timeout=60):
-    req = urllib.request.Request(url, headers=headers or {})
+def request_json(url, headers=None, data=None, timeout=60):
+    req = urllib.request.Request(url, data=data, headers=headers or {})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
@@ -49,7 +49,7 @@ def gemini_generate(prompt):
             "Secrets and variables > Actions before preparing a release."
         )
     model = os.getenv("GEMINI_MODEL", DEFAULT_MODEL)
-    url = f"{GEMINI_API}/models/{urllib.parse.quote(model, safe='')}:generateContent?key={urllib.parse.quote(key, safe='')}"
+    url = f"{GEMINI_API}/models/{urllib.parse.quote(model, safe='')}:generateContent"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -60,8 +60,9 @@ def gemini_generate(prompt):
     }
     result = request_json(url, {
         "Content-Type": "application/json",
+        "x-goog-api-key": key,
         "User-Agent": "unitask-release-notes",
-    }, timeout=120)
+    }, data=json.dumps(payload).encode("utf-8"), timeout=120)
     candidates = result.get("candidates", [])
     if not candidates:
         feedback = result.get("promptFeedback", {})

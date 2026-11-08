@@ -5,106 +5,50 @@ All notable changes to UniTask are documented in this file.
 ## [4.0.0] - 08-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
 
-### New Features
-- [add the pause icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/80c56392a0058bedf54d7810ce54623a92725b21)
-- [add the play (resume) icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/50efb2ee7d297281a290eb5e96bed6b5c76927b0)
-- [add the stop icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/06c93ca189f41b8c7bac19acf37075b1d5d0e78b)
-- [show icons on the timer notification buttons](https://github.com/ahmad-maqsood/unitask/commit/8983498e083ae629bacc128769b85bab982e8fe4)
-- [add a hook for the running-timer notification](https://github.com/ahmad-maqsood/unitask/commit/19d814285a3de6ecf01525ba5af9bde5ed41883d)
-- [show an ongoing notification while the timer runs](https://github.com/ahmad-maqsood/unitask/commit/6da326401fd531a893a884276736e6038d663633)
-- [handle Pause, Resume and Stop from the timer notification](https://github.com/ahmad-maqsood/unitask/commit/f7c1ea392c7d6bb217fe7e91999247565ff045fe)
-- [keep the running-timer notification in sync](https://github.com/ahmad-maqsood/unitask/commit/6b1c030677f8f8241b0d6ec89da7b4f603d9bde5)
-- [register the timer notification action receiver](https://github.com/ahmad-maqsood/unitask/commit/7624cf87209b3bbdc269b097416ec90959cc3b38)
-- [feat: Tools menu, timer, countdown and notes export](https://github.com/ahmad-maqsood/unitask/pull/48) — What's new
+### Added
+- **Study timer:** added a stopwatch and countdown with preset or custom durations, plus a fullscreen landscape display.
+- **Timer notifications:** added an ongoing notification with Pause, Resume and Stop controls, including support for the lock screen.
+- **Countdown alarm:** the app now sounds an alarm when a countdown finishes, even when the app is not open.
+- **Global search:** search across app content and jump directly to settings pages.
+- **Recently deleted and semester archive:** recover deleted content and keep older semester work organised.
+- **Notes sharing and export:** share notes as text, Markdown or PDF without opening the editor.
+- **Google Drive backup:** back up and restore personal app data using the app's private folder in Drive.
 
-### Improvements
-- [improve: timer lock screen controls, countdown alarm, and notes limits](https://github.com/ahmad-maqsood/unitask/pull/58) — This pull request introduces three focused improvements across the Timer and Notes features:
-- [make the app bar logo follow the theme](https://github.com/ahmad-maqsood/unitask/commit/25503fecefd670c1c35fe7f68c4063770572b78c)
-- [show full tool descriptions on two lines](https://github.com/ahmad-maqsood/unitask/commit/0b7ba8bd59859bfd77132bdf09b0d79a24b1673c)
-- [refactor: transition to local-first personal storage and remove Supabase personal sync](https://github.com/ahmad-maqsood/unitask/pull/56) — This PR transitions UniTask to a local-first storage model for personal data (courses, tasks, lecture timetable slots, and notes). All personal data now resides securely on the dev
+### Improved
+- **Local-first personal data:** courses, tasks, timetable entries and notes are stored locally in Room rather than synced as personal data through Supabase.
+- **Timer controls:** refined the notification buttons and made timer actions easier to reach while the phone is locked.
+- **Group chat storage:** limited each group to its 500 newest messages to keep the database manageable.
+- **App appearance:** updated the app icon and made the app-bar logo follow the selected theme.
+- **Small-screen layouts and navigation:** improved tool descriptions and adjusted several screens for clearer presentation.
 
-### Bug Fixes
-- [feat: add Google Drive backup and restore](https://github.com/ahmad-maqsood/unitask/pull/50) — What
-- [removed nested folder](https://github.com/ahmad-maqsood/unitask/commit/99039f08319ef1f1ddf034fe9e699cab17c70bd2)
+### Fixed
+- Improved reliability in Drive backup and restore, note handling, and timer notification state updates.
+- Fixed issues found in the app's automated UI and database tests.
 
-### Other Changes
-- [docs: refresh automated README screenshots](https://github.com/ahmad-maqsood/unitask/pull/59) — Summary
-- [improve README with highlights, build steps and a fixed diagram](https://github.com/ahmad-maqsood/unitask/commit/186784f142704dccdc61c7f1a9bc68094b1a3d32)
-- [stop closing the database in DriveRestoreOfferCardTest teardown](https://github.com/ahmad-maqsood/unitask/commit/e20a2a4c1abbbfdd9ce8db51d28f32b7ba934e7c)
-- [add Global search and Recently deleted screenshots, use Pakistani chat names](https://github.com/ahmad-maqsood/unitask/commit/edbbf18fbed5ea17861b0bcedf5e1e4eef6e673e)
-- [update: bump app version to 4.0.0](https://github.com/ahmad-maqsood/unitask/commit/79621ca3427e724e3e4f2574d5d94ab21948c3cd)
-- [feats: recently deleted, semester archive, and global search](https://github.com/ahmad-maqsood/unitask/pull/57) — Added three major capabilities to UniTask:
-- [add manual lines of code count workflow](https://github.com/ahmad-maqsood/unitask/commit/367525e3f4f83a65b5390af80ab3579d2fdf66b8)
-- [Keep lint self-test output out of CI results](https://github.com/ahmad-maqsood/unitask/commit/e1076af76b171ff3ef762e93757289267ee167e3)
-- [Remove dependency review workflow](https://github.com/ahmad-maqsood/unitask/commit/3fbb1eb89e92d4830b38d590bf7186c603daccef)
-- [make lint failures easy to read](https://github.com/ahmad-maqsood/unitask/commit/79c5704abb862f94ab5f83255a57ebc291afe60b)
-- [remove smoke tests](https://github.com/ahmad-maqsood/unitask/commit/d078fd7a6749cb5b398ecc70fd2750bf08e0f7fc)
-- [Replace app icon with the Sunrise U design](https://github.com/ahmad-maqsood/unitask/pull/55) — Summary
-- [Limit group chat to 500 messages per group in Supabase](https://github.com/ahmad-maqsood/unitask/pull/54) — Summary
-- [Redesign running timer notification with round icon buttons](https://github.com/ahmad-maqsood/unitask/pull/53) — Summary
-- [Fix Drive restore test Compose teardown](https://github.com/ahmad-maqsood/unitask/pull/52) — Summary
-- [Fix Drive restore offer test database cleanup](https://github.com/ahmad-maqsood/unitask/pull/51) — Summary
-- [cover the running-timer notification updates](https://github.com/ahmad-maqsood/unitask/commit/6c9b41251ad4d4ef7bdd46ac58f0f8cfc09dcfb8)
-- [tag the Deadlines list so tests can scroll it](https://github.com/ahmad-maqsood/unitask/commit/6cb55fb64a1f16727e39b1c1a49c072cc2306151)
-- [fix five failing smoke tests](https://github.com/ahmad-maqsood/unitask/commit/51d4563e1bfcbc5089bd2d14f614d81f19722738)
-- [print failing smoke test names and stack traces](https://github.com/ahmad-maqsood/unitask/commit/00d280fe440fdd90d46e2e7aab194fb1a52f31de)
-- [capture the study timer in README screenshots](https://github.com/ahmad-maqsood/unitask/commit/4b2dfaae662f6a5aebbea1114450753e50b4d3d1)
-- [export the timer screenshot from the emulator](https://github.com/ahmad-maqsood/unitask/commit/1ff360d01a867a594fc91a39ca247689effe5863)
-- [add the study timer to the README screenshot gallery](https://github.com/ahmad-maqsood/unitask/commit/07e21a13ce6df31ada78db3f44f87427f5aa45c5)
-- [Fix SmokeFlowsTest compile errors](https://github.com/ahmad-maqsood/unitask/commit/3244039a3e077168b8374ac4576bb1edca09babf)
-- [msg: explain that Drive access is limited to UniTask's own folder](https://github.com/ahmad-maqsood/unitask/commit/56e794de283758106748c3bd4ad05daea4446298)
-- [add website pages for Google consent screen](https://github.com/ahmad-maqsood/unitask/commit/51a9f2ea12b8ff7fae5feee3e8917e7123111caa)
-- [add workflow to deploy the website to Firebase Hosting](https://github.com/ahmad-maqsood/unitask/commit/8171b279b67ca5bf767c7112f65b3e8fc0145387)
-- [docs: remove What's new section from README](https://github.com/ahmad-maqsood/unitask/pull/49) — Summary
-- [Remove standalone setup guide and its documentation references](https://github.com/ahmad-maqsood/unitask/pull/47) — Summary
-- [Merge branch 'main' of https://github.com/ahmad-maqsood/unitask](https://github.com/ahmad-maqsood/unitask/commit/4266a630a90fe69610f998954661f722e20d102f)
-- [Add v3.5.0 section and move 3.4.0 to earlier changes](https://github.com/ahmad-maqsood/unitask/commit/1cdcd9d2ffcd56ba416133e3c5a03ea359b9d48e)
-- [docs: add CHANGELOG entry for v3.5.0](https://github.com/ahmad-maqsood/unitask/pull/46) — Automatically generated release notes for v3.5.0. Review all entries, especially **Other Changes**, before merging. The matching GitHub Release is a draft and has not been publishe
+### Developer & project maintenance
+- Improved automated README screenshot capture and expanded the screenshot gallery.
+- Refined lint and test workflows, including clearer lint failure output and more reliable test diagnostics.
+- Added supporting website pages and automated Firebase Hosting deployment for the Google consent screen.
 
 ## [3.5.0] - 06-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.5.0)
 
-### Bug Fixes
-- [fixes: sync safety, private data cleanup, notes editor, date picker, tests, and no class alerts in the bell](https://github.com/ahmad-maqsood/unitask/pull/45) — What this changes
-- [fix: make README screenshot export reliable](https://github.com/ahmad-maqsood/unitask/pull/42) — Summary
-- [fix: resolve compose flowrow crash, group chat tab reset, and realtime websocket](https://github.com/ahmad-maqsood/unitask/pull/41)
-- [fix: diagnose screenshot demo group loading](https://github.com/ahmad-maqsood/unitask/pull/40) — Summary
-- [Refuse imported files that are too long for a note](https://github.com/ahmad-maqsood/unitask/commit/4bfdb250734bf03ec67e84a11680e2122de95077)
-- [generate debug keystore with valid keytool command](https://github.com/ahmad-maqsood/unitask/commit/11a319806a1f9a311666bca82aa398a78c712afa)
-- [fix: resolve Compose screenshot test compilation](https://github.com/ahmad-maqsood/unitask/pull/38) — Summary
-- [pass screenshot test arguments safely](https://github.com/ahmad-maqsood/unitask/commit/a83b76ded8b16e195115ee0d40e1a3fb686c0fc3)
-- [fix: use valid Android emulator device profile](https://github.com/ahmad-maqsood/unitask/pull/35) — Summary
+### Improved
+- Improved note editing, recovery and synchronization, including safer handling of deleted notes and more efficient note updates.
+- Improved group chat stability, including tab state handling and WebSocket connectivity.
+- Made README screenshot capture more reliable and added automated screenshot generation.
+- Updated the default notification sound.
 
-### Other Changes
-- [update: bump versioncode to 18 and versionname to 3.5.0](https://github.com/ahmad-maqsood/unitask/commit/92656b1dc69b9225420c75b48c21fd6808d8af82)
-- [docs: add automatically captured README screenshots](https://github.com/ahmad-maqsood/unitask/pull/44) — Summary
-- [docs: refresh automated README screenshots](https://github.com/ahmad-maqsood/unitask/pull/43) — Summary
-- [change audio of default sound_2](https://github.com/ahmad-maqsood/unitask/commit/c14324bc59ada76bb0170784fe6051f611d89b95)
-- [include unmerged semantics for screenshot selectors](https://github.com/ahmad-maqsood/unitask/commit/eb956e5ea421394705e26ff36f6ba85ad90481cb)
-- [return to home before capturing settings](https://github.com/ahmad-maqsood/unitask/commit/ec2eaa431ae8b9010e03e24803473b1d019f87e1)
-- [Don't purge trashed notes whose cloud copy still exists](https://github.com/ahmad-maqsood/unitask/commit/8c5f67c0b79dc3c549d2015dd6b95e3a92f72dab)
-- [Stop note watchers when the editor closes](https://github.com/ahmad-maqsood/unitask/commit/25cc979f63088b6a1aac81bed628561a59004930)
-- [Raise compileSdk to 37 for the OkHttp engine](https://github.com/ahmad-maqsood/unitask/commit/5df24c0333b7643617d7a2e85bf4219ad2e1bb1d)
-- [Fix editor state bugs, trash handling and note sync issues](https://github.com/ahmad-maqsood/unitask/pull/39) — Summary
-- [Use Ktor OkHttp engine so Supabase Realtime can use WebSockets](https://github.com/ahmad-maqsood/unitask/commit/68cfaaa99d98c9f35e9ce25342eb2f5818b7edda)
-- [Use Ktor OkHttp engine so Supabase Realtime can use WebSockets](https://github.com/ahmad-maqsood/unitask/commit/2da93954dd4c9e7483bf75929b1d5c83d4ebb6c2)
-- [preserve instrumentation reports when screenshot tests fail](https://github.com/ahmad-maqsood/unitask/commit/f1c57793a666cdb315d34271f246e6c6323f03e5)
-- [start adb before launching screenshot emulator](https://github.com/ahmad-maqsood/unitask/commit/b54f16a0ee85a1d2c5fab439f3fcd0e29933e1a6)
-- [enable KVM acceleration for screenshot emulator](https://github.com/ahmad-maqsood/unitask/commit/f902a205a49a2b361646662f1d01ac18722c099d)
-- [Add docIdsNeedingBody helper for lighter note sync](https://github.com/ahmad-maqsood/unitask/commit/47efe010f7446204190e13821d9f3f92c2ae2ef2)
-- [Bring a trashed note back when new text is saved into it](https://github.com/ahmad-maqsood/unitask/commit/f8b91dc8c1a71e474bc32eac5f39b645858e3ecf)
-- [Add observeNoteById query to NoteDao](https://github.com/ahmad-maqsood/unitask/commit/ececd57d54b7bc45a92474082eb3c62cb3c3bfbd)
-- [create debug keystore before prebuilding screenshots](https://github.com/ahmad-maqsood/unitask/commit/f65660981619c87bb5325f9b0b413f1859b375eb)
-- [reduce emulator resource pressure during screenshot tests](https://github.com/ahmad-maqsood/unitask/commit/40185c3732ccfd4f332cc900bc156650851d5179)
-- [give screenshot emulator explicit memory](https://github.com/ahmad-maqsood/unitask/commit/65268bca601ddfa7be61c3178107269fef0fb3d4)
-- [ci: run screenshot capture as standalone bash script](https://github.com/ahmad-maqsood/unitask/pull/37) — Summary
-- [avoid flaky emulator animation setup](https://github.com/ahmad-maqsood/unitask/commit/285ebb27e2c9db4a29ed968864a1cd4c47637570)
-- [use lighter Android emulator for screenshot workflow](https://github.com/ahmad-maqsood/unitask/commit/10d28c257828b40ad5c3cc72de34e89adf666c0e)
-- [ci: generate debug keystore for screenshot workflow](https://github.com/ahmad-maqsood/unitask/pull/36) — Summary
-- [ci: automate README screenshots from the Android app](https://github.com/ahmad-maqsood/unitask/pull/34) — Summary
-- [Fix invalid YAML in release APK workflow](https://github.com/ahmad-maqsood/unitask/pull/33) — Summary
-- [Fix release APK workflow registration](https://github.com/ahmad-maqsood/unitask/pull/32) — Summary
-- [Add automatic release summaries and changelog PRs](https://github.com/ahmad-maqsood/unitask/pull/31) — Summary
+### Fixed
+- Fixed synchronization and private-data cleanup issues, note editor and date-picker problems, and incorrect class alerts appearing in the notification bell.
+- Fixed a Compose layout crash and issues affecting group chat navigation and real-time updates.
+- Prevented oversized imported files from being added as notes.
+- Fixed screenshot and instrumentation test setup issues, including emulator configuration and test compilation.
+
+### Developer & project maintenance
+- Added and refined automated screenshot, lint and test workflows.
+- Improved CI diagnostics and preserved useful test reports when screenshot tests fail.
+- Updated the networking engine to support Supabase Realtime WebSockets and raised the compile SDK requirement for compatibility.
 
 ## [3.4.0] - 05-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.4.0)

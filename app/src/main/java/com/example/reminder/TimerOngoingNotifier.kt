@@ -8,6 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.SystemClock
+import android.view.View
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
@@ -19,9 +22,9 @@ import com.example.util.timer.TimerState
 
 /**
  * Shows a silent, ongoing notification while a stopwatch or countdown is running or paused,
- * with Pause/Resume and Stop buttons.
+ * with round Pause/Resume and Stop buttons in a custom layout (notification_timer.xml).
  *
- * While running, the clock in the notification is drawn by the system chronometer, so it
+ * While running, the clock in the notification is drawn by a Chronometer view, so it
  * ticks live without the app staying awake. Every state change posts a fresh notification
  * with the right start/end time.
  */
@@ -49,14 +52,9 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
         val running = TimerLogic.isRunning(state)
         val totalMinutes = maxOf(1L, state.countdownTotalMillis / 60_000L)
 
-        val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setContentTitle(if (countdown) "Countdown" else "Stopwatch")
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(openAppIntent())
+        val title = if (countdown) "Countdown" else "Stopwatch"
+        val views = RemoteViews(appContext.packageName, R.layout.notification_timer)
+        views.setTextViewText(R.id.timer_notif_label, title)
 
         if (running) {
             val whenMillis = if (countdown) {
@@ -64,24 +62,55 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             } else {
                 now - TimerLogic.elapsedMillis(state, now)
             }
-            builder.setShowWhen(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(countdown)
-                .setWhen(whenMillis)
-                .setContentText(if (countdown) "$totalMinutes minute countdown" else "Running")
-            builder.addAction(R.drawable.ic_timer_pause, "Pause", actionIntent(TimerActionReceiver.ACTION_PAUSE))
+            // Chronometer counts against the elapsedRealtime clock, so convert the wall-clock target.
+            val base = SystemClock.elapsedRealtime() + (whenMillis - now)
+            views.setTextViewText(
+                R.id.timer_notif_label,
+                if (countdown) "$totalMinutes minute countdown" else title
+            )
+            views.setViewVisibility(R.id.timer_notif_chronometer, View.VISIBLE)
+            views.setViewVisibility(R.id.timer_notif_paused_text, View.GONE)
+            views.setChronometerCountDown(R.id.timer_notif_chronometer, countdown)
+            views.setChronometer(R.id.timer_notif_chronometer, base, null, true)
+            views.setImageViewResource(R.id.timer_notif_btn_primary, R.drawable.ic_timer_pause)
+            views.setContentDescription(R.id.timer_notif_btn_primary, "Pause")
+            views.setOnClickPendingIntent(
+                R.id.timer_notif_btn_primary,
+                actionIntent(TimerActionReceiver.ACTION_PAUSE)
+            )
         } else {
             val shown = if (countdown) {
                 TimerLogic.formatClock(TimerLogic.remainingMillis(state, now), roundUp = true)
             } else {
                 TimerLogic.formatClock(TimerLogic.elapsedMillis(state, now), roundUp = false)
             }
-            builder.setShowWhen(false)
-                .setUsesChronometer(false)
-                .setContentText("Paused at $shown")
-            builder.addAction(R.drawable.ic_timer_play, "Resume", actionIntent(TimerActionReceiver.ACTION_RESUME))
+            views.setViewVisibility(R.id.timer_notif_chronometer, View.GONE)
+            views.setViewVisibility(R.id.timer_notif_paused_text, View.VISIBLE)
+            views.setTextViewText(R.id.timer_notif_paused_text, shown)
+            views.setTextViewText(R.id.timer_notif_label, "$title \u2022 Paused")
+            views.setImageViewResource(R.id.timer_notif_btn_primary, R.drawable.ic_timer_play)
+            views.setContentDescription(R.id.timer_notif_btn_primary, "Resume")
+            views.setOnClickPendingIntent(
+                R.id.timer_notif_btn_primary,
+                actionIntent(TimerActionReceiver.ACTION_RESUME)
+            )
         }
-        builder.addAction(R.drawable.ic_timer_stop, "Stop", actionIntent(TimerActionReceiver.ACTION_STOP))
+        views.setOnClickPendingIntent(
+            R.id.timer_notif_btn_stop,
+            actionIntent(TimerActionReceiver.ACTION_STOP)
+        )
+
+        val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_unitask)
+            .setContentTitle(title)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(views)
+            .setCustomBigContentView(views)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(openAppIntent())
 
         nm.notify(NOTIFICATION_ID, builder.build())
     }

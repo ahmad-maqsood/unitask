@@ -33,6 +33,9 @@ interface TaskAttachmentDao {
     @Query("DELETE FROM task_attachments WHERE taskId = :taskId")
     suspend fun deleteAttachmentsForTask(taskId: Long)
 
+    @Query("SELECT COUNT(*) FROM task_attachments WHERE taskId IN (SELECT id FROM tasks WHERE courseId = :courseId)")
+    suspend fun countAttachmentsForCourse(courseId: Long): Int
+
     @Query("SELECT relativePath FROM task_attachments")
     suspend fun getAllRelativePaths(): List<String>
 }

@@ -74,6 +74,20 @@ class AppDatabaseMigrationTest {
                     assertTrue("repeatAnchorDay is missing after the upgrade", cursor.moveToFirst())
                     assertEquals(0, cursor.getInt(0))
                 }
+
+            db.openHelper.writableDatabase
+                .query("SELECT deletedAt FROM tasks WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("deletedAt is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals(0L, cursor.getLong(0))
+                }
+
+            db.openHelper.writableDatabase
+                .query("SELECT archivedSemester FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("archivedSemester is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("", cursor.getString(0))
+                }
         } finally {
             db.close()
         }
@@ -123,6 +137,107 @@ class AppDatabaseMigrationTest {
                     assertEquals("Lecture 1", cursor.getString(0))
                     assertEquals("Intro to graphs", cursor.getString(1))
                     assertEquals(1L, cursor.getLong(2))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrating12To13KeepsOldDataAndAddsDeletedAt() {
+        // 1. A version 12 database holding one course, one task and one lecture slot.
+        val old = helper.createDatabase("migration-test-12-13", 12)
+        old.execSQL(
+            "INSERT INTO courses (id, name, code, instructor, colorHex, location, isSynced, cloudId, isDeleted) " +
+                "VALUES (1, 'Algorithms', 'CS201', 'Dr. Smith', '#4F46E5', 'Room 101', 0, '', 0)"
+        )
+        old.execSQL(
+            "INSERT INTO tasks (id, courseId, title, description, dueDateEpochMillis, dueTimeHour, dueTimeMinute, " +
+                "priority, status, reminderOption, reminderEpochMillis, isSynced, cloudId, isDeleted, createdAt, " +
+                "repeatRule, completedAtMillis, repeatAnchorDay, autoDeleteWhenDone) " +
+                "VALUES (1, 1, 'Lab report', 'old user task', 1700000000000, 12, 0, " +
+                "'MEDIUM', 'PENDING', 'NONE', NULL, 0, '', 0, 1700000000000, 'NONE', 0, 0, 0)"
+        )
+        old.execSQL(
+            "INSERT INTO lecture_slots (id, courseId, dayOfWeek, startHour, startMinute, endHour, endMinute, " +
+                "classroom, instructor, isSynced, cloudId, isDeleted) " +
+                "VALUES (1, 1, 1, 9, 0, 10, 30, 'Hall A', 'Dr. Smith', 0, '', 0)"
+        )
+        old.close()
+
+        // 2. Open it the way the app does. Room throws here if the schema does not match the code.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-12-13")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            // 3. The old task and slot are still there, unchanged.
+            db.openHelper.writableDatabase
+                .query("SELECT title, description FROM tasks WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old task is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Lab report", cursor.getString(0))
+                    assertEquals("old user task", cursor.getString(1))
+                }
+
+            db.openHelper.writableDatabase
+                .query("SELECT classroom, instructor FROM lecture_slots WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old slot is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Hall A", cursor.getString(0))
+                    assertEquals("Dr. Smith", cursor.getString(1))
+                }
+
+            // 4. The new deletedAt column exists in both tables and defaults to 0.
+            db.openHelper.writableDatabase
+                .query("SELECT deletedAt FROM tasks WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("deletedAt is missing from tasks after the upgrade", cursor.moveToFirst())
+                    assertEquals(0L, cursor.getLong(0))
+                }
+
+            db.openHelper.writableDatabase
+                .query("SELECT deletedAt FROM lecture_slots WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("deletedAt is missing from lecture_slots after the upgrade", cursor.moveToFirst())
+                    assertEquals(0L, cursor.getLong(0))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrating13To14KeepsOldDataAndAddsArchivedSemester() {
+        // 1. A version 13 database holding one course.
+        val old = helper.createDatabase("migration-test-13-14", 13)
+        old.execSQL(
+            "INSERT INTO courses (id, name, code, instructor, colorHex, location, isSynced, cloudId, isDeleted) " +
+                "VALUES (1, 'Algorithms', 'CS201', 'Dr. Smith', '#4F46E5', 'Room 101', 0, '', 0)"
+        )
+        old.close()
+
+        // 2. Open it the way the app does. Room throws here if schema does not match code.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-13-14")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            // 3. The old course is still there, unchanged.
+            db.openHelper.writableDatabase
+                .query("SELECT name, code FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old course is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Algorithms", cursor.getString(0))
+                    assertEquals("CS201", cursor.getString(1))
+                }
+
+            // 4. The new archivedSemester column exists and defaults to ''.
+            db.openHelper.writableDatabase
+                .query("SELECT archivedSemester FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("archivedSemester is missing from courses after the upgrade", cursor.moveToFirst())
+                    assertEquals("", cursor.getString(0))
                 }
         } finally {
             db.close()

@@ -98,7 +98,6 @@ import kotlinx.coroutines.launch
 fun NotesScreen(
     onOpenNote: (Long) -> Unit,
     onNewNote: () -> Unit,
-    onOpenTrash: () -> Unit = {},
     onClose: () -> Unit,
     viewModel: NotesViewModel = viewModel(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
@@ -283,19 +282,6 @@ fun NotesScreen(
                                             "application/octet-stream"
                                         )
                                     )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Recently deleted") },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    showListOverflowMenu = false
-                                    onOpenTrash()
                                 }
                             )
                         }
@@ -509,7 +495,7 @@ fun NotesScreen(
                                 snackbarJob?.cancel()
                                 snackbarJob = coroutineScope.launch {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Note deleted",
+                                        message = "Note moved to Recently deleted",
                                         actionLabel = "Undo",
                                         duration = SnackbarDuration.Short
                                     )

@@ -88,7 +88,8 @@ data class TaskItem(
     val repeatAnchorDay: Int = 0,
     // "Delete when done": a one-time task with this on is removed after the day it was finished.
     // Saved on the phone and in the local backup only.
-    val autoDeleteWhenDone: Boolean = false
+    val autoDeleteWhenDone: Boolean = false,
+    val deletedAt: Long = 0L
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

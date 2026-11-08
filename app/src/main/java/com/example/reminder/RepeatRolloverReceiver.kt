@@ -95,6 +95,15 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 scheduler.rescheduleAll(db)
             }
 
+            // Purge old task trash (deleted more than 30 days ago).
+            try {
+                repository.purgeOldTaskTrash()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not purge old task trash: ${e.message}")
+            }
+
             // Purge old notes trash (deleted more than 30 days ago).
             // This runs on app open, after boot and every midnight.
             try {
@@ -104,6 +113,15 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Could not purge old notes trash: ${e.message}")
+            }
+
+            // Purge old class trash (deleted more than 30 days ago).
+            try {
+                repository.purgeOldClassTrash()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not purge old class trash: ${e.message}")
             }
 
             // A new day has started: redraw the home screen widget.

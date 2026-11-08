@@ -30,5 +30,6 @@ data class LectureSlot(
     val instructor: String = "",
     val isSynced: Boolean = false,
     val cloudId: String = "",
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val deletedAt: Long = 0L
 )

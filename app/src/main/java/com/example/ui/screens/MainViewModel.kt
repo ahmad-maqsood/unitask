@@ -73,6 +73,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 import com.example.data.local.LectureSlot
+import com.example.data.local.ArchivedSemesterSummary
+import com.example.data.repository.ArchivedCourseCodeException
+import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment
 import com.example.util.SavedAttachmentInfo
@@ -395,6 +398,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _courseSaveError = MutableStateFlow<String?>(null)
     val courseSaveError: StateFlow<String?> = _courseSaveError.asStateFlow()
 
+    private val _courseArchivedConflict = MutableStateFlow<ArchivedCourseConflict?>(null)
+    val courseArchivedConflict: StateFlow<ArchivedCourseConflict?> = _courseArchivedConflict.asStateFlow()
+
 
     private val _selectedCourseDetailId = MutableStateFlow<Long?>(null)
     val selectedCourseDetailId: StateFlow<Long?> = _selectedCourseDetailId.asStateFlow()
@@ -424,6 +430,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val coursesWithCounts: StateFlow<List<CourseWithTaskCount>> = repository.coursesWithTaskCounts
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedSemesters: StateFlow<List<ArchivedSemesterSummary>> = repository.observeArchivedSemesters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeCoursesForArchive: StateFlow<List<ArchiveCourseItem>> = repository.observeActiveCoursesForArchive()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTasksWithCourse: StateFlow<List<TaskWithCourse>> = repository.allTasksWithCourse
@@ -1170,20 +1182,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun restoreLectureSlot(id: Long) {
+        viewModelScope.launch {
+            repository.restoreLectureSlot(id)
+        }
+    }
+
+    fun undoDeleteLectureSlot(slot: LectureSlot) {
+        viewModelScope.launch {
+            repository.restoreLectureSlot(slot.id)
+        }
+    }
+
     fun openAddCourseDialog() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _courseToEdit.value = null
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun openEditCourseDialog(course: Course) {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _courseToEdit.value = course
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun closeCourseDialog() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _isAddEditCourseDialogOpen.value = false
         _courseToEdit.value = null
     }
@@ -1209,31 +1236,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _courseSaveError.value = "A course with this code already exists: ${duplicate.code} (${duplicate.name})"
                 return@launch
             }
-            if (currentCourse != null) {
-                val updated = currentCourse.copy(
-                    name = name.trim(),
-                    code = code.trim().uppercase(),
-                    instructor = instructor.trim(),
-                    colorHex = colorHex,
-                    location = location.trim()
-                )
-                repository.updateCourse(updated)
-            } else {
-                val newCourse = Course(
-                    name = name.trim(),
-                    code = code.trim().uppercase(),
-                    instructor = instructor.trim(),
-                    colorHex = colorHex,
-                    location = location.trim()
-                )
-                repository.insertCourse(newCourse)
+            val archived = repository.findArchivedCourseByCode(code)
+            if (archived != null) {
+                _courseArchivedConflict.value = ArchivedCourseConflict(code = code.trim().uppercase(), semesterName = archived.archivedSemester)
+                return@launch
             }
-            closeCourseDialog()
+            try {
+                if (currentCourse != null) {
+                    val updated = currentCourse.copy(
+                        name = name.trim(),
+                        code = code.trim().uppercase(),
+                        instructor = instructor.trim(),
+                        colorHex = colorHex,
+                        location = location.trim()
+                    )
+                    repository.updateCourse(updated)
+                } else {
+                    val newCourse = Course(
+                        name = name.trim(),
+                        code = code.trim().uppercase(),
+                        instructor = instructor.trim(),
+                        colorHex = colorHex,
+                        location = location.trim()
+                    )
+                    repository.insertCourse(newCourse)
+                }
+                closeCourseDialog()
+            } catch (e: ArchivedCourseCodeException) {
+                _courseArchivedConflict.value = ArchivedCourseConflict(code = code.trim().uppercase(), semesterName = e.semesterName)
+            }
         }
     }
 
     fun clearCourseSaveError() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
     }
 
 
@@ -1247,6 +1284,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             repository.deleteCourse(course)
         }
+    }
+
+    fun archiveCourses(courseIds: List<Long>, semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            if (_selectedCourseDetailId.value in courseIds) {
+                _selectedCourseDetailId.value = null
+            }
+            if (_courseFilter.value in courseIds) {
+                _courseFilter.value = null
+            }
+            repository.archiveCourses(courseIds, semesterName)
+            onDone()
+        }
+    }
+
+    fun undoArchive(courseIds: List<Long>) {
+        viewModelScope.launch {
+            repository.undoArchive(courseIds)
+        }
+    }
+
+    fun restoreSemester(semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.restoreSemester(semesterName)
+            onDone()
+        }
+    }
+
+    fun deleteSemesterForever(semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            val courses = repository.getCoursesForSemester(semesterName)
+            val courseIds = courses.map { it.id }.toSet()
+            if (_selectedCourseDetailId.value in courseIds) {
+                _selectedCourseDetailId.value = null
+            }
+            if (_courseFilter.value in courseIds) {
+                _courseFilter.value = null
+            }
+            repository.deleteSemesterForever(semesterName)
+            onDone()
+        }
+    }
+
+    suspend fun findArchivedCourseByCode(code: String): Course? {
+        return repository.findArchivedCourseByCode(code)
     }
 
     fun openCourseDetail(courseId: Long) {

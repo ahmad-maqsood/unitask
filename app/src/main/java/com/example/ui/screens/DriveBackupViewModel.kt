@@ -593,17 +593,8 @@ class DriveBackupViewModel(
     }
 
     companion object {
-        fun buildCountsText(info: DriveBackupInfo): String {
-            val parts = mutableListOf(
-                "${info.courses} courses",
-                "${info.tasks} tasks",
-                "${info.notes} notes"
-            )
-            if (info.attachments > 0) {
-                parts.add("${info.attachments} attachments")
-            }
-            return parts.joinToString(", ")
-        }
+        fun buildCountsText(info: DriveBackupInfo): String =
+            DriveBackupManager.buildCountsText(info)
 
         fun formatBackupTime(millis: Long): String {
             if (millis <= 0L) return ""

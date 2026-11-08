@@ -499,10 +499,10 @@ private fun exportUserData(
     scope.launch(kotlinx.coroutines.Dispatchers.IO) {
         try {
             val db = com.example.data.local.AppDatabase.getDatabase(context)
-            val courses = db.courseDao().getAllCoursesList()
-            val tasks = db.taskDao().getAllActiveTasksSync()
-            val slots = db.lectureSlotDao().getAllSlotsSync()
-            val notes = db.noteDao().getActiveNotesSync()
+            val courses = db.courseDao().getAllCoursesListIncludingArchived()
+            val tasks = db.taskDao().getAllActiveTasksSyncIncludingArchived()
+            val slots = db.lectureSlotDao().getAllSlotsSyncIncludingArchived().filter { !it.isDeleted }
+            val notes = db.noteDao().getActiveNotesSyncIncludingArchived()
             val courseCodeById = courses.associate { it.id to it.code }
 
             val referencedImages = mutableSetOf<String>()

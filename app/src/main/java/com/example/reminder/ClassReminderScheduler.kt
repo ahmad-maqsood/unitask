@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import com.example.data.local.AppDatabase
 import com.example.data.local.LectureSlot
+import com.example.data.local.isArchived
 import java.util.Calendar
 
 /**
@@ -84,9 +85,9 @@ class ClassReminderScheduler(context: Context) {
 
     /** Makes the alarms match the current timetable (or removes them all when the setting is off). */
     suspend fun rescheduleAll(database: AppDatabase) {
-        val activeCourseIds = database.courseDao().getAllCoursesList().map { it.id }.toSet()
+        val activeCourseIds = database.courseDao().getAllCoursesList().filter { !it.isArchived }.map { it.id }.toSet()
         val wanted = database.lectureSlotDao().getAllSlotsSync()
-            .filter { !it.isDeleted && it.courseId in activeCourseIds }
+            .filter { !it.isDeleted && it.deletedAt <= 0L && it.courseId in activeCourseIds }
         val enabled = isEnabled(appContext)
 
         synchronized(LOCK) {
@@ -110,18 +111,21 @@ class ClassReminderScheduler(context: Context) {
 
     /** Sets both alarms (10 minutes before, and at the start) for the next time [slot] happens. */
     fun scheduleSlot(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
+        if (slot.isDeleted || slot.deletedAt > 0L) return
         scheduleSoonAlarm(slot, afterMillis)
         scheduleStartAlarm(slot, afterMillis)
     }
 
     /** Sets only the "class started" alarm. */
     fun scheduleStartAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
+        if (slot.isDeleted || slot.deletedAt > 0L) return
         val trigger = nextStartMillis(appContext, slot, afterMillis)
         setAlarm(trigger, requestCodeFor(slot.id), intentFor(slot.id, trigger))
     }
 
     /** Sets only the "class starts in 10 minutes" alarm. */
     fun scheduleSoonAlarm(slot: LectureSlot, afterMillis: Long = System.currentTimeMillis()) {
+        if (slot.isDeleted || slot.deletedAt > 0L) return
         val classStart = nextStartMillis(appContext, slot, afterMillis + LEAD_MILLIS)
         setAlarm(
             classStart - LEAD_MILLIS,

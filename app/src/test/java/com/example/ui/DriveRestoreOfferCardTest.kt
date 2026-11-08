@@ -314,7 +314,10 @@ class DriveRestoreOfferCardTest {
 
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()
         composeRule.onNodeWithTag("drive_offer_restore_button").performClick()
-        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("No backup found in this Google account.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         composeRule.onAllNodesWithText("No backup found in this Google account.").onLast().assertIsDisplayed()
         composeRule.onNodeWithTag("drive_restore_offer_card").assertIsDisplayed()

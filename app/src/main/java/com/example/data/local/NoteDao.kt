@@ -13,10 +13,18 @@ interface NoteDao {
     @Query(
         "SELECT n.*, c.code AS courseCode, c.name AS courseName, c.colorHex AS courseColorHex " +
         "FROM notes n LEFT JOIN courses c ON c.id = n.courseId AND c.isDeleted = 0 " +
-        "WHERE n.isDeleted = 0 " +
+        "WHERE n.isDeleted = 0 AND (n.courseId IS NULL OR n.courseId NOT IN (SELECT id FROM courses WHERE archivedSemester != '')) " +
         "ORDER BY n.isPinned DESC, n.updatedAt DESC"
     )
     fun observeNotes(): Flow<List<NoteListItem>>
+
+    @Query(
+        "SELECT n.*, c.code AS courseCode, c.name AS courseName, c.colorHex AS courseColorHex " +
+        "FROM notes n LEFT JOIN courses c ON c.id = n.courseId AND c.isDeleted = 0 " +
+        "WHERE n.isDeleted = 0 " +
+        "ORDER BY n.isPinned DESC, n.updatedAt DESC"
+    )
+    fun observeNotesIncludingArchived(): Flow<List<NoteListItem>>
 
     @Query(
         "SELECT n.*, c.code AS courseCode, c.name AS courseName, c.colorHex AS courseColorHex " +
@@ -35,8 +43,14 @@ interface NoteDao {
     @Query("SELECT * FROM notes")
     suspend fun getAllNotesSync(): List<Note>
 
-    @Query("SELECT * FROM notes WHERE isDeleted = 0")
+    @Query(
+        "SELECT * FROM notes " +
+        "WHERE isDeleted = 0 AND (courseId IS NULL OR courseId NOT IN (SELECT id FROM courses WHERE archivedSemester != ''))"
+    )
     suspend fun getActiveNotesSync(): List<Note>
+
+    @Query("SELECT * FROM notes WHERE isDeleted = 0")
+    suspend fun getActiveNotesSyncIncludingArchived(): List<Note>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(note: Note): Long

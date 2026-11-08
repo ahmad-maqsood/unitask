@@ -3,7 +3,11 @@ package com.example.data.repository
 import android.content.Context
 import com.example.data.local.Course
 import com.example.data.local.CourseDao
+import com.example.data.local.ArchivedSemesterSummary
+import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.CourseWithTaskCount
+import com.example.data.local.NoteListItem
+import com.example.data.local.isArchived
 import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotDao
 import com.example.data.local.LectureSlotWithCourse
@@ -35,15 +39,15 @@ import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+class ArchivedCourseCodeException(val semesterName: String) :
+    IllegalStateException("Course code belongs to archived semester: $semesterName")
+
 class AppRepository(
     private val context: Context,
     private val courseDao: CourseDao,
@@ -60,20 +64,20 @@ class AppRepository(
 
     val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
         .map { list ->
-            list.filter { !it.isDeleted && !it.isMyTasksCourse() }
+            list.filter { !it.isDeleted && !it.isArchived && !it.isMyTasksCourse() }
                 .distinctBy { it.code.trim().replace("\\s+".toRegex(), "").uppercase() }
         }
         .flowOn(Dispatchers.IO)
 
     val allTasksWithCourse: Flow<List<TaskWithCourse>> = taskDao.getAllTasksWithCourse()
         .map { list ->
-            list.filter { it.course != null && !it.course.isDeleted && !it.task.isDeleted }
+            list.filter { it.course != null && !it.course.isDeleted && !it.course.isArchived && !it.task.isDeleted }
         }
         .flowOn(Dispatchers.IO)
 
     val allLectureSlots: Flow<List<LectureSlotWithCourse>> = lectureSlotDao.getAllSlotsWithCourse()
         .map { list ->
-            list.filter { it.course != null && !it.course.isDeleted }
+            list.filter { it.course != null && !it.course.isDeleted && !it.course.isArchived }
         }
         .flowOn(Dispatchers.IO)
 
@@ -105,9 +109,17 @@ class AppRepository(
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
         val normCode = normalizeCourseCode(course.code)
 
+        val archived = courseDao.findArchivedCourseByCode(normCode)
+        if (archived != null) {
+            throw ArchivedCourseCodeException(archived.archivedSemester)
+        }
+
         // Check if an existing course already matches this normalized code
         val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getAnyCourseByNormalizedCode(normCode)
         if (existing != null) {
+            if (existing.isArchived) {
+                throw ArchivedCourseCodeException(existing.archivedSemester)
+            }
             val updated = existing.copy(
                 code = course.code.trim().uppercase(),
                 name = course.name.trim(),
@@ -126,11 +138,171 @@ class AppRepository(
         id
     }
 
+    suspend fun archiveCourses(courseIds: List<Long>, semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        if (trimmed.isBlank()) {
+            throw IllegalArgumentException("Semester name cannot be blank")
+        }
+        if (trimmed.length > 40) {
+            throw IllegalArgumentException("Semester name cannot exceed 40 characters")
+        }
+
+        val existingArchived = courseDao.getArchivedCoursesSync()
+        val matchingExistingName = existingArchived
+            .map { it.archivedSemester }
+            .firstOrNull { it.equals(trimmed, ignoreCase = true) }
+        val finalSemesterName = matchingExistingName ?: trimmed
+
+        val courses = courseIds.mapNotNull { courseDao.getCourseByIdSync(it) }
+        if (courses.any { it.isMyTasksCourse() }) {
+            throw IllegalArgumentException("The My tasks course cannot be archived")
+        }
+
+        inTransaction {
+            courseDao.setArchivedSemester(courseIds, finalSemesterName)
+        }
+
+        for (cId in courseIds) {
+            val tasks = taskDao.getTasksForCourseSync(cId).filter { !it.isDeleted }
+            for (t in tasks) {
+                reminderScheduler.cancelReminder(t.id)
+                SnoozeStore.clear(context, t.id, cancelAlarm = true)
+                taskDao.updateTask(t.copy(reminderEpochMillis = null, isSynced = false))
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
+    suspend fun restoreSemester(semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        val courses = courseDao.getCoursesForSemester(trimmed)
+
+        inTransaction {
+            courseDao.clearArchivedSemester(trimmed)
+        }
+
+        for (course in courses) {
+            val tasks = taskDao.getTasksForCourseSync(course.id).filter { !it.isDeleted && it.status != TaskStatus.COMPLETED }
+            for (task in tasks) {
+                val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+                val updatedTask = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false)
+                taskDao.updateTask(updatedTask)
+                if (calculatedReminder != null) {
+                    reminderScheduler.scheduleReminder(updatedTask, course.code)
+                }
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
+    suspend fun undoArchive(courseIds: List<Long>) = withContext(Dispatchers.IO) {
+        if (courseIds.isEmpty()) return@withContext
+        val courses = courseIds.mapNotNull { courseDao.getCourseByIdSyncIncludingArchived(it) }
+
+        inTransaction {
+            courseDao.clearArchivedSemesterForCourses(courseIds)
+        }
+
+        for (course in courses) {
+            val tasks = taskDao.getTasksForCourseSync(course.id).filter { !it.isDeleted && it.status != TaskStatus.COMPLETED }
+            for (task in tasks) {
+                val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+                val updatedTask = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false)
+                taskDao.updateTask(updatedTask)
+                if (calculatedReminder != null) {
+                    reminderScheduler.scheduleReminder(updatedTask, course.code)
+                }
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
+    suspend fun deleteSemesterForever(semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        val courses = courseDao.getCoursesForSemester(trimmed)
+        for (course in courses) {
+            deleteCourse(course)
+        }
+    }
+
+    fun observeArchivedSemesters(): Flow<List<ArchivedSemesterSummary>> {
+        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotesIncludingArchived() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        return combine(
+            courseDao.getAllCoursesIncludingArchived(),
+            taskDao.getAllTasksWithCourseIncludingArchived(),
+            lectureSlotDao.getAllSlotsWithCourseIncludingArchived(),
+            notesFlow
+        ) { allCourses, allTasks, allSlots, allNotes ->
+            val archived = allCourses.filter { !it.isDeleted && it.archivedSemester.isNotBlank() }
+            if (archived.isEmpty()) {
+                emptyList()
+            } else {
+                val grouped = archived.groupBy { it.archivedSemester.trim().uppercase() }
+                grouped.values.map { semesterCourses ->
+                    val semesterName = semesterCourses.first().archivedSemester.trim()
+                    val courseIds = semesterCourses.map { it.id }.toSet()
+                    val courseCodes = semesterCourses.map { it.code }.distinct().sorted()
+                    val taskCount = allTasks.count { it.task.courseId in courseIds && !it.task.isDeleted }
+                    val classCount = allSlots.count { it.slot.courseId in courseIds && !it.slot.isDeleted }
+                    val noteCount = allNotes.count { it.note.courseId in courseIds && !it.note.isDeleted }
+
+                    ArchivedSemesterSummary(
+                        name = semesterName,
+                        courseCount = semesterCourses.size,
+                        taskCount = taskCount,
+                        classCount = classCount,
+                        noteCount = noteCount,
+                        courseCodes = courseCodes
+                    )
+                }.sortedBy { it.name }
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun observeActiveCoursesForArchive(): Flow<List<ArchiveCourseItem>> {
+        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotes() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        return combine(
+            courseDao.getAllCourses(),
+            taskDao.getAllTasksWithCourse(),
+            lectureSlotDao.getAllSlotsWithCourse(),
+            notesFlow
+        ) { courses, tasks, slots, notes ->
+            courses.filter { !it.isMyTasksCourse() }.map { course ->
+                val taskCount = tasks.count { it.task.courseId == course.id && !it.task.isDeleted }
+                val classCount = slots.count { it.slot.courseId == course.id && !it.slot.isDeleted }
+                val noteCount = notes.count { it.note.courseId == course.id && !it.note.isDeleted }
+                ArchiveCourseItem(
+                    id = course.id,
+                    code = course.code,
+                    name = course.name,
+                    taskCount = taskCount,
+                    classCount = classCount,
+                    noteCount = noteCount
+                )
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
         /** Another (not deleted) course with the same code, ignoring spaces and capitals. */
     suspend fun findActiveCourseByCode(code: String, excludeCourseId: Long = 0L): Course? = withContext(Dispatchers.IO) {
         val normCode = normalizeCourseCode(code)
         courseDao.getAllCoursesMatchingNormalizedCode(normCode)
-            .firstOrNull { !it.isDeleted && it.id != excludeCourseId }
+            .firstOrNull { !it.isDeleted && !it.isArchived && it.id != excludeCourseId }
+    }
+
+    suspend fun findArchivedCourseByCode(code: String): Course? = withContext(Dispatchers.IO) {
+        val normCode = normalizeCourseCode(code)
+        courseDao.findArchivedCourseByCode(normCode)
+    }
+
+    suspend fun getCoursesForSemester(semesterName: String): List<Course> = withContext(Dispatchers.IO) {
+        courseDao.getCoursesForSemester(semesterName.trim())
     }
 
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {
@@ -177,7 +349,7 @@ class AppRepository(
     /** Re-arms the "class started" alarms after any change to slots or courses. */
     private suspend fun refreshClassAlarms() {
         try {
-            ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+            ClassReminderScheduler(context).rescheduleAll((database as? AppDatabase) ?: AppDatabase.getDatabase(context))
         } catch (e: Exception) {
             Log.w("AppRepository", "Could not refresh class alarms: ${e.message}")
         }
@@ -328,45 +500,67 @@ class AppRepository(
         changed
     }
 
+    fun observeDeletedTasks(): Flow<List<TaskWithCourse>> {
+        return taskDao.observeDeletedTasks().flowOn(Dispatchers.IO)
+    }
+
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
         reminderScheduler.cancelReminder(task.id)
         SnoozeStore.clear(context, task.id, cancelAlarm = true)
-        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
-        if (attachments.isNotEmpty()) {
-            // Keep the files for a short moment so that Undo can bring them back.
-            synchronized(undoLock) { pendingUndoAttachments[task.id] = attachments }
-            cleanupScope.launch {
-                delay(UNDO_WINDOW_MS)
-                val leftover = synchronized(undoLock) { pendingUndoAttachments.remove(task.id) }
-                leftover?.forEach { AttachmentManager.deleteAttachmentFile(context, it.relativePath) }
-            }
-        }
-        taskDao.deleteTaskById(task.id)
+        val now = System.currentTimeMillis()
+        taskDao.softDeleteTask(task.id, now)
     }
 
     suspend fun restoreTask(taskId: Long) = withContext(Dispatchers.IO) {
         taskDao.restoreTask(taskId)
         val task = taskDao.getTaskById(taskId)
         if (task != null) {
-            val course = courseDao.getCourseByIdSync(task.courseId)
-            val courseCode = course?.code ?: "Course"
-            reminderScheduler.scheduleReminder(task, courseCode)
+            val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+            val updatedTask = task.copy(reminderEpochMillis = calculatedReminder)
+            taskDao.updateTask(updatedTask)
+            if (updatedTask.status != TaskStatus.COMPLETED) {
+                val course = courseDao.getCourseByIdSync(updatedTask.courseId)
+                val courseCode = course?.code ?: "Course"
+                reminderScheduler.scheduleReminder(updatedTask, courseCode)
+            }
         }
     }
 
-    /**
-     * Undo for a deleted task. If the row is still on the phone it is restored as before. Otherwise
-     * the task is saved again as a new task and its attachments are linked back to it, as long as
-     * Undo is used within the undo window.
-     */
     suspend fun undoDeleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
-        if (taskDao.getAnyTaskById(task.id) != null) {
-            restoreTask(task.id)
-            return@withContext
+        restoreTask(task.id)
+    }
+
+    suspend fun deleteTaskForever(id: Long) = withContext(Dispatchers.IO) {
+        reminderScheduler.cancelReminder(id)
+        SnoozeStore.clear(context, id, cancelAlarm = true)
+        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(id)
+        for (att in attachments) {
+            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
         }
-        val newId = insertTask(task.copy(id = 0L, cloudId = "", isSynced = false, isDeleted = false))
-        val saved = synchronized(undoLock) { pendingUndoAttachments.remove(task.id) }
-        saved?.forEach { taskAttachmentDao.insertAttachment(it.copy(id = 0L, taskId = newId)) }
+        inTransaction {
+            taskAttachmentDao.deleteAttachmentsForTask(id)
+            taskDao.deleteTaskById(id)
+        }
+    }
+
+    suspend fun emptyTaskTrash() = withContext(Dispatchers.IO) {
+        val trashed = taskDao.getDeletedTasksSync()
+        for (task in trashed) {
+            deleteTaskForever(task.id)
+        }
+    }
+
+    suspend fun purgeOldTaskTrash(now: Long = System.currentTimeMillis()): Int = withContext(Dispatchers.IO) {
+        val cutoff = now - (NoteRepository.TRASH_DAYS * 24L * 60L * 60L * 1000L)
+        val toPurge = taskDao.getDeletedTasksSync().filter { it.deletedAt > 0L && it.deletedAt < cutoff }
+        for (task in toPurge) {
+            val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
+            for (att in attachments) {
+                AttachmentManager.deleteAttachmentFile(context, att.relativePath)
+            }
+            taskAttachmentDao.deleteAttachmentsForTask(task.id)
+        }
+        taskDao.purgeDeletedBefore(cutoff)
     }
     // Attachments
     fun getAttachmentsForTask(taskId: Long): Flow<List<TaskAttachment>> {
@@ -394,16 +588,57 @@ class AppRepository(
         refreshClassAlarms()
     }
 
+    fun observeDeletedLectureSlots(): Flow<List<LectureSlotWithCourse>> {
+        return lectureSlotDao.observeDeletedSlots().flowOn(Dispatchers.IO)
+    }
+
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        lectureSlotDao.deleteSlot(slot)
+        val now = System.currentTimeMillis()
+        lectureSlotDao.softDeleteSlot(slot.id, now)
+        try {
+            ClassReminderScheduler(context).cancelSlot(slot.id)
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+        }
         refreshClassAlarms()
     }
 
-    private companion object {
-        // A little longer than the 5 second Undo bar in the task tabs.
-        const val UNDO_WINDOW_MS = 8_000L
-        val undoLock = Any()
-        val pendingUndoAttachments = mutableMapOf<Long, List<TaskAttachment>>()
-        val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    suspend fun restoreLectureSlot(id: Long) = withContext(Dispatchers.IO) {
+        lectureSlotDao.restoreSlot(id)
+        refreshClassAlarms()
+    }
+
+    suspend fun deleteSlotForever(id: Long) = withContext(Dispatchers.IO) {
+        try {
+            ClassReminderScheduler(context).cancelSlot(id)
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+        }
+        lectureSlotDao.deleteSlotById(id)
+        refreshClassAlarms()
+    }
+
+    suspend fun emptyClassTrash() = withContext(Dispatchers.IO) {
+        val trashed = lectureSlotDao.getDeletedSlotsSync()
+        for (slot in trashed) {
+            deleteSlotForever(slot.id)
+        }
+    }
+
+    suspend fun purgeOldClassTrash(now: Long = System.currentTimeMillis()): Int = withContext(Dispatchers.IO) {
+        val cutoff = now - (NoteRepository.TRASH_DAYS * 24L * 60L * 60L * 1000L)
+        val toPurge = lectureSlotDao.getDeletedSlotsSync().filter { it.deletedAt > 0L && it.deletedAt < cutoff }
+        for (slot in toPurge) {
+            try {
+                ClassReminderScheduler(context).cancelSlot(slot.id)
+            } catch (e: Exception) {
+                Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+            }
+        }
+        val purgedCount = lectureSlotDao.purgeDeletedBefore(cutoff)
+        if (purgedCount > 0) {
+            refreshClassAlarms()
+        }
+        purgedCount
     }
 }

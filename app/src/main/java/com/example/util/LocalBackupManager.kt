@@ -6,6 +6,7 @@ import android.util.Base64
 import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
+import com.example.data.local.isArchived
 import com.example.data.local.LectureSlot
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.Note
@@ -136,24 +137,26 @@ object LocalBackupManager {
     ): BuiltBackup =
         withContext(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(context)
-            val courses = db.courseDao().getAllCoursesList().filter { !it.isDeleted }
+            val courses = db.courseDao().getAllCoursesListIncludingArchived().filter { !it.isDeleted }
             val codeById = courses.associate { it.id to it.code }
-            val slots = db.lectureSlotDao().getAllSlotsSync()
+            val slots = db.lectureSlotDao().getAllSlotsSyncIncludingArchived()
                 .filter { !it.isDeleted && it.courseId in codeById }
-            val tasks = db.taskDao().getAllActiveTasksSync()
+            val tasks = db.taskDao().getAllActiveTasksSyncIncludingArchived()
                 .filter { !it.isDeleted && it.courseId in codeById }
-            val notes = db.noteDao().getActiveNotesSync()
+            val notes = db.noteDao().getActiveNotesSyncIncludingArchived()
 
             val courseArray = JSONArray()
             for (c in courses) {
-                courseArray.put(
-                    JSONObject()
-                        .put("code", c.code)
-                        .put("name", c.name)
-                        .put("instructor", c.instructor)
-                        .put("colorHex", c.colorHex)
-                        .put("location", c.location)
-                )
+                val obj = JSONObject()
+                    .put("code", c.code)
+                    .put("name", c.name)
+                    .put("instructor", c.instructor)
+                    .put("colorHex", c.colorHex)
+                    .put("location", c.location)
+                if (c.archivedSemester.isNotBlank()) {
+                    obj.put("archivedSemester", c.archivedSemester)
+                }
+                courseArray.put(obj)
             }
             val slotArray = JSONArray()
             for (s in slots) {
@@ -262,7 +265,7 @@ object LocalBackupManager {
             }
 
             val exportedCoursesCount = courses.count {
-                normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE
+                normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE && !it.isArchived
             }
             val exportedMyTasksCount = tasks.count {
                 val code = codeById[it.courseId] ?: ""
@@ -451,6 +454,7 @@ object LocalBackupManager {
                 val instructor = o.optString("instructor").trim()
                 val colorHex = o.optString("colorHex").ifBlank { "#4F46E5" }
                 val location = o.optString("location").trim()
+                val archivedSemester = o.optString("archivedSemester").trim()
 
                 val existing = courseDao.getCourseByNormalizedCode(norm)
                     ?: courseDao.getAnyCourseByNormalizedCode(norm)
@@ -463,7 +467,8 @@ object LocalBackupManager {
                             instructor = instructor,
                             colorHex = colorHex,
                             location = location,
-                            isSynced = false
+                            isSynced = false,
+                            archivedSemester = archivedSemester
                         )
                     )
                     idByCode[norm] = id
@@ -530,6 +535,7 @@ object LocalBackupManager {
                             classroom = classroom,
                             instructor = instructor,
                             isDeleted = false,
+                            deletedAt = 0L,
                             isSynced = false
                         )
                     )
@@ -617,6 +623,7 @@ object LocalBackupManager {
                         repeatAnchorDay = repeatAnchorDay,
                         autoDeleteWhenDone = autoDeleteWhenDone,
                         isDeleted = false,
+                        deletedAt = 0L,
                         isSynced = false
                     )
                     taskDao.updateTask(
@@ -631,7 +638,7 @@ object LocalBackupManager {
             }
 
             // ---- notes
-            val existingNotes = noteDao.getActiveNotesSync().toMutableList()
+            val existingNotes = noteDao.getActiveNotesSyncIncludingArchived().toMutableList()
             val noteArray = data.optJSONArray("notes") ?: JSONArray()
             for (i in 0 until noteArray.length()) {
                 val o = noteArray.optJSONObject(i) ?: continue

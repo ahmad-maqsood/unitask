@@ -4,8 +4,11 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
+import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.Note
+import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
+import com.example.ui.screens.DriveBackupViewModel
 import com.example.util.BackupResult
 import com.example.util.NoteImages
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +45,10 @@ class DriveBackupManagerTest {
             .edit()
             .clear()
             .commit()
+        val attDirSetup = File(context.filesDir, "attachments")
+        if (attDirSetup.exists()) {
+            attDirSetup.deleteRecursively()
+        }
     }
 
     @After
@@ -53,6 +60,10 @@ class DriveBackupManagerTest {
         val imageDir = File(context.filesDir, "note_images")
         if (imageDir.exists()) {
             imageDir.deleteRecursively()
+        }
+        val attDir = File(context.filesDir, "attachments")
+        if (attDir.exists()) {
+            attDir.deleteRecursively()
         }
         context.getSharedPreferences("drive_backup_prefs", Context.MODE_PRIVATE)
             .edit()
@@ -394,5 +405,144 @@ class DriveBackupManagerTest {
         assertTrue(res2 is BackupResult.Success)
         assertEquals(1, courseDao.getAllCourses().first().size)
         assertEquals(1, taskDao.getAllActiveTasksSync().size)
+    }
+
+    @Test
+    fun backupWithMyTasks_summaryCountsMyTasksCorrectly() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val noteDao = db.noteDao()
+        val attDao = db.taskAttachmentDao()
+        val fakeStore = FakeDriveStore()
+
+        DrivePrefs(context).includeAttachments = true
+
+        // 8 courses
+        val courseIds = (1..8).map { i ->
+            courseDao.insertCourse(Course(name = "Course $i", code = "CRS$i", colorHex = "#123456"))
+        }
+
+        // 2 course tasks
+        val tId1 = taskDao.insertTask(TaskItem(courseId = courseIds[0], title = "Course Task 1", dueDateEpochMillis = 1000L))
+        val tId2 = taskDao.insertTask(TaskItem(courseId = courseIds[1], title = "Course Task 2", dueDateEpochMillis = 2000L))
+
+        // 3 My tasks
+        val myTasksCourse = Course(name = "My tasks", code = MY_TASKS_COURSE_CODE, colorHex = "#888888")
+        val myTasksCourseId = courseDao.insertCourse(myTasksCourse)
+        taskDao.insertTask(TaskItem(courseId = myTasksCourseId, title = "My Task 1", dueDateEpochMillis = 3000L))
+        taskDao.insertTask(TaskItem(courseId = myTasksCourseId, title = "My Task 2", dueDateEpochMillis = 4000L))
+        taskDao.insertTask(TaskItem(courseId = myTasksCourseId, title = "My Task 3", dueDateEpochMillis = 5000L))
+
+        // 2 notes
+        noteDao.insert(Note(title = "Note 1", body = "Body 1", createdAt = 1000L, updatedAt = 1000L))
+        noteDao.insert(Note(title = "Note 2", body = "Body 2", createdAt = 2000L, updatedAt = 2000L))
+
+        // 4 attachments
+        val attachmentsDir = File(context.filesDir, "attachments").apply { mkdirs() }
+        for (i in 1..4) {
+            val file = File(attachmentsDir, "att_$i.txt").apply { writeBytes("att $i".toByteArray()) }
+            attDao.insertAttachment(
+                TaskAttachment(
+                    taskId = if (i <= 2) tId1 else tId2,
+                    fileName = "att_$i.txt",
+                    relativePath = "attachments/att_$i.txt",
+                    fileSize = file.length(),
+                    mimeType = "text/plain"
+                )
+            )
+        }
+
+        val result = DriveBackupManager.backUp(context, fakeStore)
+        assertTrue(result is DriveBackupResult.Success)
+        val info = (result as DriveBackupResult.Success).info
+        assertEquals(8, info.courses)
+        assertEquals(2, info.tasks)
+        assertEquals(3, info.myTasks)
+        assertEquals(2, info.notes)
+        assertEquals(4, info.attachments)
+
+        val expectedSummary = "8 courses, 2 tasks, 3 My tasks, 2 notes, 4 attachments"
+        assertEquals(expectedSummary, DriveBackupManager.buildCountsText(info))
+        assertEquals(expectedSummary, DriveBackupViewModel.buildCountsText(info))
+        assertEquals(expectedSummary, DrivePrefs(context).lastCounts)
+
+        val zeroMyTasksInfo = info.copy(myTasks = 0)
+        assertEquals("8 courses, 2 tasks, 2 notes, 4 attachments", DriveBackupManager.buildCountsText(zeroMyTasksInfo))
+
+        val zeroAttachmentsInfo = info.copy(attachments = 0)
+        assertEquals("8 courses, 2 tasks, 3 My tasks, 2 notes", DriveBackupManager.buildCountsText(zeroAttachmentsInfo))
+    }
+
+    @Test
+    fun oldSlotWithoutMyTasksProp_reuploadedOnceThenUnchanged() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val fakeStore = FakeDriveStore()
+
+        val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+
+        // Initial backup writes slot 1 with myTasks prop
+        val initialRes = DriveBackupManager.backUp(context, fakeStore)
+        assertTrue(initialRes is DriveBackupResult.Success)
+
+        // Simulate an older slot by stripping the myTasks prop
+        val slot1 = fakeStore.files.values.first { it.name == "unitask-backup-1.json" }
+        slot1.props.remove("myTasks")
+        assertFalse(slot1.props.containsKey("myTasks"))
+
+        // Next backup without force: missing prop triggers re-upload
+        fakeStore.callLog.clear()
+        val reuploadRes = DriveBackupManager.backUp(context, fakeStore, force = false)
+        assertTrue("Expected Success (re-upload) for slot lacking myTasks prop", reuploadRes is DriveBackupResult.Success)
+        assertTrue("Slot must be re-uploaded", fakeStore.callLog.any { it == "upload" })
+
+        // Check that slot now has myTasks prop
+        val updatedSlot = fakeStore.files.values.first { it.id == (reuploadRes as DriveBackupResult.Success).info.slotFileId }
+        assertTrue(updatedSlot.props.containsKey("myTasks"))
+
+        // Second run without force: slot now has myTasks prop and data is unchanged -> Unchanged
+        fakeStore.callLog.clear()
+        val unchangedRes = DriveBackupManager.backUp(context, fakeStore, force = false)
+        assertTrue("Second run must be Unchanged", unchangedRes is DriveBackupResult.Unchanged)
+        assertTrue("No uploads on second run", fakeStore.callLog.none { it.startsWith("upload") })
+    }
+
+    @Test
+    fun infoFromSlot_readsMyTasksPropertyOrDefaultZero() {
+        val fileWithMyTasks = DriveFile(
+            id = "file_1",
+            name = "unitask-backup-1.json",
+            size = 100L,
+            createdTimeMillis = 1000L,
+            modifiedTimeMillis = 1000L,
+            props = mapOf(
+                "seq" to "1",
+                "exportedAt" to "1000",
+                "courses" to "8",
+                "tasks" to "2",
+                "myTasks" to "3",
+                "notes" to "2",
+                "images" to "0",
+                "attachments" to "4",
+                "appVersion" to "1.0",
+                "formatVersion" to "1"
+            )
+        )
+        val info = DriveBackupManager.infoFromSlot(fileWithMyTasks)
+        assertNotNull(info)
+        assertEquals(3, info!!.myTasks)
+        assertEquals(8, info.courses)
+        assertEquals(2, info.tasks)
+        assertEquals(2, info.notes)
+        assertEquals(4, info.attachments)
+
+        // Old slot without myTasks prop defaults to 0
+        val fileWithoutMyTasks = fileWithMyTasks.copy(
+            props = fileWithMyTasks.props - "myTasks"
+        )
+        val oldInfo = DriveBackupManager.infoFromSlot(fileWithoutMyTasks)
+        assertNotNull(oldInfo)
+        assertEquals(0, oldInfo!!.myTasks)
     }
 }

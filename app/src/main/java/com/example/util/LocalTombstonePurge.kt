@@ -30,9 +30,11 @@ object LocalTombstonePurge {
         val deletedCourses = courseDao.getDeletedCourses()
         val deletedCourseIds = deletedCourses.map { it.id }.toSet()
 
-        val deletedTasks = taskDao.getDeletedTasks()
+        val deletedTasks = taskDao.getDeletedTasks().filter { it.deletedAt <= 0L }
         val courseTaskIds = deletedCourseIds.flatMap { courseId ->
-            taskDao.getAnyTasksForCourseSync(courseId).map { it.id }
+            taskDao.getAnyTasksForCourseSync(courseId)
+                .filter { it.deletedAt <= 0L }
+                .map { it.id }
         }
         val allTaskIdsToDelete = (deletedTasks.map { it.id } + courseTaskIds).distinct()
 
@@ -44,7 +46,7 @@ object LocalTombstonePurge {
         }
 
         db.withTransaction {
-            for (slot in slotDao.getDeletedSlots()) {
+            for (slot in slotDao.getDeletedSlots().filter { it.deletedAt <= 0L }) {
                 slotDao.deleteSlot(slot)
             }
             for (courseId in deletedCourseIds) {

@@ -120,7 +120,7 @@ fun MyTasksTab(
             try {
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
-                        message = "\"${task.title}\" deleted",
+                        message = "Task moved to Recently deleted",
                         actionLabel = "Undo",
                         duration = SnackbarDuration.Indefinite
                     )

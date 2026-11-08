@@ -30,7 +30,6 @@ fun NotesHost(
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     // A new number every time the editor opens, so each open gets a fresh editor state
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
-    var inTrash by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -41,12 +40,8 @@ fun NotesHost(
         }
     }
 
-    BackHandler(enabled = editorTarget == null && !inTrash) {
+    BackHandler(enabled = editorTarget == null) {
         onClose()
-    }
-
-    BackHandler(enabled = editorTarget == null && inTrash) {
-        inTrash = false
     }
 
     if (editorTarget != null) {
@@ -59,7 +54,7 @@ fun NotesHost(
                 editorTarget = null
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
-                        message = "Note deleted",
+                        message = "Note moved to Recently deleted",
                         actionLabel = "Undo",
                         duration = SnackbarDuration.Short
                     )
@@ -68,11 +63,6 @@ fun NotesHost(
                     }
                 }
             }
-        )
-    } else if (inTrash) {
-        NoteTrashScreen(
-            onClose = { inTrash = false },
-            viewModel = viewModel
         )
     } else {
         NotesScreen(
@@ -84,7 +74,6 @@ fun NotesHost(
                 editorSession = NoteEditorSessions.next()
                 editorTarget = "new"
             },
-            onOpenTrash = { inTrash = true },
             onClose = onClose,
             viewModel = viewModel,
             snackbarHostState = snackbarHostState

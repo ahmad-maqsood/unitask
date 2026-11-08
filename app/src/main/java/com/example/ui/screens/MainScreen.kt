@@ -40,8 +40,10 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 
 
 import androidx.compose.material.icons.filled.Groups
@@ -70,6 +72,7 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,6 +88,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,6 +123,43 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.Crossfade
+/** Builds the list of tool tiles available in the Tools sheet. */
+fun buildToolsList(
+    onOpenNotes: () -> Unit,
+    onOpenTimer: () -> Unit,
+    onOpenRecentlyDeleted: () -> Unit,
+    onOpenSearch: () -> Unit = {}
+): List<ToolEntry> = listOf(
+    ToolEntry(
+        label = "Notes",
+        description = "Lecture notes and summaries",
+        icon = Icons.Default.EditNote,
+        testTag = "tools_tile_notes",
+        onClick = onOpenNotes
+    ),
+    ToolEntry(
+        label = "Timer",
+        description = "Stopwatch and countdown",
+        icon = Icons.Default.Timer,
+        testTag = "tools_tile_timer",
+        onClick = onOpenTimer
+    ),
+    ToolEntry(
+        label = "Recently deleted",
+        description = "Restore tasks and notes",
+        icon = Icons.Default.DeleteSweep,
+        testTag = "tools_tile_recently_deleted",
+        onClick = onOpenRecentlyDeleted
+    ),
+    ToolEntry(
+        label = "Search",
+        description = "Find tasks, notes and courses",
+        icon = Icons.Default.Search,
+        testTag = "tools_tile_search",
+        onClick = onOpenSearch
+    )
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -142,6 +183,7 @@ fun MainScreen(
 
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.refreshMessage.collectLatest { message ->
@@ -232,6 +274,8 @@ fun MainScreen(
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val allCourses by viewModel.allCourses.collectAsStateWithLifecycle()
     val coursesWithCounts by viewModel.coursesWithCounts.collectAsStateWithLifecycle()
+    val archivedSemesters by viewModel.archivedSemesters.collectAsStateWithLifecycle()
+    val activeCoursesForArchive by viewModel.activeCoursesForArchive.collectAsStateWithLifecycle()
     val filteredTasks by viewModel.filteredTasks.collectAsStateWithLifecycle()
     val allTasksWithCourse by viewModel.allTasksWithCourse.collectAsStateWithLifecycle()
     val allLectureSlots by viewModel.allLectureSlots.collectAsStateWithLifecycle()
@@ -256,6 +300,7 @@ fun MainScreen(
     val isAddEditCourseDialogOpen by viewModel.isAddEditCourseDialogOpen.collectAsStateWithLifecycle()
     val courseToEdit by viewModel.courseToEdit.collectAsStateWithLifecycle()
     val courseSaveError by viewModel.courseSaveError.collectAsStateWithLifecycle()
+    val courseArchivedConflict by viewModel.courseArchivedConflict.collectAsStateWithLifecycle()
 
 
     val isAddEditSlotDialogOpen by viewModel.isAddEditSlotDialogOpen.collectAsStateWithLifecycle()
@@ -290,6 +335,10 @@ fun MainScreen(
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
+    var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
+    var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
+    var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -314,21 +363,11 @@ fun MainScreen(
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
     val timerActive = !TimerLogic.isIdle(timerState)
 
-    val tools = listOf(
-        ToolEntry(
-            label = "Notes",
-            description = "Lecture notes and summaries",
-            icon = Icons.Default.EditNote,
-            testTag = "tools_tile_notes",
-            onClick = { showNotes = true }
-        ),
-        ToolEntry(
-            label = "Timer",
-            description = "Stopwatch and countdown",
-            icon = Icons.Default.Timer,
-            testTag = "tools_tile_timer",
-            onClick = { showTimer = true }
-        )
+    val tools = buildToolsList(
+        onOpenNotes = { showNotes = true },
+        onOpenTimer = { showTimer = true },
+        onOpenRecentlyDeleted = { showRecentlyDeleted = true },
+        onOpenSearch = { showSearch = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -336,6 +375,8 @@ fun MainScreen(
     BackHandler {
         when {
             isFabMenuExpanded -> isFabMenuExpanded = false
+            showArchivedSemesters -> showArchivedSemesters = false
+            showSearch -> showSearch = false
             currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
             else -> {
                 val now = System.currentTimeMillis()
@@ -774,7 +815,20 @@ fun MainScreen(
                             onAddSlotClick = { viewModel.openAddSlotDialog() },
                             onSelectedDayChange = { viewModel.setTimetableSelectedDay(it) },
                             onEditSlot = { viewModel.openEditSlotDialog(it) },
-                            onDeleteSlot = { viewModel.deleteLectureSlot(it) },
+                            onDeleteSlot = { slot ->
+                                viewModel.deleteLectureSlot(slot)
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Class moved to Recently deleted",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.undoDeleteLectureSlot(slot)
+                                    }
+                                }
+                            },
                             onTaskClick = { viewModel.openEditTaskDialog(it.task) },
                             onRescheduleAllReminders = { viewModel.rescheduleAllReminders() }
                         )
@@ -786,7 +840,10 @@ fun MainScreen(
                             onCourseClick = { courseId -> viewModel.openCourseDetail(courseId) },
                             onEditCourse = { viewModel.openEditCourseDialog(it) },
                             onDeleteCourse = { viewModel.deleteCourse(it) },
-                            onAddCourseClick = { viewModel.openAddCourseDialog() }
+                            onAddCourseClick = { viewModel.openAddCourseDialog() },
+                            archivedSemestersCount = archivedSemesters.size,
+                            onArchiveCoursesClick = { showArchiveCoursesSheet = true },
+                            onArchivedSemestersClick = { showArchivedSemesters = true }
                         )
                     }
 
@@ -860,6 +917,7 @@ fun MainScreen(
                     onAddSlot = { courseId -> viewModel.openAddSlotDialog(courseId) },
                     onEditSlot = { viewModel.openEditSlotDialog(it) },
                     onDeleteSlot = { viewModel.deleteLectureSlot(it) },
+                    onUndoDeleteSlot = { viewModel.undoDeleteLectureSlot(it) },
                     onStatusCycle = { viewModel.cycleTaskStatus(it) },
                     onEditTask = { viewModel.openEditTaskDialog(it) },
                     onDeleteTask = { viewModel.deleteTask(it) },
@@ -885,7 +943,10 @@ fun MainScreen(
         !isMyTaskDialogOpen &&
         !showNotes &&
         !showTools &&
-        !showTimer
+        !showTimer &&
+        !showRecentlyDeleted &&
+        !showArchivedSemesters &&
+        !showSearch
     ) {
         DriveMigrationDialog(
             onDismiss = { hasShownMigrationDialogThisSession = true }
@@ -918,8 +979,22 @@ fun MainScreen(
                 viewModel.saveCourse(name, code, instructor, color, location)
             },
             duplicateError = courseSaveError,
-            onClearDuplicateError = { viewModel.clearCourseSaveError() }
-
+            onClearDuplicateError = { viewModel.clearCourseSaveError() },
+            archivedConflict = courseArchivedConflict,
+            onCheckArchivedCode = { code ->
+                viewModel.findArchivedCourseByCode(code)?.archivedSemester
+            },
+            onRestoreSemester = { semesterName ->
+                viewModel.restoreSemester(semesterName) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Restored $semesterName",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+                viewModel.closeCourseDialog()
+            }
         )
     }
 
@@ -972,6 +1047,105 @@ fun MainScreen(
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             TimerScreen(onClose = { showTimer = false })
         }
+    }
+
+    if (showRecentlyDeleted) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            RecentlyDeletedScreen(onClose = { showRecentlyDeleted = false })
+        }
+    }
+
+    if (showArchivedSemesters) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            ArchivedSemestersScreen(
+                semesters = archivedSemesters,
+                onRestoreSemester = { semesterName ->
+                    viewModel.restoreSemester(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Restored $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                onDeleteSemesterForever = { semesterName ->
+                    viewModel.deleteSemesterForever(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Deleted $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                onClose = { showArchivedSemesters = false }
+            )
+        }
+    }
+
+    if (showSearch) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            SearchScreen(
+                onClose = { showSearch = false },
+                onNavigateToPersonalTask = { taskWithCourse, isMyTask ->
+                    showSearch = false
+                    if (isMyTask) {
+                        viewModel.setTab(MainTab.MYTASKS)
+                        viewModel.openMyTaskDialog(taskWithCourse.task)
+                    } else {
+                        viewModel.setTab(MainTab.DEADLINES)
+                        viewModel.openEditTaskDialog(taskWithCourse.task)
+                    }
+                },
+                onNavigateToGroupTask = { taskTitle ->
+                    showSearch = false
+                    viewModel.setTab(MainTab.DEADLINES)
+                    viewModel.onSearchQueryChange(taskTitle)
+                },
+                onNavigateToCourse = { courseId ->
+                    showSearch = false
+                    viewModel.setTab(MainTab.COURSES)
+                    viewModel.openCourseDetail(courseId)
+                },
+                onRestoreSemester = { semesterName ->
+                    viewModel.restoreSemester(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Restored $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                groupTasks = groupEntryByItemId.values.map { it.toTaskWithCourse() }
+            )
+        }
+    }
+
+    if (showArchiveCoursesSheet) {
+        ArchiveCoursesSheet(
+            courses = activeCoursesForArchive,
+            existingSemesterNames = archivedSemesters.map { it.name },
+            onConfirmArchive = { courseIds, semesterName ->
+                showArchiveCoursesSheet = false
+                viewModel.archiveCourses(courseIds, semesterName) {
+                    scope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        val courseLabel = if (courseIds.size == 1) "1 course" else "${courseIds.size} courses"
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Archived $courseLabel to $semesterName",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.undoArchive(courseIds)
+                        }
+                    }
+                }
+            },
+            onDismiss = { showArchiveCoursesSheet = false }
+        )
     }
 
     markdownViewerState?.let { mState ->

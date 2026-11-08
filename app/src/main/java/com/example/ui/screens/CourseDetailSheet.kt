@@ -35,6 +35,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +51,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.local.AppDatabase
+import com.example.util.formatCourseDeleteWarning
+import com.example.util.queryCourseDeleteLoss
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,6 +85,7 @@ fun CourseDetailSheet(
     onAddSlot: (courseId: Long) -> Unit = {},
     onEditSlot: (LectureSlot) -> Unit = {},
     onDeleteSlot: (LectureSlot) -> Unit = {},
+    onUndoDeleteSlot: (LectureSlot) -> Unit = {},
     onStatusCycle: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
@@ -90,16 +102,42 @@ fun CourseDetailSheet(
             Color(0xFF4F46E5)
         }
     }
+    val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(showDeleteConfirm) {
+        if (showDeleteConfirm) {
+            try {
+                val db = AppDatabase.getDatabase(context)
+                val loss = queryCourseDeleteLoss(db, course)
+                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount)
+                deleteWarningMessage = if (warning.isNotBlank()) {
+                    "${course.code} will be deleted. $warning"
+                } else {
+                    "${course.code} will be deleted."
+                }
+            } catch (_: Exception) {
+                deleteWarningMessage = "${course.code} and all of its assignments, class slots and attached files will be deleted."
+            }
+        } else {
+            deleteWarningMessage = null
+        }
+    }
+
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "Delete course?",
-            message = "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
             onConfirm = { onDeleteCourse(course) },
             onDismiss = { showDeleteConfirm = false }
         )
     }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(course.code, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -426,7 +464,21 @@ fun CourseDetailSheet(
                                                     )
                                                 }
                                                 IconButton(
-                                                    onClick = { onDeleteSlot(slot) },
+                                                    onClick = {
+                                                        val slotToDelete = slot
+                                                        onDeleteSlot(slotToDelete)
+                                                        scope.launch {
+                                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                                            val result = snackbarHostState.showSnackbar(
+                                                                message = "Class moved to Recently deleted",
+                                                                actionLabel = "Undo",
+                                                                duration = SnackbarDuration.Short
+                                                            )
+                                                            if (result == SnackbarResult.ActionPerformed) {
+                                                                onUndoDeleteSlot(slotToDelete)
+                                                            }
+                                                        }
+                                                    },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
                                                     Icon(

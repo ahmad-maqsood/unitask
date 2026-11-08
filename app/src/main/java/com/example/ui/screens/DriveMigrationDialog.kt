@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +43,7 @@ import com.example.util.drive.DrivePrefs
  * Migration prompt displayed to existing cloud sync users offering
  * a seamless one-click switch to Google Drive backup.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DriveMigrationDialog(
     onDismiss: () -> Unit,

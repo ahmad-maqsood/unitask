@@ -379,7 +379,7 @@ fun MainScreen(
                                 .clip(RoundedCornerShape(10.dp))
                         )
 
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = "UniTask",
                                 style = MaterialTheme.typography.titleLarge,
@@ -388,12 +388,12 @@ fun MainScreen(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Text(
+                            ShrinkToFitText(
                                 text = "University Task Manager",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                minFontSize = 9.sp
                             )
                         }
                     }
@@ -1043,13 +1043,12 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
             }
         },
         label = {
-            Text(
+            ShrinkToFitText(
                 text = label,
                 maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                minFontSize = 9.sp
             )
         }
     )

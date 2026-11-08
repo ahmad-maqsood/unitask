@@ -340,7 +340,8 @@ fun CloudBackupSheet(
                     Text(
                         text = "100% offline-ready. Room Database stores all data on device.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

@@ -21,7 +21,18 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
+import com.example.ui.screens.DriveBackupSection
+import com.example.ui.screens.DriveRestoreOfferCard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.data.local.AppDatabase
@@ -884,5 +895,69 @@ class SmokeFlowsTest {
         waitForText("RTC101")
         scenario?.close()
         scenario = null
+    }
+
+    @Test
+    fun layoutFitsOnNarrowScreenWithLargeFont() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // Verify that the five bottom navigation items are all displayed on the main screen
+        waitForTag("tab_deadlines")
+        composeRule.onNodeWithTag("tab_deadlines").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_timetable").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_courses").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_groups").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_mytasks").assertIsDisplayed()
+
+        // Verify DriveRestoreOfferCard on narrow screen (320.dp) with 1.5x font scale
+        scenario?.onActivity { activity ->
+            activity.setContent {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density = LocalDensity.current.density, fontScale = 1.5f)
+                ) {
+                    DriveRestoreOfferCard(
+                        modifier = Modifier.width(320.dp)
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("drive_offer_dismiss_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("drive_offer_dismiss_button").assertWidthIsAtLeast(64.dp)
+        val dismissBounds = composeRule.onNodeWithTag("drive_offer_dismiss_button").getUnclippedBoundsInRoot()
+        assertTrue(dismissBounds.height < 64.dp)
+
+        // Verify DriveBackupSection buttons when connected
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = DrivePrefs(context)
+        val originalEmail = prefs.connectedEmail
+        try {
+            prefs.connectedEmail = "test_smoke@example.com"
+            scenario?.onActivity { activity ->
+                activity.setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = LocalDensity.current.density, fontScale = 1.5f)
+                    ) {
+                        DriveBackupSection(
+                            showHeading = true
+                        )
+                    }
+                }
+            }
+            composeRule.waitForIdle()
+
+            composeRule.onNodeWithTag("drive_backup_now_button").assertIsDisplayed()
+            composeRule.onNodeWithTag("drive_backup_now_button").assertWidthIsAtLeast(64.dp)
+            val backupBounds = composeRule.onNodeWithTag("drive_backup_now_button").getUnclippedBoundsInRoot()
+            assertTrue(backupBounds.height < 64.dp)
+
+            composeRule.onNodeWithTag("drive_restore_button").assertIsDisplayed()
+            composeRule.onNodeWithTag("drive_restore_button").assertWidthIsAtLeast(64.dp)
+            val restoreBounds = composeRule.onNodeWithTag("drive_restore_button").getUnclippedBoundsInRoot()
+            assertTrue(restoreBounds.height < 64.dp)
+        } finally {
+            prefs.connectedEmail = originalEmail
+        }
     }
 }

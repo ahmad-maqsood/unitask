@@ -91,7 +91,8 @@ fun DriveRestoreOfferCard(
                     text = "Had UniTask on another phone?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
                 )
             }
 
@@ -130,15 +131,16 @@ fun DriveRestoreOfferCard(
                 )
             }
 
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Button(
                     onClick = { viewModel.requestRestore() },
                     enabled = isNotBusy,
-                    modifier = Modifier.testTag("drive_offer_restore_button")
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("drive_offer_restore_button")
                 ) {
                     Text("Restore from Google Drive")
                 }
@@ -149,7 +151,9 @@ fun DriveRestoreOfferCard(
                         onDismiss()
                     },
                     enabled = isNotBusy,
-                    modifier = Modifier.testTag("drive_offer_dismiss_button")
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .testTag("drive_offer_dismiss_button")
                 ) {
                     Text("Not now")
                 }

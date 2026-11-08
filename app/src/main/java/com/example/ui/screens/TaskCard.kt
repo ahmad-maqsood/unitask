@@ -287,7 +287,7 @@ fun TaskCard(
                         IconButton(
                             onClick = { showMenu = true },
                             modifier = Modifier
-                                .size(32.dp)
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .testTag("task_menu_${task.id}")
                         ) {
                             Icon(

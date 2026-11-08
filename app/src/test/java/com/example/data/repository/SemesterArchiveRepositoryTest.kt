@@ -12,6 +12,7 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.isArchived
 import com.example.reminder.ReminderScheduler
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -39,7 +40,7 @@ class SemesterArchiveRepositoryTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         db = AppDatabase.getDatabase(context)
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
         scheduler = ReminderScheduler(context)
@@ -57,7 +58,7 @@ class SemesterArchiveRepositoryTest {
 
     @After
     fun tearDown() {
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
     }
@@ -169,7 +170,7 @@ class SemesterArchiveRepositoryTest {
     }
 
     @Test
-    fun mytasksCannotBeArchived() = runBlocking {
+    fun mytasksCannotBeArchived(): Unit = runBlocking {
         val myTasksId = repo.insertCourse(
             Course(name = "My tasks", code = "MYTASKS", colorHex = "#000000")
         )
@@ -182,7 +183,7 @@ class SemesterArchiveRepositoryTest {
     }
 
     @Test
-    fun blankAndOverLongNamesAreRejected() = runBlocking {
+    fun blankAndOverLongNamesAreRejected(): Unit = runBlocking {
         val courseId = repo.insertCourse(
             Course(name = "Physics", code = "PHYS 101", colorHex = "#4F46E5")
         )

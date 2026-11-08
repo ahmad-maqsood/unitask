@@ -236,7 +236,7 @@ class DriveMigrationPromptTest {
         composeRule.onNodeWithTag("drive_migration_dialog").assertIsDisplayed()
         composeRule.onNodeWithText("Back up to Google Drive").assertIsDisplayed()
         composeRule.onNodeWithText(
-            "UniTask now backs up to your own Google Drive. In a future update, your courses, tasks and notes will no longer be synced through UniTask's own cloud, so please make a Drive backup now. Your data stays on this phone either way."
+            "UniTask no longer syncs your courses, tasks and notes to the online account. They stay on this phone. Back up to your own Google Drive so a lost or reset phone cannot take them with it."
         ).assertIsDisplayed()
         composeRule.onNodeWithTag("drive_migration_backup_button").assertIsDisplayed()
         composeRule.onNodeWithTag("drive_migration_later_button").assertIsDisplayed()

@@ -63,9 +63,6 @@ interface LectureSlotDao {
     @Query("SELECT COUNT(*) FROM lecture_slots WHERE courseId = :courseId")
     suspend fun countSlotsForCourse(courseId: Long): Int
 
-    @Query("SELECT COUNT(*) FROM lecture_slots WHERE courseId = :courseId AND isDeleted = 0")
-    suspend fun countActiveSlotsForCourse(courseId: Long): Int
-
     @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND dayOfWeek = :dayOfWeek AND startHour = :startHour AND startMinute = :startMinute LIMIT 1")
     suspend fun findMatchingSlot(courseId: Long, dayOfWeek: Int, startHour: Int, startMinute: Int): LectureSlot?
 

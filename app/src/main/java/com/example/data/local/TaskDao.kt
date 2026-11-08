@@ -76,9 +76,6 @@ interface TaskDao {
     @Query("SELECT COUNT(*) FROM tasks WHERE courseId = :courseId")
     suspend fun countTasksForCourse(courseId: Long): Int
 
-    @Query("SELECT COUNT(*) FROM tasks WHERE courseId = :courseId AND isDeleted = 0")
-    suspend fun countActiveTasksForCourse(courseId: Long): Int
-
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
     suspend fun softDeleteTasksForCourse(courseId: Long)
 

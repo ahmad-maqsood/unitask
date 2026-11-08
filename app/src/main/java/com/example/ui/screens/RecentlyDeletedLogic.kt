@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import com.example.util.DateFormats
+import com.example.util.TimeFormatter
 import java.util.Calendar
 
 /**
@@ -53,11 +54,11 @@ fun dayOfWeekName(dayOfWeek: Int): String {
 
 /**
  * Formats day and time for a lecture slot in the trash.
- * For example: "Thursday, 10:00 to 11:30" or "Monday, 09:00 to 10:30".
+ * For example: "Thursday, 10:00 AM to 11:30 AM" or "Monday, 09:00 AM to 10:30 AM".
  */
 fun formatTrashClassTime(dayOfWeek: Int, startHour: Int, startMinute: Int, endHour: Int, endMinute: Int): String {
     val day = dayOfWeekName(dayOfWeek)
-    val startTime = String.format(java.util.Locale.US, "%02d:%02d", startHour, startMinute)
-    val endTime = String.format(java.util.Locale.US, "%02d:%02d", endHour, endMinute)
+    val startTime = TimeFormatter.format12Hour(startHour, startMinute)
+    val endTime = TimeFormatter.format12Hour(endHour, endMinute)
     return if (day.isNotEmpty()) "$day, $startTime to $endTime" else "$startTime to $endTime"
 }

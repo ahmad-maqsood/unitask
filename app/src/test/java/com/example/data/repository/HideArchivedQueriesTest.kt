@@ -310,12 +310,14 @@ class HideArchivedQueriesTest {
 
     @Test
     fun dailySummaryAndIcsExportIgnoreArchivedCourses() = runBlocking {
+        // 1 = Monday ... 7 = Sunday, same as the timetable. The widget only lists today's classes.
+        val today = (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7 + 1
         val activeCourseId = repo.insertCourse(
             Course(name = "Operating Systems", code = "CS 301", colorHex = "#10B981")
         )
         val activeSlot = LectureSlot(
             courseId = activeCourseId,
-            dayOfWeek = 1,
+            dayOfWeek = today,
             startHour = 8,
             startMinute = 30,
             endHour = 10,
@@ -329,7 +331,7 @@ class HideArchivedQueriesTest {
         )
         val archivedSlot = LectureSlot(
             courseId = archivedCourseId,
-            dayOfWeek = 1,
+            dayOfWeek = today,
             startHour = 10,
             startMinute = 30,
             endHour = 12,

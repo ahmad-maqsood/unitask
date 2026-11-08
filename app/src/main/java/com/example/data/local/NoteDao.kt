@@ -75,7 +75,4 @@ interface NoteDao {
 
     @Query("UPDATE notes SET courseId = :newCourseId, isSynced = 0 WHERE courseId = :oldCourseId")
     suspend fun reassignCourse(oldCourseId: Long, newCourseId: Long)
-
-    @Query("SELECT COUNT(*) FROM notes WHERE courseId = :courseId AND isDeleted = 0")
-    suspend fun countActiveNotesForCourse(courseId: Long): Int
 }

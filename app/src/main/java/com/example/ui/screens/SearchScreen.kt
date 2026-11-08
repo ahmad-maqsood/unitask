@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,6 +80,10 @@ fun SearchScreen(
         viewModel.setGroupTasks(groupTasks)
     }
 
+    DisposableEffect(Unit) {
+        onDispose { viewModel.resetSearch() }
+    }
+
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val includeArchived by viewModel.includeArchived.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
@@ -93,6 +98,10 @@ fun SearchScreen(
         coursesExpanded = false
     }
 
+    fun resetSearch() {
+        _searchQuery.value = ""
+        _includeArchived.value = false
+    }
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var archivedDialogSemester by remember { mutableStateOf<String?>(null) }

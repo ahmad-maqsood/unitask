@@ -82,9 +82,9 @@ class RecentlyDeletedLogicTest {
 
     @Test
     fun testFormatTrashClassTime() {
-        assertEquals("Thursday, 10:00 to 11:30", formatTrashClassTime(4, 10, 0, 11, 30))
-        assertEquals("Monday, 09:30 to 11:00", formatTrashClassTime(1, 9, 30, 11, 0))
-        assertEquals("Friday, 14:05 to 15:50", formatTrashClassTime(5, 14, 5, 15, 50))
+        assertEquals("Thursday, 10:00 AM to 11:30 AM", formatTrashClassTime(4, 10, 0, 11, 30))
+        assertEquals("Monday, 09:30 AM to 11:00 AM", formatTrashClassTime(1, 9, 30, 11, 0))
+        assertEquals("Friday, 02:05 PM to 03:50 PM", formatTrashClassTime(5, 14, 5, 15, 50))
     }
 
     @Test

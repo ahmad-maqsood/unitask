@@ -11,7 +11,10 @@ import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.repository.NoteRepository
 import com.example.reminder.ReminderScheduler
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,16 +93,16 @@ class SearchViewModel(
         _includeArchived.value = include
     }
 
+    /** Clears the query and the archived switch so the next visit starts fresh. */
+    fun resetSearch() {
+        _searchQuery.value = ""
+        _includeArchived.value = false
+    }
+
     fun setGroupTasks(tasks: List<TaskWithCourse>) {
         _groupTasks.value = tasks
     }
 
-    fun restoreSemester(semesterName: String, onDone: () -> Unit = {}) {
-        viewModelScope.launch {
-            appRepository.restoreSemester(semesterName)
-            onDone()
-        }
-    }
 
     // Active tasks combine repository tasks with visible group tasks.
     private val activeTasksFlow: Flow<List<TaskWithCourse>> = combine(
@@ -109,32 +112,39 @@ class SearchViewModel(
         personal + groups
     }
 
-    // Archived data retrieved via Dao methods that include archived entries.
-    private val archivedDataFlow: Flow<SearchArchivedData> = combine(
-        courseDao.getAllCoursesIncludingArchived(),
-        taskDao.getAllTasksWithCourseIncludingArchived(),
-        noteDao.observeNotesIncludingArchived()
-    ) { courses, tasks, notes ->
-        val archivedCourses = courses.filter { !it.isDeleted && it.archivedSemester.isNotBlank() && !it.isMyTasksCourse() }
-        val courseSemesterMap = archivedCourses.associate { it.id to it.archivedSemester }
+    // Archived data. Only loaded while "Include archived" is on.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val archivedDataFlow: Flow<SearchArchivedData> = _includeArchived.flatMapLatest { include ->
+        if (!include) {
+            flowOf(SearchArchivedData(emptyList(), emptyList(), emptyList()))
+        } else {
+            combine(
+                courseDao.getAllCoursesIncludingArchived(),
+                taskDao.getAllTasksWithCourseIncludingArchived(),
+                noteDao.observeNotesIncludingArchived()
+            ) { courses, tasks, notes ->
+                val archivedCourses = courses.filter { !it.isDeleted && it.archivedSemester.isNotBlank() && !it.isMyTasksCourse() }
+                val courseSemesterMap = archivedCourses.associate { it.id to it.archivedSemester }
 
-        val archivedCourseItems = archivedCourses.map { ArchivedItem(it, it.archivedSemester) }
-        val archivedTaskItems = tasks.filter {
-            !it.task.isDeleted && it.course != null && !it.course.isDeleted && it.course.archivedSemester.isNotBlank()
-        }.map {
-            ArchivedItem(it, it.course!!.archivedSemester)
-        }
-        val archivedNoteItems = notes.filter {
-            !it.note.isDeleted && it.note.courseId in courseSemesterMap.keys
-        }.map {
-            ArchivedItem(it, courseSemesterMap[it.note.courseId] ?: "")
-        }
+                val archivedCourseItems = archivedCourses.map { ArchivedItem(it, it.archivedSemester) }
+                val archivedTaskItems = tasks.filter {
+                    !it.task.isDeleted && it.course != null && !it.course.isDeleted && it.course.archivedSemester.isNotBlank()
+                }.map {
+                    ArchivedItem(it, it.course!!.archivedSemester)
+                }
+                val archivedNoteItems = notes.filter {
+                    !it.note.isDeleted && it.note.courseId in courseSemesterMap.keys
+                }.map {
+                    ArchivedItem(it, courseSemesterMap[it.note.courseId] ?: "")
+                }
 
-        SearchArchivedData(
-            courses = archivedCourseItems,
-            tasks = archivedTaskItems,
-            notes = archivedNoteItems
-        )
+                SearchArchivedData(
+                    courses = archivedCourseItems,
+                    tasks = archivedTaskItems,
+                    notes = archivedNoteItems
+                )
+            }
+        }
     }
 
     // Active data flow combining active tasks, notes, courses and archived data.

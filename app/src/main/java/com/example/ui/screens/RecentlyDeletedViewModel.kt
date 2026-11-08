@@ -54,21 +54,9 @@ class RecentlyDeletedViewModel(
     val deletedClasses: StateFlow<List<LectureSlotWithCourse>> = appRepository.observeDeletedLectureSlots()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun restoreTask(task: TaskItem) {
-        viewModelScope.launch {
-            appRepository.restoreTask(task.id)
-        }
-    }
-
     fun restoreTask(taskId: Long) {
         viewModelScope.launch {
             appRepository.restoreTask(taskId)
-        }
-    }
-
-    fun deleteTaskForever(task: TaskItem) {
-        viewModelScope.launch {
-            appRepository.deleteTaskForever(task.id)
         }
     }
 
@@ -101,12 +89,6 @@ class RecentlyDeletedViewModel(
         viewModelScope.launch {
             noteRepository.emptyTrash()
             NoteImages.cleanupOrphans(getApplication(), database.noteDao())
-        }
-    }
-
-    fun restoreClass(slot: LectureSlot) {
-        viewModelScope.launch {
-            appRepository.restoreLectureSlot(slot.id)
         }
     }
 

@@ -608,10 +608,6 @@ class AppRepository(
         refreshClassAlarms()
     }
 
-    suspend fun undoDeleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        restoreLectureSlot(slot.id)
-    }
-
     suspend fun deleteSlotForever(id: Long) = withContext(Dispatchers.IO) {
         try {
             ClassReminderScheduler(context).cancelSlot(id)

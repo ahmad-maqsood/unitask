@@ -383,7 +383,7 @@ class ClassTrashRepositoryTest {
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, System.currentTimeMillis())
         }
         receiver.onReceive(context, intentStart)
-        Thread.sleep(150)
+        shadowOf(Looper.getMainLooper()).idle()
 
         val intentSoon = Intent(context, ClassStartReceiver::class.java).apply {
             action = ClassReminderScheduler.ACTION_CLASS_SOON
@@ -391,7 +391,7 @@ class ClassTrashRepositoryTest {
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, System.currentTimeMillis() + 600_000L)
         }
         receiver.onReceive(context, intentSoon)
-        Thread.sleep(150)
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(0, shadowNm.allNotifications.size)
     }

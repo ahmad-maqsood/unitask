@@ -34,7 +34,8 @@ data class DriveBackupInfo(
     val appVersion: String,
     val formatVersion: Int,
     val sizeBytes: Long,
-    val attachments: Int = 0
+    val attachments: Int = 0,
+    val myTasks: Int = 0
 )
 
 /**
@@ -94,6 +95,24 @@ object DriveBackupManager {
             names.add("$ATTACHMENT_PREFIX$att")
         }
         return names
+    }
+
+    /**
+     * Builds a human-readable summary of backup counts.
+     */
+    fun buildCountsText(info: DriveBackupInfo): String {
+        val parts = mutableListOf(
+            "${info.courses} courses",
+            "${info.tasks} tasks"
+        )
+        if (info.myTasks > 0) {
+            parts.add("${info.myTasks} My tasks")
+        }
+        parts.add("${info.notes} notes")
+        if (info.attachments > 0) {
+            parts.add("${info.attachments} attachments")
+        }
+        return parts.joinToString(", ")
     }
 
     /**
@@ -162,7 +181,8 @@ object DriveBackupManager {
             // (d) Unchanged check
             if (!force && latestSlot != null) {
                 val latestHash = latestSlot.props["dataHash"]
-                if (latestHash != null && latestHash == dataHash) {
+                val hasMyTasks = latestSlot.props.containsKey("myTasks")
+                if (latestHash != null && latestHash == dataHash && hasMyTasks) {
                     val info = infoFromSlot(latestSlot)
                     if (info != null) {
                         prefs.lastAttemptAt = System.currentTimeMillis()
@@ -247,6 +267,7 @@ object DriveBackupManager {
                 "exportedAt" to now.toString(),
                 "courses" to built.counts.courses.toString(),
                 "tasks" to built.counts.tasks.toString(),
+                "myTasks" to built.counts.myTasks.toString(),
                 "notes" to built.counts.notes.toString(),
                 "images" to built.referencedImages.size.toString(),
                 "attachments" to built.counts.attachments.toString(),
@@ -272,24 +293,6 @@ object DriveBackupManager {
                 }
             }
 
-            // (i) Update DrivePrefs
-            prefs.lastSuccessAt = now
-            prefs.lastAttemptAt = now
-            prefs.lastHash = dataHash
-            val countsParts = mutableListOf(
-                "${built.counts.courses} courses",
-                "${built.counts.tasks} tasks",
-                "${built.counts.notes} notes"
-            )
-            if (built.counts.attachments > 0) {
-                countsParts.add("${built.counts.attachments} attachments")
-            }
-            prefs.lastCounts = countsParts.joinToString(", ")
-            prefs.lastError = null
-            prefs.consecutiveFailures = 0
-            prefs.failureNotified = false
-            prefs.firstFailureAt = 0L
-            
             val info = DriveBackupInfo(
                 slotFileId = finalizedSlot.id,
                 seq = newSeq,
@@ -301,8 +304,19 @@ object DriveBackupManager {
                 appVersion = BuildConfig.VERSION_NAME,
                 formatVersion = 1,
                 sizeBytes = envelopeBytes.size.toLong(),
-                attachments = built.counts.attachments
+                attachments = built.counts.attachments,
+                myTasks = built.counts.myTasks
             )
+
+            // (i) Update DrivePrefs
+            prefs.lastSuccessAt = now
+            prefs.lastAttemptAt = now
+            prefs.lastHash = dataHash
+            prefs.lastCounts = buildCountsText(info)
+            prefs.lastError = null
+            prefs.consecutiveFailures = 0
+            prefs.failureNotified = false
+            prefs.firstFailureAt = 0L
 
             DriveBackupResult.Success(
                 info = info,
@@ -466,13 +480,14 @@ object DriveBackupManager {
         }
     }
 
-    private fun infoFromSlot(file: DriveFile): DriveBackupInfo? {
+    internal fun infoFromSlot(file: DriveFile): DriveBackupInfo? {
         val seq = file.props["seq"]?.toLongOrNull() ?: return null
         if (seq <= 0) return null
         val exportedAt = file.props["exportedAt"]?.toLongOrNull() ?: return null
         val formatVersion = file.props["formatVersion"]?.toIntOrNull() ?: return null
         val courses = file.props["courses"]?.toIntOrNull() ?: 0
         val tasks = file.props["tasks"]?.toIntOrNull() ?: 0
+        val myTasks = file.props["myTasks"]?.toIntOrNull() ?: 0
         val notes = file.props["notes"]?.toIntOrNull() ?: 0
         val images = file.props["images"]?.toIntOrNull() ?: 0
         val attachments = file.props["attachments"]?.toIntOrNull() ?: 0
@@ -488,7 +503,8 @@ object DriveBackupManager {
             appVersion = appVersion,
             formatVersion = formatVersion,
             sizeBytes = file.size,
-            attachments = attachments
+            attachments = attachments,
+            myTasks = myTasks
         )
     }
 

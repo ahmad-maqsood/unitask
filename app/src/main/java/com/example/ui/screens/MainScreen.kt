@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 
 
 import androidx.compose.material.icons.filled.Groups
@@ -126,7 +127,8 @@ import androidx.compose.animation.Crossfade
 fun buildToolsList(
     onOpenNotes: () -> Unit,
     onOpenTimer: () -> Unit,
-    onOpenRecentlyDeleted: () -> Unit
+    onOpenRecentlyDeleted: () -> Unit,
+    onOpenSearch: () -> Unit = {}
 ): List<ToolEntry> = listOf(
     ToolEntry(
         label = "Notes",
@@ -148,6 +150,13 @@ fun buildToolsList(
         icon = Icons.Default.DeleteSweep,
         testTag = "tools_tile_recently_deleted",
         onClick = onOpenRecentlyDeleted
+    ),
+    ToolEntry(
+        label = "Search",
+        description = "Find tasks, notes and courses",
+        icon = Icons.Default.Search,
+        testTag = "tools_tile_search",
+        onClick = onOpenSearch
     )
 )
 
@@ -329,6 +338,7 @@ fun MainScreen(
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -356,7 +366,8 @@ fun MainScreen(
     val tools = buildToolsList(
         onOpenNotes = { showNotes = true },
         onOpenTimer = { showTimer = true },
-        onOpenRecentlyDeleted = { showRecentlyDeleted = true }
+        onOpenRecentlyDeleted = { showRecentlyDeleted = true },
+        onOpenSearch = { showSearch = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -365,6 +376,7 @@ fun MainScreen(
         when {
             isFabMenuExpanded -> isFabMenuExpanded = false
             showArchivedSemesters -> showArchivedSemesters = false
+            showSearch -> showSearch = false
             currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
             else -> {
                 val now = System.currentTimeMillis()
@@ -933,7 +945,8 @@ fun MainScreen(
         !showTools &&
         !showTimer &&
         !showRecentlyDeleted &&
-        !showArchivedSemesters
+        !showArchivedSemesters &&
+        !showSearch
     ) {
         DriveMigrationDialog(
             onDismiss = { hasShownMigrationDialogThisSession = true }
@@ -1067,6 +1080,45 @@ fun MainScreen(
                     }
                 },
                 onClose = { showArchivedSemesters = false }
+            )
+        }
+    }
+
+    if (showSearch) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            SearchScreen(
+                onClose = { showSearch = false },
+                onNavigateToPersonalTask = { taskWithCourse, isMyTask ->
+                    showSearch = false
+                    if (isMyTask) {
+                        viewModel.setTab(MainTab.MYTASKS)
+                        viewModel.openMyTaskDialog(taskWithCourse.task)
+                    } else {
+                        viewModel.setTab(MainTab.DEADLINES)
+                        viewModel.openEditTaskDialog(taskWithCourse.task)
+                    }
+                },
+                onNavigateToGroupTask = { taskTitle ->
+                    showSearch = false
+                    viewModel.setTab(MainTab.DEADLINES)
+                    viewModel.onSearchQueryChange(taskTitle)
+                },
+                onNavigateToCourse = { courseId ->
+                    showSearch = false
+                    viewModel.setTab(MainTab.COURSES)
+                    viewModel.openCourseDetail(courseId)
+                },
+                onRestoreSemester = { semesterName ->
+                    viewModel.restoreSemester(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Restored $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                groupTasks = groupEntryByItemId.values.map { it.toTaskWithCourse() }
             )
         }
     }

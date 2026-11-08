@@ -10,18 +10,20 @@ import org.junit.Test
 class ToolsListTest {
 
     @Test
-    fun testToolsListContainsRecentlyDeletedTile() {
+    fun testToolsListContainsRecentlyDeletedAndSearchTiles() {
         var notesClicked = false
         var timerClicked = false
         var recentlyDeletedClicked = false
+        var searchClicked = false
 
         val tools = buildToolsList(
             onOpenNotes = { notesClicked = true },
             onOpenTimer = { timerClicked = true },
-            onOpenRecentlyDeleted = { recentlyDeletedClicked = true }
+            onOpenRecentlyDeleted = { recentlyDeletedClicked = true },
+            onOpenSearch = { searchClicked = true }
         )
 
-        assertEquals(3, tools.size)
+        assertEquals(4, tools.size)
 
         val recentlyDeleted = tools.find { it.label == "Recently deleted" }
         assertNotNull(recentlyDeleted)
@@ -30,6 +32,14 @@ class ToolsListTest {
 
         recentlyDeleted?.onClick?.invoke()
         assertTrue(recentlyDeletedClicked)
+
+        val search = tools.find { it.label == "Search" }
+        assertNotNull(search)
+        assertEquals("Find tasks, notes and courses", search?.description)
+        assertEquals("tools_tile_search", search?.testTag)
+
+        search?.onClick?.invoke()
+        assertTrue(searchClicked)
     }
 
     @Test
@@ -38,5 +48,14 @@ class ToolsListTest {
         assertNotNull(feature)
         assertTrue(feature?.howTo?.contains("Recently deleted") == true)
         assertTrue(feature?.howTo?.contains("30 days") == true)
+    }
+
+    @Test
+    fun testFeatureGuideContainsSearch() {
+        val feature = FeatureGuide.all.find { it.title == "Search" }
+        assertNotNull(feature)
+        assertEquals(76, feature?.sortOrder)
+        assertTrue(feature?.howTo?.contains("Search") == true)
+        assertTrue(feature?.howTo?.contains("Include archived") == true)
     }
 }

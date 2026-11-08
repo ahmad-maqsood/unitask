@@ -74,6 +74,10 @@ object FeatureGuide {
             "1. Open the Courses tab and tap the three-dot menu next to Add Course.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
         ),
         AppFeature(
+            "Search", "Find tasks, notes and courses with multi-word search and archived results.", "assignment", 76,
+            "1. Tap the Tools icon in the top bar, then tap Search.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Turn on Include archived to find items from past semesters."
+        ),
+        AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "groups", 80,
             "1. Sign in with Google and open the Groups tab.\n2. Tap the QR icon in group details to show your invite QR code and link.\n3. To join, tap 'Join Group' and scan a QR screenshot or paste an invite link."
         ),

@@ -64,6 +64,8 @@ jobs:
         id: notes
         env:
           GH_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-3.1-flash-lite
           NAME: ${{ steps.version.outputs.name }}
         run: |
           TAG="v$NAME"
@@ -94,15 +96,20 @@ jobs:
           echo "Comparing $TAG against $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"
           python3 .github/scripts/release_notes.py generate \
             --repo "$GITHUB_REPOSITORY" --base-tag "$BASE_TAG" \
-            --head-ref "$GITHUB_SHA" --output "$RUNNER_TEMP/release-notes.md"
-          echo "notes_file=$RUNNER_TEMP/release-notes.md" >> "$GITHUB_OUTPUT"
+            --head-ref "$GITHUB_SHA" --version "$NAME" \
+            --release-output "$RUNNER_TEMP/release-description.md" \
+            --changelog-output "$RUNNER_TEMP/changelog-entry.md"
+          echo "release_file=$RUNNER_TEMP/release-description.md" >> "$GITHUB_OUTPUT"
+          echo "changelog_file=$RUNNER_TEMP/changelog-entry.md" >> "$GITHUB_OUTPUT"
 
       - name: Save generated release notes
         if: ${{ always() && inputs.prepare_release }}
         uses: actions/upload-artifact@v7
         with:
           name: release-notes-${{ steps.version.outputs.name }}
-          path: ${{ runner.temp }}/release-notes.md
+          path: |
+            ${{ runner.temp }}/release-description.md
+            ${{ runner.temp }}/changelog-entry.md
           if-no-files-found: ignore
           retention-days: 14
 
@@ -167,7 +174,7 @@ jobs:
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
           gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" \
             --target "$GITHUB_SHA" --title "UniTask $NAME" \
-            --notes-file "$RUNNER_TEMP/release-notes.md" $FLAGS
+            --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
           echo "Created draft release v$NAME (compared with $BASE_TAG)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create CHANGELOG pull request
@@ -184,7 +191,7 @@ jobs:
           git checkout -b "$BRANCH" origin/main
           python3 .github/scripts/release_notes.py insert-changelog \
             --changelog CHANGELOG.md --version "$NAME" --date "$RELEASE_DATE" \
-            --download-url "$RELEASE_URL" --notes-file "$RUNNER_TEMP/release-notes.md"
+            --download-url "$RELEASE_URL" --notes-file "$RUNNER_TEMP/changelog-entry.md"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md

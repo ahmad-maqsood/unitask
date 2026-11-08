@@ -98,7 +98,8 @@ fun BackgroundSetupDialog(
                             if (hasAutostart)
                                 "UniTask is already allowed to run in the background. Some phones also need Auto-start turned on, so it's worth checking that in your phone's settings."
                             else
-                                "UniTask is already allowed to run in the background. No other setting is needed on this phone."
+                                "UniTask is already allowed to run in the background. No other setting is needed on this phone.",
+                            modifier = Modifier.verticalScroll(rememberScrollState())
                         )
                     },
                     confirmButton = {
@@ -134,7 +135,7 @@ fun BackgroundSetupDialog(
                     onDismissRequest = dismissDialog,
                     title = { Text("Keep alerts on time") },
                     text = {
-                        Text("Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.")
+                        Text("Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.", modifier = Modifier.verticalScroll(rememberScrollState()))
                     },
                     confirmButton = {
                         Button(

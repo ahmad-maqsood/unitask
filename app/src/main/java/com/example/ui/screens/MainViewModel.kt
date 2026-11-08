@@ -45,7 +45,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.withTimeoutOrNull
+import com.example.util.drive.DrivePrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -80,12 +80,14 @@ import java.util.Calendar
 import com.example.data.local.deadlineMillis
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
-import com.example.sync.SupabaseSyncManager
 import android.net.Uri
 import com.example.data.repository.NoteRepository
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteShare
+import com.example.util.normalizeCourseCode
+import com.example.util.resetGroupStateOnAccountSwitch
+import com.example.util.shouldResetGroupState
 import kotlinx.coroutines.withContext
 
 sealed interface MarkdownViewerState {
@@ -176,9 +178,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             // Done ticks made offline go out first, then everything is read again.
                             try { GroupRepository(application).flushPendingDone() } catch (_: Exception) { }
                             GroupRepository.localChanges.tryEmit(Unit)
-                            if (currentSupabaseUid() != null) {
-                                com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
-                            }
                         }
                     }
                 }
@@ -205,6 +204,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
             try {
+                com.example.util.LocalTombstonePurge.purgeOnce(application, database)
+            } catch (_: Exception) {
+            }
+            try {
                 ReminderScheduler(application).rescheduleAll(database)
             } catch (_: Exception) {
             }
@@ -221,11 +224,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
         }
-        // Schedule periodic sync
-        com.example.sync.SyncScheduler.schedulePeriodicSync(application)
+
+        // Decide once whether this phone belongs to someone who used the old personal cloud sync.
+        DrivePrefs(application).let { prefs ->
+            if (prefs.legacyCloudSyncUser == null) {
+                prefs.legacyCloudSyncUser = !AuthStorage.getLastUid(application).isNullOrBlank()
+            }
+        }
+        // Cancel legacy personal cloud sync jobs left behind from previous app versions
+        com.example.sync.SyncScheduler.cancelLegacyPersonalSync(application)
         // Periodic group and announcement sync while the app is closed (every 15 minutes)
         com.example.sync.SyncScheduler.schedulePeriodicSyncWorker(application)
-        // Follow the Supabase session: signing in starts live sync, signing out stops it.
+        // Follow the Supabase session: signing in starts the group flows, signing out stops them.
         // "Initializing" (session still loading) and "RefreshFailure" (offline) are preserved,
         // so an offline app start never looks like a sign-out.
         viewModelScope.launch {
@@ -241,26 +251,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         if (user?.id != lastUserId) {
                             lastUserId = user?.id
                             launch(Dispatchers.IO) {
-                                if (prevSyncedUid != null && user != null && user.id != prevSyncedUid) {
-                                    Log.i("MainViewModel", "Switching user accounts ($prevSyncedUid -> ${user.id}). Resetting local data.")
+                                if (shouldResetGroupState(prevSyncedUid, user?.id)) {
+                                    Log.i("MainViewModel", "Switching user accounts ($prevSyncedUid -> ${user?.id}). Resetting group state.")
                                     try {
-                                        // Stop the old account's alarms first, or they keep firing after the data is gone.
-                                        runCatching { com.example.reminder.ReminderScheduler(application).cancelAll(database) }
-                                        runCatching { com.example.reminder.ClassReminderScheduler(application).cancelAll() }
-                                        runCatching { com.example.reminder.GroupReminderScheduler(application).cancelGroupsNotIn(emptySet()) }                                       
-                                        database.clearAllTables()
-                                        com.example.util.PrivateDataCleaner.clearPersonalFiles(application)
-                                        com.example.data.groups.GroupRepository.clearCache(application)
+                                        resetGroupStateOnAccountSwitch(application)
                                     } catch (e: Exception) {
-                                        Log.w("MainViewModel", "Error resetting local tables: ${e.message}")
+                                        Log.w("MainViewModel", "Error resetting group state: ${e.message}")
                                     }
                                 }
                                 if (user != null) {
                                     AuthStorage.setLastSyncedUid(application, user.id)
                                 }
-                                com.example.sync.SupabaseSyncManager.startRealtimeSync(application, database)
-                                com.example.sync.SupabaseSyncManager.syncAllDataNow(application, database)
-                                com.example.sync.SyncScheduler.scheduleSync(application)
                             }
                         }
                     }
@@ -277,7 +278,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             _currentUser.value = null
                             if (lastUserId != null) {
                                 lastUserId = null
-                                com.example.sync.SupabaseSyncManager.stopRealtimeSync()
                             }
                         } else if (_currentUser.value == null) {
                             // Transient status on lock/unlock or network transition: preserve last known user
@@ -299,7 +299,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
-        com.example.sync.SupabaseSyncManager.stopRealtimeSync()
         networkCallback?.let { cb ->
             val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             try { cm?.unregisterNetworkCallback(cb) } catch (_: Exception) { }
@@ -315,38 +314,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Pull to refresh. Local data is live from Room, so this re-evaluates the class schedule
-     * and, when signed in, starts a cloud sync.
+     * Pull to refresh. Local data is live from Room, so this re-arms the reminder alarms and
+     * re-emits group changes so the group screens reload.
      */
     fun refreshData() {
         if (_isRefreshing.value) return
         _clockTick.value = System.currentTimeMillis()
 
-        if (currentSupabaseUid() == null) {
-            _isRefreshing.value = false
-            _refreshMessage.tryEmit("Sign in to back up and sync your data.")
-            return
-        }
-
         viewModelScope.launch {
             _isRefreshing.value = true
-            _refreshMessage.emit("Syncing...")
             try {
-                val database = AppDatabase.getDatabase(getApplication())
-                val success = withTimeoutOrNull(8_000L) {
-                    com.example.sync.SupabaseSyncManager.syncAllDataNow(getApplication(), database)
-                } ?: false
-
                 GroupRepository.localChanges.tryEmit(Unit)
                 rescheduleAllReminders()
-
-                if (success) {
-                    _refreshMessage.emit("Up to date")
-                } else {
-                    _refreshMessage.emit("Could not sync. Check your connection.")
-                }
-            } catch (e: Exception) {
-                _refreshMessage.emit("Could not sync. Check your connection.")
+                _refreshMessage.emit("Up to date")
             } finally {
                 _isRefreshing.value = false
             }
@@ -629,12 +609,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 body = body,
                 courseId = null
             )
-            if (newId > 0L && currentSupabaseUid() != null) {
-                try {
-                    com.example.sync.SyncScheduler.scheduleSync(getApplication())
-                } catch (_: Exception) {
-                }
-            }
+
             newId
         } catch (_: Exception) {
             0L
@@ -1115,7 +1090,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun undoDeleteTask(task: TaskItem) {
         if (isGroupTaskItem(task)) return
-        SupabaseSyncManager.clearPendingTaskDeletion(task.id, task.cloudId)
         viewModelScope.launch {
             repository.undoDeleteTask(task)
         }
@@ -1223,7 +1197,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         location: String
     ) {
         viewModelScope.launch {
-            val normCode = SupabaseSyncManager.normalizeCode(code)
+            val normCode = normalizeCourseCode(code)
             if (normCode == MY_TASKS_COURSE_CODE) {
                 _courseSaveError.value = "\"$MY_TASKS_COURSE_CODE\" is a reserved course code. Please choose a different code."
                 return@launch

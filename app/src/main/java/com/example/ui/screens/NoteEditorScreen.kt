@@ -52,10 +52,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.sync.SyncScheduler
 import com.example.util.NoteImages
 import com.example.util.NoteShare
-import com.example.util.currentSupabaseUid
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
@@ -255,8 +253,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * Cloud sync can change this note while it is open. Show that newer text instead of
-     * saving the old text over it on the next keystroke.
+     * An outside change (such as a backup restore) can change this note while it is open.
+     * Show that newer text instead of saving the old text over it on the next keystroke.
      */
     suspend fun watchForOutsideChanges() {
         val id = currentId
@@ -411,14 +409,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    private fun triggerSyncIfLoggedIn() {
-        if (currentSupabaseUid() != null) {
-            try {
-                SyncScheduler.scheduleSync(getApplication())
-            } catch (_: Exception) {
-            }
-        }
-    }
+
 
     private suspend fun performSave(): Long = saveMutex.withLock {
         if (discarded || trashed) return@withLock 0L
@@ -444,9 +435,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
         }
-        if (savedId > 0L) {
-            triggerSyncIfLoggedIn()
-        }
+
         savedId
     }
 
@@ -458,11 +447,9 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                 val savedId = saveAndFlush()
                 if (savedId > 0L) {
                     repository.setPinned(savedId, target)
-                    triggerSyncIfLoggedIn()
                 }
             } else {
                 repository.setPinned(currentId, target)
-                triggerSyncIfLoggedIn()
             }
         }
     }
@@ -474,7 +461,6 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             trashed = true
             repository.moveToTrash(id)
         }
-        triggerSyncIfLoggedIn()
     }
 }
 

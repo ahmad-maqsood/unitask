@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
@@ -117,7 +117,7 @@ enum class SettingsPage {
 
 /**
  * The gear button in the top bar. It opens a Settings sheet with:
- * Account row (sign in / cloud backup), and sections for General (theme, week parity),
+ * Account row (sign in for groups / online account), and sections for General (theme, week parity),
  * Notifications & reminders, Backup & data, and About & help.
  * It also checks GitHub once when the app opens and shows a badge on the gear if a newer
  * release exists.
@@ -260,9 +260,9 @@ fun SettingsButton(
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
                             SettingsRow(
-                                icon = Icons.Default.CloudSync,
-                                title = if (currentUser == null) "Sign in to back up data" else "Cloud backup",
-                                subtitle = currentUser?.email ?: "Not signed in",
+                                icon = Icons.Default.AccountCircle,
+                                title = if (currentUser == null) "Sign in for groups" else "Online account",
+                                subtitle = currentUser?.email ?: "Needed for groups and chat",
                                 onClick = {
                                     showSheet = false
                                     page = null

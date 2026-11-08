@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -482,7 +484,8 @@ fun GroupsListScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 32.dp, top = 32.dp, end = 32.dp, bottom = 88.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -513,7 +516,7 @@ fun GroupsListScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = 88.dp)
             ) {
                 items(memberships, key = { it.groupId }) { group ->
                     val info = chatInfo[group.groupId]

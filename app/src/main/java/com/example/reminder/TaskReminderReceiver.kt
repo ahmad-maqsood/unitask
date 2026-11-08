@@ -74,9 +74,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         com.example.widget.UniTaskWidget.refresh(context)
                         ReminderScheduler(context).cancelReminder(taskId)
                         SnoozeStore.clear(context, taskId, cancelAlarm = true)
-                        if (currentSupabaseUid() != null) {
-                            com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
-                        }
                     } catch (_: Exception) {
                     } finally {
                         pending.finish()

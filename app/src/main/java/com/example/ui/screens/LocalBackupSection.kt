@@ -327,7 +327,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    Text("Working on your backup...")
+                    Text("Working on your backup...", modifier = Modifier.weight(1f))
                 }
             }
         )

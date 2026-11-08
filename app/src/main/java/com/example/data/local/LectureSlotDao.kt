@@ -56,26 +56,8 @@ interface LectureSlotDao {
     @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND dayOfWeek = :dayOfWeek AND startHour = :startHour AND startMinute = :startMinute LIMIT 1")
     suspend fun findMatchingSlot(courseId: Long, dayOfWeek: Int, startHour: Int, startMinute: Int): LectureSlot?
 
-    @Query("SELECT * FROM lecture_slots WHERE cloudId = :cloudId LIMIT 1")
-    suspend fun getSlotByCloudId(cloudId: String): LectureSlot?
-
-    @Query("UPDATE lecture_slots SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
-    suspend fun markSlotSynced(id: Long, cloudId: String)
-
-    @Query("UPDATE lecture_slots SET isSynced = 0 WHERE courseId = :courseId")
-    suspend fun markSlotsUnsyncedForCourse(courseId: Long)
-
-    
-    @Query("UPDATE lecture_slots SET isSynced = 0")
-    suspend fun markAllSlotsUnsynced()
-    
     @Query("SELECT * FROM lecture_slots WHERE isDeleted = 1")
     suspend fun getDeletedSlots(): List<LectureSlot>
-
-    @Query("UPDATE lecture_slots SET isDeleted = 1, isSynced = 0 WHERE id = :id")
-    suspend fun softDeleteSlot(id: Long)
-    @Query("UPDATE lecture_slots SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
-    suspend fun softDeleteSlotsForCourse(courseId: Long)
 
     @Query("UPDATE lecture_slots SET courseId = :newCourseId WHERE courseId = :oldCourseId")
     suspend fun reassignSlotsToCourse(oldCourseId: Long, newCourseId: Long)

@@ -192,9 +192,9 @@ fun DriveBackupSection(
                 }
 
                 // Action buttons
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
                         onClick = {
@@ -208,7 +208,7 @@ fun DriveBackupSection(
                         },
                         enabled = isNotBusy,
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .testTag("drive_backup_now_button")
                     ) {
                         Text("Back up now")
@@ -218,7 +218,7 @@ fun DriveBackupSection(
                         onClick = { viewModel.requestRestore() },
                         enabled = isNotBusy,
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .testTag("drive_restore_button")
                     ) {
                         Text("Restore from Google Drive")

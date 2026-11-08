@@ -12,6 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
@@ -48,8 +50,9 @@ fun UpdatePrompt() {
             title = { Text("Update available") },
             text = {
                 Text(
-                    "A new version (${available.latestVersion}) of UniTask is available. " +
-                        "You have ${UpdateChecker.currentVersion(context)}."
+                    text = "A new version (${available.latestVersion}) of UniTask is available. " +
+                        "You have ${UpdateChecker.currentVersion(context)}.",
+                    modifier = Modifier.verticalScroll(rememberScrollState())
                 )
             },
             confirmButton = {

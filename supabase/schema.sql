@@ -1,6 +1,10 @@
 -- =====================================================================
 -- UniTask Supabase setup, captured from the live project.
 -- =====================================================================
+-- From app version 4.0.0 the tables courses, tasks, slots and notes
+-- are legacy (the app no longer reads or writes them; they are kept for
+-- older app versions until a cleanup).
+--
 -- Everything in PART A is copied from the real project.
 -- Columns are shown as comments because the query output has no keys or
 -- identity settings. Policies are written as CREATE POLICY statements
@@ -17,17 +21,17 @@
 --                 expires_at timestamptz NULL | enabled boolean true
 -- app_features:   id bigint NOT NULL | sort_order int 0 | title text | description text
 --                 icon text 'star' | enabled boolean true | how_to text ''
--- courses:        user_id uuid auth.uid() | doc_id text | code text | name text
+-- courses (LEGACY since 4.0.0): user_id uuid auth.uid() | doc_id text | code text | name text
 --                 instructor text '' | color_hex text '' | location text '' | updated_at timestamptz now()
--- tasks:          user_id uuid auth.uid() | doc_id text | course_code text '' | title text
+-- tasks (LEGACY since 4.0.0):   user_id uuid auth.uid() | doc_id text | course_code text '' | title text
 --                 description text '' | due_date_epoch_millis bigint | due_time_hour int 0
 --                 due_time_minute int 0 | priority text | status text | reminder_option text 'NONE'
 --                 updated_at timestamptz now() | repeat_rule text 'NONE' | completed_at_millis bigint 0
 --                 repeat_anchor_day int 0
--- slots:          user_id uuid auth.uid() | doc_id text | course_code text | day_of_week int
+-- slots (LEGACY since 4.0.0):   user_id uuid auth.uid() | doc_id text | course_code text | day_of_week int
 --                 start_hour int | start_minute int | end_hour int | end_minute int
 --                 classroom text '' | instructor text '' | updated_at timestamptz now()
--- notes:          user_id uuid auth.uid() | doc_id text | title text '' | body text ''
+-- notes (LEGACY since 4.0.0):   user_id uuid auth.uid() | doc_id text | title text '' | body text ''
 --                 course_code text '' | is_pinned boolean false | created_at_millis bigint
 --                 updated_at_millis bigint
 -- groups:         id uuid gen_random_uuid() | username text | name text | owner_id uuid

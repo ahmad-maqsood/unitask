@@ -20,8 +20,6 @@ import com.example.data.local.encodeReminderOptions
 import com.example.data.repository.NoteRepository
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
-import com.example.sync.SupabaseSyncManager
-import com.example.sync.SyncScheduler
 import com.example.util.drive.SettingsSnapshot
 import com.example.util.markdown.referencedImageNames
 import kotlinx.coroutines.Dispatchers
@@ -264,11 +262,11 @@ object LocalBackupManager {
             }
 
             val exportedCoursesCount = courses.count {
-                SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
+                normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE
             }
             val exportedMyTasksCount = tasks.count {
                 val code = codeById[it.courseId] ?: ""
-                SupabaseSyncManager.normalizeCode(code) == MY_TASKS_COURSE_CODE
+                normalizeCourseCode(code) == MY_TASKS_COURSE_CODE
             }
             val exportedTasksCount = tasks.size - exportedMyTasksCount
 
@@ -446,10 +444,9 @@ object LocalBackupManager {
                 val o = courseArray.optJSONObject(i) ?: continue
                 val code = o.optString("code").trim().uppercase()
                 if (code.isBlank()) continue
-                val norm = SupabaseSyncManager.normalizeCode(code)
+                val norm = normalizeCourseCode(code)
                 if (idByCode.containsKey(norm)) continue
 
-                SupabaseSyncManager.clearPendingDeletionForCourse(norm)
                 val name = o.optString("name").trim().ifBlank { code }
                 val instructor = o.optString("instructor").trim()
                 val colorHex = o.optString("colorHex").ifBlank { "#4F46E5" }
@@ -495,7 +492,7 @@ object LocalBackupManager {
             val slotArray = data.optJSONArray("slots") ?: JSONArray()
             for (i in 0 until slotArray.length()) {
                 val o = slotArray.optJSONObject(i) ?: continue
-                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = normalizeCourseCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val day = o.optInt("dayOfWeek", 0)
                 val startHour = o.optInt("startHour", -1)
@@ -521,15 +518,11 @@ object LocalBackupManager {
                         instructor = instructor,
                         isSynced = false
                     )
-                    SupabaseSyncManager.clearPendingDeletionForSlot(
-                        SupabaseSyncManager.getSlotDocId(newSlot, norm)
-                    )
+
                     slotDao.insertSlot(newSlot)
                     addedSlots++
                 } else if (existing.isDeleted) {
-                    SupabaseSyncManager.clearPendingDeletionForSlot(
-                        SupabaseSyncManager.getSlotDocId(existing, norm)
-                    )
+
                     slotDao.updateSlot(
                         existing.copy(
                             endHour = endHour,
@@ -550,7 +543,7 @@ object LocalBackupManager {
 
             for (i in 0 until taskArray.length()) {
                 val o = taskArray.optJSONObject(i) ?: continue
-                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = normalizeCourseCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val title = o.optString("title").trim()
                 if (title.isBlank()) continue
@@ -644,7 +637,7 @@ object LocalBackupManager {
                 val o = noteArray.optJSONObject(i) ?: continue
                 val rawCourseCode = o.optString("courseCode").trim()
                 val courseId = if (rawCourseCode.isNotBlank()) {
-                    val norm = SupabaseSyncManager.normalizeCode(rawCourseCode)
+                    val norm = normalizeCourseCode(rawCourseCode)
                     idByCode[norm]
                 } else {
                     null
@@ -856,13 +849,9 @@ object LocalBackupManager {
             0
         }
 
-        // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
+        // Data is safe in Room now: put alarms back.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
-        try {
-            if (currentSupabaseUid() != null) SyncScheduler.scheduleSync(context)
-        } catch (_: Exception) {
-        }
 
         return BackupCounts(
             courses = addedCourses,

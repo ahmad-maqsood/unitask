@@ -6,12 +6,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -39,6 +43,7 @@ import com.example.util.drive.DrivePrefs
  * Migration prompt displayed to existing cloud sync users offering
  * a seamless one-click switch to Google Drive backup.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DriveMigrationDialog(
     onDismiss: () -> Unit,
@@ -102,14 +107,14 @@ fun DriveMigrationDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (!backupSucceeded) {
                     Text(
-                        text = "UniTask now backs up to your own Google Drive. In a future update, " +
-                            "your courses, tasks and notes will no longer be synced through UniTask's own cloud, " +
-                            "so please make a Drive backup now. Your data stays on this phone either way.",
+                        text = "UniTask no longer syncs your courses, tasks and notes to the online account. They stay on this phone. Back up to your own Google Drive so a lost or reset phone cannot take them with it.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
@@ -130,7 +135,8 @@ fun DriveMigrationDialog(
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Text(
                             text = state.busy?.progressText ?: state.busy?.label ?: "Backing up...",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 } else if (backupSucceeded) {
@@ -153,7 +159,8 @@ fun DriveMigrationDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Also back up every day",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 } else if (backupStarted && state.isError) {
@@ -209,7 +216,7 @@ fun DriveMigrationDialog(
                         Text("Remind me later")
                     }
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onNever) {
                             Text("Don't ask again")
                         }

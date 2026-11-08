@@ -42,8 +42,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
+
+
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
@@ -97,6 +97,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
 import com.example.R
 import androidx.core.content.ContextCompat
@@ -109,7 +110,6 @@ import com.example.data.local.isMyTasksCourse
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
-import com.example.util.AuthStorage
 import com.example.util.BackgroundAccess
 import com.example.util.drive.DriveMigrationPrompt
 import com.example.util.drive.DrivePrefs
@@ -295,7 +295,7 @@ fun MainScreen(
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
     var hasShownMigrationDialogThisSession by rememberSaveable { mutableStateOf(false) }
     val drivePrefs = remember { DrivePrefs(context) }
-    val usedCloudSync = !AuthStorage.getLastUid(context).isNullOrBlank()
+    val usedCloudSync = drivePrefs.legacyCloudSyncUser == true
     val hasMigrationData = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() } ||
         allTasksWithCourse.any { !it.task.isDeleted } ||
         activeNotes.any { !it.note.isDeleted }
@@ -379,7 +379,7 @@ fun MainScreen(
                                 .clip(RoundedCornerShape(10.dp))
                         )
 
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = "UniTask",
                                 style = MaterialTheme.typography.titleLarge,
@@ -388,12 +388,12 @@ fun MainScreen(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Text(
+                            ShrinkToFitText(
                                 text = "University Task Manager",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                minFontSize = 9.sp
                             )
                         }
                     }
@@ -1043,13 +1043,12 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
             }
         },
         label = {
-            Text(
+            ShrinkToFitText(
                 text = label,
                 maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                minFontSize = 9.sp
             )
         }
     )

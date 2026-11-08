@@ -147,7 +147,7 @@ fun TaskCard(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "Delete task?",
-            message = "\"${task.title}\" will be removed from this phone and from your cloud backup.",
+            message = "\"${task.title}\" will be removed from this phone.",
             onConfirm = { onDeleteClick(task) },
             onDismiss = { showDeleteConfirm = false }
         )
@@ -287,7 +287,7 @@ fun TaskCard(
                         IconButton(
                             onClick = { showMenu = true },
                             modifier = Modifier
-                                .size(32.dp)
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .testTag("task_menu_${task.id}")
                         ) {
                             Icon(

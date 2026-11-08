@@ -4,7 +4,7 @@ import android.content.Context
 import com.example.BuildConfig
 import com.example.data.local.AppDatabase
 import com.example.data.local.MY_TASKS_COURSE_CODE
-import com.example.sync.SupabaseSyncManager
+import com.example.util.normalizeCourseCode
 import com.example.util.BackupFileSource
 import com.example.util.BackupResult
 import com.example.util.BuiltBackup
@@ -426,7 +426,7 @@ object DriveBackupManager {
     internal suspend fun isDatabaseEmpty(context: Context): Boolean = withContext(Dispatchers.IO) {
         val db = AppDatabase.getDatabase(context)
         val courses = db.courseDao().getAllCoursesList().filter {
-            !it.isDeleted && SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
+            !it.isDeleted && normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE
         }
         if (courses.isNotEmpty()) return@withContext false
 

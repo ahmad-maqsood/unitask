@@ -95,6 +95,18 @@ class DrivePrefs(context: Context) {
         get() = prefs.getInt(KEY_MIGRATION_PROMPT_COUNT, 0)
         set(value) = prefs.edit().putInt(KEY_MIGRATION_PROMPT_COUNT, value).apply()
 
+    /**
+     * Set once, on the first start after personal sync was removed: true if the phone was already
+     * signed in then (so it may have used the old cloud sync). Null means not decided yet.
+     */
+    var legacyCloudSyncUser: Boolean?
+        get() = if (prefs.contains(KEY_LEGACY_CLOUD_USER)) prefs.getBoolean(KEY_LEGACY_CLOUD_USER, false) else null
+        set(value) {
+            prefs.edit().apply {
+                if (value == null) remove(KEY_LEGACY_CLOUD_USER) else putBoolean(KEY_LEGACY_CLOUD_USER, value)
+            }.apply()
+        }
+        
     /** Epoch millis before which the migration prompt should not be shown again. */
     var migrationNextPromptAt: Long
         get() = prefs.getLong(KEY_MIGRATION_NEXT_PROMPT_AT, 0L)
@@ -141,6 +153,7 @@ class DrivePrefs(context: Context) {
         private const val KEY_RESTORE_OFFER_DISMISSED = "restore_offer_dismissed"
         private const val KEY_MIGRATION_PROMPT_COUNT = "migration_prompt_count"
         private const val KEY_MIGRATION_NEXT_PROMPT_AT = "migration_next_prompt_at"
+        private const val KEY_LEGACY_CLOUD_USER = "legacy_cloud_sync_user"
         private const val KEY_LAST_COUNTS = "last_counts"
     }
 }

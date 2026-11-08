@@ -19,8 +19,20 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
+import com.example.ui.screens.DriveBackupSection
+import com.example.ui.screens.DriveRestoreOfferCard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.data.local.AppDatabase
@@ -654,7 +666,7 @@ class SmokeFlowsTest {
         scenario?.close()
         scenario = null
 
-        // (c) The migration prompt is only for users who signed in to cloud sync. The app
+        // (c) The migration prompt is only for users who previously used cloud sync. The app
         // clears the saved cloud user whenever there is no Supabase session, which is
         // always the case on the emulator, so with data but no cloud user it must stay hidden.
         // The prompt rules themselves are covered by DriveMigrationPromptTest.
@@ -674,6 +686,51 @@ class SmokeFlowsTest {
                 .fetchSemanticsNodes().isEmpty()
         )
         assertEquals(0, prefs.migrationPromptCount)
+    }
+
+
+    @Test
+    fun online_account_settings_and_deadlines_refresh_without_personal_sync() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // (a) Settings shows the row with test tag settings_account_row and the text "Sign in for groups" when signed out
+        waitForTag("top_bar_settings_button")
+        tap("top_bar_settings_button")
+
+        waitForTag("settings_account_row")
+        composeRule.onNodeWithTag("settings_account_row", useUnmergedTree = true).assertIsDisplayed()
+        waitForText("Sign in for groups")
+
+        // (b) Opening it shows the sign-in button and no "Sync Now" text anywhere
+        tap("settings_account_row")
+        waitForTag("google_signin_backup_button")
+        composeRule.onNodeWithTag("google_signin_backup_button", useUnmergedTree = true).assertIsDisplayed()
+        assertTrue(
+            composeRule.onAllNodesWithText("Sync Now", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
+
+        // Close the account sheet
+        tap("backup_sheet_close_button")
+        composeRule.waitForIdle()
+
+        // (c) Pull to refresh on the Deadlines tab finishes without showing any "Sign in to back up" or "Could not sync" text
+        waitForTag("tab_deadlines")
+        tap("tab_deadlines")
+        waitForTag("deadlines_list")
+        composeRule.onNodeWithTag("deadlines_list", useUnmergedTree = true).performTouchInput {
+            swipeDown()
+        }
+        composeRule.waitForIdle()
+
+        assertTrue(
+            composeRule.onAllNodesWithText("Sign in to back up", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
+        assertTrue(
+            composeRule.onAllNodesWithText("Could not sync", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
     }
 
     @Test
@@ -838,5 +895,69 @@ class SmokeFlowsTest {
         waitForText("RTC101")
         scenario?.close()
         scenario = null
+    }
+
+    @Test
+    fun layoutFitsOnNarrowScreenWithLargeFont() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // Verify that the five bottom navigation items are all displayed on the main screen
+        waitForTag("tab_deadlines")
+        composeRule.onNodeWithTag("tab_deadlines").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_timetable").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_courses").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_groups").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab_mytasks").assertIsDisplayed()
+
+        // Verify DriveRestoreOfferCard on narrow screen (320.dp) with 1.5x font scale
+        scenario?.onActivity { activity ->
+            activity.setContent {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density = LocalDensity.current.density, fontScale = 1.5f)
+                ) {
+                    DriveRestoreOfferCard(
+                        modifier = Modifier.width(320.dp)
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("drive_offer_dismiss_button").assertIsDisplayed()
+        composeRule.onNodeWithTag("drive_offer_dismiss_button").assertWidthIsAtLeast(64.dp)
+        val dismissBounds = composeRule.onNodeWithTag("drive_offer_dismiss_button").getUnclippedBoundsInRoot()
+        assertTrue(dismissBounds.height < 64.dp)
+
+        // Verify DriveBackupSection buttons when connected
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = DrivePrefs(context)
+        val originalEmail = prefs.connectedEmail
+        try {
+            prefs.connectedEmail = "test_smoke@example.com"
+            scenario?.onActivity { activity ->
+                activity.setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = LocalDensity.current.density, fontScale = 1.5f)
+                    ) {
+                        DriveBackupSection(
+                            showHeading = true
+                        )
+                    }
+                }
+            }
+            composeRule.waitForIdle()
+
+            composeRule.onNodeWithTag("drive_backup_now_button").assertIsDisplayed()
+            composeRule.onNodeWithTag("drive_backup_now_button").assertWidthIsAtLeast(64.dp)
+            val backupBounds = composeRule.onNodeWithTag("drive_backup_now_button").getUnclippedBoundsInRoot()
+            assertTrue(backupBounds.height < 64.dp)
+
+            composeRule.onNodeWithTag("drive_restore_button").assertIsDisplayed()
+            composeRule.onNodeWithTag("drive_restore_button").assertWidthIsAtLeast(64.dp)
+            val restoreBounds = composeRule.onNodeWithTag("drive_restore_button").getUnclippedBoundsInRoot()
+            assertTrue(restoreBounds.height < 64.dp)
+        } finally {
+            prefs.connectedEmail = originalEmail
+        }
     }
 }

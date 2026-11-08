@@ -32,7 +32,7 @@ UniTask helps students keep track of what is due, when classes start and what th
 | Principle | Description |
 | --- | --- |
 | **Offline first** | Deadlines, personal tasks, courses, the timetable and reminders are stored on the device. No account is required to use them. |
-| **Optional cloud** | Signing in with Google adds cloud backup and shared study groups with chat. |
+| **Optional cloud** | Signing in with Google is for study groups and chat. |
 | **Private by design** | The application contains no advertising and no tracking. |
 
 UniTask is a personal project, created to solve everyday planning problems for its author and classmates.
@@ -120,7 +120,7 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
   - Share notes as plain text or export as `.md` files, and import `.md` or `.txt` files directly into Notes.
   - Open Markdown files from other apps via "Open with" and Share, and save the preview to Notes.
   - Photos from the gallery are stored locally with thumbnail preview, full-screen viewing and automatic orphan cleanup.
-  - Notes are included in encrypted local backups, data export and cloud sync with conflict protection.
+  - Notes are included in encrypted local backups, data export and Google Drive backup.
   - Deleting a course keeps notes safe and cleanly detaches the course link.
 
 ### Study timer
@@ -169,23 +169,20 @@ Let Gradle sync before building. Cloud features that use Supabase or Google Sign
 
 ### Backup and data
 
-- Automatic Google cloud sync with multi-account isolation.
 - Password-protected offline backups and a JSON export of your data.
-- Complete account and cloud data deletion.
+- Deleting the online account.
 - A GitHub release updater, an announcements bell and a built-in **Learn to use the app** guide.
 
 ## Architecture
 
-UniTask is local-first. The screens read from a Room database, so the application remains fast and usable offline. Changes are pushed to Supabase in the background, and group data is read live.
+UniTask is local-first. Personal data lives in Room on the device and is backed up to the user's own Google Drive, so the application remains fast and usable offline. Supabase is used for groups, chat and announcements.
 
 ```mermaid
 flowchart LR
     UI["Jetpack Compose UI"] --> VM["ViewModels"]
     VM --> Repo["Repositories"]
     Repo --> Room[("Room / SQLite")]
-    Repo --> Sync["SupabaseSyncManager"]
     Repo --> Groups["GroupRepository"]
-    Sync <--> SB[("Supabase<br/>Auth, Postgres, Realtime")]
     Groups <--> SB
     Repo --> Alarms["AlarmManager and WorkManager"]
 ```
@@ -205,7 +202,7 @@ flowchart LR
 
 ### Synchronisation
 
-- Personal data is written to Room first and pushed to the cloud when the user is signed in. Deletions are tracked so removed items do not return. A delete that fails, for example while offline, is kept and retried on the next sync.
+- Personal data is stored on the device in Room and can be backed up to the user's own Google Drive. It is not uploaded to Supabase.
 - Group screens use Supabase Realtime for instant updates, with a short polling safety net in case an event is missed.
 - Actions in groups, such as adding a task, ticking it done or sending a message, appear on screen immediately and are confirmed by the server shortly afterwards.
 - Row Level Security on every table controls who can read and write which data. The anon key in the application is public by design and carries no additional access.
@@ -220,7 +217,7 @@ app/src/main/java/com/example/
     local/         Room entities, DAOs, migrations, repeat rules
     groups/        Group repository and models (Supabase realtime)
     repository/    AppRepository for personal data, NoteRepository
-  sync/            SupabaseSyncManager, NoteSync, SyncWorker, PeriodicSyncWorker, SyncScheduler
+  sync/            PeriodicSyncWorker, DriveBackupWorker, SyncScheduler
   reminder/        Task, class, daily-summary, group and announcement alarms, snooze and receivers
   widget/          "UniTask Today" home-screen widget (Glance)
   ui/
@@ -251,7 +248,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 ## Privacy and permissions
 
 - Personal tasks, courses, the timetable and notes are stored on the device and work without an account.
-- Signing in is optional and is needed only for cloud backup, notes sync and groups. Notes are stored on the device and are uploaded only when signed in.
+- Signing in is optional and is needed only for study groups and chat. Notes and other personal data stay on the device.
 - Google Drive backup: the only permission asked is access to the app's own hidden folder in Google Drive (the appdata scope). The app cannot see other Drive files, and the user can remove access in their Google account settings.
 - Local backups can be password-protected (encrypted). Restore only backups you trust.
 - **Report a problem** opens a form that is pre-filled with only the app version, Android version and phone model.
@@ -265,8 +262,8 @@ Some phone manufacturers aggressively stop background applications. If reminders
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Offers the battery setting for reliable reminders |
 | `VIBRATE` | Alarm-style alerts |
 | `CAMERA` | Optional. Scans a group's QR code. The application works without it |
-| `INTERNET` | Cloud backup, groups, update checks and announcements |
-| `ACCESS_NETWORK_STATE` | Checks that the device is online before syncing |
+| `INTERNET` | Google Drive backup, study groups, update checks and announcements |
+| `ACCESS_NETWORK_STATE` | Checks that the device is online before network operations |
 
 ## Known limitations
 
@@ -282,9 +279,9 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - Chat notifications come from a background check, so Android battery limits can delay them. No external push service is used.
 - Group chat supports text only. Messages cannot be edited after sending, and to keep the database small, each group keeps only its 500 newest messages (older ones are removed automatically as new ones arrive), and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).
-- Snoozes and the **Delete when done** setting belong to the phone on which they were set. They are not synchronised to the cloud, although **Delete when done** is kept in local backups.
+- Snoozes and the **Delete when done** setting belong to the phone on which they were set. **Delete when done** is kept in backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.
-- Note images stay on the phone (they are in local backups but not in cloud sync).
+- Note images stay on the phone and are included in backups.
 - Notes are limited to 200,000 characters and 10 images.
 
 ## Support

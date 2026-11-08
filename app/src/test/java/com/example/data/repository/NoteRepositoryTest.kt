@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
+import com.example.data.local.Note
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -212,7 +213,16 @@ class NoteRepositoryTest {
         repo.deleteForever(id)
         assertNull(repo.getNote(id))
     }
-    
+
+    @Test
+    fun deleteForeverRemovesNoteThatStillHasUnsyncedCloudId() = runBlocking {
+        val id = db.noteDao().insert(
+            Note(title = "Legacy", isDeleted = true, deletedAt = 1L, cloudId = "cloud-1", isSynced = false)
+        )
+        repo.deleteForever(id)
+        assertNull(repo.getNote(id))
+    }
+
     @Test
     fun typingAgainAfterClearingBringsNoteBackFromTrash() = runBlocking {
         val id = repo.saveNote(id = 0, title = "Plan", body = "Old text", courseId = null)

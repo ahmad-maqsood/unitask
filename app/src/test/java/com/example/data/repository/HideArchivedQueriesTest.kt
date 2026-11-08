@@ -13,7 +13,7 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.MissedReminders
 import com.example.reminder.ReminderScheduler
 import com.example.util.buildTimetableIcs
-import com.example.widget.TodayOverview
+import com.example.widget.TodayOverviewLoader
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -356,8 +356,8 @@ class HideArchivedQueriesTest {
         assertFalse(summaryClasses.any { it.courseId == archivedCourseId })
 
         // 3. TodayOverview test
-        val overview = TodayOverview.load(context)
-        assertTrue(overview.classes.any { it.courseCode == "CS 301" })
-        assertFalse(overview.classes.any { it.courseCode == "HIST 101" })
+        val overview = TodayOverviewLoader.load(context)
+        assertTrue(overview.classes.any { it.code == "CS 301" })
+        assertFalse(overview.classes.any { it.code == "HIST 101" })
     }
 }

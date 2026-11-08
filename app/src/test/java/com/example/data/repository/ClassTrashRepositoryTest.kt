@@ -15,6 +15,7 @@ import com.example.util.LocalBackupManager
 import com.example.util.LocalTombstonePurge
 import com.example.util.findConflicts
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -43,7 +44,7 @@ class ClassTrashRepositoryTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         db = AppDatabase.getDatabase(context)
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
         scheduler = ReminderScheduler(context)
@@ -72,7 +73,7 @@ class ClassTrashRepositoryTest {
 
     @After
     fun tearDown() {
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
         context.getSharedPreferences("local_tombstone_purge", Context.MODE_PRIVATE)

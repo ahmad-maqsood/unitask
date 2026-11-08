@@ -2,6 +2,65 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.0.0] - 08-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
+
+### New Features
+- [add the pause icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/80c56392a0058bedf54d7810ce54623a92725b21)
+- [add the play (resume) icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/50efb2ee7d297281a290eb5e96bed6b5c76927b0)
+- [add the stop icon for the timer notification](https://github.com/ahmad-maqsood/unitask/commit/06c93ca189f41b8c7bac19acf37075b1d5d0e78b)
+- [show icons on the timer notification buttons](https://github.com/ahmad-maqsood/unitask/commit/8983498e083ae629bacc128769b85bab982e8fe4)
+- [add a hook for the running-timer notification](https://github.com/ahmad-maqsood/unitask/commit/19d814285a3de6ecf01525ba5af9bde5ed41883d)
+- [show an ongoing notification while the timer runs](https://github.com/ahmad-maqsood/unitask/commit/6da326401fd531a893a884276736e6038d663633)
+- [handle Pause, Resume and Stop from the timer notification](https://github.com/ahmad-maqsood/unitask/commit/f7c1ea392c7d6bb217fe7e91999247565ff045fe)
+- [keep the running-timer notification in sync](https://github.com/ahmad-maqsood/unitask/commit/6b1c030677f8f8241b0d6ec89da7b4f603d9bde5)
+- [register the timer notification action receiver](https://github.com/ahmad-maqsood/unitask/commit/7624cf87209b3bbdc269b097416ec90959cc3b38)
+- [feat: Tools menu, timer, countdown and notes export](https://github.com/ahmad-maqsood/unitask/pull/48) — What's new
+
+### Improvements
+- [improve: timer lock screen controls, countdown alarm, and notes limits](https://github.com/ahmad-maqsood/unitask/pull/58) — This pull request introduces three focused improvements across the Timer and Notes features:
+- [make the app bar logo follow the theme](https://github.com/ahmad-maqsood/unitask/commit/25503fecefd670c1c35fe7f68c4063770572b78c)
+- [show full tool descriptions on two lines](https://github.com/ahmad-maqsood/unitask/commit/0b7ba8bd59859bfd77132bdf09b0d79a24b1673c)
+- [refactor: transition to local-first personal storage and remove Supabase personal sync](https://github.com/ahmad-maqsood/unitask/pull/56) — This PR transitions UniTask to a local-first storage model for personal data (courses, tasks, lecture timetable slots, and notes). All personal data now resides securely on the dev
+
+### Bug Fixes
+- [feat: add Google Drive backup and restore](https://github.com/ahmad-maqsood/unitask/pull/50) — What
+- [removed nested folder](https://github.com/ahmad-maqsood/unitask/commit/99039f08319ef1f1ddf034fe9e699cab17c70bd2)
+
+### Other Changes
+- [docs: refresh automated README screenshots](https://github.com/ahmad-maqsood/unitask/pull/59) — Summary
+- [improve README with highlights, build steps and a fixed diagram](https://github.com/ahmad-maqsood/unitask/commit/186784f142704dccdc61c7f1a9bc68094b1a3d32)
+- [stop closing the database in DriveRestoreOfferCardTest teardown](https://github.com/ahmad-maqsood/unitask/commit/e20a2a4c1abbbfdd9ce8db51d28f32b7ba934e7c)
+- [add Global search and Recently deleted screenshots, use Pakistani chat names](https://github.com/ahmad-maqsood/unitask/commit/edbbf18fbed5ea17861b0bcedf5e1e4eef6e673e)
+- [update: bump app version to 4.0.0](https://github.com/ahmad-maqsood/unitask/commit/79621ca3427e724e3e4f2574d5d94ab21948c3cd)
+- [feats: recently deleted, semester archive, and global search](https://github.com/ahmad-maqsood/unitask/pull/57) — Added three major capabilities to UniTask:
+- [add manual lines of code count workflow](https://github.com/ahmad-maqsood/unitask/commit/367525e3f4f83a65b5390af80ab3579d2fdf66b8)
+- [Keep lint self-test output out of CI results](https://github.com/ahmad-maqsood/unitask/commit/e1076af76b171ff3ef762e93757289267ee167e3)
+- [Remove dependency review workflow](https://github.com/ahmad-maqsood/unitask/commit/3fbb1eb89e92d4830b38d590bf7186c603daccef)
+- [make lint failures easy to read](https://github.com/ahmad-maqsood/unitask/commit/79c5704abb862f94ab5f83255a57ebc291afe60b)
+- [remove smoke tests](https://github.com/ahmad-maqsood/unitask/commit/d078fd7a6749cb5b398ecc70fd2750bf08e0f7fc)
+- [Replace app icon with the Sunrise U design](https://github.com/ahmad-maqsood/unitask/pull/55) — Summary
+- [Limit group chat to 500 messages per group in Supabase](https://github.com/ahmad-maqsood/unitask/pull/54) — Summary
+- [Redesign running timer notification with round icon buttons](https://github.com/ahmad-maqsood/unitask/pull/53) — Summary
+- [Fix Drive restore test Compose teardown](https://github.com/ahmad-maqsood/unitask/pull/52) — Summary
+- [Fix Drive restore offer test database cleanup](https://github.com/ahmad-maqsood/unitask/pull/51) — Summary
+- [cover the running-timer notification updates](https://github.com/ahmad-maqsood/unitask/commit/6c9b41251ad4d4ef7bdd46ac58f0f8cfc09dcfb8)
+- [tag the Deadlines list so tests can scroll it](https://github.com/ahmad-maqsood/unitask/commit/6cb55fb64a1f16727e39b1c1a49c072cc2306151)
+- [fix five failing smoke tests](https://github.com/ahmad-maqsood/unitask/commit/51d4563e1bfcbc5089bd2d14f614d81f19722738)
+- [print failing smoke test names and stack traces](https://github.com/ahmad-maqsood/unitask/commit/00d280fe440fdd90d46e2e7aab194fb1a52f31de)
+- [capture the study timer in README screenshots](https://github.com/ahmad-maqsood/unitask/commit/4b2dfaae662f6a5aebbea1114450753e50b4d3d1)
+- [export the timer screenshot from the emulator](https://github.com/ahmad-maqsood/unitask/commit/1ff360d01a867a594fc91a39ca247689effe5863)
+- [add the study timer to the README screenshot gallery](https://github.com/ahmad-maqsood/unitask/commit/07e21a13ce6df31ada78db3f44f87427f5aa45c5)
+- [Fix SmokeFlowsTest compile errors](https://github.com/ahmad-maqsood/unitask/commit/3244039a3e077168b8374ac4576bb1edca09babf)
+- [msg: explain that Drive access is limited to UniTask's own folder](https://github.com/ahmad-maqsood/unitask/commit/56e794de283758106748c3bd4ad05daea4446298)
+- [add website pages for Google consent screen](https://github.com/ahmad-maqsood/unitask/commit/51a9f2ea12b8ff7fae5feee3e8917e7123111caa)
+- [add workflow to deploy the website to Firebase Hosting](https://github.com/ahmad-maqsood/unitask/commit/8171b279b67ca5bf767c7112f65b3e8fc0145387)
+- [docs: remove What's new section from README](https://github.com/ahmad-maqsood/unitask/pull/49) — Summary
+- [Remove standalone setup guide and its documentation references](https://github.com/ahmad-maqsood/unitask/pull/47) — Summary
+- [Merge branch 'main' of https://github.com/ahmad-maqsood/unitask](https://github.com/ahmad-maqsood/unitask/commit/4266a630a90fe69610f998954661f722e20d102f)
+- [Add v3.5.0 section and move 3.4.0 to earlier changes](https://github.com/ahmad-maqsood/unitask/commit/1cdcd9d2ffcd56ba416133e3c5a03ea359b9d48e)
+- [docs: add CHANGELOG entry for v3.5.0](https://github.com/ahmad-maqsood/unitask/pull/46) — Automatically generated release notes for v3.5.0. Review all entries, especially **Other Changes**, before merging. The matching GitHub Release is a draft and has not been publishe
+
 ## [3.5.0] - 06-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.5.0)
 

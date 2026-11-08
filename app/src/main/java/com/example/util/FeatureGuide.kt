@@ -70,6 +70,10 @@ object FeatureGuide {
             "1. Open the Courses tab and tap the menu icon next to Add Course.\n2. Tap Archive courses to group finished courses into a semester.\n3. Archived courses, their tasks, classes and notes are hidden and their reminders stop.\n4. You can restore an archived semester at any time."
         ),
         AppFeature(
+            "Archive a semester", "Hide completed courses into an archive while preserving their history.", "school", 74,
+            "1. Open the Courses tab and tap the three-dot menu next to Add Course.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
+        ),
+        AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "groups", 80,
             "1. Sign in with Google and open the Groups tab.\n2. Tap the QR icon in group details to show your invite QR code and link.\n3. To join, tap 'Join Group' and scan a QR screenshot or paste an invite link."
         ),

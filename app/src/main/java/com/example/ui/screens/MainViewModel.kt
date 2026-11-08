@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 
 import com.example.data.local.LectureSlot
 import com.example.data.local.ArchivedSemesterSummary
+import com.example.data.local.ArchivedCourseCodeException
 import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment
@@ -396,6 +397,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Set when the course being saved has the same code as another course.
     private val _courseSaveError = MutableStateFlow<String?>(null)
     val courseSaveError: StateFlow<String?> = _courseSaveError.asStateFlow()
+
+    private val _courseArchivedConflict = MutableStateFlow<ArchivedCourseConflict?>(null)
+    val courseArchivedConflict: StateFlow<ArchivedCourseConflict?> = _courseArchivedConflict.asStateFlow()
 
 
     private val _selectedCourseDetailId = MutableStateFlow<Long?>(null)
@@ -1192,18 +1196,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun openAddCourseDialog() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _courseToEdit.value = null
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun openEditCourseDialog(course: Course) {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _courseToEdit.value = course
         _isAddEditCourseDialogOpen.value = true
     }
 
     fun closeCourseDialog() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
         _isAddEditCourseDialogOpen.value = false
         _courseToEdit.value = null
     }
@@ -1229,31 +1236,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _courseSaveError.value = "A course with this code already exists: ${duplicate.code} (${duplicate.name})"
                 return@launch
             }
-            if (currentCourse != null) {
-                val updated = currentCourse.copy(
-                    name = name.trim(),
-                    code = code.trim().uppercase(),
-                    instructor = instructor.trim(),
-                    colorHex = colorHex,
-                    location = location.trim()
-                )
-                repository.updateCourse(updated)
-            } else {
-                val newCourse = Course(
-                    name = name.trim(),
-                    code = code.trim().uppercase(),
-                    instructor = instructor.trim(),
-                    colorHex = colorHex,
-                    location = location.trim()
-                )
-                repository.insertCourse(newCourse)
+            val archived = repository.findArchivedCourseByCode(code)
+            if (archived != null) {
+                _courseArchivedConflict.value = ArchivedCourseConflict(code = code.trim().uppercase(), semesterName = archived.archivedSemester)
+                return@launch
             }
-            closeCourseDialog()
+            try {
+                if (currentCourse != null) {
+                    val updated = currentCourse.copy(
+                        name = name.trim(),
+                        code = code.trim().uppercase(),
+                        instructor = instructor.trim(),
+                        colorHex = colorHex,
+                        location = location.trim()
+                    )
+                    repository.updateCourse(updated)
+                } else {
+                    val newCourse = Course(
+                        name = name.trim(),
+                        code = code.trim().uppercase(),
+                        instructor = instructor.trim(),
+                        colorHex = colorHex,
+                        location = location.trim()
+                    )
+                    repository.insertCourse(newCourse)
+                }
+                closeCourseDialog()
+            } catch (e: ArchivedCourseCodeException) {
+                _courseArchivedConflict.value = ArchivedCourseConflict(code = code.trim().uppercase(), semesterName = e.semesterName)
+            }
         }
     }
 
     fun clearCourseSaveError() {
         _courseSaveError.value = null
+        _courseArchivedConflict.value = null
     }
 
 
@@ -1286,6 +1303,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.undoArchive(courseIds)
         }
+    }
+
+    fun restoreSemester(semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.restoreSemester(semesterName)
+            onDone()
+        }
+    }
+
+    fun deleteSemesterForever(semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            val courses = repository.getCoursesForSemester(semesterName)
+            val courseIds = courses.map { it.id }.toSet()
+            if (_selectedCourseDetailId.value in courseIds) {
+                _selectedCourseDetailId.value = null
+            }
+            if (_courseFilter.value in courseIds) {
+                _courseFilter.value = null
+            }
+            repository.deleteSemesterForever(semesterName)
+            onDone()
+        }
+    }
+
+    suspend fun findArchivedCourseByCode(code: String): Course? {
+        return repository.findArchivedCourseByCode(code)
     }
 
     fun openCourseDetail(courseId: Long) {

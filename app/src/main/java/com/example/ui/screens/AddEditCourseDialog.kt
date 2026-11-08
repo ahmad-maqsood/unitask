@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,10 +49,13 @@ import com.example.ui.theme.CourseColors
 @Composable
 fun AddEditCourseDialog(
     courseToEdit: Course?,
-        onDismiss: () -> Unit,
+    onDismiss: () -> Unit,
     onSave: (name: String, code: String, instructor: String, colorHex: String, location: String) -> Unit,
     duplicateError: String? = null,
-    onClearDuplicateError: () -> Unit = {}
+    onClearDuplicateError: () -> Unit = {},
+    archivedConflict: ArchivedCourseConflict? = null,
+    onCheckArchivedCode: (suspend (String) -> String?)? = null,
+    onRestoreSemester: (String) -> Unit = {}
 ) {
 
     var code by rememberSaveable { mutableStateOf(courseToEdit?.code ?: "") }
@@ -62,6 +66,27 @@ fun AddEditCourseDialog(
     var codeError by rememberSaveable { mutableStateOf(false) }
     var reservedCodeError by rememberSaveable { mutableStateOf(false) }
     var nameError by rememberSaveable { mutableStateOf(false) }
+
+    var typingArchivedConflict by remember { mutableStateOf<ArchivedCourseConflict?>(null) }
+
+    LaunchedEffect(code) {
+        val trimmed = code.trim()
+        if (trimmed.isNotBlank() && onCheckArchivedCode != null) {
+            val semester = onCheckArchivedCode(trimmed)
+            if (semester != null) {
+                typingArchivedConflict = ArchivedCourseConflict(
+                    code = trimmed.uppercase(),
+                    semesterName = semester
+                )
+            } else {
+                typingArchivedConflict = null
+            }
+        } else {
+            typingArchivedConflict = null
+        }
+    }
+
+    val activeArchivedConflict = typingArchivedConflict ?: archivedConflict
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -91,11 +116,30 @@ fun AddEditCourseDialog(
 
                     label = { Text("Course Code *") },
                     placeholder = { Text("e.g. CS 301, MATH 240") },
-                    isError = codeError || reservedCodeError || duplicateError != null,
+                    isError = codeError || reservedCodeError || duplicateError != null || activeArchivedConflict != null,
                     supportingText = when {
                         codeError -> { { Text("Course code is required") } }
                         reservedCodeError -> { { Text("This code is reserved") } }
                         duplicateError != null -> { { Text(duplicateError) } }
+                        activeArchivedConflict != null -> {
+                            {
+                                Column(modifier = Modifier.padding(top = 4.dp)) {
+                                    Text(
+                                        text = "${activeArchivedConflict.code} is archived in ${activeArchivedConflict.semesterName}.",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    TextButton(
+                                        onClick = {
+                                            onRestoreSemester(activeArchivedConflict.semesterName)
+                                        },
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        Text("Restore ${activeArchivedConflict.semesterName}")
+                                    }
+                                }
+                            }
+                        }
                         else -> null
                     },
 
@@ -205,7 +249,7 @@ fun AddEditCourseDialog(
                     if (isReserved) reservedCodeError = true
                     if (isNameEmpty) nameError = true
 
-                    if (!isCodeEmpty && !isNameEmpty && !isReserved) {
+                    if (!isCodeEmpty && !isNameEmpty && !isReserved && activeArchivedConflict == null) {
                         onSave(name, code, instructor, selectedColor, location)
                     }
                 },

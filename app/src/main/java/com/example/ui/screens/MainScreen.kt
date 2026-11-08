@@ -291,6 +291,7 @@ fun MainScreen(
     val isAddEditCourseDialogOpen by viewModel.isAddEditCourseDialogOpen.collectAsStateWithLifecycle()
     val courseToEdit by viewModel.courseToEdit.collectAsStateWithLifecycle()
     val courseSaveError by viewModel.courseSaveError.collectAsStateWithLifecycle()
+    val courseArchivedConflict by viewModel.courseArchivedConflict.collectAsStateWithLifecycle()
 
 
     val isAddEditSlotDialogOpen by viewModel.isAddEditSlotDialogOpen.collectAsStateWithLifecycle()
@@ -327,6 +328,7 @@ fun MainScreen(
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
+    var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -362,6 +364,7 @@ fun MainScreen(
     BackHandler {
         when {
             isFabMenuExpanded -> isFabMenuExpanded = false
+            showArchivedSemesters -> showArchivedSemesters = false
             currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
             else -> {
                 val now = System.currentTimeMillis()
@@ -828,7 +831,7 @@ fun MainScreen(
                             onAddCourseClick = { viewModel.openAddCourseDialog() },
                             archivedSemestersCount = archivedSemesters.size,
                             onArchiveCoursesClick = { showArchiveCoursesSheet = true },
-                            onArchivedSemestersClick = { /* Step 13 will wire ArchivedSemestersScreen */ }
+                            onArchivedSemestersClick = { showArchivedSemesters = true }
                         )
                     }
 
@@ -929,7 +932,8 @@ fun MainScreen(
         !showNotes &&
         !showTools &&
         !showTimer &&
-        !showRecentlyDeleted
+        !showRecentlyDeleted &&
+        !showArchivedSemesters
     ) {
         DriveMigrationDialog(
             onDismiss = { hasShownMigrationDialogThisSession = true }
@@ -962,8 +966,22 @@ fun MainScreen(
                 viewModel.saveCourse(name, code, instructor, color, location)
             },
             duplicateError = courseSaveError,
-            onClearDuplicateError = { viewModel.clearCourseSaveError() }
-
+            onClearDuplicateError = { viewModel.clearCourseSaveError() },
+            archivedConflict = courseArchivedConflict,
+            onCheckArchivedCode = { code ->
+                viewModel.findArchivedCourseByCode(code)?.archivedSemester
+            },
+            onRestoreSemester = { semesterName ->
+                viewModel.restoreSemester(semesterName) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Restored $semesterName",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+                viewModel.closeCourseDialog()
+            }
         )
     }
 
@@ -1021,6 +1039,35 @@ fun MainScreen(
     if (showRecentlyDeleted) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             RecentlyDeletedScreen(onClose = { showRecentlyDeleted = false })
+        }
+    }
+
+    if (showArchivedSemesters) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            ArchivedSemestersScreen(
+                semesters = archivedSemesters,
+                onRestoreSemester = { semesterName ->
+                    viewModel.restoreSemester(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Restored $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                onDeleteSemesterForever = { semesterName ->
+                    viewModel.deleteSemesterForever(semesterName) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Deleted $semesterName",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
+                onClose = { showArchivedSemesters = false }
+            )
         }
     }
 

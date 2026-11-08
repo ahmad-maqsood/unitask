@@ -296,6 +296,15 @@ class AppRepository(
             .firstOrNull { !it.isDeleted && !it.isArchived && it.id != excludeCourseId }
     }
 
+    suspend fun findArchivedCourseByCode(code: String): Course? = withContext(Dispatchers.IO) {
+        val normCode = normalizeCourseCode(code)
+        courseDao.findArchivedCourseByCode(normCode)
+    }
+
+    suspend fun getCoursesForSemester(semesterName: String): List<Course> = withContext(Dispatchers.IO) {
+        courseDao.getCoursesForSemester(semesterName.trim())
+    }
+
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {
         val courseToUpdate = course.copy(code = course.code.trim().uppercase(), isSynced = false)
         courseDao.updateCourse(courseToUpdate)

@@ -81,6 +81,13 @@ class AppDatabaseMigrationTest {
                     assertTrue("deletedAt is missing after the upgrade", cursor.moveToFirst())
                     assertEquals(0L, cursor.getLong(0))
                 }
+
+            db.openHelper.writableDatabase
+                .query("SELECT archivedSemester FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("archivedSemester is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("", cursor.getString(0))
+                }
         } finally {
             db.close()
         }
@@ -194,6 +201,43 @@ class AppDatabaseMigrationTest {
                 .use { cursor ->
                     assertTrue("deletedAt is missing from lecture_slots after the upgrade", cursor.moveToFirst())
                     assertEquals(0L, cursor.getLong(0))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrating13To14KeepsOldDataAndAddsArchivedSemester() {
+        // 1. A version 13 database holding one course.
+        val old = helper.createDatabase("migration-test-13-14", 13)
+        old.execSQL(
+            "INSERT INTO courses (id, name, code, instructor, colorHex, location, isSynced, cloudId, isDeleted) " +
+                "VALUES (1, 'Algorithms', 'CS201', 'Dr. Smith', '#4F46E5', 'Room 101', 0, '', 0)"
+        )
+        old.close()
+
+        // 2. Open it the way the app does. Room throws here if schema does not match code.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-13-14")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            // 3. The old course is still there, unchanged.
+            db.openHelper.writableDatabase
+                .query("SELECT name, code FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old course is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Algorithms", cursor.getString(0))
+                    assertEquals("CS201", cursor.getString(1))
+                }
+
+            // 4. The new archivedSemester column exists and defaults to ''.
+            db.openHelper.writableDatabase
+                .query("SELECT archivedSemester FROM courses WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("archivedSemester is missing from courses after the upgrade", cursor.moveToFirst())
+                    assertEquals("", cursor.getString(0))
                 }
         } finally {
             db.close()

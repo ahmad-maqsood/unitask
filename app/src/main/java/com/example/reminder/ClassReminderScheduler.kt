@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import com.example.data.local.AppDatabase
 import com.example.data.local.LectureSlot
+import com.example.data.local.isArchived
 import java.util.Calendar
 
 /**
@@ -84,7 +85,7 @@ class ClassReminderScheduler(context: Context) {
 
     /** Makes the alarms match the current timetable (or removes them all when the setting is off). */
     suspend fun rescheduleAll(database: AppDatabase) {
-        val activeCourseIds = database.courseDao().getAllCoursesList().map { it.id }.toSet()
+        val activeCourseIds = database.courseDao().getAllCoursesList().filter { !it.isArchived }.map { it.id }.toSet()
         val wanted = database.lectureSlotDao().getAllSlotsSync()
             .filter { !it.isDeleted && it.deletedAt <= 0L && it.courseId in activeCourseIds }
         val enabled = isEnabled(appContext)

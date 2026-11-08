@@ -3,7 +3,10 @@ package com.example.data.repository
 import android.content.Context
 import com.example.data.local.Course
 import com.example.data.local.CourseDao
+import com.example.data.local.ArchivedSemesterSummary
 import com.example.data.local.CourseWithTaskCount
+import com.example.data.local.NoteListItem
+import com.example.data.local.isArchived
 import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotDao
 import com.example.data.local.LectureSlotWithCourse
@@ -41,6 +44,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+class ArchivedCourseCodeException(val semesterName: String) :
+    IllegalStateException("Course code belongs to archived semester: $semesterName")
+
 class AppRepository(
     private val context: Context,
     private val courseDao: CourseDao,
@@ -102,9 +108,17 @@ class AppRepository(
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
         val normCode = normalizeCourseCode(course.code)
 
+        val archived = courseDao.findArchivedCourseByCode(normCode)
+        if (archived != null) {
+            throw ArchivedCourseCodeException(archived.archivedSemester)
+        }
+
         // Check if an existing course already matches this normalized code
         val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getAnyCourseByNormalizedCode(normCode)
         if (existing != null) {
+            if (existing.isArchived) {
+                throw ArchivedCourseCodeException(existing.archivedSemester)
+            }
             val updated = existing.copy(
                 code = course.code.trim().uppercase(),
                 name = course.name.trim(),
@@ -121,6 +135,109 @@ class AppRepository(
         val courseToInsert = course.copy(code = course.code.trim().uppercase(), isSynced = false, isDeleted = false)
         val id = courseDao.insertCourse(courseToInsert)
         id
+    }
+
+    suspend fun archiveCourses(courseIds: List<Long>, semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        if (trimmed.isBlank()) {
+            throw IllegalArgumentException("Semester name cannot be blank")
+        }
+        if (trimmed.length > 40) {
+            throw IllegalArgumentException("Semester name cannot exceed 40 characters")
+        }
+
+        val existingArchived = courseDao.getArchivedCoursesSync()
+        val matchingExistingName = existingArchived
+            .map { it.archivedSemester }
+            .firstOrNull { it.equals(trimmed, ignoreCase = true) }
+        val finalSemesterName = matchingExistingName ?: trimmed
+
+        val courses = courseIds.mapNotNull { courseDao.getCourseByIdSync(it) }
+        if (courses.any { it.isMyTasksCourse() }) {
+            throw IllegalArgumentException("The My tasks course cannot be archived")
+        }
+
+        inTransaction {
+            courseDao.setArchivedSemester(courseIds, finalSemesterName)
+        }
+
+        for (cId in courseIds) {
+            val tasks = taskDao.getTasksForCourseSync(cId).filter { !it.isDeleted }
+            for (t in tasks) {
+                reminderScheduler.cancelReminder(t.id)
+                SnoozeStore.clear(context, t.id, cancelAlarm = true)
+                taskDao.updateTask(t.copy(reminderEpochMillis = null, isSynced = false))
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
+    suspend fun restoreSemester(semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        val courses = courseDao.getCoursesForSemester(trimmed)
+
+        inTransaction {
+            courseDao.clearArchivedSemester(trimmed)
+        }
+
+        for (course in courses) {
+            val tasks = taskDao.getTasksForCourseSync(course.id).filter { !it.isDeleted && it.status != TaskStatus.COMPLETED }
+            for (task in tasks) {
+                val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+                val updatedTask = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false)
+                taskDao.updateTask(updatedTask)
+                if (calculatedReminder != null) {
+                    reminderScheduler.scheduleReminder(updatedTask, course.code)
+                }
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
+    suspend fun deleteSemesterForever(semesterName: String) = withContext(Dispatchers.IO) {
+        val trimmed = semesterName.trim()
+        val courses = courseDao.getCoursesForSemester(trimmed)
+        for (course in courses) {
+            deleteCourse(course)
+        }
+    }
+
+    fun observeArchivedSemesters(): Flow<List<ArchivedSemesterSummary>> {
+        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotes() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        return combine(
+            courseDao.getAllCourses(),
+            taskDao.getAllTasksWithCourse(),
+            lectureSlotDao.getAllSlotsWithCourse(),
+            notesFlow
+        ) { allCourses, allTasks, allSlots, allNotes ->
+            val archived = allCourses.filter { !it.isDeleted && it.archivedSemester.isNotBlank() }
+            if (archived.isEmpty()) {
+                emptyList()
+            } else {
+                val grouped = archived.groupBy { it.archivedSemester.trim().uppercase() }
+                grouped.values.map { semesterCourses ->
+                    val semesterName = semesterCourses.first().archivedSemester.trim()
+                    val courseIds = semesterCourses.map { it.id }.toSet()
+                    val courseCodes = semesterCourses.map { it.code }.distinct().sorted()
+                    val taskCount = allTasks.count { it.task.courseId in courseIds && !it.task.isDeleted }
+                    val classCount = allSlots.count { it.slot.courseId in courseIds && !it.slot.isDeleted }
+                    val noteCount = allNotes.count { it.note.courseId in courseIds && !it.note.isDeleted }
+
+                    ArchivedSemesterSummary(
+                        name = semesterName,
+                        courseCount = semesterCourses.size,
+                        taskCount = taskCount,
+                        classCount = classCount,
+                        noteCount = noteCount,
+                        courseCodes = courseCodes
+                    )
+                }.sortedBy { it.name }
+            }
+        }.flowOn(Dispatchers.Default)
     }
 
         /** Another (not deleted) course with the same code, ignoring spaces and capitals. */
@@ -174,7 +291,7 @@ class AppRepository(
     /** Re-arms the "class started" alarms after any change to slots or courses. */
     private suspend fun refreshClassAlarms() {
         try {
-            ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
+            ClassReminderScheduler(context).rescheduleAll(database ?: AppDatabase.getDatabase(context))
         } catch (e: Exception) {
             Log.w("AppRepository", "Could not refresh class alarms: ${e.message}")
         }

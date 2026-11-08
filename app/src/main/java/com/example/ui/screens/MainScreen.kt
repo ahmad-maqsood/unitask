@@ -87,6 +87,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -173,6 +174,7 @@ fun MainScreen(
 
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.refreshMessage.collectLatest { message ->
@@ -263,6 +265,8 @@ fun MainScreen(
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val allCourses by viewModel.allCourses.collectAsStateWithLifecycle()
     val coursesWithCounts by viewModel.coursesWithCounts.collectAsStateWithLifecycle()
+    val archivedSemesters by viewModel.archivedSemesters.collectAsStateWithLifecycle()
+    val activeCoursesForArchive by viewModel.activeCoursesForArchive.collectAsStateWithLifecycle()
     val filteredTasks by viewModel.filteredTasks.collectAsStateWithLifecycle()
     val allTasksWithCourse by viewModel.allTasksWithCourse.collectAsStateWithLifecycle()
     val allLectureSlots by viewModel.allLectureSlots.collectAsStateWithLifecycle()
@@ -322,6 +326,7 @@ fun MainScreen(
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
+    var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -820,7 +825,10 @@ fun MainScreen(
                             onCourseClick = { courseId -> viewModel.openCourseDetail(courseId) },
                             onEditCourse = { viewModel.openEditCourseDialog(it) },
                             onDeleteCourse = { viewModel.deleteCourse(it) },
-                            onAddCourseClick = { viewModel.openAddCourseDialog() }
+                            onAddCourseClick = { viewModel.openAddCourseDialog() },
+                            archivedSemestersCount = archivedSemesters.size,
+                            onArchiveCoursesClick = { showArchiveCoursesSheet = true },
+                            onArchivedSemestersClick = { /* Step 13 will wire ArchivedSemestersScreen */ }
                         )
                     }
 
@@ -1014,6 +1022,31 @@ fun MainScreen(
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             RecentlyDeletedScreen(onClose = { showRecentlyDeleted = false })
         }
+    }
+
+    if (showArchiveCoursesSheet) {
+        ArchiveCoursesSheet(
+            courses = activeCoursesForArchive,
+            existingSemesterNames = archivedSemesters.map { it.name },
+            onConfirmArchive = { courseIds, semesterName ->
+                showArchiveCoursesSheet = false
+                viewModel.archiveCourses(courseIds, semesterName) {
+                    scope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        val courseLabel = if (courseIds.size == 1) "1 course" else "${courseIds.size} courses"
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Archived $courseLabel to $semesterName",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.undoArchive(courseIds)
+                        }
+                    }
+                }
+            },
+            onDismiss = { showArchiveCoursesSheet = false }
+        )
     }
 
     markdownViewerState?.let { mState ->

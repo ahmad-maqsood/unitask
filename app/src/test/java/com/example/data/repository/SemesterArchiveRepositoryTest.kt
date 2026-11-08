@@ -304,4 +304,91 @@ class SemesterArchiveRepositoryTest {
         // No more archived semesters
         assertTrue(repo.observeArchivedSemesters().first().isEmpty())
     }
+
+    @Test
+    fun undoArchiveRestoresOnlyGivenCourses() = runBlocking {
+        val course1Id = repo.insertCourse(
+            Course(name = "Operating Systems", code = "CS 301", colorHex = "#4F46E5")
+        )
+        val course2Id = repo.insertCourse(
+            Course(name = "Networks", code = "CS 302", colorHex = "#10B981")
+        )
+        val course3Id = repo.insertCourse(
+            Course(name = "Databases", code = "CS 303", colorHex = "#F59E0B")
+        )
+
+        val task1Id = repo.insertTask(
+            TaskItem(
+                courseId = course1Id,
+                title = "Lab OS",
+                dueDateEpochMillis = System.currentTimeMillis() + 86400000L,
+                dueTimeHour = 10,
+                dueTimeMinute = 0,
+                reminderOptions = setOf(ReminderOption.AT_DEADLINE)
+            )
+        )
+        val task2Id = repo.insertTask(
+            TaskItem(
+                courseId = course2Id,
+                title = "Network Quiz",
+                dueDateEpochMillis = System.currentTimeMillis() + 86400000L,
+                dueTimeHour = 14,
+                dueTimeMinute = 0,
+                reminderOptions = setOf(ReminderOption.AT_DEADLINE)
+            )
+        )
+        val task3Id = repo.insertTask(
+            TaskItem(
+                courseId = course3Id,
+                title = "SQL Assignment",
+                dueDateEpochMillis = System.currentTimeMillis() + 86400000L,
+                dueTimeHour = 16,
+                dueTimeMinute = 0,
+                reminderOptions = setOf(ReminderOption.AT_DEADLINE)
+            )
+        )
+
+        // Archive all 3 courses into Fall 2026
+        repo.archiveCourses(listOf(course1Id, course2Id, course3Id), "Fall 2026")
+
+        // Confirm all 3 are archived
+        assertNull(db.courseDao().getCourseByIdSync(course1Id))
+        assertNull(db.courseDao().getCourseByIdSync(course2Id))
+        assertNull(db.courseDao().getCourseByIdSync(course3Id))
+        assertNull(db.taskDao().getTaskByIdSync(task1Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getTaskByIdSync(task2Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getTaskByIdSync(task3Id)!!.reminderEpochMillis)
+
+        val summariesBeforeUndo = repo.observeArchivedSemesters().first()
+        assertEquals(1, summariesBeforeUndo.size)
+        assertEquals(3, summariesBeforeUndo[0].courseCount)
+
+        // Undo archive only for course1 and course2
+        repo.undoArchive(listOf(course1Id, course2Id))
+
+        // course1 and course2 are active again
+        val c1 = db.courseDao().getCourseByIdSync(course1Id)
+        val c2 = db.courseDao().getCourseByIdSync(course2Id)
+        assertNotNull(c1)
+        assertNotNull(c2)
+        assertEquals("", c1!!.archivedSemester)
+        assertEquals("", c2!!.archivedSemester)
+
+        // course3 is still archived
+        assertNull(db.courseDao().getCourseByIdSync(course3Id))
+        val c3 = db.courseDao().getCourseByIdSyncIncludingArchived(course3Id)
+        assertNotNull(c3)
+        assertEquals("Fall 2026", c3!!.archivedSemester)
+
+        // Reminders re-armed only for course1 and course2 tasks
+        assertNotNull(db.taskDao().getTaskByIdSync(task1Id)!!.reminderEpochMillis)
+        assertNotNull(db.taskDao().getTaskByIdSync(task2Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getTaskByIdSync(task3Id)!!.reminderEpochMillis)
+
+        // Archived semester still exists, but with only course3 remaining
+        val summariesAfterUndo = repo.observeArchivedSemesters().first()
+        assertEquals(1, summariesAfterUndo.size)
+        assertEquals(1, summariesAfterUndo[0].courseCount)
+        assertEquals(listOf("CS 303"), summariesAfterUndo[0].courseCodes)
+    }
 }

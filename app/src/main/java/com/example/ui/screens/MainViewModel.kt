@@ -73,6 +73,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 import com.example.data.local.LectureSlot
+import com.example.data.local.ArchivedSemesterSummary
+import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment
 import com.example.util.SavedAttachmentInfo
@@ -424,6 +426,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val coursesWithCounts: StateFlow<List<CourseWithTaskCount>> = repository.coursesWithTaskCounts
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedSemesters: StateFlow<List<ArchivedSemesterSummary>> = repository.observeArchivedSemesters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeCoursesForArchive: StateFlow<List<ArchiveCourseItem>> = repository.observeActiveCoursesForArchive()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTasksWithCourse: StateFlow<List<TaskWithCourse>> = repository.allTasksWithCourse
@@ -1258,6 +1266,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _courseFilter.value = null
             }
             repository.deleteCourse(course)
+        }
+    }
+
+    fun archiveCourses(courseIds: List<Long>, semesterName: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            if (_selectedCourseDetailId.value in courseIds) {
+                _selectedCourseDetailId.value = null
+            }
+            if (_courseFilter.value in courseIds) {
+                _courseFilter.value = null
+            }
+            repository.archiveCourses(courseIds, semesterName)
+            onDone()
+        }
+    }
+
+    fun undoArchive(courseIds: List<Long>) {
+        viewModelScope.launch {
+            repository.undoArchive(courseIds)
         }
     }
 

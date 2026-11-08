@@ -32,3 +32,15 @@ data class ArchivedSemesterSummary(
     val noteCount: Int,
     val courseCodes: List<String>
 )
+
+/**
+ * Active course candidate for semester archive, including its live counts.
+ */
+data class ArchiveCourseItem(
+    val id: Long,
+    val code: String,
+    val name: String,
+    val taskCount: Int,
+    val classCount: Int = 0,
+    val noteCount: Int = 0
+)

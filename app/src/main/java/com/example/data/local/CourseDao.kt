@@ -102,4 +102,7 @@ interface CourseDao {
 
     @Query("UPDATE courses SET archivedSemester = '', isSynced = 0 WHERE UPPER(TRIM(archivedSemester)) = UPPER(TRIM(:semesterName))")
     suspend fun clearArchivedSemester(semesterName: String)
+
+    @Query("UPDATE courses SET archivedSemester = '', isSynced = 0 WHERE id IN (:courseIds)")
+    suspend fun clearArchivedSemesterForCourses(courseIds: List<Long>)
 }

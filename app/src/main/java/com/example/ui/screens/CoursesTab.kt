@@ -18,6 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +50,9 @@ fun CoursesTab(
     onEditCourse: (Course) -> Unit,
     onDeleteCourse: (Course) -> Unit,
     onAddCourseClick: () -> Unit,
+    archivedSemestersCount: Int = 0,
+    onArchiveCoursesClick: () -> Unit = {},
+    onArchivedSemestersClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -74,14 +85,53 @@ fun CoursesTab(
                     )
                 }
 
-                OutlinedButton(
-                    onClick = onAddCourseClick,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.testTag("courses_tab_add_course_button")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text("Add Course", style = MaterialTheme.typography.labelMedium)
+                    OutlinedButton(
+                        onClick = onAddCourseClick,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.testTag("courses_tab_add_course_button")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text("Add Course", style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    var showMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.testTag("courses_more_button")
+                        ) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More course options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Archive courses...") },
+                                onClick = {
+                                    showMenu = false
+                                    onArchiveCoursesClick()
+                                }
+                            )
+                            val archivedLabel = if (archivedSemestersCount > 0) {
+                                "Archived semesters ($archivedSemestersCount)"
+                            } else {
+                                "Archived semesters"
+                            }
+                            DropdownMenuItem(
+                                text = { Text(archivedLabel) },
+                                onClick = {
+                                    showMenu = false
+                                    onArchivedSemestersClick()
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

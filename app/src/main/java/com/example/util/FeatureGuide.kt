@@ -66,6 +66,10 @@ object FeatureGuide {
             "1. Open the Courses tab.\n2. Tap Add Course and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
         ),
         AppFeature(
+            "Semester Archive", "Archive past courses to keep your screen tidy while keeping all data.", "school", 72,
+            "1. Open the Courses tab and tap the menu icon next to Add Course.\n2. Tap Archive courses to group finished courses into a semester.\n3. Archived courses, their tasks, classes and notes are hidden and their reminders stop.\n4. You can restore an archived semester at any time."
+        ),
+        AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "groups", 80,
             "1. Sign in with Google and open the Groups tab.\n2. Tap the QR icon in group details to show your invite QR code and link.\n3. To join, tap 'Join Group' and scan a QR screenshot or paste an invite link."
         ),

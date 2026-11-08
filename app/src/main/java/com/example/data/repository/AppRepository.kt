@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.data.local.Course
 import com.example.data.local.CourseDao
 import com.example.data.local.ArchivedSemesterSummary
+import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.CourseWithTaskCount
 import com.example.data.local.NoteListItem
 import com.example.data.local.isArchived
@@ -198,6 +199,30 @@ class AppRepository(
         com.example.widget.UniTaskWidget.refresh(context)
     }
 
+    suspend fun undoArchive(courseIds: List<Long>) = withContext(Dispatchers.IO) {
+        if (courseIds.isEmpty()) return@withContext
+        val courses = courseIds.mapNotNull { courseDao.getCourseByIdSyncIncludingArchived(it) }
+
+        inTransaction {
+            courseDao.clearArchivedSemesterForCourses(courseIds)
+        }
+
+        for (course in courses) {
+            val tasks = taskDao.getTasksForCourseSync(course.id).filter { !it.isDeleted && it.status != TaskStatus.COMPLETED }
+            for (task in tasks) {
+                val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+                val updatedTask = task.copy(reminderEpochMillis = calculatedReminder, isSynced = false)
+                taskDao.updateTask(updatedTask)
+                if (calculatedReminder != null) {
+                    reminderScheduler.scheduleReminder(updatedTask, course.code)
+                }
+            }
+        }
+
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
     suspend fun deleteSemesterForever(semesterName: String) = withContext(Dispatchers.IO) {
         val trimmed = semesterName.trim()
         val courses = courseDao.getCoursesForSemester(trimmed)
@@ -236,6 +261,30 @@ class AppRepository(
                         courseCodes = courseCodes
                     )
                 }.sortedBy { it.name }
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun observeActiveCoursesForArchive(): Flow<List<ArchiveCourseItem>> {
+        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotes() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        return combine(
+            courseDao.getAllCourses(),
+            taskDao.getAllTasksWithCourse(),
+            lectureSlotDao.getAllSlotsWithCourse(),
+            notesFlow
+        ) { courses, tasks, slots, notes ->
+            courses.filter { !it.isMyTasksCourse() }.map { course ->
+                val taskCount = tasks.count { it.task.courseId == course.id && !it.task.isDeleted }
+                val classCount = slots.count { it.slot.courseId == course.id && !it.slot.isDeleted }
+                val noteCount = notes.count { it.note.courseId == course.id && !it.note.isDeleted }
+                ArchiveCourseItem(
+                    id = course.id,
+                    code = course.code,
+                    name = course.name,
+                    taskCount = taskCount,
+                    classCount = classCount,
+                    noteCount = noteCount
+                )
             }
         }.flowOn(Dispatchers.Default)
     }

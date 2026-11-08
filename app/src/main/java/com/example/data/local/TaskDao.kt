@@ -16,6 +16,10 @@ interface TaskDao {
     fun getAllTasksWithCourse(): Flow<List<TaskWithCourse>>
 
     @Transaction
+    @Query("SELECT * FROM tasks WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    fun observeDeletedTasks(): Flow<List<TaskWithCourse>>
+
+    @Transaction
     @Query("SELECT * FROM tasks WHERE courseId = :courseId AND isDeleted = 0 ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
     fun getTasksForCourse(courseId: Long): Flow<List<TaskWithCourse>>
 
@@ -43,8 +47,17 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isDeleted = 1")
     suspend fun getDeletedTasks(): List<TaskItem>
 
-    @Query("UPDATE tasks SET isDeleted = 0, isSynced = 0 WHERE id = :id")
+    @Query("SELECT * FROM tasks WHERE isDeleted = 1")
+    suspend fun getDeletedTasksSync(): List<TaskItem>
+
+    @Query("UPDATE tasks SET isDeleted = 1, deletedAt = :deletedAt, isSynced = 0 WHERE id = :id")
+    suspend fun softDeleteTask(id: Long, deletedAt: Long)
+
+    @Query("UPDATE tasks SET isDeleted = 0, deletedAt = 0, isSynced = 0 WHERE id = :id")
     suspend fun restoreTask(id: Long)
+
+    @Query("DELETE FROM tasks WHERE isDeleted = 1 AND deletedAt > 0 AND deletedAt < :cutoff")
+    suspend fun purgeDeletedBefore(cutoff: Long): Int
 
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
     suspend fun softDeleteTasksForCourse(courseId: Long)

@@ -280,7 +280,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - The Drive backup is not encrypted by UniTask and is stored in the user's own Google Drive.
 - The daily backup needs the app to be opened.
 - Chat notifications come from a background check, so Android battery limits can delay them. No external push service is used.
-- Group chat supports text only. Messages cannot be edited after sending, and messages older than 30 days are deleted automatically by a scheduled database job.
+- Group chat supports text only. Messages cannot be edited after sending, and to keep the database small, each group keeps only its 500 newest messages (older ones are removed automatically as new ones arrive), and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. They are not synchronised to the cloud, although **Delete when done** is kept in local backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.

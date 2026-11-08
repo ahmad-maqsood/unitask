@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 
 import com.example.data.local.LectureSlot
 import com.example.data.local.ArchivedSemesterSummary
-import com.example.data.local.ArchivedCourseCodeException
+import com.example.data.repository.ArchivedCourseCodeException
 import com.example.data.local.ArchiveCourseItem
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskAttachment

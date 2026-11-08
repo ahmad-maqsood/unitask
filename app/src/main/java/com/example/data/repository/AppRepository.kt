@@ -349,7 +349,7 @@ class AppRepository(
     /** Re-arms the "class started" alarms after any change to slots or courses. */
     private suspend fun refreshClassAlarms() {
         try {
-            ClassReminderScheduler(context).rescheduleAll(database ?: AppDatabase.getDatabase(context))
+            ClassReminderScheduler(context).rescheduleAll((database as? AppDatabase) ?: AppDatabase.getDatabase(context))
         } catch (e: Exception) {
             Log.w("AppRepository", "Could not refresh class alarms: ${e.message}")
         }

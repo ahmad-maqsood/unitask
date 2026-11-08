@@ -452,7 +452,6 @@ private fun SearchTaskRow(
                 Spacer(modifier = Modifier.weight(1f))
                 val statusLabel = when (result.task.status) {
                     TaskStatus.COMPLETED -> "Completed"
-                    TaskStatus.IN_PROGRESS -> "In progress"
                     TaskStatus.PENDING -> "Pending"
                 }
                 Text(

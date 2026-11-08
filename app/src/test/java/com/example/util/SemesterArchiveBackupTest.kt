@@ -13,6 +13,8 @@ import com.example.data.local.isArchived
 import com.example.ui.screens.RecentlyDeletedViewModel
 import com.example.util.drive.DriveBackupManager
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -38,12 +40,12 @@ class SemesterArchiveBackupTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         db = AppDatabase.getDatabase(context)
-        runBlocking { db.clearAllTables() }
+        runBlocking(Dispatchers.IO) { db.clearAllTables() }
     }
 
     @After
     fun tearDown() {
-        runBlocking { db.clearAllTables() }
+        runBlocking(Dispatchers.IO) { db.clearAllTables() }
     }
 
     @Test
@@ -108,7 +110,7 @@ class SemesterArchiveBackupTest {
         assertTrue(foundActiveCourse)
 
         // 4. Wipe database to verify full restore
-        db.clearAllTables()
+        withContext(Dispatchers.IO) { db.clearAllTables() }
         assertEquals(0, courseDao.getAllCoursesListIncludingArchived().size)
 
         // 5. Apply backup

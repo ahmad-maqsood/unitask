@@ -197,6 +197,7 @@ fun RecentlyDeletedScreen(
                                 DeletedTaskCard(
                                     item = item,
                                     now = now,
+                                    restoreDisabledReason = viewModel.restoreDisabledReason(item),
                                     onRestore = {
                                         viewModel.restoreTask(item.task.id)
                                         scope.launch {
@@ -257,6 +258,7 @@ fun RecentlyDeletedScreen(
                                 DeletedClassCard(
                                     item = item,
                                     now = now,
+                                    restoreDisabledReason = viewModel.restoreDisabledReason(item),
                                     onRestore = {
                                         viewModel.restoreClass(item.slot.id)
                                         scope.launch {
@@ -400,7 +402,8 @@ private fun DeletedTaskCard(
     now: Long,
     onRestore: () -> Unit,
     onDeleteForever: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    restoreDisabledReason: String? = null
 ) {
     val task = item.task
     val course = item.course
@@ -502,9 +505,15 @@ private fun DeletedTaskCard(
             ) {
                 TextButton(
                     onClick = onRestore,
-                    modifier = Modifier.testTag("trash_restore_task_${task.id}")
+                    enabled = restoreDisabledReason == null,
+                    modifier = Modifier
+                        .testTag("trash_restore_task_${task.id}")
+                        .weight(1f, fill = false)
                 ) {
-                    Text("Restore")
+                    Text(
+                        text = restoreDisabledReason ?: "Restore",
+                        textAlign = if (restoreDisabledReason != null) TextAlign.End else TextAlign.Start
+                    )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(
@@ -649,7 +658,8 @@ private fun DeletedClassCard(
     now: Long,
     onRestore: () -> Unit,
     onDeleteForever: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    restoreDisabledReason: String? = null
 ) {
     val slot = item.slot
     val course = item.course
@@ -761,9 +771,15 @@ private fun DeletedClassCard(
             ) {
                 TextButton(
                     onClick = onRestore,
-                    modifier = Modifier.testTag("trash_restore_class_${slot.id}")
+                    enabled = restoreDisabledReason == null,
+                    modifier = Modifier
+                        .testTag("trash_restore_class_${slot.id}")
+                        .weight(1f, fill = false)
                 ) {
-                    Text("Restore")
+                    Text(
+                        text = restoreDisabledReason ?: "Restore",
+                        textAlign = if (restoreDisabledReason != null) TextAlign.End else TextAlign.Start
+                    )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(

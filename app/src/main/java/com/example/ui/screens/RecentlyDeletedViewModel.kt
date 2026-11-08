@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
 import com.example.data.local.LectureSlot
+import com.example.data.local.isArchived
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.NoteListItem
 import com.example.data.local.TaskItem
@@ -124,6 +125,24 @@ class RecentlyDeletedViewModel(
     fun emptyClassTrash() {
         viewModelScope.launch {
             appRepository.emptyClassTrash()
+        }
+    }
+
+    fun restoreDisabledReason(taskWithCourse: TaskWithCourse): String? {
+        val course = taskWithCourse.course ?: return null
+        return if (course.isArchived) {
+            "Its course is archived in ${course.archivedSemester}. Restore the semester first."
+        } else {
+            null
+        }
+    }
+
+    fun restoreDisabledReason(slotWithCourse: LectureSlotWithCourse): String? {
+        val course = slotWithCourse.course ?: return null
+        return if (course.isArchived) {
+            "Its course is archived in ${course.archivedSemester}. Restore the semester first."
+        } else {
+            null
         }
     }
 }

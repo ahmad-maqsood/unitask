@@ -12,7 +12,7 @@ from pathlib import Path
 
 API = "https://api.github.com"
 GEMINI_API = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_MODEL = "gemini-2.5-flash-lite"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
 MAX_PATCH_CHARS = 5000
 MAX_CONTEXT_CHARS = 100000
 
@@ -277,7 +277,7 @@ def validate_markdown(value, name):
         raise RuntimeError(f"Generated {name} is unexpectedly long; refusing to publish it.")
     if not re.search(r"^#{2,3} ", value, re.M):
         raise RuntimeError(f"Generated {name} has no expected Markdown section headings.")
-    if re.search(r"^##? \\[?\\d+\\.\\d+", value, re.M):
+    if re.search(r"^##? \[?\d+\.\d+", value, re.M):
         raise RuntimeError(f"Generated {name} contains a version heading that should not be present.")
     return value + "\n"
 
@@ -296,12 +296,12 @@ def generate(repo, base, head, version, release_output, changelog_output):
 def update_changelog(path, version, date, url, notes_path):
     file = Path(path)
     text = file.read_text(encoding="utf-8")
-    if re.search(rf"^## \\[{re.escape(version)}\\](?:\\s|$)", text, re.M):
+    if re.search(rf"^## \[{re.escape(version)}\](?:\s|$)", text, re.M):
         raise RuntimeError(f"CHANGELOG.md already contains [{version}]; refusing to overwrite it.")
     notes = Path(notes_path).read_text(encoding="utf-8").strip()
     if not notes:
         raise RuntimeError("Generated changelog entry is empty.")
-    first = re.search(r"^## \\[", text, re.M)
+    first = re.search(r"^## \[", text, re.M)
     at = first.start() if first else len(text)
     entry = f"## [{version}] - {date}\n[Download APK]({url})\n\n{notes}\n\n"
     file.write_text(text[:at].rstrip() + "\n\n" + entry + text[at:].lstrip("\n"), encoding="utf-8")

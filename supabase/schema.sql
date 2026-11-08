@@ -551,3 +551,37 @@ order by 1, 2;
 -- 2026-11-04: removed the "Learn to use the app" table. The feature list now lives in the app code
 -- (util/FeatureGuide.kt), so the app no longer reads app_features from Supabase.
 drop table if exists public.app_features;
+
+-- 2026-11-08: keep at most 500 chat messages per group.
+-- After every new message, the oldest messages of that group beyond the newest 500 are deleted
+-- immediately. This works together with the 30-day job above (delete-old-chat): a message is removed
+-- when it is older than 30 days OR when it is no longer one of the group's 500 newest messages.
+-- SECURITY DEFINER lets the trigger delete rows even though members cannot delete other people's messages.
+create or replace function public.trim_group_messages()
+ returns trigger
+ language plpgsql
+ security definer
+ set search_path to 'public'
+as $function$
+begin
+  delete from public.group_messages
+  where id in (
+    select id from public.group_messages
+    where group_id = new.group_id
+    order by created_at desc, id desc
+    offset 500
+  );
+  return null;
+end $function$;
+
+drop trigger if exists t_gmsg_trim on public.group_messages;
+create trigger t_gmsg_trim after insert on public.group_messages
+  for each row execute function public.trim_group_messages();
+
+-- One-time cleanup of groups that already have more than 500 messages (run once in the SQL editor):
+delete from public.group_messages m
+using (
+  select id, row_number() over (partition by group_id order by created_at desc, id desc) as rn
+  from public.group_messages
+) r
+where m.id = r.id and r.rn > 500;

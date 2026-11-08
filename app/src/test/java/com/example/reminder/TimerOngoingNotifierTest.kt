@@ -5,11 +5,14 @@ import android.app.Application
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
+import android.view.View
+import android.widget.FrameLayout
 import androidx.test.core.app.ApplicationProvider
+import com.example.R
 import com.example.util.timer.TimerMode
 import com.example.util.timer.TimerState
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,10 +53,17 @@ class TimerOngoingNotifierTest {
         assertEquals(1, notifications.size)
         val runningNotif = notifications.last()
         assertEquals(Notification.VISIBILITY_PUBLIC, runningNotif.visibility)
-        assertNotNull(runningNotif.actions)
-        assertEquals(2, runningNotif.actions.size)
-        assertEquals("Pause", runningNotif.actions[0].title.toString())
-        assertEquals("Stop", runningNotif.actions[1].title.toString())
+        // Buttons are round icon buttons inside the custom view, not native text actions.
+        assertNull(runningNotif.actions)
+        val runningView = runningNotif.bigContentView.apply(context, FrameLayout(context))
+        assertEquals(
+            "Pause",
+            runningView.findViewById<View>(R.id.timer_notif_primary).contentDescription.toString()
+        )
+        assertEquals(
+            "Stop",
+            runningView.findViewById<View>(R.id.timer_notif_stop).contentDescription.toString()
+        )
 
         val pausedState = TimerState(
             mode = TimerMode.STOPWATCH,
@@ -66,9 +76,15 @@ class TimerOngoingNotifierTest {
         assertEquals(1, updatedNotifications.size)
         val pausedNotif = updatedNotifications.last()
         assertEquals(Notification.VISIBILITY_PUBLIC, pausedNotif.visibility)
-        assertNotNull(pausedNotif.actions)
-        assertEquals(2, pausedNotif.actions.size)
-        assertEquals("Resume", pausedNotif.actions[0].title.toString())
-        assertEquals("Stop", pausedNotif.actions[1].title.toString())
+        assertNull(pausedNotif.actions)
+        val pausedView = pausedNotif.bigContentView.apply(context, FrameLayout(context))
+        assertEquals(
+            "Resume",
+            pausedView.findViewById<View>(R.id.timer_notif_primary).contentDescription.toString()
+        )
+        assertEquals(
+            "Stop",
+            pausedView.findViewById<View>(R.id.timer_notif_stop).contentDescription.toString()
+        )
     }
 }

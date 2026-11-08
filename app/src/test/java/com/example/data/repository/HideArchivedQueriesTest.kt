@@ -15,6 +15,7 @@ import com.example.reminder.ReminderScheduler
 import com.example.util.buildTimetableIcs
 import com.example.widget.TodayOverviewLoader
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -42,7 +43,7 @@ class HideArchivedQueriesTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         db = AppDatabase.getDatabase(context)
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
         reminderScheduler = ReminderScheduler(context)
@@ -60,7 +61,7 @@ class HideArchivedQueriesTest {
 
     @After
     fun tearDown() {
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             db.clearAllTables()
         }
     }

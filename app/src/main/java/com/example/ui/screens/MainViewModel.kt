@@ -1170,6 +1170,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun restoreLectureSlot(id: Long) {
+        viewModelScope.launch {
+            repository.restoreLectureSlot(id)
+        }
+    }
+
+    fun undoDeleteLectureSlot(slot: LectureSlot) {
+        viewModelScope.launch {
+            repository.restoreLectureSlot(slot.id)
+        }
+    }
+
     fun openAddCourseDialog() {
         _courseSaveError.value = null
         _courseToEdit.value = null

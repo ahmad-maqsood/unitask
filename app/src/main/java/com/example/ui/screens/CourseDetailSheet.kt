@@ -35,6 +35,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -79,6 +85,7 @@ fun CourseDetailSheet(
     onAddSlot: (courseId: Long) -> Unit = {},
     onEditSlot: (LectureSlot) -> Unit = {},
     onDeleteSlot: (LectureSlot) -> Unit = {},
+    onUndoDeleteSlot: (LectureSlot) -> Unit = {},
     onStatusCycle: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
@@ -126,7 +133,11 @@ fun CourseDetailSheet(
             onDismiss = { showDeleteConfirm = false }
         )
     }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(course.code, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -453,7 +464,21 @@ fun CourseDetailSheet(
                                                     )
                                                 }
                                                 IconButton(
-                                                    onClick = { onDeleteSlot(slot) },
+                                                    onClick = {
+                                                        val slotToDelete = slot
+                                                        onDeleteSlot(slotToDelete)
+                                                        scope.launch {
+                                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                                            val result = snackbarHostState.showSnackbar(
+                                                                message = "Class moved to Recently deleted",
+                                                                actionLabel = "Undo",
+                                                                duration = SnackbarDuration.Short
+                                                            )
+                                                            if (result == SnackbarResult.ActionPerformed) {
+                                                                onUndoDeleteSlot(slotToDelete)
+                                                            }
+                                                        }
+                                                    },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
                                                     Icon(

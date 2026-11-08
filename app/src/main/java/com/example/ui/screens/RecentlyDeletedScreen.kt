@@ -55,13 +55,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.NoteListItem
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
 import kotlinx.coroutines.launch
 
 /**
- * Screen showing items in the trash (Tasks and Notes) with tabs to restore or delete forever.
+ * Screen showing items in the trash (Tasks, Notes and Classes) with tabs to restore or delete forever.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,10 +72,16 @@ fun RecentlyDeletedScreen(
 ) {
     val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
     val deletedNotes by viewModel.deletedNotes.collectAsStateWithLifecycle()
+    val deletedClasses by viewModel.deletedClasses.collectAsStateWithLifecycle()
+
+    val validDeletedClasses = remember(deletedClasses) {
+        deletedClasses.filter { it.course != null && !it.course.isDeleted }
+    }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var taskToDeleteForever by remember { mutableStateOf<TaskWithCourse?>(null) }
     var noteToDeleteForever by remember { mutableStateOf<NoteListItem?>(null) }
+    var classToDeleteForever by remember { mutableStateOf<LectureSlotWithCourse?>(null) }
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -84,7 +91,11 @@ fun RecentlyDeletedScreen(
         onClose()
     }
 
-    val currentTabHasItems = if (selectedTab == 0) deletedTasks.isNotEmpty() else deletedNotes.isNotEmpty()
+    val currentTabHasItems = when (selectedTab) {
+        0 -> deletedTasks.isNotEmpty()
+        1 -> deletedNotes.isNotEmpty()
+        else -> validDeletedClasses.isNotEmpty()
+    }
 
     Scaffold(
         modifier = Modifier
@@ -145,6 +156,12 @@ fun RecentlyDeletedScreen(
                     text = { Text(formatTabTitle("Notes", deletedNotes.size)) },
                     modifier = Modifier.testTag("recently_deleted_tab_notes")
                 )
+                Tab(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    text = { Text(formatTabTitle("Classes", validDeletedClasses.size)) },
+                    modifier = Modifier.testTag("recently_deleted_tab_classes")
+                )
             }
 
             Surface(
@@ -161,61 +178,94 @@ fun RecentlyDeletedScreen(
 
             val now = remember { System.currentTimeMillis() }
 
-            if (selectedTab == 0) {
-                if (deletedTasks.isEmpty()) {
-                    TrashEmptyState(
-                        title = "No deleted tasks",
-                        subtitle = "Deleted tasks will appear here."
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("tasks_trash_list"),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(deletedTasks, key = { it.task.id }) { item ->
-                            DeletedTaskCard(
-                                item = item,
-                                now = now,
-                                onRestore = {
-                                    viewModel.restoreTask(item.task.id)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Task restored")
-                                    }
-                                },
-                                onDeleteForever = { taskToDeleteForever = item }
-                            )
+            when (selectedTab) {
+                0 -> {
+                    if (deletedTasks.isEmpty()) {
+                        TrashEmptyState(
+                            title = "No deleted tasks",
+                            subtitle = "Deleted tasks will appear here."
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag("tasks_trash_list"),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(deletedTasks, key = { it.task.id }) { item ->
+                                DeletedTaskCard(
+                                    item = item,
+                                    now = now,
+                                    onRestore = {
+                                        viewModel.restoreTask(item.task.id)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Task restored")
+                                        }
+                                    },
+                                    onDeleteForever = { taskToDeleteForever = item }
+                                )
+                            }
                         }
                     }
                 }
-            } else {
-                if (deletedNotes.isEmpty()) {
-                    TrashEmptyState(
-                        title = "No deleted notes",
-                        subtitle = "Deleted notes will appear here."
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("notes_trash_list"),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(deletedNotes, key = { it.note.id }) { item ->
-                            DeletedNoteCard(
-                                item = item,
-                                now = now,
-                                onRestore = {
-                                    viewModel.restoreNote(item.note.id)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Note restored")
-                                    }
-                                },
-                                onDeleteForever = { noteToDeleteForever = item }
-                            )
+                1 -> {
+                    if (deletedNotes.isEmpty()) {
+                        TrashEmptyState(
+                            title = "No deleted notes",
+                            subtitle = "Deleted notes will appear here."
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag("notes_trash_list"),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(deletedNotes, key = { it.note.id }) { item ->
+                                DeletedNoteCard(
+                                    item = item,
+                                    now = now,
+                                    onRestore = {
+                                        viewModel.restoreNote(item.note.id)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Note restored")
+                                        }
+                                    },
+                                    onDeleteForever = { noteToDeleteForever = item }
+                                )
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    if (validDeletedClasses.isEmpty()) {
+                        TrashEmptyState(
+                            title = "No deleted classes",
+                            subtitle = "Deleted classes will appear here."
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag("classes_trash_list"),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(validDeletedClasses, key = { it.slot.id }) { item ->
+                                DeletedClassCard(
+                                    item = item,
+                                    now = now,
+                                    onRestore = {
+                                        viewModel.restoreClass(item.slot.id)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Class restored")
+                                        }
+                                    },
+                                    onDeleteForever = { classToDeleteForever = item }
+                                )
+                            }
                         }
                     }
                 }
@@ -247,20 +297,32 @@ fun RecentlyDeletedScreen(
         )
     }
 
+    if (classToDeleteForever != null) {
+        ConfirmDeleteDialog(
+            title = "Delete forever?",
+            message = "This class will be permanently deleted. This cannot be undone.",
+            onConfirm = {
+                classToDeleteForever?.let { viewModel.deleteClassForever(it.slot.id) }
+                classToDeleteForever = null
+            },
+            onDismiss = { classToDeleteForever = null }
+        )
+    }
+
     if (showEmptyTrashDialog) {
-        val emptyMessage = if (selectedTab == 0) {
-            "All tasks in the trash will be permanently deleted. This cannot be undone."
-        } else {
-            "All notes in the trash will be permanently deleted. This cannot be undone."
+        val emptyMessage = when (selectedTab) {
+            0 -> "All tasks in the trash will be permanently deleted. This cannot be undone."
+            1 -> "All notes in the trash will be permanently deleted. This cannot be undone."
+            else -> "All classes in the trash will be permanently deleted. This cannot be undone."
         }
         ConfirmDeleteDialog(
             title = "Empty trash?",
             message = emptyMessage,
             onConfirm = {
-                if (selectedTab == 0) {
-                    viewModel.emptyTaskTrash()
-                } else {
-                    viewModel.emptyNoteTrash()
+                when (selectedTab) {
+                    0 -> viewModel.emptyTaskTrash()
+                    1 -> viewModel.emptyNoteTrash()
+                    else -> viewModel.emptyClassTrash()
                 }
                 showEmptyTrashDialog = false
             },
@@ -570,6 +632,143 @@ private fun DeletedNoteCard(
                 TextButton(
                     onClick = onDeleteForever,
                     modifier = Modifier.testTag("trash_delete_forever_button_${item.note.id}")
+                ) {
+                    Text(
+                        text = "Delete forever",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeletedClassCard(
+    item: LectureSlotWithCourse,
+    now: Long,
+    onRestore: () -> Unit,
+    onDeleteForever: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val slot = item.slot
+    val course = item.course
+    val courseCode = course?.code.orEmpty()
+    val courseName = course?.name.orEmpty()
+    val courseColor = remember(course?.colorHex) {
+        course?.colorHex?.let {
+            try {
+                Color(android.graphics.Color.parseColor(it))
+            } catch (_: Exception) {
+                Color(0xFF4F46E5)
+            }
+        } ?: Color(0xFF4F46E5)
+    }
+
+    val daysLeft = remember(slot.deletedAt, now) {
+        daysLeftInTrash(slot.deletedAt, now)
+    }
+    val daysLeftText = remember(daysLeft) {
+        formatTrashDaysLeft(daysLeft)
+    }
+    val timeText = remember(slot.dayOfWeek, slot.startHour, slot.startMinute, slot.endHour, slot.endMinute) {
+        formatTrashClassTime(slot.dayOfWeek, slot.startHour, slot.startMinute, slot.endHour, slot.endMinute)
+    }
+
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .testTag("trash_class_card_${slot.id}")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (courseCode.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = courseColor.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = courseCode,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = courseColor,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                if (courseName.isNotBlank()) {
+                    Text(
+                        text = courseName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = timeText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (slot.classroom.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = slot.classroom,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = daysLeftText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onRestore,
+                    modifier = Modifier.testTag("trash_restore_class_${slot.id}")
+                ) {
+                    Text("Restore")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = onDeleteForever,
+                    modifier = Modifier.testTag("trash_delete_forever_class_${slot.id}")
                 ) {
                     Text(
                         text = "Delete forever",

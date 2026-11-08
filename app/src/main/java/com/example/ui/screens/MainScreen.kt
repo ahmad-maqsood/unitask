@@ -71,6 +71,7 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -794,7 +795,20 @@ fun MainScreen(
                             onAddSlotClick = { viewModel.openAddSlotDialog() },
                             onSelectedDayChange = { viewModel.setTimetableSelectedDay(it) },
                             onEditSlot = { viewModel.openEditSlotDialog(it) },
-                            onDeleteSlot = { viewModel.deleteLectureSlot(it) },
+                            onDeleteSlot = { slot ->
+                                viewModel.deleteLectureSlot(slot)
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Class moved to Recently deleted",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.undoDeleteLectureSlot(slot)
+                                    }
+                                }
+                            },
                             onTaskClick = { viewModel.openEditTaskDialog(it.task) },
                             onRescheduleAllReminders = { viewModel.rescheduleAllReminders() }
                         )
@@ -880,6 +894,7 @@ fun MainScreen(
                     onAddSlot = { courseId -> viewModel.openAddSlotDialog(courseId) },
                     onEditSlot = { viewModel.openEditSlotDialog(it) },
                     onDeleteSlot = { viewModel.deleteLectureSlot(it) },
+                    onUndoDeleteSlot = { viewModel.undoDeleteLectureSlot(it) },
                     onStatusCycle = { viewModel.cycleTaskStatus(it) },
                     onEditTask = { viewModel.openEditTaskDialog(it) },
                     onDeleteTask = { viewModel.deleteTask(it) },

@@ -43,7 +43,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 40,
-            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap + Add Class and enter course, time, classroom, and instructor."
+            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap + Add Class and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
         ),
         AppFeature(
             "Bi-Weekly Timetable (Week A/B)", "Support for classes that alternate weekly.", "schedule", 45,
@@ -142,8 +142,8 @@ object FeatureGuide {
             "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick 15, 25, 45 or 60 minutes, or tap Custom to type your own.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active.\n7. When a countdown ends you get a notification, even if the app is closed."
         ),
         AppFeature(
-            "Recently deleted", "Restore deleted tasks and notes, or remove them forever.", "assignment", 155,
-            "1. Tap the Tools icon in the top bar, then tap Recently deleted.\n2. Switch between the Tasks and Notes tabs to see your deleted items.\n3. Tap Restore on any item to put it back where it was.\n4. Tap Delete forever (or Empty trash) to remove items permanently.\n5. Items left in the trash are automatically removed for good after 30 days."
+            "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "assignment", 155,
+            "1. Tap the Tools icon in the top bar, then tap Recently deleted.\n2. Switch between the Tasks, Notes and Classes tabs to see your deleted items.\n3. Tap Restore on any item to put it back where it was.\n4. Tap Delete forever (or Empty trash) to remove items permanently.\n5. Items left in the trash are automatically removed for good after 30 days."
         ),
         AppFeature(
             "Google Drive backup", "Back up everything to your own Google Drive and restore it on any phone.", "backup", 160,

@@ -13,6 +13,9 @@ import com.example.reminder.ReminderScheduler
 import com.example.ui.screens.RecentlyDeletedViewModel
 import com.example.ui.screens.formatTabTitle
 import com.example.ui.screens.formatTrashDaysLeft
+import com.example.data.local.LectureSlot
+import com.example.ui.screens.dayOfWeekName
+import com.example.ui.screens.formatTrashClassTime
 import com.example.ui.screens.formatTrashTaskDueDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -62,6 +65,26 @@ class RecentlyDeletedLogicTest {
     @After
     fun tearDown() {
         db.close()
+    }
+
+    @Test
+    fun testDayOfWeekName() {
+        assertEquals("Monday", dayOfWeekName(1))
+        assertEquals("Tuesday", dayOfWeekName(2))
+        assertEquals("Wednesday", dayOfWeekName(3))
+        assertEquals("Thursday", dayOfWeekName(4))
+        assertEquals("Friday", dayOfWeekName(5))
+        assertEquals("Saturday", dayOfWeekName(6))
+        assertEquals("Sunday", dayOfWeekName(7))
+        assertEquals("", dayOfWeekName(0))
+        assertEquals("", dayOfWeekName(8))
+    }
+
+    @Test
+    fun testFormatTrashClassTime() {
+        assertEquals("Thursday, 10:00 to 11:30", formatTrashClassTime(4, 10, 0, 11, 30))
+        assertEquals("Monday, 09:30 to 11:00", formatTrashClassTime(1, 9, 30, 11, 0))
+        assertEquals("Friday, 14:05 to 15:50", formatTrashClassTime(5, 14, 5, 15, 50))
     }
 
     @Test
@@ -187,5 +210,67 @@ class RecentlyDeletedLogicTest {
         assertTrue(viewModel.deletedNotes.first { it.isEmpty() }.isEmpty())
         assertNull(db.noteDao().getNoteById(n1))
         assertNull(db.noteDao().getNoteById(n2))
+    }
+
+    @Test
+    fun testViewModelClassActions() = runBlocking {
+        val courseId = db.courseDao().insertCourse(Course(name = "Biology", code = "BIO 101", colorHex = "#123456"))
+        val now = System.currentTimeMillis()
+        val slotId = db.lectureSlotDao().insertSlot(
+            LectureSlot(
+                courseId = courseId,
+                dayOfWeek = 4,
+                startHour = 10,
+                startMinute = 0,
+                endHour = 11,
+                endMinute = 30,
+                classroom = "Lab 3",
+                isDeleted = true,
+                deletedAt = now
+            )
+        )
+
+        // Verify slot appears in deletedClasses
+        val deleted = viewModel.deletedClasses.first { it.isNotEmpty() }
+        assertEquals(1, deleted.size)
+        assertEquals(slotId, deleted.first().slot.id)
+
+        // Restore class
+        viewModel.restoreClass(slotId)
+        val afterRestore = viewModel.deletedClasses.first { it.isEmpty() }
+        assertTrue(afterRestore.isEmpty())
+        val restored = db.lectureSlotDao().getSlotById(slotId)
+        assertNotNull(restored)
+        assertFalse(restored!!.isDeleted)
+        assertEquals(0L, restored.deletedAt)
+
+        // Soft delete again and test deleteClassForever
+        db.lectureSlotDao().softDeleteSlot(slotId, now)
+        val backInTrash = viewModel.deletedClasses.first { it.isNotEmpty() }
+        assertEquals(1, backInTrash.size)
+
+        viewModel.deleteClassForever(slotId)
+        val afterDeleteForever = viewModel.deletedClasses.first { it.isEmpty() }
+        assertTrue(afterDeleteForever.isEmpty())
+        assertNull(db.lectureSlotDao().getSlotById(slotId))
+    }
+
+    @Test
+    fun testViewModelEmptyClassTrash() = runBlocking {
+        val courseId = db.courseDao().insertCourse(Course(name = "Chemistry", code = "CHEM 101", colorHex = "#123456"))
+        val now = System.currentTimeMillis()
+        val s1 = db.lectureSlotDao().insertSlot(
+            LectureSlot(courseId = courseId, dayOfWeek = 1, startHour = 9, startMinute = 0, endHour = 10, endMinute = 0, isDeleted = true, deletedAt = now)
+        )
+        val s2 = db.lectureSlotDao().insertSlot(
+            LectureSlot(courseId = courseId, dayOfWeek = 3, startHour = 14, startMinute = 0, endHour = 15, endMinute = 0, isDeleted = true, deletedAt = now)
+        )
+
+        assertEquals(2, viewModel.deletedClasses.first { it.size == 2 }.size)
+
+        viewModel.emptyClassTrash()
+        assertTrue(viewModel.deletedClasses.first { it.isEmpty() }.isEmpty())
+        assertNull(db.lectureSlotDao().getSlotById(s1))
+        assertNull(db.lectureSlotDao().getSlotById(s2))
     }
 }

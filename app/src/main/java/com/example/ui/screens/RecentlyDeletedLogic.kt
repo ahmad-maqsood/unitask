@@ -34,3 +34,30 @@ fun formatTrashTaskDueDate(epochMillis: Long, hour: Int, minute: Int): String {
     val timeStr = DateFormats.clock(cal.timeInMillis)
     return "Due $dateStr at $timeStr"
 }
+
+/**
+ * Returns full English name for day of week (1 = Monday ... 7 = Sunday).
+ */
+fun dayOfWeekName(dayOfWeek: Int): String {
+    return when (dayOfWeek) {
+        1 -> "Monday"
+        2 -> "Tuesday"
+        3 -> "Wednesday"
+        4 -> "Thursday"
+        5 -> "Friday"
+        6 -> "Saturday"
+        7 -> "Sunday"
+        else -> ""
+    }
+}
+
+/**
+ * Formats day and time for a lecture slot in the trash.
+ * For example: "Thursday, 10:00 to 11:30" or "Monday, 09:00 to 10:30".
+ */
+fun formatTrashClassTime(dayOfWeek: Int, startHour: Int, startMinute: Int, endHour: Int, endMinute: Int): String {
+    val day = dayOfWeekName(dayOfWeek)
+    val startTime = String.format(java.util.Locale.US, "%02d:%02d", startHour, startMinute)
+    val endTime = String.format(java.util.Locale.US, "%02d:%02d", endHour, endMinute)
+    return if (day.isNotEmpty()) "$day, $startTime to $endTime" else "$startTime to $endTime"
+}

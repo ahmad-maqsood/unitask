@@ -59,6 +59,9 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE isDeleted = 1 AND deletedAt > 0 AND deletedAt < :cutoff")
     suspend fun purgeDeletedBefore(cutoff: Long): Int
 
+    @Query("SELECT COUNT(*) FROM tasks WHERE courseId = :courseId")
+    suspend fun countTasksForCourse(courseId: Long): Int
+
     @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE courseId = :courseId")
     suspend fun softDeleteTasksForCourse(courseId: Long)
 

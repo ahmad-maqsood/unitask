@@ -104,6 +104,10 @@ fun buildTimetableIcs(
         val slot = item.slot
         val course = item.course
 
+        if (slot.isDeleted || course?.isDeleted == true) {
+            continue
+        }
+
         // Validate time values and skip invalid or non-advancing slots
         if (slot.dayOfWeek !in 1..7 ||
             slot.startHour !in 0..23 || slot.startMinute !in 0..59 ||

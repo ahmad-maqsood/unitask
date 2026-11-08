@@ -45,6 +45,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.local.AppDatabase
+import com.example.util.formatCourseDeleteWarning
+import com.example.util.queryCourseDeleteLoss
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,11 +95,33 @@ fun CourseDetailSheet(
             Color(0xFF4F46E5)
         }
     }
+    val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(showDeleteConfirm) {
+        if (showDeleteConfirm) {
+            try {
+                val db = AppDatabase.getDatabase(context)
+                val loss = queryCourseDeleteLoss(db, course)
+                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount)
+                deleteWarningMessage = if (warning.isNotBlank()) {
+                    "${course.code} will be deleted. $warning"
+                } else {
+                    "${course.code} will be deleted."
+                }
+            } catch (_: Exception) {
+                deleteWarningMessage = "${course.code} and all of its assignments, class slots and attached files will be deleted."
+            }
+        } else {
+            deleteWarningMessage = null
+        }
+    }
+
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "Delete course?",
-            message = "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
             onConfirm = { onDeleteCourse(course) },
             onDismiss = { showDeleteConfirm = false }
         )

@@ -174,5 +174,20 @@ class IcsExportTest {
         assertTrue(icsB.contains("UID:unitask_slot_1@unitask\r\nDTSTAMP:20261028T000000Z\r\nDTSTART:20261102T090000Z"))
         assertTrue(icsB.contains("UID:unitask_slot_2@unitask\r\nDTSTAMP:20261028T000000Z\r\nDTSTART:20261026T090000Z"))
     }
+
+    @Test
+    fun testTrashedSlotAndCourseAreIgnored() {
+        val activeSlot = makeSlot(id = 1, classroom = "Room 101")
+        val trashedSlot = makeSlot(id = 2, classroom = "Room 102").let {
+            it.copy(slot = it.slot.copy(isDeleted = true))
+        }
+        val trashedCourseSlot = makeSlot(id = 3, classroom = "Room 103").let {
+            it.copy(course = it.course?.copy(isDeleted = true))
+        }
+        val ics = buildTimetableIcs(listOf(activeSlot, trashedSlot, trashedCourseSlot), zoneId = ZoneId.of("UTC"))
+        assertTrue(ics.contains("UID:unitask_slot_1@unitask"))
+        assertFalse(ics.contains("UID:unitask_slot_2@unitask"))
+        assertFalse(ics.contains("UID:unitask_slot_3@unitask"))
+    }
 }
 

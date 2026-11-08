@@ -1,6 +1,7 @@
 package com.example.reminder
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -21,8 +22,8 @@ import com.example.util.timer.TimerOngoingHook
 import com.example.util.timer.TimerState
 
 /**
- * Shows a silent, ongoing notification while a stopwatch or countdown is running or paused,
- * with round Pause/Resume and Stop buttons in a custom layout (notification_timer.xml).
+ * Shows an ongoing notification while a stopwatch or countdown is running or paused,
+ * with Pause/Resume and Stop action buttons for use from the lock screen or shade.
  *
  * While running, the clock in the notification is drawn by a Chronometer view, so it
  * ticks live without the app staying awake. Every state change posts a fresh notification
@@ -72,12 +73,6 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             views.setViewVisibility(R.id.timer_notif_paused_text, View.GONE)
             views.setChronometerCountDown(R.id.timer_notif_chronometer, countdown)
             views.setChronometer(R.id.timer_notif_chronometer, base, null, true)
-            views.setImageViewResource(R.id.timer_notif_btn_primary, R.drawable.ic_timer_pause)
-            views.setContentDescription(R.id.timer_notif_btn_primary, "Pause")
-            views.setOnClickPendingIntent(
-                R.id.timer_notif_btn_primary,
-                actionIntent(TimerActionReceiver.ACTION_PAUSE)
-            )
         } else {
             val shown = if (countdown) {
                 TimerLogic.formatClock(TimerLogic.remainingMillis(state, now), roundUp = true)
@@ -88,29 +83,27 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             views.setViewVisibility(R.id.timer_notif_paused_text, View.VISIBLE)
             views.setTextViewText(R.id.timer_notif_paused_text, shown)
             views.setTextViewText(R.id.timer_notif_label, "$title \u2022 Paused")
-            views.setImageViewResource(R.id.timer_notif_btn_primary, R.drawable.ic_timer_play)
-            views.setContentDescription(R.id.timer_notif_btn_primary, "Resume")
-            views.setOnClickPendingIntent(
-                R.id.timer_notif_btn_primary,
-                actionIntent(TimerActionReceiver.ACTION_RESUME)
-            )
         }
-        views.setOnClickPendingIntent(
-            R.id.timer_notif_btn_stop,
-            actionIntent(TimerActionReceiver.ACTION_STOP)
-        )
+
+        val primaryIcon = if (running) R.drawable.ic_timer_pause else R.drawable.ic_timer_play
+        val primaryTitle = if (running) "Pause" else "Resume"
+        val primaryAction = if (running) TimerActionReceiver.ACTION_PAUSE else TimerActionReceiver.ACTION_RESUME
 
         val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setContentTitle(title)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+            .setShowWhen(false)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(views)
             .setCustomBigContentView(views)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(openAppIntent())
+            .addAction(primaryIcon, primaryTitle, actionIntent(primaryAction))
+            .addAction(R.drawable.ic_timer_stop, "Stop", actionIntent(TimerActionReceiver.ACTION_STOP))
 
         nm.notify(NOTIFICATION_ID, builder.build())
     }
@@ -125,12 +118,16 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Running timer",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Shows the stopwatch or countdown while it is running."
+                setSound(null, null)
+                enableVibration(false)
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             nm.createNotificationChannel(channel)
+            nm.deleteNotificationChannel(OLD_CHANNEL_ID)
         }
     }
 
@@ -157,7 +154,8 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
     }
 
     companion object {
-        const val CHANNEL_ID = "unitask_timer_running_v1"
+        const val CHANNEL_ID = "unitask_timer_running_v2"
+        private const val OLD_CHANNEL_ID = "unitask_timer_running_v1"
         const val NOTIFICATION_ID = 9922
     }
 }

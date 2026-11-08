@@ -45,6 +45,9 @@ class TaskTrashRepositoryTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
+        AppDatabase::class.java.getDeclaredField("INSTANCE")
+            .apply { isAccessible = true }
+            .set(null, db)
         scheduler = ReminderScheduler(context)
         repo = AppRepository(
             context = context,
@@ -69,6 +72,9 @@ class TaskTrashRepositoryTest {
     @After
     fun tearDown() {
         db.close()
+        AppDatabase::class.java.getDeclaredField("INSTANCE")
+            .apply { isAccessible = true }
+            .set(null, null)
         if (attachmentsDir.exists()) {
             attachmentsDir.deleteRecursively()
         }

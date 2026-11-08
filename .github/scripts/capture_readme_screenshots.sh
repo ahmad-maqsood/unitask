@@ -29,6 +29,18 @@ if [[ ! -f "$HOME/.android/debug.keystore" ]]; then
     -keyalg RSA -keysize 2048 -validity 10000
 fi
 
+# The Pixel 2 emulator profile uses the three-button navigation bar (back, home, recents).
+# Switch it to swipe-gesture navigation so the screenshots show the thin gesture bar instead.
+# "enable-exclusive --category" turns the gestural overlay on and the other navigation
+# overlays off. If this fails the screenshots are still taken, just with the button bar.
+adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.gestural >/dev/null 2>&1 || true
+sleep 5
+if adb shell cmd overlay list 2>/dev/null | tr -d '\r' | grep -q '^\[x\] com.android.internal.systemui.navbar.gestural'; then
+  echo "Gesture navigation is enabled."
+else
+  echo "Warning: could not enable gesture navigation; screenshots will show the button bar." >&2
+fi
+
 APP_ID="com.aistudio.unitask.zrvqk"
 
 # Run the instrumentation directly instead of through connectedDebugAndroidTest.

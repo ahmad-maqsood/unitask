@@ -139,7 +139,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Markdown in Notes", "Format text with headings, checklists, tables, links and gallery images.", "assignment", 140,
-            "1. While editing a note, tap the toolbar buttons above the keyboard for headings, bold, italic, lists, quotes, inline code, links and tables.\n2. Tap the image icon on the toolbar to add photos from your gallery (up to 10 images per note).\n3. Tap the Preview icon in the top bar to see how your note renders.\n4. Interactive checklists can be ticked or unticked directly in Preview.\n5. Tap the Edit icon in the top bar to return to editing."
+            "1. While editing a note, tap the toolbar buttons above the keyboard for headings, bold, italic, lists, quotes, inline code, links and tables.\n2. Tap the image icon on the toolbar to add photos from your gallery (up to 50 images per note).\n3. Tap the Preview icon in the top bar to see how your note renders.\n4. Interactive checklists can be ticked or unticked directly in Preview.\n5. Tap the Edit icon in the top bar to return to editing."
         ),
         AppFeature(
             "Share, Backup and Sync for Notes", "Share notes, import files, back up notes locally and sync with your cloud account.", "backup", 145,

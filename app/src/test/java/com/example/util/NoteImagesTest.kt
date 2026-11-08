@@ -72,6 +72,13 @@ class NoteImagesTest {
         assertFalse(NoteImages.isValidImageName("invalid@char.jpg"))
     }
 
+    @Test
+    fun canAddImageChecksLimit() {
+        assertTrue(NoteImages.canAddImage(49))
+        assertFalse(NoteImages.canAddImage(50))
+        assertFalse(NoteImages.canAddImage(51))
+    }
+
     // -------------------------------------------------------------------------
     // computeSampleSize tests
     // -------------------------------------------------------------------------

@@ -145,6 +145,21 @@ class NoteRepositoryTest {
     }
 
     @Test
+    fun noteBodyCutAt300000AndShorterBodyUnchanged() = runBlocking {
+        val shortBody = "Short note body content"
+        val shortId = repo.saveNote(id = 0, title = "Short", body = shortBody, courseId = null)
+        val shortNote = repo.getNote(shortId)!!
+        assertEquals(shortBody, shortNote.body)
+
+        val oversizedBody = "x".repeat(300_050)
+        val longId = repo.saveNote(id = 0, title = "Long", body = oversizedBody, courseId = null)
+        val longNote = repo.getNote(longId)!!
+        assertEquals(300_000, longNote.body.length)
+        assertEquals(NoteRepository.MAX_BODY, longNote.body.length)
+        assertEquals("x".repeat(300_000), longNote.body)
+    }
+
+    @Test
     fun moveToTrashAndRestoreFromTrash() = runBlocking {
         val id = repo.saveNote(id = 0, title = "Note to Trash", body = "Body", courseId = null)
 

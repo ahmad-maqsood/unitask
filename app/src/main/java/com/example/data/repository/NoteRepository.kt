@@ -12,8 +12,8 @@ class NoteRepository(private val noteDao: NoteDao) {
 
     companion object {
         const val MAX_TITLE = 150
-        // Kept at 200,000 characters as a reasonable maximum note size.
-        const val MAX_BODY = 200_000
+        // Kept at 300,000 characters as a reasonable maximum note size.
+        const val MAX_BODY = 300_000
         const val TRASH_DAYS = 30
     }
 

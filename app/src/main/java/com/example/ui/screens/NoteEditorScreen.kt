@@ -514,8 +514,8 @@ fun NoteEditorScreen(
     ) { uri: Uri? ->
         if (uri != null) {
             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
-            if (count >= NoteImages.MAX_IMAGES_PER_NOTE) {
-                Toast.makeText(context, "A note can hold up to 10 images", Toast.LENGTH_SHORT).show()
+            if (!NoteImages.canAddImage(count)) {
+                Toast.makeText(context, "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images", Toast.LENGTH_SHORT).show()
                 return@rememberLauncherForActivityResult
             }
             isImportingImage = true
@@ -1006,8 +1006,8 @@ fun NoteEditorScreen(
                     IconButton(
                         onClick = {
                             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
-                            if (count >= NoteImages.MAX_IMAGES_PER_NOTE) {
-                                Toast.makeText(context, "A note can hold up to 10 images", Toast.LENGTH_SHORT).show()
+                            if (!NoteImages.canAddImage(count)) {
+                                Toast.makeText(context, "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images", Toast.LENGTH_SHORT).show()
                             } else {
                                 pickImageLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)

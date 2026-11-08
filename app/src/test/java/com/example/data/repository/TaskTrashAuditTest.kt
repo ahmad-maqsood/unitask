@@ -203,7 +203,7 @@ class TaskTrashAuditTest {
             TaskAttachment(
                 taskId = trashedTaskId,
                 fileName = "trashed_att.pdf",
-                relativePath = "trashed_att.pdf",
+                relativePath = "task_attachments/trashed_att.pdf",
                 fileSize = 13L,
                 mimeType = "application/pdf"
             )

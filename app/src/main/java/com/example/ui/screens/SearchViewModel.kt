@@ -181,7 +181,8 @@ class SearchViewModel(
             courses = data.courses,
             archivedTasks = if (includeArchived) data.archived.tasks else emptyList(),
             archivedNotes = if (includeArchived) data.archived.notes else emptyList(),
-            archivedCourses = if (includeArchived) data.archived.courses else emptyList()
+            archivedCourses = if (includeArchived) data.archived.courses else emptyList(),
+            settingsEntries = allSettingsSearchEntries
         )
     }
         .flowOn(Dispatchers.Default)

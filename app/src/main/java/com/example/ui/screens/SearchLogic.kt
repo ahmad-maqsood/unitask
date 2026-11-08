@@ -19,6 +19,9 @@ sealed class SearchNavigationTarget {
     /** Opens a course detail sheet. */
     data class OpenCourse(val courseId: Long) : SearchNavigationTarget()
 
+    /** Opens the Settings sheet on the page that holds the setting, or the sign in sheet for the account row. */
+    data class OpenSetting(val page: SettingsPage?, val opensAccount: Boolean) : SearchNavigationTarget()
+
     /** Opens an alert dialog notifying that the item belongs to an archived semester. */
     data class ShowArchivedDialog(val semesterName: String) : SearchNavigationTarget()
 }
@@ -56,6 +59,13 @@ fun resolveCourseClickTarget(result: SearchCourseResult): SearchNavigationTarget
         return SearchNavigationTarget.ShowArchivedDialog(result.archivedSemester ?: "")
     }
     return SearchNavigationTarget.OpenCourse(result.course.id)
+}
+
+/**
+ * Pure function determining the navigation action when a settings search result is clicked.
+ */
+fun resolveSettingClickTarget(entry: SettingsSearchEntry): SearchNavigationTarget {
+    return SearchNavigationTarget.OpenSetting(entry.page, entry.opensAccount)
 }
 
 /**

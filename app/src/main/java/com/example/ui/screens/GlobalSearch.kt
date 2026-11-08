@@ -55,10 +55,11 @@ data class SearchCourseResult(
 data class SearchResults(
     val tasks: List<SearchTaskResult>,
     val notes: List<SearchNoteResult>,
-    val courses: List<SearchCourseResult>
+    val courses: List<SearchCourseResult>,
+    val settings: List<SettingsSearchEntry> = emptyList()
 ) {
-    val isEmpty: Boolean get() = tasks.isEmpty() && notes.isEmpty() && courses.isEmpty()
-    val totalCount: Int get() = tasks.size + notes.size + courses.size
+    val isEmpty: Boolean get() = tasks.isEmpty() && notes.isEmpty() && courses.isEmpty() && settings.isEmpty()
+    val totalCount: Int get() = tasks.size + notes.size + courses.size + settings.size
 }
 
 /**
@@ -185,7 +186,8 @@ fun searchEverything(
     courses: List<Course>,
     archivedTasks: List<ArchivedItem<TaskWithCourse>> = emptyList(),
     archivedNotes: List<ArchivedItem<NoteListItem>> = emptyList(),
-    archivedCourses: List<ArchivedItem<Course>> = emptyList()
+    archivedCourses: List<ArchivedItem<Course>> = emptyList(),
+    settingsEntries: List<SettingsSearchEntry> = emptyList()
 ): SearchResults {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) {
@@ -249,9 +251,12 @@ fun searchEverything(
         }
     }
 
+    val settingsResults = settingsEntries.filter { matchesSetting(it, words) }
+
     return SearchResults(
         tasks = taskResults,
         notes = noteResults,
-        courses = courseResults
+        courses = courseResults,
+        settings = settingsResults
     )
 }

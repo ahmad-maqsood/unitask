@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -164,6 +165,8 @@ fun SearchScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // The app draws edge to edge, so keep the search box below the status bar.
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 OutlinedTextField(
@@ -516,7 +519,10 @@ private fun SearchNoteRow(
                 val highlightColor = MaterialTheme.colorScheme.primary
                 val annotatedSnippet = remember(result.snippet, result.matchRange, highlightColor) {
                     buildAnnotatedString {
-                        append(result.snippet)
+                        // Show line breaks as spaces so the two-line preview is not used up by
+                        // short lines and the matched word stays visible. Each character is
+                        // swapped one for one, so the highlight range below is still correct.
+                        append(result.snippet.replace('\n', ' ').replace('\r', ' '))
                         val range = result.matchRange
                         if (range != null && range.first in 0 until result.snippet.length) {
                             val end = minOf(result.snippet.length, range.last + 1)

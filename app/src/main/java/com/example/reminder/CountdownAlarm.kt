@@ -25,6 +25,7 @@ class CountdownAlarm(private val context: Context) : CountdownAlarmHook {
     }
 
     override fun schedule(endAtMillis: Long) {
+        CountdownNotifier.cancelFinished(context)
         val pi = pendingIntent()
         alarmManager?.let { am ->
             try {

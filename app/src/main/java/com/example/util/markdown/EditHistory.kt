@@ -1,11 +1,11 @@
 package com.example.util.markdown
 
 // We keep both limits: 100 snapshots caps the number of undo steps for short notes,
-// while maxTotalChars (2,000,000 characters, ~4 MB of UTF-16 text) caps memory usage
-// when editing large notes close to the 200,000 character limit.
+// while maxTotalChars (3,000,000 characters, at most ~6 MB of UTF-16 text) caps memory usage
+// when editing large notes close to the 300,000 character limit (about 10 undo steps).
 class EditHistory(
     private val limit: Int = 100,
-    private val maxTotalChars: Int = 2_000_000
+    private val maxTotalChars: Int = 3_000_000
 ) {
 
     private val undoStack = ArrayDeque<EditorText>()

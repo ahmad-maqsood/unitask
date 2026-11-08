@@ -22,9 +22,6 @@ class CountdownReceiver : BroadcastReceiver() {
         }
 
         // Alarms can arrive a moment early; tolerance allows ending cleanly.
-        val finished = controller.markFinishedIfDue(toleranceMillis = 2000L)
-        if (finished) {
-            CountdownNotifier.notifyFinished(context, state.countdownTotalMillis)
-        }
+        CountdownNotifier.finishIfDue(context, controller, toleranceMillis = 2000L)
     }
 }

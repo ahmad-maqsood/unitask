@@ -19,9 +19,11 @@ import kotlin.math.roundToInt
 object NoteImages {
 
     const val PREFIX = "unitask-image:"
-    const val MAX_IMAGES_PER_NOTE = 10
+    const val MAX_IMAGES_PER_NOTE = 50
     const val MAX_EDGE_PX = 1600
     const val JPEG_QUALITY = 80
+
+    fun canAddImage(currentCount: Int): Boolean = currentCount < MAX_IMAGES_PER_NOTE
 
     private val VALID_NAME_REGEX = Regex("""^[A-Za-z0-9_-]{8,64}\.jpg$""")
 

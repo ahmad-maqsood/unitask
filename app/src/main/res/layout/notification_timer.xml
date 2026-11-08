@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Custom layout for the running stopwatch/countdown notification:
-     icon | time + label | two round buttons. -->
+     icon | time + label. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -46,22 +46,4 @@
             android:maxLines="1"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Info" />
     </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/timer_notif_btn_primary"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:background="@drawable/bg_timer_notif_button"
-        android:padding="10dp"
-        android:src="@drawable/ic_timer_pause" />
-
-    <ImageButton
-        android:id="@+id/timer_notif_btn_stop"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_marginStart="8dp"
-        android:background="@drawable/bg_timer_notif_button"
-        android:contentDescription="Stop"
-        android:padding="10dp"
-        android:src="@drawable/ic_timer_stop" />
 </LinearLayout>

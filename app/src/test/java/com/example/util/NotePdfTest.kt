@@ -2,6 +2,7 @@ package com.example.util
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.example.data.repository.NoteRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -82,11 +83,11 @@ class NotePdfTest {
     }
 
     @Test
-    fun largeNoteOf200000CharactersCompletesAndStaysUnder300Pages() {
+    fun largeNoteOf300000CharactersCompletesAndStaysUnder300Pages() {
         assumePdfSupported()
         val line = "A repeated line of study notes to test large document pagination and bounds.\n"
-        val count = (200_000 / line.length) + 1
-        val largeBody = line.repeat(count).take(200_000)
+        val count = (NoteRepository.MAX_BODY / line.length) + 1
+        val largeBody = line.repeat(count).take(NoteRepository.MAX_BODY)
 
         val out = ByteArrayOutputStream()
         NotePdf.write(context, "Massive Note", largeBody, out)

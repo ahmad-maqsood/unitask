@@ -153,4 +153,81 @@ class TimerLogicTest {
         assertEquals("00:00", TimerLogic.formatClock(-5000L, roundUp = false))
         assertEquals("00:00", TimerLogic.formatClock(-5000L, roundUp = true))
     }
+
+    @Test
+    fun combineHoursAndMinutesCalculatesTotalMinutes() {
+        assertEquals(0, TimerLogic.combineHoursAndMinutes(0, 0))
+        assertEquals(45, TimerLogic.combineHoursAndMinutes(0, 45))
+        assertEquals(60, TimerLogic.combineHoursAndMinutes(1, 0))
+        assertEquals(90, TimerLogic.combineHoursAndMinutes(1, 30))
+        assertEquals(600, TimerLogic.combineHoursAndMinutes(10, 0))
+    }
+
+    @Test
+    fun splitHoursAndMinutesSplitsIntoHoursAndMinutes() {
+        assertEquals(Pair(0, 0), TimerLogic.splitHoursAndMinutes(0))
+        assertEquals(Pair(0, 45), TimerLogic.splitHoursAndMinutes(45))
+        assertEquals(Pair(1, 0), TimerLogic.splitHoursAndMinutes(60))
+        assertEquals(Pair(1, 30), TimerLogic.splitHoursAndMinutes(90))
+        assertEquals(Pair(10, 0), TimerLogic.splitHoursAndMinutes(600))
+    }
+
+    @Test
+    fun addMinutesClampsAtBothEnds() {
+        // Upper clamp at MAX_COUNTDOWN_MINUTES (600)
+        assertEquals(600, TimerLogic.addMinutes(590, 20))
+        assertEquals(600, TimerLogic.addMinutes(600, 10))
+
+        // Lower clamp at MIN_COUNTDOWN_MINUTES (1)
+        assertEquals(1, TimerLogic.addMinutes(5, -10))
+        assertEquals(1, TimerLogic.addMinutes(1, -5))
+
+        // Normal addition within range
+        assertEquals(30, TimerLogic.addMinutes(25, 5))
+        assertEquals(75, TimerLogic.addMinutes(45, 30))
+    }
+
+    @Test
+    fun formatDurationProducesAllThreeShapes() {
+        // Minutes only: "45 min"
+        assertEquals("45 min", TimerLogic.formatDuration(45))
+
+        // Hours only: "1 h"
+        assertEquals("1 h", TimerLogic.formatDuration(60))
+        assertEquals("2 h", TimerLogic.formatDuration(120))
+
+        // Both hours and minutes: "1 h 30 min"
+        assertEquals("1 h 30 min", TimerLogic.formatDuration(90))
+        assertEquals("2 h 15 min", TimerLogic.formatDuration(135))
+    }
+
+    @Test
+    fun isAlarmLateDetectsLateAlarmsPastTwoMinutes() {
+        // Running 10-minute countdown started at 10_000L, scheduled to end at 610_000L
+        val runningState = TimerState(
+            mode = TimerMode.COUNTDOWN,
+            countdownTotalMillis = 10 * 60_000L,
+            runningSinceMillis = 10_000L,
+            accumulatedMillis = 0L
+        )
+
+        // Still running before end: not late
+        assertFalse(TimerLogic.isAlarmLate(runningState, now = 300_000L))
+
+        // Arrives exactly at end time: not late
+        assertFalse(TimerLogic.isAlarmLate(runningState, now = 610_000L))
+
+        // Arrives 1 minute after end time (within 2 minutes threshold): not late
+        assertFalse(TimerLogic.isAlarmLate(runningState, now = 670_000L))
+
+        // Arrives exactly 2 minutes after end time: not late (not > 2 minutes)
+        assertFalse(TimerLogic.isAlarmLate(runningState, now = 730_000L))
+
+        // Arrives 2 minutes and 1 second after end time (exceeds 2 minutes threshold): late
+        assertTrue(TimerLogic.isAlarmLate(runningState, now = 730_001L))
+
+        // Not a running countdown: false
+        val idleState = TimerState(mode = TimerMode.COUNTDOWN)
+        assertFalse(TimerLogic.isAlarmLate(idleState, now = 1_000_000L))
+    }
 }

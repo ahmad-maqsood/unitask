@@ -3,6 +3,7 @@ package com.example.ui.screens
 import com.example.data.local.Course
 import com.example.data.local.Note
 import com.example.data.local.NoteListItem
+import com.example.data.repository.NoteRepository
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskWithCourse
 import org.junit.Assert.assertEquals
@@ -148,11 +149,11 @@ class GlobalSearchTest {
 
     @Test
     fun testMatchDeepInsideLongNoteBodyQuickly() {
-        val padding = "x".repeat(199_980)
+        val padding = "x".repeat(NoteRepository.MAX_BODY - 20)
         val target = "SPECIAL_NEEDLE"
         val suffix = "y".repeat(6)
         val longBody = padding + target + suffix
-        assertEquals(200_000, longBody.length)
+        assertEquals(NoteRepository.MAX_BODY, longBody.length)
 
         val note = makeNote(title = "Massive Note", body = longBody)
 

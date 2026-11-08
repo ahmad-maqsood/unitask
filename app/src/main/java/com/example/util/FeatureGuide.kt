@@ -139,7 +139,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Markdown in Notes", "Format text with headings, checklists, tables, links and gallery images.", "assignment", 140,
-            "1. While editing a note, tap the toolbar buttons above the keyboard for headings, bold, italic, lists, quotes, inline code, links and tables.\n2. Tap the image icon on the toolbar to add photos from your gallery (up to 10 images per note).\n3. Tap the Preview icon in the top bar to see how your note renders.\n4. Interactive checklists can be ticked or unticked directly in Preview.\n5. Tap the Edit icon in the top bar to return to editing."
+            "1. While editing a note, tap the toolbar buttons above the keyboard for headings, bold, italic, lists, quotes, inline code, links and tables.\n2. Tap the image icon on the toolbar to add photos from your gallery (up to 50 images per note).\n3. Tap the Preview icon in the top bar to see how your note renders.\n4. Interactive checklists can be ticked or unticked directly in Preview.\n5. Tap the Edit icon in the top bar to return to editing."
         ),
         AppFeature(
             "Share, Backup and Sync for Notes", "Share notes, import files, back up notes locally and sync with your cloud account.", "backup", 145,
@@ -147,7 +147,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "schedule", 150,
-            "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick 15, 25, 45 or 60 minutes, or tap Custom to type your own.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active.\n7. When a countdown ends you get a notification, even if the app is closed."
+            "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it."
         ),
         AppFeature(
             "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "assignment", 155,

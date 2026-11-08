@@ -65,7 +65,7 @@ data class SearchResults(
  * Extracts a snippet of around 80 characters surrounding the first match in [body].
  * If [body] contains none of the query words (e.g. match was in title or course code),
  * returns up to the first 80 characters of [body] with null matchRange.
- * Uses region matching / indexOf to avoid lowercasing large bodies (up to 200,000 characters).
+ * Uses region matching / indexOf to avoid lowercasing large bodies (up to 300,000 characters).
  */
 fun buildNoteSnippet(
     body: String,

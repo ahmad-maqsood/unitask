@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.data.local.AppDatabase
 import com.example.util.timer.TimerController
+import com.example.util.timer.TimerLogic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,9 +49,15 @@ class BootReceiver : BroadcastReceiver() {
                 step("repeat rollover") { RepeatRolloverReceiver.rolloverAndReschedule(appContext) }
                 step("countdown timer") {
                     val controller = TimerController.get(appContext)
+                    val stateBefore = controller.state.value
+                    val ring = !TimerLogic.isAlarmLate(stateBefore, controller.now())
                     val endedWhileOff = controller.restoreAfterReboot()
                     if (endedWhileOff) {
-                        CountdownNotifier.notifyFinished(appContext, controller.state.value.countdownTotalMillis)
+                        CountdownNotifier.notifyFinished(
+                            appContext,
+                            controller.state.value.countdownTotalMillis,
+                            ring = ring
+                        )
                     }
                 }
             } finally {

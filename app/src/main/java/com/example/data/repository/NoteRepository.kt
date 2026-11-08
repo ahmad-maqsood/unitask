@@ -109,9 +109,6 @@ class NoteRepository(private val noteDao: NoteDao) {
     }
 
     suspend fun deleteForever(id: Long) = withContext(Dispatchers.IO) {
-        val note = noteDao.getNoteById(id) ?: return@withContext
-        // Cloud copy not deleted yet: keep the row so sync can finish deleting it
-        if (note.cloudId.isNotBlank() && !note.isSynced) return@withContext
         noteDao.deleteForever(id)
     }
 

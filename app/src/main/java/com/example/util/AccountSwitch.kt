@@ -38,10 +38,12 @@ suspend fun resetGroupStateOnAccountSwitch(context: Context) {
  * Clears group caches, reminders, background sync, and auth storage when an online
  * account is deleted. Personal data and local note images remain safe on the phone.
  */
-fun clearGroupDataForDeletedAccount(context: Context) {
+suspend fun clearGroupDataForDeletedAccount(context: Context) {
     runCatching { GroupReminderScheduler(context).cancelGroupsNotIn(emptySet()) }
     runCatching { GroupTaskProcessor(context).clearAll() }
     runCatching { GroupRepository.clearCache(context) }
+    runCatching { GroupCacheRepository(context).clearCache() }
+    runCatching { GroupRepository(context).clearPendingDone() }
     runCatching { GroupChatTracker(context).clearAll() }
     runCatching { GroupChatNotifier(context).clearAll() }
     runCatching { AuthStorage.clear(context) }

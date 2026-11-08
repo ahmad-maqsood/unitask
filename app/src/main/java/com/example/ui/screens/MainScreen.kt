@@ -109,7 +109,6 @@ import com.example.data.local.isMyTasksCourse
 import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
-import com.example.util.AuthStorage
 import com.example.util.BackgroundAccess
 import com.example.util.drive.DriveMigrationPrompt
 import com.example.util.drive.DrivePrefs
@@ -295,7 +294,7 @@ fun MainScreen(
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
     var hasShownMigrationDialogThisSession by rememberSaveable { mutableStateOf(false) }
     val drivePrefs = remember { DrivePrefs(context) }
-    val usedCloudSync = !AuthStorage.getLastUid(context).isNullOrBlank()
+    val usedCloudSync = drivePrefs.legacyCloudSyncUser == true
     val hasMigrationData = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() } ||
         allTasksWithCourse.any { !it.task.isDeleted } ||
         activeNotes.any { !it.note.isDeleted }

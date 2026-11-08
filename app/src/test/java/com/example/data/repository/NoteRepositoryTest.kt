@@ -212,6 +212,15 @@ class NoteRepositoryTest {
         repo.deleteForever(id)
         assertNull(repo.getNote(id))
     }
+
+    @Test
+    fun deleteForeverRemovesNoteThatStillHasUnsyncedCloudId() = runBlocking {
+        val id = noteDao.insert(
+            Note(title = "Legacy", isDeleted = true, deletedAt = 1L, cloudId = "cloud-1", isSynced = false)
+        )
+        repo.deleteForever(id)
+        assertNull(repo.getNote(id))
+    }
     
     @Test
     fun typingAgainAfterClearingBringsNoteBackFromTrash() = runBlocking {

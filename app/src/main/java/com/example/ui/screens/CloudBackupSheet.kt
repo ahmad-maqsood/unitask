@@ -37,7 +37,6 @@ import kotlinx.serialization.json.encodeToJsonElement
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -258,7 +257,7 @@ fun CloudBackupSheet(
                     Text("Sign Out (Keep Offline)")
                 }
 
-                // Delete Account & Cloud Data Button (GDPR)
+                // Delete Account Button (GDPR)
                 OutlinedButton(
                     onClick = { showDeleteConfirmDialog = true },
                     enabled = !isLoading,

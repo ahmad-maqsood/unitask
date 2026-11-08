@@ -13,8 +13,9 @@ import java.util.UUID
 const val GROUP_TASK_COLOR_HEX = "#0D9488"
 
 /**
- * Group tasks are shown as personal tasks without being copied into Room, so they never touch
- * cloud backup. They get negative ids; Room only hands out positive ones, so the two can never clash.
+ * Group tasks are shown as personal tasks without being copied into Room, so they are never part
+ * of local or Google Drive backups. They get negative ids; Room only hands out positive ones, so
+ * the two can never clash.
  */
 private fun negativeId(key: String): Long =
     UUID.nameUUIDFromBytes(key.toByteArray()).mostSignificantBits or Long.MIN_VALUE

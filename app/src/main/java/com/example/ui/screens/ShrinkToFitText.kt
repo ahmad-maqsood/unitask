@@ -35,7 +35,7 @@ fun ShrinkToFitText(
     val initialSize = remember(style.fontSize) {
         if (style.fontSize.isSpecified && style.fontSize.isSp) style.fontSize else 11.sp
     }
-    var fontSize by remember(text, initialSize) {
+    var fontSize by remember(text, initialSize, fontWeight) {
         mutableStateOf(initialSize)
     }
 

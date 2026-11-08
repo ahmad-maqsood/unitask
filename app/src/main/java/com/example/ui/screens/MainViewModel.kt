@@ -45,7 +45,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.withTimeoutOrNull
+import com.example.util.drive.DrivePrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -224,11 +224,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
         }
+
+        // Decide once whether this phone belongs to someone who used the old personal cloud sync.
+        DrivePrefs(application).let { prefs ->
+            if (prefs.legacyCloudSyncUser == null) {
+                prefs.legacyCloudSyncUser = !AuthStorage.getLastUid(application).isNullOrBlank()
+            }
+        }
         // Cancel legacy personal cloud sync jobs left behind from previous app versions
         com.example.sync.SyncScheduler.cancelLegacyPersonalSync(application)
         // Periodic group and announcement sync while the app is closed (every 15 minutes)
         com.example.sync.SyncScheduler.schedulePeriodicSyncWorker(application)
-        // Follow the Supabase session: signing in starts live sync, signing out stops it.
+        // Follow the Supabase session: signing in starts the group flows, signing out stops them.
         // "Initializing" (session still loading) and "RefreshFailure" (offline) are preserved,
         // so an offline app start never looks like a sign-out.
         viewModelScope.launch {
@@ -307,8 +314,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Pull to refresh. Local data is live from Room, so this re-evaluates the class schedule
-     * and, when signed in, starts a cloud sync.
+     * Pull to refresh. Local data is live from Room, so this re-arms the reminder alarms and
+     * re-emits group changes so the group screens reload.
      */
     fun refreshData() {
         if (_isRefreshing.value) return

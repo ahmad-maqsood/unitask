@@ -74,7 +74,7 @@
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
 -keep class com.example.sync.PeriodicSyncWorker { *; }
--keep class com.example.sync.SyncWorker { *; }
+
 
 # -----------------------------------------------------------------------------
 # 5. BroadcastReceivers

@@ -106,14 +106,12 @@ jobs:
               echo "::error::A changelog PR for $TAG already exists."
               exit 1
             fi
-  
           fi
+          BASE_TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$NAME")
           if [ "${{ inputs.test_release_notes }}" = "true" ]; then
-            BASE_TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$NAME")
             echo "### AI release-notes test" >> "$GITHUB_STEP_SUMMARY"
             echo "Comparing current workflow branch ($GITHUB_SHA) against latest published release $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"
           else
-            BASE_TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$NAME")
             echo "Comparing v$NAME against $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "base_tag=$BASE_TAG" >> "$GITHUB_OUTPUT"

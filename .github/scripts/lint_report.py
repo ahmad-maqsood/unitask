@@ -13,6 +13,8 @@ What it does:
   * Exits with 1 if there is at least one Error or Fatal problem, otherwise 0.
     Warnings never fail the run.
 """
+import contextlib
+import io
 import os
 import sys
 import tempfile
@@ -197,16 +199,22 @@ SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 def self_test():
-    with tempfile.TemporaryDirectory() as tmp:
-        sample = os.path.join(tmp, "lint.xml")
-        with open(sample, "w", encoding="utf-8") as handle:
-            handle.write(SAMPLE.format(root=os.getcwd()))
-        problems = parse(sample)
-        assert [p["id"] for p in problems] == ["MissingClass", "UnusedResources"], problems
-        assert problems[0]["file"] == "app/src/main/AndroidManifest.xml", problems[0]["file"]
-        assert (problems[0]["line"], problems[0]["column"]) == (45, 18)
-        assert report(sample) == 1, "an Error must fail the run"
-        assert report(os.path.join(tmp, "missing.xml")) == 0, "a missing report must not crash"
+    # Stay silent: no fake annotations, no fake summary table in the real CI run.
+    summary_file = os.environ.pop("GITHUB_STEP_SUMMARY", None)
+    try:
+        with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stdout(io.StringIO()):
+            sample = os.path.join(tmp, "lint.xml")
+            with open(sample, "w", encoding="utf-8") as handle:
+                handle.write(SAMPLE.format(root=os.getcwd()))
+            problems = parse(sample)
+            assert [p["id"] for p in problems] == ["MissingClass", "UnusedResources"], problems
+            assert problems[0]["file"] == "app/src/main/AndroidManifest.xml", problems[0]["file"]
+            assert (problems[0]["line"], problems[0]["column"]) == (45, 18)
+            assert report(sample) == 1, "an Error must fail the run"
+            assert report(os.path.join(tmp, "missing.xml")) == 0, "a missing report must not crash"
+    finally:
+        if summary_file is not None:
+            os.environ["GITHUB_STEP_SUMMARY"] = summary_file
     print("lint_report self-test passed")
 
 

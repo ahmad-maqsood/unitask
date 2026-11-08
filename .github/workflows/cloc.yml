@@ -1,0 +1,34 @@
+name: Count lines of code
+
+# Manual only, so it never slows down pull requests or releases.
+# Run it from the Actions tab when you want the numbers.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cloc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      # Pinned to a commit (tag 7) so a later change by the action's author
+      # cannot run in this repo unnoticed.
+      # Generated Room schemas, build output and JSON are left out so they
+      # do not inflate the count.
+      - name: Count lines of code (cloc)
+        uses: djdefi/cloc-action@a0529b3e4543679d21233a9287ee96b1b1a29949
+        with:
+          options: --exclude-dir=schemas,build,.gradle,node_modules --exclude-lang=JSON --md --report-file=cloc.md
+
+      - name: Show the report in the job summary
+        if: always()
+        run: |
+          if [ -f cloc.md ]; then
+            cat cloc.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No cloc.md report found. See the step log above." >> "$GITHUB_STEP_SUMMARY"
+          fi

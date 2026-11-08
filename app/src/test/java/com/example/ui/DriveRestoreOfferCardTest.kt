@@ -99,7 +99,8 @@ class DriveRestoreOfferCardTest {
         composeRule.activity.finish()
         composeRule.waitForIdle()
 
-        db.close()
+        // Do not close the database here: a screen may still be reading from it, and the
+        // resulting "connection pool has been closed" error leaked into the next test.
         AppDatabase::class.java.getDeclaredField("INSTANCE")
             .apply { isAccessible = true }
             .set(null, null)

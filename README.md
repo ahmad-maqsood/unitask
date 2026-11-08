@@ -19,7 +19,7 @@ No advertising. No tracking.
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Limitations](#known-limitations) · [Support](#support)
 
 </div>
 
@@ -34,6 +34,15 @@ UniTask helps students keep track of what is due, when classes start and what th
 | **Offline first** | Deadlines, personal tasks, courses, the timetable and reminders are stored on the device. No account is required to use them. |
 | **Optional cloud** | Signing in with Google is for study groups and chat. |
 | **Private by design** | The application contains no advertising and no tracking. |
+
+### Highlights
+
+- **Coursework.** Deadlines with priorities, reminders and attachments, colour-coded courses and repeating tasks.
+- **Timetable.** Weekly or bi-weekly schedule with a live next-class card and `.ics` export.
+- **Notes.** Markdown notes with a preview mode, course tags and photos. Deleted notes stay in the trash for 30 days.
+- **Study timer.** Stopwatch and countdown that alerts you when time is up, even if the app is closed.
+- **Study groups.** Shared tasks and real-time chat, joined with a QR code, an invite link or a code.
+- **Backup.** Optional private backup to your own Google Drive, and password-protected local backups.
 
 UniTask is a personal project, created to solve everyday planning problems for its author and classmates.
 
@@ -83,15 +92,24 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 > [!NOTE]
 > Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates** and must be installed manually.
 
-## Building from Source
+## Building from source
 
-To build UniTask, install Android Studio with a JDK compatible with the project's Gradle configuration, then clone this repository and open it in Android Studio:
+**Requirements**
+
+- A recent stable release of Android Studio.
+- JDK 21, the version used by the project's continuous integration.
+- An Android 7.0 (API 24) or newer device or emulator to run the app.
+
+**Build and test**
 
 ```bash
 git clone https://github.com/ahmad-maqsood/unitask.git
+cd unitask
+./gradlew assembleDebug        # builds a debug APK in app/build/outputs/apk/debug/
+./gradlew testDebugUnitTest    # runs the unit tests
 ```
 
-Let Gradle sync before building. Cloud features that use Supabase or Google Sign-In require your own service configuration and credentials. Never commit secrets to the repository.
+You can also open the cloned folder in Android Studio and let Gradle sync before running the app. Cloud features that use Supabase or Google Sign-In require your own service configuration and credentials. Never commit secrets to the repository.
 
 ## Features
 
@@ -183,7 +201,7 @@ flowchart LR
     VM --> Repo["Repositories"]
     Repo --> Room[("Room / SQLite")]
     Repo --> Groups["GroupRepository"]
-    Groups <--> SB
+    Groups <--> SB[("Supabase")]
     Repo --> Alarms["AlarmManager and WorkManager"]
 ```
 
@@ -290,6 +308,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - **Request a feature:** use **Settings, Request a feature** in the app.
 - **Bugs and ideas:** [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose).
 - **Security issues:** please do not use a public issue. See [SECURITY.md](SECURITY.md).
+- **Release notes:** see the [changelog](CHANGELOG.md).
 
 UniTask is a personal project, but community contributions and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 

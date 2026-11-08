@@ -79,7 +79,7 @@ def main():
         + table
         + f'\n\n<p align="center"><sub>Automatically captured from UniTask {version} '
           "using fictional demo data on an Android emulator.</sub></p>\n\n"
-        + links + "\n"
+        + links + "\n\n"
     )
 
     readme_path = ROOT / "README.md"

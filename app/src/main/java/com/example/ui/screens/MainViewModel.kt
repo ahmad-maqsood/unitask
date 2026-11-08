@@ -86,6 +86,7 @@ import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteShare
 import com.example.util.normalizeCourseCode
+import com.example.util.resetGroupStateOnAccountSwitch
 import com.example.util.shouldResetGroupState
 import kotlinx.coroutines.withContext
 
@@ -246,13 +247,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 if (shouldResetGroupState(prevSyncedUid, user?.id)) {
                                     Log.i("MainViewModel", "Switching user accounts ($prevSyncedUid -> ${user?.id}). Resetting group state.")
                                     try {
-                                        runCatching { com.example.reminder.GroupReminderScheduler(application).cancelGroupsNotIn(emptySet()) }
-                                        runCatching { com.example.data.groups.GroupRepository.clearCache(application) }
-                                        runCatching { groupCacheRepository.clearCache() }
-                                        runCatching { groupTaskProcessor.clearAll() }
-                                        runCatching { groupRepository.clearPendingDone() }
-                                        runCatching { com.example.data.groups.GroupChatTracker(application).clearAll() }
-                                        runCatching { com.example.reminder.GroupChatNotifier(application).clearAll() }
+                                        resetGroupStateOnAccountSwitch(application)
                                     } catch (e: Exception) {
                                         Log.w("MainViewModel", "Error resetting group state: ${e.message}")
                                     }

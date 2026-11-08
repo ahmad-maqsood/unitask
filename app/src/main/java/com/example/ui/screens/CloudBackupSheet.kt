@@ -72,6 +72,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 
+import com.example.util.clearGroupDataForDeletedAccount
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
@@ -386,13 +387,7 @@ fun CloudBackupSheet(
                             try {
                                 SupabaseProvider.client.postgrest.rpc("delete_my_account")
 
-                                runCatching { com.example.reminder.GroupReminderScheduler(context).cancelGroupsNotIn(emptySet()) }
-                                runCatching { com.example.reminder.GroupTaskProcessor(context).clearAll() }
-                                runCatching { com.example.data.groups.GroupRepository.clearCache(context) }
-                                runCatching { com.example.data.groups.GroupChatTracker(context).clearAll() }
-                                runCatching { com.example.reminder.GroupChatNotifier(context).clearAll() }
-                                runCatching { com.example.util.AuthStorage.clear(context) }
-                                runCatching { androidx.work.WorkManager.getInstance(context).cancelUniqueWork("unitask_periodic_sync") }
+                                clearGroupDataForDeletedAccount(context)
                                 signOut(context, credentialManager, onSignOutComplete = {
                                     isLoading = false
                                     onAuthChanged()

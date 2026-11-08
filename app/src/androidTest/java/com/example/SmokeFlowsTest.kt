@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -654,7 +655,7 @@ class SmokeFlowsTest {
         scenario?.close()
         scenario = null
 
-        // (c) The migration prompt is only for users who signed in to cloud sync. The app
+        // (c) The migration prompt is only for users who previously used cloud sync. The app
         // clears the saved cloud user whenever there is no Supabase session, which is
         // always the case on the emulator, so with data but no cloud user it must stay hidden.
         // The prompt rules themselves are covered by DriveMigrationPromptTest.
@@ -674,6 +675,51 @@ class SmokeFlowsTest {
                 .fetchSemanticsNodes().isEmpty()
         )
         assertEquals(0, prefs.migrationPromptCount)
+    }
+
+
+    @Test
+    fun online_account_settings_and_deadlines_refresh_without_personal_sync() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        // (a) Settings shows the row with test tag settings_account_row and the text "Sign in for groups" when signed out
+        waitForTag("top_bar_settings_button")
+        tap("top_bar_settings_button")
+
+        waitForTag("settings_account_row")
+        composeRule.onNodeWithTag("settings_account_row", useUnmergedTree = true).assertIsDisplayed()
+        waitForText("Sign in for groups")
+
+        // (b) Opening it shows the sign-in button and no "Sync Now" text anywhere
+        tap("settings_account_row")
+        waitForTag("google_signin_backup_button")
+        composeRule.onNodeWithTag("google_signin_backup_button", useUnmergedTree = true).assertIsDisplayed()
+        assertTrue(
+            composeRule.onAllNodesWithText("Sync Now", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
+
+        // Close the account sheet
+        tap("backup_sheet_close_button")
+        composeRule.waitForIdle()
+
+        // (c) Pull to refresh on the Deadlines tab finishes without showing any "Sign in to back up" or "Could not sync" text
+        waitForTag("tab_deadlines")
+        tap("tab_deadlines")
+        waitForTag("deadlines_list")
+        composeRule.onNodeWithTag("deadlines_list", useUnmergedTree = true).performTouchInput {
+            swipeDown()
+        }
+        composeRule.waitForIdle()
+
+        assertTrue(
+            composeRule.onAllNodesWithText("Sign in to back up", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
+        assertTrue(
+            composeRule.onAllNodesWithText("Could not sync", substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        )
     }
 
     @Test

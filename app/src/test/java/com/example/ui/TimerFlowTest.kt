@@ -107,7 +107,7 @@ class TimerFlowTest {
         composeRule.onNodeWithTag("timer_preset_custom").assertIsDisplayed()
 
         // Default 25 min shows 25:00
-        composeRule.onNodeWithTag("timer_time_text").assertTextEquals("25:00")
+        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertTextEquals("25:00")
     }
 
     @Test
@@ -154,7 +154,7 @@ class TimerFlowTest {
 
         composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
         // Length remains default 25:00
-        composeRule.onNodeWithTag("timer_time_text").assertTextEquals("25:00")
+        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertTextEquals("25:00")
     }
 
     @Test
@@ -169,7 +169,7 @@ class TimerFlowTest {
         composeRule.onNodeWithText("Total: 1 h 30 min").assertIsDisplayed()
 
         composeRule.onNodeWithTag("timer_custom_set_button").performClick()
-        composeRule.onNodeWithTag("timer_time_text").assertTextEquals("1:30:00")
+        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertTextEquals("1:30:00")
         composeRule.onNodeWithText("1 h 30 min").assertIsDisplayed()
     }
 
@@ -209,7 +209,7 @@ class TimerFlowTest {
         composeRule.onNodeWithTag("timer_mode_stopwatch").assertIsDisplayed()
         composeRule.onNodeWithTag("timer_mode_countdown").assertIsDisplayed()
         composeRule.onNodeWithTag("timer_preset_15").assertIsDisplayed()
-        composeRule.onNodeWithTag("timer_time_text").assertIsDisplayed()
+        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertIsDisplayed()
     }
 
     @Test

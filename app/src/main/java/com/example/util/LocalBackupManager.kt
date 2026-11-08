@@ -617,6 +617,7 @@ object LocalBackupManager {
                         repeatAnchorDay = repeatAnchorDay,
                         autoDeleteWhenDone = autoDeleteWhenDone,
                         isDeleted = false,
+                        deletedAt = 0L,
                         isSynced = false
                     )
                     taskDao.updateTask(

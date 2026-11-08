@@ -35,9 +35,6 @@ import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -328,45 +325,67 @@ class AppRepository(
         changed
     }
 
+    fun observeDeletedTasks(): Flow<List<TaskWithCourse>> {
+        return taskDao.observeDeletedTasks().flowOn(Dispatchers.IO)
+    }
+
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
         reminderScheduler.cancelReminder(task.id)
         SnoozeStore.clear(context, task.id, cancelAlarm = true)
-        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
-        if (attachments.isNotEmpty()) {
-            // Keep the files for a short moment so that Undo can bring them back.
-            synchronized(undoLock) { pendingUndoAttachments[task.id] = attachments }
-            cleanupScope.launch {
-                delay(UNDO_WINDOW_MS)
-                val leftover = synchronized(undoLock) { pendingUndoAttachments.remove(task.id) }
-                leftover?.forEach { AttachmentManager.deleteAttachmentFile(context, it.relativePath) }
-            }
-        }
-        taskDao.deleteTaskById(task.id)
+        val now = System.currentTimeMillis()
+        taskDao.softDeleteTask(task.id, now)
     }
 
     suspend fun restoreTask(taskId: Long) = withContext(Dispatchers.IO) {
         taskDao.restoreTask(taskId)
         val task = taskDao.getTaskById(taskId)
         if (task != null) {
-            val course = courseDao.getCourseByIdSync(task.courseId)
-            val courseCode = course?.code ?: "Course"
-            reminderScheduler.scheduleReminder(task, courseCode)
+            val calculatedReminder = reminderScheduler.calculateReminderMillis(task)
+            val updatedTask = task.copy(reminderEpochMillis = calculatedReminder)
+            taskDao.updateTask(updatedTask)
+            if (updatedTask.status != TaskStatus.COMPLETED) {
+                val course = courseDao.getCourseByIdSync(updatedTask.courseId)
+                val courseCode = course?.code ?: "Course"
+                reminderScheduler.scheduleReminder(updatedTask, courseCode)
+            }
         }
     }
 
-    /**
-     * Undo for a deleted task. If the row is still on the phone it is restored as before. Otherwise
-     * the task is saved again as a new task and its attachments are linked back to it, as long as
-     * Undo is used within the undo window.
-     */
     suspend fun undoDeleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
-        if (taskDao.getAnyTaskById(task.id) != null) {
-            restoreTask(task.id)
-            return@withContext
+        restoreTask(task.id)
+    }
+
+    suspend fun deleteTaskForever(id: Long) = withContext(Dispatchers.IO) {
+        reminderScheduler.cancelReminder(id)
+        SnoozeStore.clear(context, id, cancelAlarm = true)
+        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(id)
+        for (att in attachments) {
+            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
         }
-        val newId = insertTask(task.copy(id = 0L, cloudId = "", isSynced = false, isDeleted = false))
-        val saved = synchronized(undoLock) { pendingUndoAttachments.remove(task.id) }
-        saved?.forEach { taskAttachmentDao.insertAttachment(it.copy(id = 0L, taskId = newId)) }
+        inTransaction {
+            taskAttachmentDao.deleteAttachmentsForTask(id)
+            taskDao.deleteTaskById(id)
+        }
+    }
+
+    suspend fun emptyTaskTrash() = withContext(Dispatchers.IO) {
+        val trashed = taskDao.getDeletedTasksSync()
+        for (task in trashed) {
+            deleteTaskForever(task.id)
+        }
+    }
+
+    suspend fun purgeOldTaskTrash(now: Long = System.currentTimeMillis()): Int = withContext(Dispatchers.IO) {
+        val cutoff = now - (NoteRepository.TRASH_DAYS * 24L * 60L * 60L * 1000L)
+        val toPurge = taskDao.getDeletedTasksSync().filter { it.deletedAt > 0L && it.deletedAt < cutoff }
+        for (task in toPurge) {
+            val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
+            for (att in attachments) {
+                AttachmentManager.deleteAttachmentFile(context, att.relativePath)
+            }
+            taskAttachmentDao.deleteAttachmentsForTask(task.id)
+        }
+        taskDao.purgeDeletedBefore(cutoff)
     }
     // Attachments
     fun getAttachmentsForTask(taskId: Long): Flow<List<TaskAttachment>> {
@@ -399,11 +418,4 @@ class AppRepository(
         refreshClassAlarms()
     }
 
-    private companion object {
-        // A little longer than the 5 second Undo bar in the task tabs.
-        const val UNDO_WINDOW_MS = 8_000L
-        val undoLock = Any()
-        val pendingUndoAttachments = mutableMapOf<Long, List<TaskAttachment>>()
-        val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    }
 }

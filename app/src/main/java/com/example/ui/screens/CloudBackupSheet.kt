@@ -37,7 +37,6 @@ import kotlinx.serialization.json.encodeToJsonElement
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -69,7 +68,6 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.example.R
-import com.example.sync.SyncScheduler
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
@@ -103,7 +101,6 @@ fun CloudBackupSheet(
     val credentialManager = remember { CredentialManager.create(context) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var syncMessage by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -136,17 +133,14 @@ fun CloudBackupSheet(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (currentUser != null) "Cloud Backup Active" else "Cloud Backup & Sync",
+                    text = if (currentUser != null) "Online account" else "Sign in with Google",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (currentUser != null)
-                        "Your assignments, courses, and timetable automatically sync with Google Cloud."
-                    else
-                        "UniTask works 100% offline. Sign in to optionally back up and sync across devices.",
+                    text = "UniTask works fully offline. Your account is used for study groups, chat and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -167,19 +161,6 @@ fun CloudBackupSheet(
                 }
             }
 
-            if (syncMessage != null) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(
-                        text = syncMessage ?: "",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-            }
 
             if (currentUser != null) {
                 // Account Info Card
@@ -226,64 +207,10 @@ fun CloudBackupSheet(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            val lastSynced = remember(syncMessage) {
-                                com.example.util.AuthStorage.getLastSyncedTimestamp(context)
-                            }
-                            if (lastSynced > 0L) {
-                                val relative = android.text.format.DateUtils.getRelativeTimeSpanString(
-                                    lastSynced,
-                                    System.currentTimeMillis(),
-                                    android.text.format.DateUtils.MINUTE_IN_MILLIS
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Last synced: $relative",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1
-                                )
-                            }
                         }
                     }
                 }
 
-                // Sync Now Button
-                Button(
-                    onClick = {
-                        isLoading = true
-                        syncMessage = null
-                        errorMessage = null
-                        coroutineScope.launch {
-                            val db = com.example.data.local.AppDatabase.getDatabase(context)
-                            val success = com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
-                            com.example.sync.SyncScheduler.scheduleSync(context)
-                            isLoading = false
-                            syncMessage = if (success) {
-                                "All courses, timetable slots, and assignments are backed up and synced!"
-                            } else {
-                                "Sync completed with offline retry scheduled."
-                            }
-                        }
-                    },
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("sync_now_button")
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Syncing...")
-                    } else {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Sync Now")
-                    }
-                }
 
                 // Export Data Button
                 OutlinedButton(
@@ -343,7 +270,7 @@ fun CloudBackupSheet(
                 ) {
                     Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Account & Cloud Data")
+                    Text("Delete Account")
                 }
             } else {
                 // Not logged in: Show Google Sign-In Button labeled "Sign in to back up data"
@@ -355,13 +282,8 @@ fun CloudBackupSheet(
                             context = context,
                             credentialManager = credentialManager,
                             onSuccess = {
-                                coroutineScope.launch {
-                                    val db = com.example.data.local.AppDatabase.getDatabase(context)
-                                    com.example.sync.SupabaseSyncManager.syncAllDataNow(context, db)
-                                    com.example.sync.SyncScheduler.scheduleSync(context)
-                                    isLoading = false
-                                    onAuthChanged()
-                                }
+                                isLoading = false
+                                onAuthChanged()
                             },
                             onError = { err ->
                                 isLoading = false
@@ -396,7 +318,7 @@ fun CloudBackupSheet(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Sign in to back up data",
+                                text = "Sign in with Google",
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -444,14 +366,14 @@ fun CloudBackupSheet(
             },
             title = {
                 Text(
-                    text = "Delete Account & Cloud Data?",
+                    text = "Delete Account?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "This permanently deletes your cloud account and clears local data. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks, and group courses you created are removed for everyone in those groups. This action cannot be undone.",
+                    text = "This permanently deletes your online account. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks and group courses you created are removed for everyone in those groups. Your courses, tasks and notes on this phone are not touched. This action cannot be undone.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -463,35 +385,14 @@ fun CloudBackupSheet(
                         coroutineScope.launch {
                             try {
                                 SupabaseProvider.client.postgrest.rpc("delete_my_account")
-                                val db = com.example.data.local.AppDatabase.getDatabase(context)
 
-                                runCatching {
-                                    val reminderScheduler = com.example.reminder.ReminderScheduler(context)
-                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                        reminderScheduler.cancelAll(db)
-                                    }
-                                }
-                                runCatching { com.example.reminder.ClassReminderScheduler(context).cancelAll() }
                                 runCatching { com.example.reminder.GroupReminderScheduler(context).cancelGroupsNotIn(emptySet()) }
                                 runCatching { com.example.reminder.GroupTaskProcessor(context).clearAll() }
-                                runCatching {
-                                    val dailyScheduler = com.example.reminder.DailySummaryScheduler(context)
-                                    dailyScheduler.cancel()
-                                    com.example.reminder.DailySummaryScheduler.setEnabled(context, false)
-                                }
-                                runCatching { androidx.work.WorkManager.getInstance(context).cancelAllWork() }
-
-                                runCatching { com.example.util.AttachmentManager.deleteAllAttachmentFiles(context) }
-                                runCatching { com.example.util.PrivateDataCleaner.clearPersonalFiles(context.applicationContext) }
                                 runCatching { com.example.data.groups.GroupRepository.clearCache(context) }
                                 runCatching { com.example.data.groups.GroupChatTracker(context).clearAll() }
                                 runCatching { com.example.reminder.GroupChatNotifier(context).clearAll() }
                                 runCatching { com.example.util.AuthStorage.clear(context) }
-
-                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    runCatching { db.clearAllTables() }
-                                }
-
+                                runCatching { androidx.work.WorkManager.getInstance(context).cancelUniqueWork("unitask_periodic_sync") }
                                 signOut(context, credentialManager, onSignOutComplete = {
                                     isLoading = false
                                     onAuthChanged()
@@ -508,7 +409,7 @@ fun CloudBackupSheet(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete Everything", color = MaterialTheme.colorScheme.onError)
+                    Text("Delete Account", color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {

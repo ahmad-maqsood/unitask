@@ -147,7 +147,7 @@ fun TaskCard(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "Delete task?",
-            message = "\"${task.title}\" will be removed from this phone and from your cloud backup.",
+            message = "\"${task.title}\" will be removed from this phone.",
             onConfirm = { onDeleteClick(task) },
             onDismiss = { showDeleteConfirm = false }
         )

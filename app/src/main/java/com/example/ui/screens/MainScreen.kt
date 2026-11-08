@@ -42,8 +42,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
+
+
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule

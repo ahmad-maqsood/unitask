@@ -400,7 +400,7 @@ class DriveBackupViewModel(
 
     /**
      * Connects to Google Drive (prompting for consent if needed) and runs an initial
-     * backup for existing users migrating from cloud sync.
+     * backup for users migrating to Google Drive.
      */
     fun startMigrationBackup() {
         viewModelScope.launch(Dispatchers.IO) {

@@ -82,12 +82,12 @@ object FeatureGuide {
             "1. Messages sent offline are queued in an outbox and sent automatically when reconnected.\n2. Scroll to the top and tap 'Load earlier messages' to view older chat history."
         ),
         AppFeature(
-            "Cloud Backup & Multi-Account", "Sign in with Google to back up your data across devices.", "backup", 120,
-            "1. Open Settings and tap Cloud backup (or Sign in to back up data).\n2. Sign in with Google to sync courses, timetable, and tasks.\n3. Switching accounts cleanly isolates and clears stale local records."
+            "Online Account", "Sign in with Google for study groups and chat.", "backup", 120,
+            "1. Open Settings and tap Online account.\n2. Sign in with Google.\n3. Your courses, tasks and notes stay on this phone; use Backup and data to save them to Google Drive."
         ),
         AppFeature(
-            "Data Export & GDPR Purge", "Export JSON backup or permanently purge your cloud account.", "backup", 125,
-            "1. Open Settings and tap Cloud backup (or Sign in to back up data).\n2. Tap 'Export My Data (JSON)' to share a full backup.\n3. Tap 'Delete Account & Cloud Data' to permanently erase cloud records and reset."
+            "Data Export & Delete Account", "Export your data or delete your online account.", "backup", 125,
+            "1. Open Settings and tap Online account.\n2. Tap 'Export My Data (JSON)' to share a copy of your data.\n3. Tap 'Delete Account' to erase your online account and group data. Data on this phone is kept."
         ),
         AppFeature(
             "Announcements Bell", "Official university updates and exam tips, fully offline-ready.", "notifications", 130,

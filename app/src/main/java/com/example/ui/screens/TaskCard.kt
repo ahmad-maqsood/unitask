@@ -485,7 +485,8 @@ fun TaskCard(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
                         }
@@ -647,7 +648,8 @@ fun TaskCard(
                                 fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
                             ),
                             color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            // Two lines so the full due date stays readable beside the status chip.
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }

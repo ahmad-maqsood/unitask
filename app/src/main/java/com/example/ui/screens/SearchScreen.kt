@@ -63,7 +63,7 @@ import com.example.data.local.isMyTasksCourse
 import com.example.util.DateFormats
 
 /**
- * Full-screen search across tasks, notes, and courses.
+ * Full-screen search across tasks, notes, courses, and settings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +74,7 @@ fun SearchScreen(
     onNavigateToCourse: (courseId: Long) -> Unit,
     onRestoreSemester: (semesterName: String) -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateToSettings: (page: SettingsPage?, opensAccount: Boolean) -> Unit = { _, _ -> },
     groupTasks: List<TaskWithCourse> = emptyList(),
     viewModel: SearchViewModel = viewModel()
 ) {
@@ -92,11 +93,13 @@ fun SearchScreen(
     var tasksExpanded by rememberSaveable { mutableStateOf(false) }
     var notesExpanded by rememberSaveable { mutableStateOf(false) }
     var coursesExpanded by rememberSaveable { mutableStateOf(false) }
+    var settingsExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(searchQuery) {
         tasksExpanded = false
         notesExpanded = false
         coursesExpanded = false
+        settingsExpanded = false
     }
 
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -177,7 +180,7 @@ fun SearchScreen(
                         .focusRequester(focusRequester)
                         .onFocusChanged { isSearchFocused = it.isFocused }
                         .testTag("search_input"),
-                    placeholder = { Text("Search tasks, notes, courses...") },
+                    placeholder = { Text("Search tasks, notes, courses, settings...") },
                     leadingIcon = {
                         IconButton(
                             onClick = onClose,
@@ -238,7 +241,7 @@ fun SearchScreen(
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
-                            text = "Type to search tasks, notes and courses",
+                            text = "Type to search tasks, notes, courses and settings",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -391,6 +394,43 @@ fun SearchScreen(
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text(formatShowAllButtonText(results.courses.size))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Section: Settings
+                        if (results.settings.isNotEmpty()) {
+                            item(key = "header_settings") {
+                                Text(
+                                    text = "Settings (${results.settings.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                                )
+                            }
+                            val visibleSettings = visibleSectionItems(results.settings, settingsExpanded)
+                            items(
+                                items = visibleSettings,
+                                key = { "setting_${it.id}" }
+                            ) { entry ->
+                                SearchSettingRow(
+                                    entry = entry,
+                                    onClick = {
+                                        val target = resolveSettingClickTarget(entry)
+                                        if (target is SearchNavigationTarget.OpenSetting) {
+                                            onNavigateToSettings(target.page, target.opensAccount)
+                                        }
+                                    }
+                                )
+                            }
+                            if (shouldShowExpandButton(results.settings.size, settingsExpanded)) {
+                                item(key = "more_settings") {
+                                    TextButton(
+                                        onClick = { settingsExpanded = true },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(formatShowAllButtonText(results.settings.size))
                                     }
                                 }
                             }
@@ -623,6 +663,49 @@ private fun SearchCourseRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchSettingRow(
+    entry: SettingsSearchEntry,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .testTag("search_setting_${entry.id}"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = entry.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = entry.summary,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Settings > ${entry.pageLabel}".replace("Settings > Settings", "Settings"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

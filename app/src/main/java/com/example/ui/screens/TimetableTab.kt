@@ -864,7 +864,11 @@ fun TimetableSlotCard(
                                                 Text(
                                                     text = t.task.title,
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    maxLines = 1
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .padding(end = 8.dp)
                                                 )
                                                 PriorityBadge(priority = t.task.priority)
                                             }

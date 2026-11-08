@@ -787,6 +787,9 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
@@ -800,7 +803,8 @@ fun AddEditTaskDialog(
                                 text = "Attachments",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 

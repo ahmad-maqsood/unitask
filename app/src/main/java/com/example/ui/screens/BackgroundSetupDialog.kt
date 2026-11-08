@@ -220,7 +220,7 @@ fun BackgroundSetupDialog(
                         ) {
                             Text(
                                 text = "Steps for my phone",
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }

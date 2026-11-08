@@ -127,13 +127,23 @@ enum class SettingsPage {
 fun SettingsButton(
     currentUser: AppUser?,
     onOpenCloudSheet: () -> Unit,
-    onRescheduleAllReminders: () -> Unit = {}
+    onRescheduleAllReminders: () -> Unit = {},
+    openRequest: SettingsOpenRequest? = null,
+    onOpenRequestHandled: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
     var page by remember { mutableStateOf<SettingsPage?>(null) }
+    // Lets global search jump straight to a Settings page.
+    LaunchedEffect(openRequest) {
+        if (openRequest != null) {
+            page = openRequest.page
+            showSheet = true
+            onOpenRequestHandled()
+        }
+    }
     var showFeatureGuide by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var isChecking by remember { mutableStateOf(false) }

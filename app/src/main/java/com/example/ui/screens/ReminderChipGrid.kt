@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.local.ReminderOption
 
 /** Short names for the chips. The caption above the grid says "before the deadline". */
@@ -79,11 +80,10 @@ fun ReminderChipGrid(
                                 )
                             },
                             label = {
-                                Text(
+                                ShrinkToFitText(
                                     text = opt.chipLabel(),
                                     style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    minFontSize = 9.sp,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.fillMaxWidth()
                                 )

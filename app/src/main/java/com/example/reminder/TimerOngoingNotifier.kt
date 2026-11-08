@@ -23,7 +23,7 @@ import com.example.util.timer.TimerState
 
 /**
  * Shows an ongoing notification while a stopwatch or countdown is running or paused,
- * with Pause/Resume and Stop action buttons for use from the lock screen or shade.
+ * with round Pause/Resume and Stop icon buttons for use from the lock screen or shade.
  *
  * While running, the clock in the notification is drawn by a Chronometer view, so it
  * ticks live without the app staying awake. Every state change posts a fresh notification
@@ -86,8 +86,18 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
         }
 
         val primaryIcon = if (running) R.drawable.ic_timer_pause else R.drawable.ic_timer_play
-        val primaryTitle = if (running) "Pause" else "Resume"
+        val primaryTitle = appContext.getString(
+            if (running) R.string.timer_notif_pause else R.string.timer_notif_resume
+        )
         val primaryAction = if (running) TimerActionReceiver.ACTION_PAUSE else TimerActionReceiver.ACTION_RESUME
+
+        views.setImageViewResource(R.id.timer_notif_primary, primaryIcon)
+        views.setContentDescription(R.id.timer_notif_primary, primaryTitle)
+        views.setOnClickPendingIntent(R.id.timer_notif_primary, actionIntent(primaryAction))
+        views.setOnClickPendingIntent(
+            R.id.timer_notif_stop,
+            actionIntent(TimerActionReceiver.ACTION_STOP)
+        )
 
         val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_unitask)
@@ -102,8 +112,6 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(openAppIntent())
-            .addAction(primaryIcon, primaryTitle, actionIntent(primaryAction))
-            .addAction(R.drawable.ic_timer_stop, "Stop", actionIntent(TimerActionReceiver.ACTION_STOP))
 
         nm.notify(NOTIFICATION_ID, builder.build())
     }

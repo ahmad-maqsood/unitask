@@ -95,6 +95,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -635,9 +636,12 @@ fun NoteEditorScreen(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
     ) {
+        // On narrow screens the five action icons leave no room for the course pill in the bar,
+        // so it moves to its own line below the bar.
+        val compactTopBar = LocalConfiguration.current.screenWidthDp < 420
         TopAppBar(
             title = {
-                if (!isPreviewMode) {
+                if (!isPreviewMode && !compactTopBar) {
                     CoursePickerPill(
                         selectedCourse = selectedCourse,
                         courseColor = courseColor,
@@ -795,6 +799,19 @@ fun NoteEditorScreen(
                 containerColor = MaterialTheme.colorScheme.surface
             )
         )
+
+        if (!isPreviewMode && compactTopBar) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                CoursePickerPill(
+                    selectedCourse = selectedCourse,
+                    courseColor = courseColor,
+                    courses = courses,
+                    expanded = showCoursePicker,
+                    onExpandedChange = { showCoursePicker = it },
+                    onSelectCourse = { viewModel.setCourse(it) }
+                )
+            }
+        }
 
         if (isPreviewMode) {
             // Preview mode: shows title (headlineSmall), course chip, then MarkdownPreview(body)

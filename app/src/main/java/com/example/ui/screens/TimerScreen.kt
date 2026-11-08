@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -575,17 +575,19 @@ private fun TimerControlButtons(
     onReset: () -> Unit
 ) {
     Row(
+        // Buttons share the row, so they fit narrow phones; the cap keeps them sensible in landscape.
         modifier = Modifier
+            .widthIn(max = 420.dp)
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (!isIdle) {
             OutlinedButton(
                 onClick = onReset,
                 modifier = Modifier
-                    .defaultMinSize(minWidth = 120.dp)
+                    .weight(1f)
                     .height(52.dp)
                     .testTag("timer_reset_button")
             ) {
@@ -598,7 +600,7 @@ private fun TimerControlButtons(
                 Button(
                     onClick = onStart,
                     modifier = Modifier
-                        .defaultMinSize(minWidth = 140.dp)
+                        .weight(1f)
                         .height(52.dp)
                         .testTag("timer_start_button")
                 ) {
@@ -609,7 +611,7 @@ private fun TimerControlButtons(
                 Button(
                     onClick = onPause,
                     modifier = Modifier
-                        .defaultMinSize(minWidth = 140.dp)
+                        .weight(1f)
                         .height(52.dp)
                         .testTag("timer_pause_button")
                 ) {
@@ -620,7 +622,7 @@ private fun TimerControlButtons(
                 Button(
                     onClick = onResume,
                     modifier = Modifier
-                        .defaultMinSize(minWidth = 140.dp)
+                        .weight(1f)
                         .height(52.dp)
                         .testTag("timer_resume_button")
                 ) {

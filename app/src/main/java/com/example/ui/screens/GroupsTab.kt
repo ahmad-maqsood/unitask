@@ -464,7 +464,7 @@ fun GroupsListScreen(
             ) {
                 Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Create a group", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Create a group", maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
 
             FilledTonalButton(
@@ -476,7 +476,7 @@ fun GroupsListScreen(
             ) {
                 Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Join a group", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Join a group", maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
 

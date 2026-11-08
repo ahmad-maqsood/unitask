@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
@@ -116,6 +117,7 @@ fun NotesScreen(
     var isWorking by remember { mutableStateOf(false) }
     var saveRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var saveRequestFormat by rememberSaveable { mutableStateOf<String?>(null) }
+    var shareRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val saveDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
@@ -488,6 +490,7 @@ fun NotesScreen(
                             item = item,
                             onClick = { onOpenNote(item.note.id) },
                             onTogglePin = { viewModel.setPinned(item.note.id, !item.note.isPinned) },
+                            onShare = { shareRequestNoteId = item.note.id },
                             onSave = { saveRequestNoteId = item.note.id },
                             onDelete = {
                                 val noteId = item.note.id
@@ -509,6 +512,38 @@ fun NotesScreen(
                 }
             }
         }
+    }
+
+    if (shareRequestNoteId != null) {
+        val targetId = shareRequestNoteId
+        val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
+        NoteExportDialog(
+            title = "Share as",
+            onPick = { format ->
+                shareRequestNoteId = null
+                if (targetNote != null) {
+                    val shareTitle = if (targetNote.title.isNotBlank()) targetNote.title else noteDisplayTitle(targetNote)
+                    val shareBody = targetNote.body
+                    val isPdf = (format == NoteExportFormat.PDF)
+                    coroutineScope.launch {
+                        if (isPdf) isWorking = true
+                        try {
+                            NoteShare.shareAsFileAsync(
+                                context = context,
+                                title = shareTitle,
+                                body = shareBody,
+                                format = format
+                            )
+                        } catch (_: Exception) {
+                            snackbarHostState.showSnackbar("Could not share the file", duration = SnackbarDuration.Short)
+                        } finally {
+                            if (isPdf) isWorking = false
+                        }
+                    }
+                }
+            },
+            onDismiss = { shareRequestNoteId = null }
+        )
     }
 
     if (saveRequestNoteId != null && saveRequestFormat == null) {
@@ -553,6 +588,7 @@ private fun NoteCard(
     item: NoteListItem,
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
+    onShare: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -646,6 +682,20 @@ private fun NoteCard(
                             onClick = {
                                 showMenu = false
                                 onTogglePin()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Share") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.testTag("note_card_menu_share"),
+                            onClick = {
+                                showMenu = false
+                                onShare()
                             }
                         )
                         DropdownMenuItem(

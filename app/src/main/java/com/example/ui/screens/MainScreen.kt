@@ -339,6 +339,7 @@ fun MainScreen(
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
+    var settingsOpenRequest by remember { mutableStateOf<SettingsOpenRequest?>(null) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
@@ -467,7 +468,9 @@ fun MainScreen(
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
-                        onRescheduleAllReminders = { viewModel.rescheduleAllReminders() }
+                        onRescheduleAllReminders = { viewModel.rescheduleAllReminders() },
+                        openRequest = settingsOpenRequest,
+                        onOpenRequestHandled = { settingsOpenRequest = null }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -1116,6 +1119,14 @@ fun MainScreen(
                                 duration = SnackbarDuration.Short
                             )
                         }
+                    }
+                },
+                onNavigateToSettings = { page, opensAccount ->
+                    showSearch = false
+                    if (opensAccount) {
+                        viewModel.openCloudBackupSheet()
+                    } else {
+                        settingsOpenRequest = SettingsOpenRequest(page)
                     }
                 },
                 groupTasks = groupEntryByItemId.values.map { it.toTaskWithCourse() }

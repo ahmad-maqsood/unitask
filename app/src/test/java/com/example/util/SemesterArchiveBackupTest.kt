@@ -208,6 +208,7 @@ class SemesterArchiveBackupTest {
             id = 1L,
             courseId = 10L,
             title = "Essay 1",
+            dueDateEpochMillis = 0L,
             isDeleted = true,
             deletedAt = 1000L
         )

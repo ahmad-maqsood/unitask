@@ -345,8 +345,8 @@ class HideArchivedQueriesTest {
         // 1. ICS Export test
         val slotsWithCourse = db.lectureSlotDao().getAllSlotsWithCourseIncludingArchived().first()
         val icsString = buildTimetableIcs(slotsWithCourse)
-        assertTrue(icsString.contains("CS 301"))
-        assertFalse(icsString.contains("HIST 101"))
+        assertTrue(icsString.contains("Operating Systems"))
+        assertFalse(icsString.contains("Archived History"))
 
         // 2. Daily summary logic test
         val activeCoursesMap = db.courseDao().getAllCoursesList().associateBy { it.id }

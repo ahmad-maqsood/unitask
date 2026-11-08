@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.reminder.AnnouncementNotifier
 import com.example.util.Announcement
@@ -407,7 +408,12 @@ fun AnnouncementBell(
 @Composable
 private fun TabLabel(text: String, unread: Int, urgent: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text, maxLines = 1)
+        ShrinkToFitText(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            minFontSize = 11.sp,
+            modifier = Modifier.weight(1f, fill = false)
+        )
         if (unread > 0) {
             Badge(
                 containerColor = if (urgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,

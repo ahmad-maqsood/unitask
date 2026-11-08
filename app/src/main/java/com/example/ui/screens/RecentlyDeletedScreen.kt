@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.LectureSlotWithCourse
@@ -105,10 +106,12 @@ fun RecentlyDeletedScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
+                    // Shrinks a little on narrow screens so it still fits beside "Empty trash".
+                    ShrinkToFitText(
                         text = "Recently deleted",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        minFontSize = 16.sp
                     )
                 },
                 navigationIcon = {

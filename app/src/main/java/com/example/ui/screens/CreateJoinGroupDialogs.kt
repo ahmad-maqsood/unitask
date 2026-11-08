@@ -758,8 +758,7 @@ fun EditGroupDialog(
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = "Copy",
-                                    maxLines = 1,
-                                    softWrap = false,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
@@ -772,8 +771,7 @@ fun EditGroupDialog(
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = "New code",
-                                    maxLines = 1,
-                                    softWrap = false,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }

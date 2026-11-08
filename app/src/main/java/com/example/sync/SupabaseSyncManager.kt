@@ -14,6 +14,7 @@ import com.example.data.local.encodeReminderOptions
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.util.SupabaseProvider
+import com.example.util.normalizeCourseCode
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
@@ -159,7 +160,7 @@ object SupabaseSyncManager {
     private var realtimeScope: CoroutineScope? = null
 
     fun normalizeCode(code: String): String {
-        return code.trim().replace("\\s+".toRegex(), "").uppercase()
+        return normalizeCourseCode(code)
     }
 
     fun recordPendingCourseDeletion(courseId: Long, code: String, cloudId: String) {

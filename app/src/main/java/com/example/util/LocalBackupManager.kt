@@ -264,11 +264,11 @@ object LocalBackupManager {
             }
 
             val exportedCoursesCount = courses.count {
-                SupabaseSyncManager.normalizeCode(it.code) != MY_TASKS_COURSE_CODE
+                normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE
             }
             val exportedMyTasksCount = tasks.count {
                 val code = codeById[it.courseId] ?: ""
-                SupabaseSyncManager.normalizeCode(code) == MY_TASKS_COURSE_CODE
+                normalizeCourseCode(code) == MY_TASKS_COURSE_CODE
             }
             val exportedTasksCount = tasks.size - exportedMyTasksCount
 
@@ -446,7 +446,7 @@ object LocalBackupManager {
                 val o = courseArray.optJSONObject(i) ?: continue
                 val code = o.optString("code").trim().uppercase()
                 if (code.isBlank()) continue
-                val norm = SupabaseSyncManager.normalizeCode(code)
+                val norm = normalizeCourseCode(code)
                 if (idByCode.containsKey(norm)) continue
 
                 SupabaseSyncManager.clearPendingDeletionForCourse(norm)
@@ -495,7 +495,7 @@ object LocalBackupManager {
             val slotArray = data.optJSONArray("slots") ?: JSONArray()
             for (i in 0 until slotArray.length()) {
                 val o = slotArray.optJSONObject(i) ?: continue
-                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = normalizeCourseCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val day = o.optInt("dayOfWeek", 0)
                 val startHour = o.optInt("startHour", -1)
@@ -550,7 +550,7 @@ object LocalBackupManager {
 
             for (i in 0 until taskArray.length()) {
                 val o = taskArray.optJSONObject(i) ?: continue
-                val norm = SupabaseSyncManager.normalizeCode(o.optString("courseCode"))
+                val norm = normalizeCourseCode(o.optString("courseCode"))
                 val courseId = idByCode[norm] ?: continue
                 val title = o.optString("title").trim()
                 if (title.isBlank()) continue
@@ -644,7 +644,7 @@ object LocalBackupManager {
                 val o = noteArray.optJSONObject(i) ?: continue
                 val rawCourseCode = o.optString("courseCode").trim()
                 val courseId = if (rawCourseCode.isNotBlank()) {
-                    val norm = SupabaseSyncManager.normalizeCode(rawCourseCode)
+                    val norm = normalizeCourseCode(rawCourseCode)
                     idByCode[norm]
                 } else {
                     null

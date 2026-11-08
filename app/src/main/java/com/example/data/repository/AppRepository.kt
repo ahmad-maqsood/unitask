@@ -32,6 +32,7 @@ import com.example.util.AttachmentManager
 import com.example.util.DateFormats
 import com.example.util.NotificationHistory
 import com.example.util.currentSupabaseUid
+import com.example.util.normalizeCourseCode
 import com.example.util.toggleChecklistLine
 import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
@@ -107,7 +108,7 @@ class AppRepository(
     }
 
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
-        val normCode = SupabaseSyncManager.normalizeCode(course.code)
+        val normCode = normalizeCourseCode(course.code)
         SupabaseSyncManager.clearPendingDeletionForCourse(normCode)
 
         // Check if an existing course already matches this normalized code
@@ -135,7 +136,7 @@ class AppRepository(
 
         /** Another (not deleted) course with the same code, ignoring spaces and capitals. */
     suspend fun findActiveCourseByCode(code: String, excludeCourseId: Long = 0L): Course? = withContext(Dispatchers.IO) {
-        val normCode = SupabaseSyncManager.normalizeCode(code)
+        val normCode = normalizeCourseCode(code)
         courseDao.getAllCoursesMatchingNormalizedCode(normCode)
             .firstOrNull { !it.isDeleted && it.id != excludeCourseId }
     }

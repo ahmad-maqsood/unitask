@@ -86,6 +86,7 @@ import com.example.data.repository.NoteRepository
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteShare
+import com.example.util.normalizeCourseCode
 import kotlinx.coroutines.withContext
 
 sealed interface MarkdownViewerState {
@@ -1223,7 +1224,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         location: String
     ) {
         viewModelScope.launch {
-            val normCode = SupabaseSyncManager.normalizeCode(code)
+            val normCode = normalizeCourseCode(code)
             if (normCode == MY_TASKS_COURSE_CODE) {
                 _courseSaveError.value = "\"$MY_TASKS_COURSE_CODE\" is a reserved course code. Please choose a different code."
                 return@launch

@@ -16,9 +16,11 @@ SCREENS = [
     ("group_chat", "Group chat", "A real conversation with fictional demo messages"),
     ("my_tasks", "My tasks", "Personal to-do list"),
     ("timer", "Study timer", "Stopwatch and countdown for study sessions"),
+    ("global_search", "Global search", "Find tasks, notes and courses in one place"),
     ("notes", "Notes", "Pinned and course-linked notes"),
     ("note_preview", "Note preview", "Formatted Markdown preview"),
     ("note_editor", "Note editor", "Markdown editing and formatting tools"),
+    ("recently_deleted", "Recently deleted", "Restore deleted tasks, notes and classes for 30 days"),
     ("settings_menu", "Settings", "Settings overview"),
     ("settings_general", "General settings", "Theme and app preferences"),
     ("settings_notifications", "Notifications", "Reminder controls"),
@@ -57,8 +59,8 @@ def main():
             )
         return "  <tr>\n" + "\n".join(cells) + "\n  </tr>"
 
-    # Full rows of 3 go in one table. Any leftover screens (15 screens fill five rows)
-    # get their own centered table, so there is no empty cell on the right.
+    # Full rows of 3 go in one table. Any leftover screens (for example the last two when
+    # there are 17 screens) get their own centered table, so there is no empty cell on the right.
     full_count = len(SCREENS) - len(SCREENS) % 3
     full_rows = [build_row(SCREENS[i:i + 3]) for i in range(0, full_count, 3)]
     table = '<table align="center">\n' + "\n".join(full_rows) + "\n</table>"

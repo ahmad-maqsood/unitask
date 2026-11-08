@@ -176,7 +176,10 @@ fun SearchScreen(
                         .testTag("search_input"),
                     placeholder = { Text("Search tasks, notes, courses...") },
                     leadingIcon = {
-                        IconButton(onClick = onClose) {
+                        IconButton(
+                            onClick = onClose,
+                            modifier = Modifier.testTag("search_back_button")
+                        ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"

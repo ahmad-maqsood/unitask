@@ -2,6 +2,7 @@ package com.example
 
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsDisplayed
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -115,6 +117,28 @@ class ReadmeScreenshotTest {
         capture("timer")
         tap("timer_back_button")
         waitForTagToDisappear("timer_screen")
+
+        // Global search: open it from the Tools sheet and search for "design". That word
+        // matches a task, a note and a course, so all three result sections are shown.
+        tap("top_bar_tools_button")
+        tap("tools_tile_search")
+        waitForTag("search_screen")
+        composeRule.onNodeWithTag("search_input", useUnmergedTree = true).performTextInput("design")
+        waitForText("Courses (")
+        hideKeyboard()
+        capture("global_search")
+        tap("search_back_button")
+        waitForTagToDisappear("search_screen")
+
+        // Recently deleted: open it from the Tools sheet. It opens on the Tasks tab, which
+        // lists the deleted demo tasks seeded in seedLocalDemoData().
+        tap("top_bar_tools_button")
+        tap("tools_tile_recently_deleted")
+        waitForTag("recently_deleted_screen")
+        waitForTag("tasks_trash_list")
+        capture("recently_deleted")
+        tap("recently_deleted_back_button")
+        waitForTagToDisappear("recently_deleted_screen")
 
         openNotes()
         waitForTag("notes_list")
@@ -318,6 +342,74 @@ class ReadmeScreenshotTest {
                 isSynced = true
             )
         )
+
+        // Items already in "Recently deleted". They are soft-deleted (isDeleted = true), so
+        // every other screen hides them. Deletion dates stay inside the 30 day trash window.
+        val now = System.currentTimeMillis()
+        fun daysAgo(days: Int): Long = now - days * 24L * 60L * 60L * 1000L
+
+        database.taskDao().insertTask(
+            TaskItem(
+                courseId = databasesId,
+                title = "Old ER diagram draft",
+                description = "Replaced by the final version.",
+                dueDateEpochMillis = dayOffset(-2),
+                dueTimeHour = 17,
+                priority = Priority.MEDIUM,
+                isSynced = true,
+                isDeleted = true,
+                deletedAt = daysAgo(2)
+            )
+        )
+        database.taskDao().insertTask(
+            TaskItem(
+                courseId = algorithmsId,
+                title = "Stack and queue worksheet",
+                dueDateEpochMillis = dayOffset(5),
+                dueTimeHour = 14,
+                priority = Priority.HIGH,
+                isSynced = true,
+                isDeleted = true,
+                deletedAt = daysAgo(6)
+            )
+        )
+        database.taskDao().insertTask(
+            TaskItem(
+                courseId = designId,
+                title = "UML class diagram exercise",
+                dueDateEpochMillis = dayOffset(7),
+                dueTimeHour = 12,
+                priority = Priority.LOW,
+                isSynced = true,
+                isDeleted = true,
+                deletedAt = daysAgo(11)
+            )
+        )
+        database.noteDao().insert(
+            Note(
+                title = "Old lecture summary",
+                body = "Draft summary that the Week 6 notes replaced.",
+                courseId = algorithmsId,
+                isSynced = true,
+                isDeleted = true,
+                deletedAt = daysAgo(3)
+            )
+        )
+        database.lectureSlotDao().insertSlot(
+            LectureSlot(
+                courseId = designId,
+                dayOfWeek = 5,
+                startHour = 10,
+                startMinute = 0,
+                endHour = 11,
+                endMinute = 30,
+                classroom = "Room 108",
+                instructor = "Ms. Ayesha Malik",
+                isSynced = true,
+                isDeleted = true,
+                deletedAt = daysAgo(8)
+            )
+        )
         return noteId
     }
 
@@ -329,6 +421,21 @@ class ReadmeScreenshotTest {
     private fun tap(tag: String) {
         composeRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed().performClick()
         composeRule.waitForIdle()
+    }
+
+    /**
+     * Hides the on-screen keyboard so it does not cover the search results. It sends a system
+     * Back press: an open keyboard takes it and hides itself. If no keyboard is open, the search
+     * screen only drops focus and stays open. The check afterwards fails loudly if the search
+     * screen was closed by mistake, instead of capturing the wrong screen.
+     */
+    private fun hideKeyboard() {
+        val output = InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("input keyevent 4")
+        // Read to the end so the command has finished before we continue.
+        ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("search_screen", useUnmergedTree = true).assertIsDisplayed()
     }
 
     private fun waitForGroupCard(groupId: String, timeoutMillis: Long) {

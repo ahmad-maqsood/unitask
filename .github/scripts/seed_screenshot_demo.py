@@ -17,6 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 GROUP_USERNAME = "unitask-screenshot-demo"
 GROUP_NAME = "UniTask Screenshot Demo"
+# Fictional display names shown in the group chat screenshot.
+OWNER_DISPLAY_NAME = "Hamza Qureshi"
+MEMBER_DISPLAY_NAME = "Zainab Fatima"
 
 
 def project_config():
@@ -148,7 +151,7 @@ def main():
         {
             "p_username": GROUP_USERNAME,
             "p_name": GROUP_NAME,
-            "p_display_name": "Alex Morgan",
+            "p_display_name": OWNER_DISPLAY_NAME,
         },
     )
     row = created[0] if isinstance(created, list) else created
@@ -161,7 +164,7 @@ def main():
         {
             "p_username": GROUP_USERNAME,
             "p_join_code": row["join_code"],
-            "p_display_name": "Jamie Chen",
+            "p_display_name": MEMBER_DISPLAY_NAME,
         },
     )
 
@@ -197,7 +200,7 @@ def main():
             {
                 "group_id": group_id,
                 "sender_id": owner_id if owner_message else member_id,
-                "sender_name": "Alex Morgan" if owner_message else "Jamie Chen",
+                "sender_name": OWNER_DISPLAY_NAME if owner_message else MEMBER_DISPLAY_NAME,
                 "text": message,
                 "created_at": (
                     now - timedelta(minutes=(len(messages) - index) * 3)

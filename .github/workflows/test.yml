@@ -50,6 +50,11 @@ jobs:
           python3 -m py_compile .github/scripts/release_notes.py
           python3 .github/scripts/release_notes.py self-test
 
+      - name: Validate lint report script
+        run: |
+          python3 -m py_compile .github/scripts/lint_report.py
+          python3 .github/scripts/lint_report.py self-test
+          
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:
@@ -66,6 +71,12 @@ jobs:
 
       - name: Run Android lint
         run: ./gradlew lintDebug --no-daemon
+
+      # Reads the lint XML report and prints every problem with its file, line, column,
+      # rule and explanation. Also adds annotations on the exact lines and a summary page.
+      - name: Show lint problems (file, line and reason)
+        if: always()
+        run: python3 .github/scripts/lint_report.py app/build/reports/lint-results-debug.xml
 
       - name: Regenerate Room schema files
         if: always()
@@ -103,5 +114,7 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+            app/build/reports/lint-results-debug.sarif
           if-no-files-found: ignore
           retention-days: 7

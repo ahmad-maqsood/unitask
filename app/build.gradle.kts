@@ -70,6 +70,20 @@ android {
     compose = true
     buildConfig = true
   }
+  
+  lint {
+    // Fail the build on real errors, but never on warnings.
+    abortOnError = true
+    warningsAsErrors = false
+    // Include the "why" text for each rule in the reports.
+    explainIssues = true
+    // Reports read by .github/scripts/lint_report.py and attached to failed CI runs.
+    xmlReport = true
+    htmlReport = true
+    sarifReport = true
+    textReport = false
+  }
+
   testOptions {
     unitTests {
       isIncludeAndroidResources = true

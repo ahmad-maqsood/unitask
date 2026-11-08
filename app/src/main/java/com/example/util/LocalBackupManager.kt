@@ -20,8 +20,6 @@ import com.example.data.local.encodeReminderOptions
 import com.example.data.repository.NoteRepository
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
-import com.example.sync.SupabaseSyncManager
-import com.example.sync.SyncScheduler
 import com.example.util.drive.SettingsSnapshot
 import com.example.util.markdown.referencedImageNames
 import kotlinx.coroutines.Dispatchers
@@ -449,7 +447,6 @@ object LocalBackupManager {
                 val norm = normalizeCourseCode(code)
                 if (idByCode.containsKey(norm)) continue
 
-                SupabaseSyncManager.clearPendingDeletionForCourse(norm)
                 val name = o.optString("name").trim().ifBlank { code }
                 val instructor = o.optString("instructor").trim()
                 val colorHex = o.optString("colorHex").ifBlank { "#4F46E5" }
@@ -521,15 +518,11 @@ object LocalBackupManager {
                         instructor = instructor,
                         isSynced = false
                     )
-                    SupabaseSyncManager.clearPendingDeletionForSlot(
-                        SupabaseSyncManager.getSlotDocId(newSlot, norm)
-                    )
+
                     slotDao.insertSlot(newSlot)
                     addedSlots++
                 } else if (existing.isDeleted) {
-                    SupabaseSyncManager.clearPendingDeletionForSlot(
-                        SupabaseSyncManager.getSlotDocId(existing, norm)
-                    )
+
                     slotDao.updateSlot(
                         existing.copy(
                             endHour = endHour,
@@ -856,13 +849,9 @@ object LocalBackupManager {
             0
         }
 
-        // Data is safe in Room now: put alarms back and let the cloud sync pick the new rows up.
+        // Data is safe in Room now: put alarms back.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
-        try {
-            if (currentSupabaseUid() != null) SyncScheduler.scheduleSync(context)
-        } catch (_: Exception) {
-        }
 
         return BackupCounts(
             courses = addedCourses,

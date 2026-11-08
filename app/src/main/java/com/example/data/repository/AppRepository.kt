@@ -26,18 +26,14 @@ import com.example.reminder.ReminderScheduler
 import com.example.reminder.SnoozeStore
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
-import com.example.sync.SupabaseSyncManager
-import com.example.sync.SyncScheduler
 import com.example.util.AttachmentManager
 import com.example.util.DateFormats
 import com.example.util.NotificationHistory
-import com.example.util.currentSupabaseUid
 import com.example.util.normalizeCourseCode
 import com.example.util.toggleChecklistLine
 import com.example.util.uncheckAllChecklistItems
 import java.util.Calendar
 import androidx.room.withTransaction
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -45,10 +41,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 class AppRepository(
     private val context: Context,
     private val courseDao: CourseDao,
@@ -109,7 +101,6 @@ class AppRepository(
 
     suspend fun insertCourse(course: Course): Long = withContext(Dispatchers.IO) {
         val normCode = normalizeCourseCode(course.code)
-        SupabaseSyncManager.clearPendingDeletionForCourse(normCode)
 
         // Check if an existing course already matches this normalized code
         val existing = courseDao.getCourseByNormalizedCode(normCode) ?: courseDao.getAnyCourseByNormalizedCode(normCode)
@@ -124,13 +115,11 @@ class AppRepository(
                 isDeleted = false
             )
             courseDao.updateCourse(updated)
-            triggerSyncIfLoggedIn()
             return@withContext existing.id
         }
 
         val courseToInsert = course.copy(code = course.code.trim().uppercase(), isSynced = false, isDeleted = false)
         val id = courseDao.insertCourse(courseToInsert)
-        triggerSyncIfLoggedIn()
         id
     }
 
@@ -144,7 +133,6 @@ class AppRepository(
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {
         val courseToUpdate = course.copy(code = course.code.trim().uppercase(), isSynced = false)
         courseDao.updateCourse(courseToUpdate)
-        triggerSyncIfLoggedIn()
     }
 
     suspend fun deleteCourse(course: Course) = withContext(Dispatchers.IO) {
@@ -183,26 +171,7 @@ class AppRepository(
             }
         }
 
-        // 5. Record in pending deletion guards
-        SupabaseSyncManager.recordPendingCourseDeletion(course.id, course.code, course.cloudId)
-        SupabaseSyncManager.recordPendingCourseDeletion(course.id, normCode, course.cloudId)
-        for (t in allTasks) {
-            SupabaseSyncManager.recordPendingTaskDeletion(t.id, t.cloudId)
-        }
-        for (s in allSlots) {
-            SupabaseSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
-        }
-
         refreshClassAlarms()
-        triggerSyncIfLoggedIn()
-    }
-
-    private fun isUserLoggedIn(): Boolean {
-        return try {
-            currentSupabaseUid() != null
-        } catch (_: Exception) {
-            false
-        }
     }
     /** Re-arms the "class started" alarms after any change to slots or courses. */
     private suspend fun refreshClassAlarms() {
@@ -221,7 +190,6 @@ class AppRepository(
         val course = courseDao.getCourseByIdSync(savedTask.courseId)
         val courseCode = course?.code ?: "Course"
         reminderScheduler.scheduleReminder(savedTask, courseCode)
-        triggerSyncIfLoggedIn()
         id
     }
 
@@ -248,7 +216,6 @@ class AppRepository(
             val courseCode = course?.code ?: "Course"
             reminderScheduler.scheduleReminder(taskToUpdate, courseCode)
         }
-        triggerSyncIfLoggedIn()
     }
 
     suspend fun updateTaskStatus(taskId: Long, newStatus: TaskStatus) = withContext(Dispatchers.IO) {
@@ -266,7 +233,6 @@ class AppRepository(
                 reminderScheduler.scheduleReminder(updated, course?.code ?: "Course")
             }
         }
-        triggerSyncIfLoggedIn()
     }
 
     suspend fun toggleChecklistItem(taskId: Long, lineIndex: Int) = withContext(Dispatchers.IO) {
@@ -274,7 +240,6 @@ class AppRepository(
         val newDescription = toggleChecklistLine(task.description, lineIndex)
         if (newDescription != task.description) {
             taskDao.updateDescription(taskId, newDescription)
-            triggerSyncIfLoggedIn()
         }
     }
 
@@ -359,7 +324,6 @@ class AppRepository(
             reminderScheduler.scheduleReminder(finalTask, course?.code ?: "Course")
             changed = true
         }
-        if (changed) triggerSyncIfLoggedIn()
         changed
     }
 
@@ -371,8 +335,6 @@ class AppRepository(
             AttachmentManager.deleteAttachmentFile(context, att.relativePath)
         }
         taskDao.deleteTaskById(task.id)
-        SupabaseSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
-        triggerSyncIfLoggedIn()
     }
 
     suspend fun restoreTask(taskId: Long) = withContext(Dispatchers.IO) {
@@ -383,7 +345,6 @@ class AppRepository(
             val courseCode = course?.code ?: "Course"
             reminderScheduler.scheduleReminder(task, courseCode)
         }
-        triggerSyncIfLoggedIn()
     }
 
     /**
@@ -413,63 +374,20 @@ class AppRepository(
 
        // Lecture slots
     suspend fun insertLectureSlot(slot: LectureSlot): Long = withContext(Dispatchers.IO) {
-        // A slot with the same course, day and time may have been deleted earlier in this session.
-        // Its cloud id is still in the "pending deletion" guard, which would make the next sync
-        // delete the new slot from the cloud and then from this phone.
-        val slotCourse = courseDao.getAnyCourseByIdSync(slot.courseId)
-        SupabaseSyncManager.clearPendingDeletionForSlot(
-            SupabaseSyncManager.getSlotDocId(slot, slotCourse?.code ?: "")
-        )
         val id = lectureSlotDao.insertSlot(slot.copy(isSynced = false))
         refreshClassAlarms()
-        triggerSyncIfLoggedIn()
         id
     }
 
     suspend fun updateLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
         lectureSlotDao.updateSlot(slot.copy(isSynced = false))
         refreshClassAlarms()
-        triggerSyncIfLoggedIn()
     }
 
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        SupabaseSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
         lectureSlotDao.deleteSlot(slot)
         refreshClassAlarms()
-        triggerSyncIfLoggedIn()
     }
 
-    fun triggerSyncIfLoggedIn() {
-        if (!isUserLoggedIn()) return
-        try {
-            // Safety net: WorkManager retries later, also when the internet comes back.
-            SyncScheduler.scheduleSync(context)
 
-            // Wait 2 seconds after the LAST change, then sync once.
-            synchronized(syncLock) {
-                pendingSync?.cancel()
-                pendingSync = syncScope.launch {
-                    delay(SYNC_DEBOUNCE_MS)
-                    // From here on, a new edit must not stop a sync that has already started.
-                    withContext(NonCancellable) {
-                        try {
-                            val db = AppDatabase.getDatabase(context)
-                            SupabaseSyncManager.syncAllDataNow(context, db)
-                        } catch (e: Exception) {
-                            Log.w("AppRepository", "Eager sync exception: ${e.message}")
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.w("AppRepository", "Error scheduling sync: ${e.message}")
-        }
-    }
-
-    private companion object {
-        const val SYNC_DEBOUNCE_MS = 2_000L
-        val syncLock = Any()
-        val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        var pendingSync: Job? = null
-    }
 }

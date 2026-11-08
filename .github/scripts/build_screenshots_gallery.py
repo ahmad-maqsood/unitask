@@ -28,10 +28,17 @@ SCREENS = [
     ("settings_about", "About and help", "App information and support"),
 ]
 
+# Shown in their own "Themes" table below the main gallery.
+THEME_SCREENS = [
+    ("theme_dark", "Dark theme", "Deadlines in dark mode"),
+    ("theme_accent", "Accent colours", "Six accent colours, shown here in Rose"),
+]
+ALL_SCREENS = SCREENS + THEME_SCREENS
+
 
 def main():
     directory = ROOT / "docs/screenshots"
-    missing = [f"{name}.png" for name, _, _ in SCREENS
+    missing = [f"{name}.png" for name, _, _ in ALL_SCREENS
                if not (directory / f"{name}.png").is_file()]
     if missing:
         raise SystemExit("Capture is incomplete; missing: " + ", ".join(missing))
@@ -41,7 +48,7 @@ def main():
     version = version_match.group(1) if version_match else "current"
 
     # Compress emulator PNGs to high-quality JPEGs to keep repository growth modest.
-    for name, _, _ in SCREENS:
+    for name, _, _ in ALL_SCREENS:
         source = directory / f"{name}.png"
         target = directory / f"{name}.jpg"
         with Image.open(source) as image:
@@ -61,22 +68,29 @@ def main():
 
     # Full rows of 3 go in one table. Any leftover screens (for example the last two when
     # there are 17 screens) get their own centered table, so there is no empty cell on the right.
-    full_count = len(SCREENS) - len(SCREENS) % 3
-    full_rows = [build_row(SCREENS[i:i + 3]) for i in range(0, full_count, 3)]
-    table = '<table align="center">\n' + "\n".join(full_rows) + "\n</table>"
-    leftover = SCREENS[full_count:]
-    if leftover:
-        table += (
-            '\n\n<table align="center">\n' + build_row(leftover) + "\n</table>"
-        )
+    def build_table(items):
+        full_count = len(items) - len(items) % 3
+        full_rows = [build_row(items[i:i + 3]) for i in range(0, full_count, 3)]
+        parts = []
+        if full_rows:
+            parts.append('<table align="center">\n' + "\n".join(full_rows) + "\n</table>")
+        leftover = items[full_count:]
+        if leftover:
+            parts.append('<table align="center">\n' + build_row(leftover) + "\n</table>")
+        return "\n\n".join(parts)
+
+    table = build_table(SCREENS)
+    themes_table = build_table(THEME_SCREENS)
     links = "Each screen is also available separately: " + " · ".join(
         f'[**{title}**](docs/screenshots/{name}.jpg)'
-        for name, title, _ in SCREENS
+        for name, title, _ in ALL_SCREENS
     ) + "."
 
     section = (
         "## Screenshots\n\n"
         + table
+        + "\n\n### Themes\n\nUniTask follows the system theme or can be set to light or dark, with six accent colours chosen in Settings.\n\n"
+        + themes_table
         + f'\n\n<p align="center"><sub>Automatically captured from UniTask {version} '
           "using fictional demo data on an Android emulator.</sub></p>\n\n"
         + links + "\n\n"

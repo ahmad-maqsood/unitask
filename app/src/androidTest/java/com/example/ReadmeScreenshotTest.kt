@@ -20,6 +20,9 @@ import com.example.data.local.Note
 import com.example.data.local.Priority
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
+import com.example.ui.theme.AccentTheme
+import com.example.ui.theme.ThemeMode
+import com.example.ui.theme.ThemePreference
 import com.example.util.Announcements
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
@@ -86,6 +89,13 @@ class ReadmeScreenshotTest {
         waitForTag("tab_deadlines")
         capture("deadlines")
 
+        // Theme variation: the same Deadlines screen in dark mode. ThemePreference is what the
+        // Settings screen changes, so the screen redraws at once. The default look (system
+        // theme, Indigo) is restored before the main screenshots continue.
+        setTheme(ThemeMode.DARK, AccentTheme.INDIGO)
+        capture("theme_dark")
+        setTheme(ThemeMode.SYSTEM, AccentTheme.INDIGO)
+
         tap("tab_timetable")
         capture("timetable")
 
@@ -106,6 +116,11 @@ class ReadmeScreenshotTest {
 
         tap("tab_mytasks")
         capture("my_tasks")
+
+        // Theme variation: the same screen in light mode with the Rose accent colour.
+        setTheme(ThemeMode.LIGHT, AccentTheme.ROSE)
+        capture("theme_accent")
+        setTheme(ThemeMode.SYSTEM, AccentTheme.INDIGO)
 
         // Study timer: open it from the Tools sheet and show a 25 minute countdown.
         tap("top_bar_tools_button")
@@ -436,6 +451,17 @@ class ReadmeScreenshotTest {
         ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("search_screen", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /** Changes the theme the way the Settings screen does. The screen redraws straight away. */
+    private fun setTheme(mode: ThemeMode, accent: AccentTheme) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        instrumentation.runOnMainSync {
+            ThemePreference.set(context, mode)
+            ThemePreference.setAccent(context, accent)
+        }
+        composeRule.waitForIdle()
     }
 
     private fun waitForGroupCard(groupId: String, timeoutMillis: Long) {

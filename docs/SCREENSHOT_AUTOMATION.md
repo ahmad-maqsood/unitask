@@ -36,7 +36,7 @@ This workflow is separate from APK releases. It only runs when you manually star
 
 ## Demo data and cleanup
 
-The emulator uses fictional courses, deadlines, timetable entries, notes and tasks, plus a few deleted items so the **Recently deleted** screen has something to show. The **Global search** screenshot searches for "design". The group chat uses fictional messages from the two demo accounts, shown with the Pakistani display names Hamza Qureshi and Zainab Fatima (set at the top of `.github/scripts/seed_screenshot_demo.py`).
+The emulator uses fictional courses, deadlines, timetable entries, notes and tasks, plus a few deleted items so the **Recently deleted** screen has something to show. The **Global search** screenshot searches for "design". Two extra screenshots show the dark theme and the Rose accent colour; the test switches the theme in code and switches back to the default afterwards. The group chat uses fictional messages from the two demo accounts, shown with the Pakistani display names Hamza Qureshi and Zainab Fatima (set at the top of `.github/scripts/seed_screenshot_demo.py`).
 
 The workflow reserves the group username `unitask-screenshot-demo`. Before creating a fresh group, it removes the previous screenshot group's messages and member, then deletes that group. It does not touch other groups. The latest demo group and messages remain in Supabase after a run, until the next screenshot run replaces them or you delete the group from UniTask while signed in as its owner.
 

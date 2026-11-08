@@ -19,7 +19,7 @@ class SearchLogicTest {
     ): TaskWithCourse {
         val course = Course(id = 10, name = "Computer Science", code = courseCode)
         return TaskWithCourse(
-            task = TaskItem(id = id, courseId = course.id, title = title),
+            task = TaskItem(id = id, courseId = course.id, title = title, dueDateEpochMillis = 0L),
             course = course
         )
     }

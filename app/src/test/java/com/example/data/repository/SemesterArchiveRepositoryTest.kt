@@ -103,9 +103,10 @@ class SemesterArchiveRepositoryTest {
         repo.archiveCourses(listOf(courseId), "Fall 2026")
 
         // Column is set and isArchived is true
-        val courseAfter = db.courseDao().getCourseByIdSync(courseId)!!
+        val courseAfter = db.courseDao().getCourseByIdSyncIncludingArchived(courseId)!!
         assertEquals("Fall 2026", courseAfter.archivedSemester)
         assertTrue(courseAfter.isArchived)
+        assertNull(db.courseDao().getCourseByIdSync(courseId))
 
         // Task reminder is cancelled
         val taskAfter = db.taskDao().getTaskByIdSync(taskId)!!
@@ -221,8 +222,8 @@ class SemesterArchiveRepositoryTest {
         repo.archiveCourses(listOf(course1Id), "Fall 2026")
         repo.archiveCourses(listOf(course2Id), "fall 2026")
 
-        val c1 = db.courseDao().getCourseByIdSync(course1Id)!!
-        val c2 = db.courseDao().getCourseByIdSync(course2Id)!!
+        val c1 = db.courseDao().getCourseByIdSyncIncludingArchived(course1Id)!!
+        val c2 = db.courseDao().getCourseByIdSyncIncludingArchived(course2Id)!!
         assertEquals("Fall 2026", c1.archivedSemester)
         assertEquals("Fall 2026", c2.archivedSemester)
 

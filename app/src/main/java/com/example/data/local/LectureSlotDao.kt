@@ -12,15 +12,19 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LectureSlotDao {
     @Transaction
-    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 0 ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
     fun getAllSlotsWithCourse(): Flow<List<LectureSlotWithCourse>>
 
     @Transaction
-    @Query("SELECT * FROM lecture_slots WHERE dayOfWeek = :dayOfWeek AND isDeleted = 0 ORDER BY startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 0 ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
+    fun getAllSlotsWithCourseIncludingArchived(): Flow<List<LectureSlotWithCourse>>
+
+    @Transaction
+    @Query("SELECT * FROM lecture_slots WHERE dayOfWeek = :dayOfWeek AND isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') ORDER BY startHour ASC, startMinute ASC")
     fun getSlotsForDay(dayOfWeek: Int): Flow<List<LectureSlotWithCourse>>
 
     @Transaction
-    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND isDeleted = 0 ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
+    @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId AND isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') ORDER BY dayOfWeek ASC, startHour ASC, startMinute ASC")
     fun getSlotsForCourse(courseId: Long): Flow<List<LectureSlotWithCourse>>
 
     @Query("SELECT * FROM lecture_slots WHERE id = :id")
@@ -47,8 +51,11 @@ interface LectureSlotDao {
     @Query("DELETE FROM lecture_slots WHERE courseId NOT IN (SELECT id FROM courses WHERE isDeleted = 0)")
     suspend fun deleteOrphanedSlots()
 
-    @Query("SELECT * FROM lecture_slots")
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '')")
     suspend fun getAllSlotsSync(): List<LectureSlot>
+
+    @Query("SELECT * FROM lecture_slots")
+    suspend fun getAllSlotsSyncIncludingArchived(): List<LectureSlot>
 
     @Query("SELECT * FROM lecture_slots WHERE courseId = :courseId")
     suspend fun getSlotsForCourseSync(courseId: Long): List<LectureSlot>

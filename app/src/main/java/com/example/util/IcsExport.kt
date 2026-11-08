@@ -1,6 +1,7 @@
 package com.example.util
 
 import com.example.data.local.LectureSlotWithCourse
+import com.example.data.local.isArchived
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
@@ -104,7 +105,7 @@ fun buildTimetableIcs(
         val slot = item.slot
         val course = item.course
 
-        if (slot.isDeleted || course?.isDeleted == true) {
+        if (slot.isDeleted || course?.isDeleted == true || course?.isArchived == true) {
             continue
         }
 

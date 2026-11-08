@@ -12,19 +12,30 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TaskDao {
     @Transaction
-    @Query("SELECT * FROM tasks WHERE isDeleted = 0 ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
+    @Query("SELECT * FROM tasks WHERE isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
     fun getAllTasksWithCourse(): Flow<List<TaskWithCourse>>
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE isDeleted = 0 ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
+    fun getAllTasksWithCourseIncludingArchived(): Flow<List<TaskWithCourse>>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE isDeleted = 1 ORDER BY deletedAt DESC")
     fun observeDeletedTasks(): Flow<List<TaskWithCourse>>
 
     @Transaction
-    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND isDeleted = 0 ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
+    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
     fun getTasksForCourse(courseId: Long): Flow<List<TaskWithCourse>>
 
-    @Query("SELECT * FROM tasks WHERE id = :id AND isDeleted = 0")
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND isDeleted = 0 ORDER BY dueDateEpochMillis ASC, dueTimeHour ASC, dueTimeMinute ASC")
+    fun getTasksForCourseIncludingArchived(courseId: Long): Flow<List<TaskWithCourse>>
+
+    @Query("SELECT * FROM tasks WHERE id = :id AND isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '')")
     suspend fun getTaskById(id: Long): TaskItem?
+
+    @Query("SELECT * FROM tasks WHERE id = :id AND isDeleted = 0")
+    suspend fun getTaskByIdIncludingArchived(id: Long): TaskItem?
 
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getAnyTaskById(id: Long): TaskItem?
@@ -35,14 +46,17 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE courseId = :courseId")
     suspend fun getAnyTasksForCourseSync(courseId: Long): List<TaskItem>
 
-    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND title = :title AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND title = :title AND isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '') LIMIT 1")
     suspend fun getTaskByTitleAndCourse(title: String, courseId: Long): TaskItem?
 
     @Query("SELECT * FROM tasks WHERE courseId = :courseId AND title = :title LIMIT 1")
     suspend fun getAnyTaskByTitleAndCourse(title: String, courseId: Long): TaskItem?
 
-    @Query("SELECT * FROM tasks WHERE isDeleted = 0")
+    @Query("SELECT * FROM tasks WHERE isDeleted = 0 AND courseId IN (SELECT id FROM courses WHERE isDeleted = 0 AND archivedSemester = '')")
     suspend fun getAllActiveTasksSync(): List<TaskItem>
+
+    @Query("SELECT * FROM tasks WHERE isDeleted = 0")
+    suspend fun getAllActiveTasksSyncIncludingArchived(): List<TaskItem>
 
     @Query("SELECT * FROM tasks WHERE isDeleted = 1")
     suspend fun getDeletedTasks(): List<TaskItem>

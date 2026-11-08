@@ -439,15 +439,15 @@ object DriveBackupManager {
 
     internal suspend fun isDatabaseEmpty(context: Context): Boolean = withContext(Dispatchers.IO) {
         val db = AppDatabase.getDatabase(context)
-        val courses = db.courseDao().getAllCoursesList().filter {
+        val courses = db.courseDao().getAllCoursesListIncludingArchived().filter {
             !it.isDeleted && normalizeCourseCode(it.code) != MY_TASKS_COURSE_CODE
         }
         if (courses.isNotEmpty()) return@withContext false
 
-        val tasks = db.taskDao().getAllActiveTasksSync().filter { !it.isDeleted }
+        val tasks = db.taskDao().getAllActiveTasksSyncIncludingArchived().filter { !it.isDeleted }
         if (tasks.isNotEmpty()) return@withContext false
 
-        val notes = db.noteDao().getActiveNotesSync()
+        val notes = db.noteDao().getActiveNotesSyncIncludingArchived()
         if (notes.isNotEmpty()) return@withContext false
 
         true

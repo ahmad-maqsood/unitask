@@ -63,20 +63,20 @@ class AppRepository(
 
     val allCourses: Flow<List<Course>> = courseDao.getAllCourses()
         .map { list ->
-            list.filter { !it.isDeleted && !it.isMyTasksCourse() }
+            list.filter { !it.isDeleted && !it.isArchived && !it.isMyTasksCourse() }
                 .distinctBy { it.code.trim().replace("\\s+".toRegex(), "").uppercase() }
         }
         .flowOn(Dispatchers.IO)
 
     val allTasksWithCourse: Flow<List<TaskWithCourse>> = taskDao.getAllTasksWithCourse()
         .map { list ->
-            list.filter { it.course != null && !it.course.isDeleted && !it.task.isDeleted }
+            list.filter { it.course != null && !it.course.isDeleted && !it.course.isArchived && !it.task.isDeleted }
         }
         .flowOn(Dispatchers.IO)
 
     val allLectureSlots: Flow<List<LectureSlotWithCourse>> = lectureSlotDao.getAllSlotsWithCourse()
         .map { list ->
-            list.filter { it.course != null && !it.course.isDeleted }
+            list.filter { it.course != null && !it.course.isDeleted && !it.course.isArchived }
         }
         .flowOn(Dispatchers.IO)
 
@@ -207,11 +207,11 @@ class AppRepository(
     }
 
     fun observeArchivedSemesters(): Flow<List<ArchivedSemesterSummary>> {
-        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotes() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        val notesFlow: Flow<List<NoteListItem>> = noteDao?.observeNotesIncludingArchived() ?: kotlinx.coroutines.flow.flowOf(emptyList())
         return combine(
-            courseDao.getAllCourses(),
-            taskDao.getAllTasksWithCourse(),
-            lectureSlotDao.getAllSlotsWithCourse(),
+            courseDao.getAllCoursesIncludingArchived(),
+            taskDao.getAllTasksWithCourseIncludingArchived(),
+            lectureSlotDao.getAllSlotsWithCourseIncludingArchived(),
             notesFlow
         ) { allCourses, allTasks, allSlots, allNotes ->
             val archived = allCourses.filter { !it.isDeleted && it.archivedSemester.isNotBlank() }
@@ -244,7 +244,7 @@ class AppRepository(
     suspend fun findActiveCourseByCode(code: String, excludeCourseId: Long = 0L): Course? = withContext(Dispatchers.IO) {
         val normCode = normalizeCourseCode(code)
         courseDao.getAllCoursesMatchingNormalizedCode(normCode)
-            .firstOrNull { !it.isDeleted && it.id != excludeCourseId }
+            .firstOrNull { !it.isDeleted && !it.isArchived && it.id != excludeCourseId }
     }
 
     suspend fun updateCourse(course: Course) = withContext(Dispatchers.IO) {

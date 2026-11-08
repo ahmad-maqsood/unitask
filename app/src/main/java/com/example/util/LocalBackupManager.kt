@@ -136,13 +136,13 @@ object LocalBackupManager {
     ): BuiltBackup =
         withContext(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(context)
-            val courses = db.courseDao().getAllCoursesList().filter { !it.isDeleted }
+            val courses = db.courseDao().getAllCoursesListIncludingArchived().filter { !it.isDeleted }
             val codeById = courses.associate { it.id to it.code }
-            val slots = db.lectureSlotDao().getAllSlotsSync()
+            val slots = db.lectureSlotDao().getAllSlotsSyncIncludingArchived()
                 .filter { !it.isDeleted && it.courseId in codeById }
-            val tasks = db.taskDao().getAllActiveTasksSync()
+            val tasks = db.taskDao().getAllActiveTasksSyncIncludingArchived()
                 .filter { !it.isDeleted && it.courseId in codeById }
-            val notes = db.noteDao().getActiveNotesSync()
+            val notes = db.noteDao().getActiveNotesSyncIncludingArchived()
 
             val courseArray = JSONArray()
             for (c in courses) {
@@ -633,7 +633,7 @@ object LocalBackupManager {
             }
 
             // ---- notes
-            val existingNotes = noteDao.getActiveNotesSync().toMutableList()
+            val existingNotes = noteDao.getActiveNotesSyncIncludingArchived().toMutableList()
             val noteArray = data.optJSONArray("notes") ?: JSONArray()
             for (i in 0 until noteArray.length()) {
                 val o = noteArray.optJSONObject(i) ?: continue

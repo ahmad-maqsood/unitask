@@ -10,28 +10,40 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CourseDao {
-    @Query("SELECT * FROM courses WHERE isDeleted = 0 ORDER BY code ASC")
+    @Query("SELECT * FROM courses WHERE isDeleted = 0 AND archivedSemester = '' ORDER BY code ASC")
     fun getAllCourses(): Flow<List<Course>>
 
     @Query("SELECT * FROM courses WHERE isDeleted = 0 ORDER BY code ASC")
+    fun getAllCoursesIncludingArchived(): Flow<List<Course>>
+
+    @Query("SELECT * FROM courses WHERE isDeleted = 0 AND archivedSemester = '' ORDER BY code ASC")
     suspend fun getAllCoursesList(): List<Course>
 
-    @Query("SELECT * FROM courses WHERE id = :id AND isDeleted = 0")
+    @Query("SELECT * FROM courses WHERE isDeleted = 0 ORDER BY code ASC")
+    suspend fun getAllCoursesListIncludingArchived(): List<Course>
+
+    @Query("SELECT * FROM courses WHERE id = :id AND isDeleted = 0 AND archivedSemester = ''")
     fun getCourseById(id: Long): Flow<Course?>
 
     @Query("SELECT * FROM courses WHERE id = :id AND isDeleted = 0")
+    fun getCourseByIdIncludingArchived(id: Long): Flow<Course?>
+
+    @Query("SELECT * FROM courses WHERE id = :id AND isDeleted = 0 AND archivedSemester = ''")
     suspend fun getCourseByIdSync(id: Long): Course?
+
+    @Query("SELECT * FROM courses WHERE id = :id AND isDeleted = 0")
+    suspend fun getCourseByIdSyncIncludingArchived(id: Long): Course?
 
     @Query("SELECT * FROM courses WHERE id = :id")
     suspend fun getAnyCourseByIdSync(id: Long): Course?
 
-    @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) AND isDeleted = 0 AND archivedSemester = '' LIMIT 1")
     suspend fun getCourseByCode(code: String): Course?
 
     @Query("SELECT * FROM courses WHERE UPPER(TRIM(code)) = UPPER(TRIM(:code)) LIMIT 1")
     suspend fun getAnyCourseByCode(code: String): Course?
 
-    @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') AND isDeleted = 0 AND archivedSemester = '' LIMIT 1")
     suspend fun getCourseByNormalizedCode(code: String): Course?
 
     @Query("SELECT * FROM courses WHERE REPLACE(UPPER(TRIM(code)), ' ', '') = REPLACE(UPPER(TRIM(:code)), ' ', '') LIMIT 1")

@@ -172,19 +172,15 @@ class AppRepository(
             }
         }
 
-        // 4. Soft-delete in Room (tasks, timetable slots and the course). The sync removes them from
-        //    the cloud and only then purges the rows, so the delete survives being offline or the
-        //    app being killed. Slots must be soft-deleted too, or they come back when a course with
-        //    the same code is added again.
+        // 4. In Room: remove the courses, tasks and timetable slots, and detach notes.
         inTransaction {
-            for (cId in allIds) {
-                taskDao.softDeleteTasksForCourse(cId)
-                lectureSlotDao.softDeleteSlotsForCourse(cId)
-                courseDao.softDeleteCourse(cId)
-            }
-
             // Detach notes tagged with deleted courses without deleting the user's notes.
             noteDao?.detachCourses(allIds)
+            for (cId in allIds) {
+                taskDao.deleteTasksForCourse(cId)
+                lectureSlotDao.deleteSlotsForCourse(cId)
+                courseDao.deleteCourseById(cId)
+            }
         }
 
         // 5. Record in pending deletion guards
@@ -195,16 +191,6 @@ class AppRepository(
         }
         for (s in allSlots) {
             SupabaseSyncManager.recordPendingSlotDeletion(s.id, s.cloudId)
-        }
-
-        // 6. The cloud delete happens in the sync (step 0 of syncAllDataNow).
-        //    Signed out and never uploaded: there is nothing to tell the cloud, so remove the rows
-        //    now (foreign keys cascade to tasks, slots and attachments) instead of keeping them forever.
-        if (!isUserLoggedIn()) {
-            for (cId in allIds) {
-                val row = courseDao.getAnyCourseByIdSync(cId) ?: continue
-                if (row.cloudId.isBlank()) courseDao.deleteCourseById(cId)
-            }
         }
 
         refreshClassAlarms()
@@ -380,15 +366,12 @@ class AppRepository(
     suspend fun deleteTask(task: TaskItem) = withContext(Dispatchers.IO) {
         reminderScheduler.cancelReminder(task.id)
         SnoozeStore.clear(context, task.id, cancelAlarm = true)
-        // Soft-delete in Room first
-        taskDao.softDeleteTask(task.id)
-        SupabaseSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
-
-        if (!isUserLoggedIn() && !task.isSynced && task.cloudId.isBlank()) {
-            taskDao.deleteTaskById(task.id)
+        val attachments = taskAttachmentDao.getAttachmentsForTaskSync(task.id)
+        for (att in attachments) {
+            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
         }
-        // When signed in, the sync removes it from the cloud and then purges the row.
-
+        taskDao.deleteTaskById(task.id)
+        SupabaseSyncManager.recordPendingTaskDeletion(task.id, task.cloudId)
         triggerSyncIfLoggedIn()
     }
 
@@ -451,12 +434,7 @@ class AppRepository(
 
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
         SupabaseSyncManager.recordPendingSlotDeletion(slot.id, slot.cloudId)
-        if (!isUserLoggedIn() && !slot.isSynced && slot.cloudId.isBlank()) {
-            lectureSlotDao.deleteSlot(slot)
-        } else {
-            // Soft-delete; the sync removes it from the cloud and then purges the row.
-            lectureSlotDao.softDeleteSlot(slot.id)
-        }
+        lectureSlotDao.deleteSlot(slot)
         refreshClassAlarms()
         triggerSyncIfLoggedIn()
     }

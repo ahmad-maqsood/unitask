@@ -9,7 +9,7 @@ import com.example.data.local.Course
 import com.example.data.local.NoteListItem
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.NoteRepository
-import com.example.sync.SupabaseSyncManager
+
 import com.example.sync.SyncScheduler
 import com.example.util.NoteImages
 import com.example.util.currentSupabaseUid
@@ -111,11 +111,6 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteForever(id: Long) {
         viewModelScope.launch {
             repository.deleteForever(id)
-            // The note is still here when its cloud copy was not deleted yet.
-            // Finish that now, then delete it from this phone.
-            if (repository.getNote(id) != null && finishCloudDeletes()) {
-                repository.deleteForever(id)
-            }
             NoteImages.cleanupOrphans(getApplication(), database.noteDao())
             triggerSyncIfLoggedIn()
         }
@@ -124,23 +119,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun emptyTrash() {
         viewModelScope.launch {
             repository.emptyTrash()
-            if (database.noteDao().getAllNotesSync().any { it.isDeleted } && finishCloudDeletes()) {
-                repository.emptyTrash()
-            }
             NoteImages.cleanupOrphans(getApplication(), database.noteDao())
             triggerSyncIfLoggedIn()
-        }
-    }
-
-    /** Runs one sync pass so cloud copies of trashed notes get deleted. False if signed out, offline or failed. */
-    private suspend fun finishCloudDeletes(): Boolean {
-        if (currentSupabaseUid() == null) return false
-        return try {
-            SupabaseSyncManager.syncAllDataNow(getApplication(), database)
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            false
         }
     }
 }

@@ -53,8 +53,7 @@ class AppRepositoryDeleteCourseTest {
     }
 
     @Test
-    fun testDeleteCourseSoftDeletesTasksAndSlotsAndDetachesNotes() = runBlocking {
-        // Create course with a non-blank cloudId so deleteCourse retains soft-deleted records for sync.
+    fun testDeleteCourseRemovesCourseTasksAndSlotsAndDetachesNotes() = runBlocking {
         val course = Course(
             name = "Software Engineering",
             code = "CS 301",
@@ -105,20 +104,15 @@ class AppRepositoryDeleteCourseTest {
         // Execute deleteCourse
         repo.deleteCourse(savedCourse)
 
-        // Course must be soft-deleted
+        // Course, tasks and slots must be removed
         val updatedCourse = db.courseDao().getAnyCourseByIdSync(courseId)
-        assertNotNull(updatedCourse)
-        assertTrue(updatedCourse?.isDeleted == true)
+        assertNull(updatedCourse)
 
-        // Task must be soft-deleted
         val tasks = db.taskDao().getAnyTasksForCourseSync(courseId)
-        assertEquals(1, tasks.size)
-        assertTrue(tasks.first().isDeleted)
+        assertTrue(tasks.isEmpty())
 
-        // Slot must be soft-deleted
         val slots = db.lectureSlotDao().getSlotsForCourseSync(courseId)
-        assertEquals(1, slots.size)
-        assertTrue(slots.first().isDeleted)
+        assertTrue(slots.isEmpty())
 
         // Note must still exist and not be deleted, but courseId must be detached (null)
         val updatedNote = db.noteDao().getNoteById(noteId)

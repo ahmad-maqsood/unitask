@@ -206,6 +206,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
             try {
+                com.example.util.LocalTombstonePurge.purgeOnce(application, database)
+            } catch (_: Exception) {
+            }
+            try {
                 ReminderScheduler(application).rescheduleAll(database)
             } catch (_: Exception) {
             }

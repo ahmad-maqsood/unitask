@@ -53,7 +53,7 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE id = :id")
     suspend fun deleteForever(id: Long)
 
-    @Query("DELETE FROM notes WHERE isDeleted = 1 AND deletedAt > 0 AND deletedAt < :cutoff AND (cloudId = '' OR isSynced = 1)")
+    @Query("DELETE FROM notes WHERE isDeleted = 1 AND deletedAt > 0 AND deletedAt < :cutoff")
     suspend fun purgeDeletedBefore(cutoff: Long): Int
 
     @Query("UPDATE notes SET courseId = NULL, isSynced = 0 WHERE courseId IN (:courseIds)")

@@ -98,10 +98,6 @@ fun SearchScreen(
         coursesExpanded = false
     }
 
-    fun resetSearch() {
-        _searchQuery.value = ""
-        _includeArchived.value = false
-    }
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var archivedDialogSemester by remember { mutableStateOf<String?>(null) }

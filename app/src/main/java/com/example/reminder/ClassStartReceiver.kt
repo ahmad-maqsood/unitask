@@ -73,13 +73,14 @@ class ClassStartReceiver : BroadcastReceiver() {
         val scheduler = ClassReminderScheduler(context)
 
         val slot = database.lectureSlotDao().getSlotById(slotId)
-        val course = if (slot != null && !slot.isDeleted) {
-            database.courseDao().getCourseByIdSync(slot.courseId)
-        } else {
-            null
-        }
-        if (slot == null || course == null) {
+        if (slot == null || slot.isDeleted || slot.deletedAt > 0L) {
             // The class was deleted after this alarm was set.
+            scheduler.cancelSlot(slotId)
+            return
+        }
+        val course = database.courseDao().getCourseByIdSync(slot.courseId)
+        if (course == null || course.isDeleted) {
+            // The course was deleted after this alarm was set.
             scheduler.cancelSlot(slotId)
             return
         }

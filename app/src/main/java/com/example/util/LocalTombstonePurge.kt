@@ -46,7 +46,7 @@ object LocalTombstonePurge {
         }
 
         db.withTransaction {
-            for (slot in slotDao.getDeletedSlots()) {
+            for (slot in slotDao.getDeletedSlots().filter { it.deletedAt <= 0L }) {
                 slotDao.deleteSlot(slot)
             }
             for (courseId in deletedCourseIds) {

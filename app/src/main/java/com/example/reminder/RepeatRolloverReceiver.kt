@@ -115,6 +115,15 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
                 Log.w(TAG, "Could not purge old notes trash: ${e.message}")
             }
 
+            // Purge old class trash (deleted more than 30 days ago).
+            try {
+                repository.purgeOldClassTrash()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not purge old class trash: ${e.message}")
+            }
+
             // A new day has started: redraw the home screen widget.
             com.example.widget.UniTaskWidget.refresh(appContext)
         }

@@ -530,6 +530,7 @@ object LocalBackupManager {
                             classroom = classroom,
                             instructor = instructor,
                             isDeleted = false,
+                            deletedAt = 0L,
                             isSynced = false
                         )
                     )

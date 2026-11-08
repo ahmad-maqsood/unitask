@@ -413,9 +413,61 @@ class AppRepository(
         refreshClassAlarms()
     }
 
+    fun observeDeletedLectureSlots(): Flow<List<LectureSlotWithCourse>> {
+        return lectureSlotDao.observeDeletedSlots().flowOn(Dispatchers.IO)
+    }
+
     suspend fun deleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
-        lectureSlotDao.deleteSlot(slot)
+        val now = System.currentTimeMillis()
+        lectureSlotDao.softDeleteSlot(slot.id, now)
+        try {
+            ClassReminderScheduler(context).cancelSlot(slot.id)
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+        }
         refreshClassAlarms()
     }
 
+    suspend fun restoreLectureSlot(id: Long) = withContext(Dispatchers.IO) {
+        lectureSlotDao.restoreSlot(id)
+        refreshClassAlarms()
+    }
+
+    suspend fun undoDeleteLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
+        restoreLectureSlot(slot.id)
+    }
+
+    suspend fun deleteSlotForever(id: Long) = withContext(Dispatchers.IO) {
+        try {
+            ClassReminderScheduler(context).cancelSlot(id)
+        } catch (e: Exception) {
+            Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+        }
+        lectureSlotDao.deleteSlotById(id)
+        refreshClassAlarms()
+    }
+
+    suspend fun emptyClassTrash() = withContext(Dispatchers.IO) {
+        val trashed = lectureSlotDao.getDeletedSlotsSync()
+        for (slot in trashed) {
+            deleteSlotForever(slot.id)
+        }
+    }
+
+    suspend fun purgeOldClassTrash(now: Long = System.currentTimeMillis()): Int = withContext(Dispatchers.IO) {
+        val cutoff = now - (NoteRepository.TRASH_DAYS * 24L * 60L * 60L * 1000L)
+        val toPurge = lectureSlotDao.getDeletedSlotsSync().filter { it.deletedAt > 0L && it.deletedAt < cutoff }
+        for (slot in toPurge) {
+            try {
+                ClassReminderScheduler(context).cancelSlot(slot.id)
+            } catch (e: Exception) {
+                Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+            }
+        }
+        val purgedCount = lectureSlotDao.purgeDeletedBefore(cutoff)
+        if (purgedCount > 0) {
+            refreshClassAlarms()
+        }
+        purgedCount
+    }
 }

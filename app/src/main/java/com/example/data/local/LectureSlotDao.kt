@@ -62,6 +62,22 @@ interface LectureSlotDao {
     @Query("SELECT * FROM lecture_slots WHERE isDeleted = 1")
     suspend fun getDeletedSlots(): List<LectureSlot>
 
+    @Transaction
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    fun observeDeletedSlots(): Flow<List<LectureSlotWithCourse>>
+
+    @Query("SELECT * FROM lecture_slots WHERE isDeleted = 1")
+    suspend fun getDeletedSlotsSync(): List<LectureSlot>
+
+    @Query("UPDATE lecture_slots SET isDeleted = 1, deletedAt = :deletedAt, isSynced = 0 WHERE id = :id")
+    suspend fun softDeleteSlot(id: Long, deletedAt: Long)
+
+    @Query("UPDATE lecture_slots SET isDeleted = 0, deletedAt = 0, isSynced = 0 WHERE id = :id")
+    suspend fun restoreSlot(id: Long)
+
+    @Query("DELETE FROM lecture_slots WHERE isDeleted = 1 AND deletedAt > 0 AND deletedAt < :cutoff")
+    suspend fun purgeDeletedBefore(cutoff: Long): Int
+
     @Query("UPDATE lecture_slots SET courseId = :newCourseId WHERE courseId = :oldCourseId")
     suspend fun reassignSlotsToCourse(oldCourseId: Long, newCourseId: Long)
 }

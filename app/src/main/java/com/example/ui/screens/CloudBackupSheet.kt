@@ -501,7 +501,7 @@ private fun exportUserData(
             val db = com.example.data.local.AppDatabase.getDatabase(context)
             val courses = db.courseDao().getAllCoursesList()
             val tasks = db.taskDao().getAllActiveTasksSync()
-            val slots = db.lectureSlotDao().getAllSlotsSync()
+            val slots = db.lectureSlotDao().getAllSlotsSync().filter { !it.isDeleted }
             val notes = db.noteDao().getActiveNotesSync()
             val courseCodeById = courses.associate { it.id to it.code }
 

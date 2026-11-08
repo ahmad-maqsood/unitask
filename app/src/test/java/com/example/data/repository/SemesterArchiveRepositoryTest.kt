@@ -92,7 +92,7 @@ class SemesterArchiveRepositoryTest {
         )
 
         // Before archive: task has reminder, class alarm is scheduled
-        val taskBefore = db.taskDao().getTaskByIdSync(taskId)!!
+        val taskBefore = db.taskDao().getAnyTaskById(taskId)!!
         assertNotNull(taskBefore.reminderEpochMillis)
 
         val prefs = context.getSharedPreferences("unitask_settings", Context.MODE_PRIVATE)
@@ -109,7 +109,7 @@ class SemesterArchiveRepositoryTest {
         assertNull(db.courseDao().getCourseByIdSync(courseId))
 
         // Task reminder is cancelled
-        val taskAfter = db.taskDao().getTaskByIdSync(taskId)!!
+        val taskAfter = db.taskDao().getAnyTaskById(taskId)!!
         assertNull(taskAfter.reminderEpochMillis)
 
         // Class alarm is cancelled
@@ -147,7 +147,7 @@ class SemesterArchiveRepositoryTest {
         )
 
         repo.archiveCourses(listOf(courseId), "Fall 2026")
-        val taskArchived = db.taskDao().getTaskByIdSync(taskId)!!
+        val taskArchived = db.taskDao().getAnyTaskById(taskId)!!
         assertNull(taskArchived.reminderEpochMillis)
 
         // Restore the semester
@@ -159,7 +159,7 @@ class SemesterArchiveRepositoryTest {
         assertFalse(courseRestored.isArchived)
 
         // Task reminder is re-armed
-        val taskRestored = db.taskDao().getTaskByIdSync(taskId)!!
+        val taskRestored = db.taskDao().getAnyTaskById(taskId)!!
         assertNotNull(taskRestored.reminderEpochMillis)
 
         // Class alarm is re-armed
@@ -293,7 +293,7 @@ class SemesterArchiveRepositoryTest {
         // Course is deleted
         assertNull(db.courseDao().getCourseByIdSync(courseId))
         // Task is deleted
-        assertNull(db.taskDao().getTaskByIdSync(taskId))
+        assertNull(db.taskDao().getAnyTaskById(taskId))
         // Slot is deleted
         assertNull(db.lectureSlotDao().getSlotById(slotId))
         // Note is detached from course
@@ -355,9 +355,9 @@ class SemesterArchiveRepositoryTest {
         assertNull(db.courseDao().getCourseByIdSync(course1Id))
         assertNull(db.courseDao().getCourseByIdSync(course2Id))
         assertNull(db.courseDao().getCourseByIdSync(course3Id))
-        assertNull(db.taskDao().getTaskByIdSync(task1Id)!!.reminderEpochMillis)
-        assertNull(db.taskDao().getTaskByIdSync(task2Id)!!.reminderEpochMillis)
-        assertNull(db.taskDao().getTaskByIdSync(task3Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getAnyTaskById(task1Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getAnyTaskById(task2Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getAnyTaskById(task3Id)!!.reminderEpochMillis)
 
         val summariesBeforeUndo = repo.observeArchivedSemesters().first()
         assertEquals(1, summariesBeforeUndo.size)
@@ -381,9 +381,9 @@ class SemesterArchiveRepositoryTest {
         assertEquals("Fall 2026", c3!!.archivedSemester)
 
         // Reminders re-armed only for course1 and course2 tasks
-        assertNotNull(db.taskDao().getTaskByIdSync(task1Id)!!.reminderEpochMillis)
-        assertNotNull(db.taskDao().getTaskByIdSync(task2Id)!!.reminderEpochMillis)
-        assertNull(db.taskDao().getTaskByIdSync(task3Id)!!.reminderEpochMillis)
+        assertNotNull(db.taskDao().getAnyTaskById(task1Id)!!.reminderEpochMillis)
+        assertNotNull(db.taskDao().getAnyTaskById(task2Id)!!.reminderEpochMillis)
+        assertNull(db.taskDao().getAnyTaskById(task3Id)!!.reminderEpochMillis)
 
         // Archived semester still exists, but with only course3 remaining
         val summariesAfterUndo = repo.observeArchivedSemesters().first()

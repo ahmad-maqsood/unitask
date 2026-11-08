@@ -3,9 +3,7 @@ package com.example.sync
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -18,22 +16,15 @@ object SyncScheduler {
     private const val ANNOUNCEMENT_PERIODIC_WORK_NAME = "unitask_announcement_check_periodic"
     private const val PERIODIC_SYNC_WORK_NAME = "unitask_periodic_sync"
 
-    fun scheduleSync(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(constraints)
-            .setInitialDelay(5, TimeUnit.SECONDS)
-            .build()
-
-        WorkManager.getInstance(context.applicationContext)
-            .enqueueUniqueWork(
-                UNIQUE_WORK_NAME,
-                ExistingWorkPolicy.REPLACE,
-                syncRequest
-            )
+    /**
+     * Cancels any pending or periodic personal sync work from older versions of the app.
+     * WorkManager keeps jobs across updates, so without this it would attempt to run
+     * a worker class that has been removed.
+     */
+    fun cancelLegacyPersonalSync(context: Context) {
+        val workManager = WorkManager.getInstance(context.applicationContext)
+        workManager.cancelUniqueWork(UNIQUE_WORK_NAME)
+        workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
     }
 
     /**
@@ -60,22 +51,5 @@ object SyncScheduler {
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )
-    }
-
-    fun schedulePeriodicSync(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(context.applicationContext)
-            .enqueueUniquePeriodicWork(
-                PERIODIC_WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
-                periodicRequest
-            )
     }
 }

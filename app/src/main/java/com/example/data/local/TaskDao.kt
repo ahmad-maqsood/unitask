@@ -37,39 +37,11 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE courseId = :courseId AND title = :title LIMIT 1")
     suspend fun getAnyTaskByTitleAndCourse(title: String, courseId: Long): TaskItem?
 
-    @Query("SELECT * FROM tasks WHERE isSynced = 0 AND isDeleted = 0")
-    suspend fun getUnsyncedTasks(): List<TaskItem>
-
     @Query("SELECT * FROM tasks WHERE isDeleted = 0")
     suspend fun getAllActiveTasksSync(): List<TaskItem>
 
-    @Query("SELECT * FROM tasks WHERE cloudId = :cloudId LIMIT 1")
-    suspend fun getTaskByCloudId(cloudId: String): TaskItem?
-    
-    // Only tasks that were never linked to a cloud document (cloudId is empty).
-    @Query("SELECT * FROM tasks WHERE courseId = :courseId AND title = :title AND cloudId = '' LIMIT 1")
-    suspend fun getUnlinkedTaskByTitleAndCourse(title: String, courseId: Long): TaskItem?
-
-    @Query("UPDATE tasks SET cloudId = :cloudId WHERE id = :id")
-    suspend fun setTaskCloudId(id: Long, cloudId: String)
-
     @Query("SELECT * FROM tasks WHERE isDeleted = 1")
     suspend fun getDeletedTasks(): List<TaskItem>
-
-    @Query("UPDATE tasks SET isSynced = 1 WHERE id IN (:ids)")
-    suspend fun markTasksSynced(ids: List<Long>)
-
-    @Query("UPDATE tasks SET isSynced = 0 WHERE courseId = :courseId")
-    suspend fun markTasksUnsyncedForCourse(courseId: Long)
-
-    @Query("UPDATE tasks SET isSynced = 0")
-    suspend fun markAllTasksUnsynced()
-
-    @Query("UPDATE tasks SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
-    suspend fun markTaskSynced(id: Long, cloudId: String)
-
-    @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0 WHERE id = :id")
-    suspend fun softDeleteTask(id: Long)
 
     @Query("UPDATE tasks SET isDeleted = 0, isSynced = 0 WHERE id = :id")
     suspend fun restoreTask(id: Long)

@@ -223,7 +223,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
         }
-        // Schedule periodic sync
+        // Cancel legacy personal cloud sync jobs left behind from previous app versions
+        com.example.sync.SyncScheduler.cancelLegacyPersonalSync(application)
         // Periodic group and announcement sync while the app is closed (every 15 minutes)
         com.example.sync.SyncScheduler.schedulePeriodicSyncWorker(application)
         // Follow the Supabase session: signing in starts live sync, signing out stops it.

@@ -52,12 +52,6 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE isDeleted = 1")
     suspend fun getDeletedCourses(): List<Course>
 
-    @Query("UPDATE courses SET isSynced = 1 WHERE id IN (:ids)")
-    suspend fun markCoursesSynced(ids: List<Long>)
-
-    @Query("UPDATE courses SET isSynced = 0")
-    suspend fun markAllCoursesUnsynced()
-
     @Query("UPDATE courses SET isSynced = 1, cloudId = :cloudId WHERE id = :id")
     suspend fun markCourseSynced(id: Long, cloudId: String)
 

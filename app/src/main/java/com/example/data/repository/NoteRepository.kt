@@ -12,8 +12,7 @@ class NoteRepository(private val noteDao: NoteDao) {
 
     companion object {
         const val MAX_TITLE = 150
-        // Must never be higher than the Supabase CHECK on notes.body (200000),
-        // otherwise the batch upload in NoteSync fails for every pending note.
+        // Kept at 200,000 characters as a reasonable maximum note size.
         const val MAX_BODY = 200_000
         const val TRASH_DAYS = 30
     }

@@ -84,7 +84,10 @@ class MainActivity : ComponentActivity() {
                 intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri
             }
             if (streamUri != null && streamUri.scheme?.lowercase() == "content") {
-                mainViewModel.openMarkdownFile(streamUri)
+                val type = intent.type?.lowercase()
+                val isMarkdownType = type == "text/markdown" || type == "text/x-markdown"
+                // A generic type (BIN) is only accepted when the file name says it is Markdown or text
+                mainViewModel.openMarkdownFile(streamUri, requireTextFileName = !isMarkdownType)
                 intent.removeExtra(Intent.EXTRA_STREAM)
             }
         }

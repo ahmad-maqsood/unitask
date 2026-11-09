@@ -291,12 +291,14 @@ private fun RenderMarkdownBlock(
         }
 
         is MarkdownBlock.Rule -> {
+            // outlineVariant is almost the same colour as the background in dark mode,
+            // so the line used to disappear. outline is visible in both themes.
             HorizontalDivider(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-                thickness = 1.dp
+                    .padding(vertical = 8.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+                thickness = 1.5.dp
             )
         }
 

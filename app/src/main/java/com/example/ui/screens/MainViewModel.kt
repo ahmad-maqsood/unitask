@@ -574,10 +574,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _markdownViewerState = MutableStateFlow<MarkdownViewerState?>(null)
     val markdownViewerState: StateFlow<MarkdownViewerState?> = _markdownViewerState.asStateFlow()
 
-    fun openMarkdownFile(uri: Uri) {
+    fun openMarkdownFile(uri: Uri, requireTextFileName: Boolean = false) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
             val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
+            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownName(name)) {
+                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md) or text files")
+                return@launch
+            }
             when (result) {
                 is MarkdownReadResult.Success -> {
                     _markdownViewerState.value = MarkdownViewerState.Content(

@@ -82,6 +82,27 @@ class TimerHistoryStoreTest {
     }
 
     @Test
+    fun addAllKeepsExistingSessionsAndCountsOnlyNewOnes() {
+        val store = TimerHistoryStore(context)
+        store.add(session(1_000L, minutes = 10))
+
+        val added = store.addAll(
+            listOf(
+                session(1_000L, minutes = 99), // same start time: the saved one wins
+                session(2_000L),
+                session(2_000L),               // repeated inside the same batch
+                session(3_000L)
+            )
+        )
+
+        assertEquals(2, added)
+        val sessions = TimerHistoryStore(context).sessions.value
+        assertEquals(listOf(3_000L, 2_000L, 1_000L), sessions.map { it.startedAtMillis })
+        assertEquals(10 * 60_000L, sessions.last().durationMillis)
+        assertEquals(0, store.addAll(emptyList()))
+    }
+
+    @Test
     fun deleteRemovesOnlyThatSession() {
         val store = TimerHistoryStore(context)
         store.add(session(1_000L))

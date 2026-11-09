@@ -184,7 +184,7 @@ class TimerController(
                     store = TimerStore(appContext),
                     alarm = CountdownAlarm(appContext),
                     ongoing = TimerOngoingNotifier(appContext),
-                    history = TimerHistoryStore(appContext)
+                    history = TimerHistoryStore.get(appContext)
                 ).also { INSTANCE = it }
             }
         }

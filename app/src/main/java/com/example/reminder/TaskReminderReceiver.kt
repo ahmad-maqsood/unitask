@@ -53,6 +53,26 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val GROUP_KEY_DEADLINES = "com.example.DEADLINE_REMINDERS"
         private const val SUMMARY_ID = 9903
         private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
+
+        /**
+         * Android does not remove a group summary when its last reminder is removed, so the empty
+         * "Deadlines and reminders" bar would stay behind after Snooze or Mark as Done.
+         * Call this right after cancelling a reminder: it removes the summary when no reminder is left.
+         * [removedId] is the reminder that was just cancelled (ignored even if it still shows as active).
+         */
+        fun removeSummaryIfEmpty(context: Context, removedId: Int) {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+            try {
+                val anyReminderLeft = nm.activeNotifications.any {
+                    it.id != SUMMARY_ID &&
+                        it.id != removedId &&
+                        it.notification.group == GROUP_KEY_DEADLINES
+                }
+                if (!anyReminderLeft) nm.cancel(SUMMARY_ID)
+            } catch (_: Exception) {
+                // If we cannot check, leave the summary alone.
+            }
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -64,6 +84,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
                 cancelSilenceAlarm(context, notifId)
+                removeSummaryIfEmpty(context, notifId)
             }
             if (taskId > 0L) {
                 val pending = goAsync()
@@ -92,6 +113,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
                 cancelSilenceAlarm(context, notifId)
+                removeSummaryIfEmpty(context, notifId)
             }
             if (groupId.isNotBlank() && taskId.isNotBlank()) {
                 val pending = goAsync()
@@ -123,6 +145,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancel(notifId)
                 cancelSilenceAlarm(context, notifId)
+                removeSummaryIfEmpty(context, notifId)
                 // Keep it in SnoozeStore, so the task card shows "Snoozed until ..." and a reboot keeps it.
                 val snoozeGroupId = intent.getStringExtra(EXTRA_GROUP_ID).orEmpty()
                 val snoozeGroupTaskId = intent.getStringExtra(EXTRA_GROUP_TASK_ID).orEmpty()

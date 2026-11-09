@@ -57,6 +57,42 @@ object MissedReminders {
             .filter { it.triggerAt <= now && it.triggerAt > now - windowMillis }
             .sortedBy { it.triggerAt }
 
+    /**
+     * While the phone is on, a waiting reminder is only treated as lost once it is this late.
+     * Battery saving can delay a normal alarm by a few minutes, and the real alarm must get its chance.
+     */
+    const val LATE_GRACE_MILLIS = 5 * 60 * 1000L
+
+    /**
+     * Which waiting reminders are overdue by more than [graceMillis] but still inside the window.
+     * These alarms never rang although the phone was on (an app cleaner removed them). Oldest first.
+     */
+    fun pickLate(
+        keys: Set<String>,
+        now: Long,
+        graceMillis: Long = LATE_GRACE_MILLIS,
+        windowMillis: Long = WINDOW_MILLIS
+    ): List<ArmedReminder> =
+        keys.mapNotNull { parseKey(it) }
+            .filter { it.triggerAt <= now - graceMillis && it.triggerAt > now - windowMillis }
+            .sortedBy { it.triggerAt }
+
+    /** The waiting reminders that are overdue right now. See [pickLate]. */
+    fun waitingLate(context: Context, now: Long = System.currentTimeMillis()): List<ArmedReminder> =
+        synchronized(lock) { pickLate(load(context), now) }
+
+    /** Forgets reminders older than the window. They can never be announced, so the list must not keep them. */
+    fun pruneExpired(context: Context, now: Long = System.currentTimeMillis()) {
+        try {
+            synchronized(lock) {
+                val keys = load(context)
+                val kept = keys.filterNot { (parseKey(it)?.triggerAt ?: 0L) <= now - WINDOW_MILLIS }.toSet()
+                if (kept.size != keys.size) save(context, kept)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     private fun load(context: Context): MutableSet<String> =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getStringSet(KEY_ARMED, emptySet())

@@ -12,13 +12,33 @@ import kotlinx.coroutines.launch
 
 /** Alarms are wiped by a reboot or an app update; this puts every unfinished reminder back. */
 class BootReceiver : BroadcastReceiver() {
+
+    companion object {
+        /** Sent instead of (or as well as) BOOT_COMPLETED by Xiaomi, Poco and HTC phones on a fast restart. */
+        const val ACTION_QUICKBOOT = "android.intent.action.QUICKBOOT_POWERON"
+        const val ACTION_HTC_QUICKBOOT = "com.htc.intent.action.QUICKBOOT_POWERON"
+
+        /** Sent when the person allows "Alarms & reminders" for the app. Alarms set before are not exact. */
+        const val ACTION_EXACT_ALARM_ALLOWED = "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"
+
+        /** The phone just started or the app was just updated. Reminders that never rang are announced. */
+        fun isStartAction(action: String?): Boolean =
+            action == Intent.ACTION_BOOT_COMPLETED ||
+                action == Intent.ACTION_MY_PACKAGE_REPLACED ||
+                action == ACTION_QUICKBOOT ||
+                action == ACTION_HTC_QUICKBOOT
+
+        /** Every broadcast that makes the alarms be set again. */
+        fun handles(action: String?): Boolean =
+            isStartAction(action) ||
+                action == Intent.ACTION_TIMEZONE_CHANGED ||
+                action == Intent.ACTION_TIME_CHANGED ||
+                action == ACTION_EXACT_ALARM_ALLOWED
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        if (action != Intent.ACTION_BOOT_COMPLETED &&
-            action != Intent.ACTION_MY_PACKAGE_REPLACED &&
-            action != Intent.ACTION_TIMEZONE_CHANGED &&
-            action != Intent.ACTION_TIME_CHANGED
-        ) return
+        if (!handles(action)) return
 
         val pending = goAsync()
         val appContext = context.applicationContext
@@ -38,7 +58,7 @@ class BootReceiver : BroadcastReceiver() {
                 val db = AppDatabase.getDatabase(appContext)
                 // Reminders that should have rung while the phone was off. This must run BEFORE the
                 // alarms are set again, because setting them again clears the waiting list.
-                if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+                if (isStartAction(action)) {
                     step("missed reminders") { MissedReminders.notifyMissed(appContext, db) }
                 }
                 step("task reminders") { ReminderScheduler(appContext).rescheduleAll(db) }
@@ -47,6 +67,8 @@ class BootReceiver : BroadcastReceiver() {
                 step("snoozed reminders") { SnoozeStore.restoreAll(appContext) }
                 step("daily summary") { DailySummaryScheduler(appContext).reschedule() }
                 step("repeat rollover") { RepeatRolloverReceiver.rolloverAndReschedule(appContext) }
+                // Also starts the 15 minute safety net right after an update, before the app is opened.
+                step("reminder guard") { ReminderGuardWorker.schedule(appContext) }
                 step("countdown timer") {
                     val controller = TimerController.get(appContext)
                     val stateBefore = controller.state.value

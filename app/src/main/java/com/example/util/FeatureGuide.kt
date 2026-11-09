@@ -123,7 +123,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Check Reminders", "Find out why reminders are late or missing, and send yourself a test.", "notifications_active", 34,
-            "1. Open Settings, then Notifications & reminders.\n2. Tap Check reminders.\n3. Tap Fix this next to any line with a warning.\n4. Tap Send test reminder, lock the screen and wait about 10 seconds.\n5. If a reminder was due while your phone was off, you get one 'Missed reminder' notification when it starts again."
+            "1. Open Settings, then Notifications & reminders.\n2. Tap Check reminders.\n3. Tap Fix this next to any line with a warning.\n4. Tap Send test reminder, lock the screen and wait about 10 seconds.\n5. Opening this check also sets any missing reminder alarm again and shows a reminder that never rang.\n6. UniTask repeats this check by itself about every 15 minutes, even when the app is closed.\n7. If a reminder was due while your phone was off, you get one 'Missed reminder' notification when it starts again."
         ),
         AppFeature(
             "Delete When Done", "Let finished one-time tasks in My tasks move to Recently deleted.", "auto_delete", 23,

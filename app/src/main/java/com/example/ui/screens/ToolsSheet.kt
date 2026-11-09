@@ -45,20 +45,24 @@ data class ToolEntry(
     val description: String,
     val icon: ImageVector,
     val testTag: String,
+    val showBadge: Boolean = false,
     val onClick: () -> Unit
 )
 
 /**
- * Top bar button opening the Tools sheet. Shows a badge dot when a timer or countdown is active.
+ * Top bar button opening the More sheet. Shows a badge dot when a timer or countdown is active,
+ * or when a newer app version is available (the update is found from the Settings tile).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolsButton(
     timerActive: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    updateAvailable: Boolean = false
 ) {
-    val description = if (timerActive) "Tools, timer active" else "Tools"
+    val description = if (timerActive) "More, timer active" else "More"
+    val showDot = timerActive || updateAvailable
     FilledTonalIconButton(
         onClick = onClick,
         modifier = modifier
@@ -69,7 +73,7 @@ fun ToolsButton(
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
     ) {
-        if (timerActive) {
+        if (showDot) {
             BadgedBox(
                 badge = {
                     Badge(
@@ -117,7 +121,7 @@ fun ToolsSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Tools",
+                text = "More",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -176,12 +180,14 @@ private fun ToolTile(
                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = tool.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(24.dp)
-                )
+                BadgedBox(badge = { if (tool.showBadge) Badge() }) {
+                    Icon(
+                        imageVector = tool.icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(

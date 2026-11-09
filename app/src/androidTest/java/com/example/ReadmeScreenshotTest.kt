@@ -122,7 +122,7 @@ class ReadmeScreenshotTest {
         capture("theme_accent")
         setTheme(ThemeMode.SYSTEM, AccentTheme.INDIGO)
 
-        // Study timer: open it from the Tools sheet and show a 25 minute countdown.
+        // Study timer: open it from the More sheet and show a 25 minute countdown.
         tap("top_bar_tools_button")
         tap("tools_tile_timer")
         waitForTag("timer_screen")
@@ -133,10 +133,9 @@ class ReadmeScreenshotTest {
         tap("timer_back_button")
         waitForTagToDisappear("timer_screen")
 
-        // Global search: open it from the Tools sheet and search for "design". That word
+        // Global search: open it from the top bar search icon and search for "design". That word
         // matches a task, a note and a course, so all three result sections are shown.
-        tap("top_bar_tools_button")
-        tap("tools_tile_search")
+        tap("top_bar_search_button")
         waitForTag("search_screen")
         composeRule.onNodeWithTag("search_input", useUnmergedTree = true).performTextInput("design")
         waitForText("Courses (")
@@ -145,7 +144,7 @@ class ReadmeScreenshotTest {
         tap("search_back_button")
         waitForTagToDisappear("search_screen")
 
-        // Recently deleted: open it from the Tools sheet. It opens on the Tasks tab, which
+        // Recently deleted: open it from the More sheet. It opens on the Tasks tab, which
         // lists the deleted demo tasks seeded in seedLocalDemoData().
         tap("top_bar_tools_button")
         tap("tools_tile_recently_deleted")
@@ -170,8 +169,9 @@ class ReadmeScreenshotTest {
         waitForTag("notes_list")
         tap("notes_back_button")
         waitForTagToDisappear("notes_list")
-        waitForTag("top_bar_settings_button")
-        tap("top_bar_settings_button")
+        waitForTag("top_bar_tools_button")
+        tap("top_bar_tools_button")
+        tap("tools_tile_settings")
         waitForTag("settings_section_general")
         capture("settings_menu")
 

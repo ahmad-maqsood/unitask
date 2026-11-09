@@ -10,17 +10,17 @@ import org.junit.Test
 class ToolsListTest {
 
     @Test
-    fun testToolsListContainsRecentlyDeletedAndSearchTiles() {
+    fun testToolsListContainsRecentlyDeletedAndSettingsTiles() {
         var notesClicked = false
         var timerClicked = false
         var recentlyDeletedClicked = false
-        var searchClicked = false
+        var settingsClicked = false
 
         val tools = buildToolsList(
             onOpenNotes = { notesClicked = true },
             onOpenTimer = { timerClicked = true },
             onOpenRecentlyDeleted = { recentlyDeletedClicked = true },
-            onOpenSearch = { searchClicked = true }
+            onOpenSettings = { settingsClicked = true }
         )
 
         assertEquals(4, tools.size)
@@ -33,13 +33,24 @@ class ToolsListTest {
         recentlyDeleted?.onClick?.invoke()
         assertTrue(recentlyDeletedClicked)
 
-        val search = tools.find { it.label == "Search" }
-        assertNotNull(search)
-        assertEquals("Find tasks, notes and courses", search?.description)
-        assertEquals("tools_tile_search", search?.testTag)
+        val settings = tools.find { it.label == "Settings" }
+        assertNotNull(settings)
+        assertEquals("Reminders, backup and account", settings?.description)
+        assertEquals("tools_tile_settings", settings?.testTag)
 
-        search?.onClick?.invoke()
-        assertTrue(searchClicked)
+        settings?.onClick?.invoke()
+        assertTrue(settingsClicked)
+
+        // Search has its own top bar icon, so it is no longer a tile.
+        assertEquals(null, tools.find { it.label == "Search" })
+    }
+
+    @Test
+    fun testSettingsTileShowsBadgeOnlyWhenUpdateAvailable() {
+        val without = buildToolsList({}, {}, {}, {})
+        val with = buildToolsList({}, {}, {}, {}, updateAvailable = true)
+        assertEquals(false, without.first { it.label == "Settings" }.showBadge)
+        assertEquals(true, with.first { it.label == "Settings" }.showBadge)
     }
 
     @Test

@@ -116,10 +116,10 @@ enum class SettingsPage {
 }
 
 /**
- * The gear button in the top bar. It opens a Settings sheet with:
- * Account row (sign in for groups / online account), and sections for General (theme, week parity),
+ * The Settings sheet. Its gear button is optional: the top bar opens it from the More sheet.
+ * It has an Account row (sign in for groups / online account), and sections for General (theme, week parity),
  * Notifications & reminders, Backup & data, and About & help.
- * It also checks GitHub once when the app opens and shows a badge on the gear if a newer
+ * It also checks GitHub once when the app opens and shows a badge on the More button if a newer
  * release exists.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -129,7 +129,9 @@ fun SettingsButton(
     onOpenCloudSheet: () -> Unit,
     onRescheduleAllReminders: () -> Unit = {},
     openRequest: SettingsOpenRequest? = null,
-    onOpenRequestHandled: () -> Unit = {}
+    onOpenRequestHandled: () -> Unit = {},
+    showButton: Boolean = true,
+    onUpdateAvailableChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -194,13 +196,17 @@ fun SettingsButton(
 
     val available = updateResult as? UpdateResult.Available
     val currentVersion = remember(context) { UpdateChecker.currentVersion(context) }
+    // Lets the More button show the update dot when this button itself is hidden.
+    LaunchedEffect(available != null) { onUpdateAvailableChanged(available != null) }
 
-    IconButton(
-        onClick = { showSheet = true },
-        modifier = Modifier.testTag("top_bar_settings_button")
-    ) {
-        BadgedBox(badge = { if (available != null) Badge() }) {
-            Icon(Icons.Default.Settings, contentDescription = "Settings")
+    if (showButton) {
+        IconButton(
+            onClick = { showSheet = true },
+            modifier = Modifier.testTag("top_bar_settings_button")
+        ) {
+            BadgedBox(badge = { if (available != null) Badge() }) {
+                Icon(Icons.Default.Settings, contentDescription = "Settings")
+            }
         }
     }
 

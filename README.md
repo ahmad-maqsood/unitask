@@ -146,7 +146,7 @@ You can also open the cloned folder in Android Studio and let Gradle sync before
 
 ### Notes
 
-- **Markdown notes.** Notes with an optional course tag, opened from the Tools menu in the top bar.
+- **Markdown notes.** Notes with an optional course tag, opened from the More menu in the top bar.
   - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
   - Edit and Preview modes with interactive checklists that can be ticked in Preview.
   - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
@@ -160,7 +160,7 @@ You can also open the cloned folder in Android Studio and let Gradle sync before
 
 ### Study timer
 
-- **Stopwatch and countdown.** Track study sessions with a stopwatch or a 15, 25, 45 or 60-minute countdown, or set a custom duration. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the Tools button.
+- **Stopwatch and countdown.** Track study sessions with a stopwatch or a 15, 25, 45 or 60-minute countdown, or set a custom duration. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
 
 ### Timetable
 

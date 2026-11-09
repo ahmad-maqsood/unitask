@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 
 
 import androidx.compose.material.icons.filled.Groups
@@ -122,12 +123,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.Crossfade
-/** Builds the list of tool tiles available in the Tools sheet. */
+/** Builds the list of tiles shown in the More sheet. Search has its own top bar icon. */
 fun buildToolsList(
     onOpenNotes: () -> Unit,
     onOpenTimer: () -> Unit,
     onOpenRecentlyDeleted: () -> Unit,
-    onOpenSearch: () -> Unit = {}
+    onOpenSettings: () -> Unit,
+    updateAvailable: Boolean = false
 ): List<ToolEntry> = listOf(
     ToolEntry(
         label = "Notes",
@@ -151,11 +153,12 @@ fun buildToolsList(
         onClick = onOpenRecentlyDeleted
     ),
     ToolEntry(
-        label = "Search",
-        description = "Find tasks, notes and courses",
-        icon = Icons.Default.Search,
-        testTag = "tools_tile_search",
-        onClick = onOpenSearch
+        label = "Settings",
+        description = "Reminders, backup and account",
+        icon = Icons.Default.Settings,
+        testTag = "tools_tile_settings",
+        showBadge = updateAvailable,
+        onClick = onOpenSettings
     )
 )
 
@@ -339,6 +342,7 @@ fun MainScreen(
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
     var settingsOpenRequest by remember { mutableStateOf<SettingsOpenRequest?>(null) }
+    var updateAvailable by remember { mutableStateOf(false) }
 
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -357,7 +361,7 @@ fun MainScreen(
         now = System.currentTimeMillis()
     )
 
-    // Observe timer state to show an active indicator dot on the Tools button.
+    // Observe timer state to show an active indicator dot on the More button.
     // The state flow only changes on start, pause, resume, reset, and finish,
     // so the top bar does NOT recompose every second. No ticking value is observed here.
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
@@ -367,7 +371,8 @@ fun MainScreen(
         onOpenNotes = { showNotes = true },
         onOpenTimer = { showTimer = true },
         onOpenRecentlyDeleted = { showRecentlyDeleted = true },
-        onOpenSearch = { showSearch = true }
+        onOpenSettings = { settingsOpenRequest = SettingsOpenRequest(null) },
+        updateAvailable = updateAvailable
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -447,8 +452,15 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showSearch = true },
+                        modifier = Modifier.testTag("top_bar_search_button")
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
                     ToolsButton(
                         timerActive = timerActive,
+                        updateAvailable = updateAvailable,
                         onClick = { showTools = true }
                     )
                     AnnouncementBell(
@@ -469,7 +481,9 @@ fun MainScreen(
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
                         onRescheduleAllReminders = { viewModel.rescheduleAllReminders() },
                         openRequest = settingsOpenRequest,
-                        onOpenRequestHandled = { settingsOpenRequest = null }
+                        onOpenRequestHandled = { settingsOpenRequest = null },
+                        showButton = false,
+                        onUpdateAvailableChanged = { updateAvailable = it }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

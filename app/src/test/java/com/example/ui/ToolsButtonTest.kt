@@ -23,7 +23,7 @@ class ToolsButtonTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun whenTimerInactive_hasToolsContentDescription_andClickCallsOnClick() {
+    fun whenTimerInactive_hasMoreContentDescription_andClickCallsOnClick() {
         var clicked = false
         composeRule.setContent {
             MyApplicationTheme {
@@ -35,7 +35,7 @@ class ToolsButtonTest {
         }
 
         composeRule.onNodeWithTag("top_bar_tools_button")
-            .assertContentDescriptionEquals("Tools")
+            .assertContentDescriptionEquals("More")
             .performClick()
 
         assertEquals(true, clicked)
@@ -54,7 +54,7 @@ class ToolsButtonTest {
         }
 
         composeRule.onNodeWithTag("top_bar_tools_button")
-            .assertContentDescriptionEquals("Tools, timer active")
+            .assertContentDescriptionEquals("More, timer active")
             .performClick()
 
         assertEquals(true, clicked)
@@ -73,12 +73,12 @@ class ToolsButtonTest {
         }
 
         composeRule.onNodeWithTag("top_bar_tools_button")
-            .assertContentDescriptionEquals("Tools")
+            .assertContentDescriptionEquals("More")
 
         timerActive.value = true
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("top_bar_tools_button")
-            .assertContentDescriptionEquals("Tools, timer active")
+            .assertContentDescriptionEquals("More, timer active")
     }
 }

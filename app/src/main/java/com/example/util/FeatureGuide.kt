@@ -71,7 +71,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Search", "Find tasks, notes, courses and settings with multi-word search. Archived items and these help guides can be included too.", "search", 76,
-            "1. Tap the Tools icon in the top bar, then tap Search.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Turn on Include archived to find items from past semesters.\n5. Turn on Include app guides to search these help guides too. Tap a guide to open it."
+            "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Turn on Include archived to find items from past semesters.\n5. Turn on Include app guides to search these help guides too. Tap a guide to open it."
         ),
         AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "qr_code", 80,
@@ -135,7 +135,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Notes", "Capture lecture notes, ideas, and revision summaries with course tags and search.", "edit_note", 135,
-            "1. Tap the Tools icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin, Save to device or Delete it.\n7. Tap Tools in the top bar, then Recently deleted to view or restore deleted notes.\n8. Use Save to device in the note menu to keep a note as a file in any folder you choose.\n9. Share or Save to device can also make a PDF that looks like the preview, with headings, lists, tables and images."
+            "1. Tap the More icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin, Save to device or Delete it.\n7. Tap More in the top bar, then Recently deleted to view or restore deleted notes.\n8. Use Save to device in the note menu to keep a note as a file in any folder you choose.\n9. Share or Save to device can also make a PDF that looks like the preview, with headings, lists, tables and images."
         ),
         AppFeature(
             "Markdown in Notes", "Format text with headings, checklists, tables, links and gallery images.", "code", 140,
@@ -147,11 +147,11 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "timer", 150,
-            "1. Tap the Tools icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the Tools icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it."
+            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it."
         ),
         AppFeature(
             "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "restore_trash", 155,
-            "1. Tap the Tools icon in the top bar, then tap Recently deleted.\n2. Switch between the Tasks, Notes and Classes tabs to see your deleted items.\n3. Tap Restore on any item to put it back where it was.\n4. Tap Delete forever (or Empty trash) to remove items permanently.\n5. Items left in the trash are automatically removed for good after 30 days."
+            "1. Tap the More icon in the top bar, then tap Recently deleted.\n2. Switch between the Tasks, Notes and Classes tabs to see your deleted items.\n3. Tap Restore on any item to put it back where it was.\n4. Tap Delete forever (or Empty trash) to remove items permanently.\n5. Items left in the trash are automatically removed for good after 30 days."
         ),
         AppFeature(
             "Google Drive backup", "Back up everything to your own Google Drive and restore it on any phone.", "backup", 160,

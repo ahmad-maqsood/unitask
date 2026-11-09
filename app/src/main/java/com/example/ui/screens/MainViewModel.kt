@@ -238,6 +238,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         com.example.sync.SyncScheduler.cancelLegacyPersonalSync(application)
         // Periodic group and announcement sync while the app is closed (every 15 minutes)
         com.example.sync.SyncScheduler.schedulePeriodicSyncWorker(application)
+        // Safety net for reminder alarms that disappear while the phone is on (every 15 minutes)
+        com.example.reminder.ReminderGuardWorker.schedule(application)
         // Follow the Supabase session: signing in starts the group flows, signing out stops them.
         // "Initializing" (session still loading) and "RefreshFailure" (offline) are preserved,
         // so an offline app start never looks like a sign-out.

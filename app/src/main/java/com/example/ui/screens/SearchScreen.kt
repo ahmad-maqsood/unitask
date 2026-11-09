@@ -60,6 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
+import com.example.util.AppFeature
 import com.example.util.DateFormats
 
 /**
@@ -88,23 +89,27 @@ fun SearchScreen(
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val includeArchived by viewModel.includeArchived.collectAsStateWithLifecycle()
+    val includeGuides by viewModel.includeGuides.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
 
     var tasksExpanded by rememberSaveable { mutableStateOf(false) }
     var notesExpanded by rememberSaveable { mutableStateOf(false) }
     var coursesExpanded by rememberSaveable { mutableStateOf(false) }
     var settingsExpanded by rememberSaveable { mutableStateOf(false) }
+    var guidesExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(searchQuery) {
         tasksExpanded = false
         notesExpanded = false
         coursesExpanded = false
         settingsExpanded = false
+        guidesExpanded = false
     }
 
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var archivedDialogSemester by remember { mutableStateOf<String?>(null) }
+    var guideDialogTitle by rememberSaveable { mutableStateOf<String?>(null) }
 
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -132,6 +137,13 @@ fun SearchScreen(
             )
         }
         return
+    }
+
+    guideDialogTitle?.let { title ->
+        FeatureGuideDialog(
+            onDismiss = { guideDialogTitle = null },
+            initialFeatureTitle = title
+        )
     }
 
     if (archivedDialogSemester != null) {
@@ -222,6 +234,23 @@ fun SearchScreen(
                         checked = includeArchived,
                         onCheckedChange = { viewModel.setIncludeArchived(it) },
                         modifier = Modifier.testTag("search_archived_switch")
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Include app guides",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Switch(
+                        checked = includeGuides,
+                        onCheckedChange = { viewModel.setIncludeGuides(it) },
+                        modifier = Modifier.testTag("search_guides_switch")
                     )
                 }
             }
@@ -431,6 +460,43 @@ fun SearchScreen(
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text(formatShowAllButtonText(results.settings.size))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Section: App guides ("Learn to use the app"), only with the switch on
+                        if (results.guides.isNotEmpty()) {
+                            item(key = "header_guides") {
+                                Text(
+                                    text = "App guides (${results.guides.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                                )
+                            }
+                            val visibleGuides = visibleSectionItems(results.guides, guidesExpanded)
+                            items(
+                                items = visibleGuides,
+                                key = { "guide_${it.title}" }
+                            ) { feature ->
+                                SearchGuideRow(
+                                    feature = feature,
+                                    onClick = {
+                                        val target = resolveGuideClickTarget(feature)
+                                        if (target is SearchNavigationTarget.OpenGuide) {
+                                            guideDialogTitle = target.featureTitle
+                                        }
+                                    }
+                                )
+                            }
+                            if (shouldShowExpandButton(results.guides.size, guidesExpanded)) {
+                                item(key = "more_guides") {
+                                    TextButton(
+                                        onClick = { guidesExpanded = true },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(formatShowAllButtonText(results.guides.size))
                                     }
                                 }
                             }
@@ -706,6 +772,64 @@ private fun SearchSettingRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun SearchGuideRow(
+    feature: AppFeature,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .testTag("search_guide_${feature.title}"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val vector = featureIcon(feature.icon)
+            if (vector != null) {
+                Icon(
+                    imageVector = vector,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = feature.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = feature.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Learn to use the app",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

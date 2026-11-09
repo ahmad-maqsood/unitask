@@ -737,10 +737,11 @@ fun EditGroupDialog(
                                     .padding(vertical = 4.dp)
                             )
                         }
-                        Row(
+                        // The two buttons are stacked, each one full width. Side by side they only got
+                        // about 100dp each inside the dialog, which cut the "New code" label in half.
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             OutlinedButton(
                                 onClick = {
@@ -752,26 +753,30 @@ fun EditGroupDialog(
                                     }
                                 },
                                 enabled = currentJoinCode.isNotBlank() && !isLoading,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("edit_group_copy_code_button")
                             ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy code", modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
+                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Copy",
-                                    maxLines = 2,
+                                    text = "Copy code",
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
                             Button(
                                 onClick = { showRegenConfirm = true },
                                 enabled = !isLoading,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("edit_group_new_code_button")
                             ) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Regenerate code", modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = "New code",
-                                    maxLines = 2,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }

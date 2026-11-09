@@ -13,7 +13,10 @@ import com.example.MainActivity
 import com.example.data.local.Priority
 import com.example.util.HighPriorityAlarm
 import com.example.data.local.TaskStatus
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class ReminderScheduler(private val context: Context) {
 
@@ -47,57 +50,50 @@ class ReminderScheduler(private val context: Context) {
         cancelReminder(task.id)
 
         for ((option, triggerTime) in upcomingTriggers(task)) {
-            val intent = reminderIntent(task.id, option).apply {
-                putExtra(TaskReminderReceiver.EXTRA_TASK_ID, task.id)
-                putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, task.title)
-                putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
-                putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, option.label)
-                putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, option.name)
-                putExtra(TaskReminderReceiver.EXTRA_TRIGGER_AT, triggerTime)
-                putExtra(TaskReminderReceiver.EXTRA_PRIORITY, task.priority.name)
-                putExtra(
-                    TaskReminderReceiver.EXTRA_DUE_INFO,
-                    "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
-                )
-            }
-            // Remember that this alarm is waiting, so we can tell if it never rang.
-            MissedReminders.recordArmed(context, task.id, option, triggerTime)
-            val requestCode = requestCodeFor(task.id, option)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            armReminder(task, courseCode, option, triggerTime)
+        }
+    }
 
-            // High priority tasks use an alarm-clock alarm, which phones do not delay or block
-            // with battery saving. Everything else keeps the normal alarm.
-            val useAlarmClock = task.priority == Priority.HIGH
-            alarmManager?.let { am ->
-                try {
-                    if (useAlarmClock) {
-                        val showIntent = PendingIntent.getActivity(
-                            context,
-                            requestCode,
-                            Intent(context, MainActivity::class.java),
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-                        am.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime, showIntent), pendingIntent)
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        if (am.canScheduleExactAlarms()) {
-                            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                        } else {
-                            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                        }
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    /** Sets the alarm of ONE reminder. The task's other alarms are not touched. */
+    private fun armReminder(task: TaskItem, courseCode: String, option: ReminderOption, triggerTime: Long) {
+        val intent = buildReminderIntent(task, courseCode, option, triggerTime)
+        // Remember that this alarm is waiting, so we can tell if it never rang.
+        MissedReminders.recordArmed(context, task.id, option, triggerTime)
+        val requestCode = requestCodeFor(task.id, option)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // High priority tasks use an alarm-clock alarm, which phones do not delay or block
+        // with battery saving. Everything else keeps the normal alarm.
+        val useAlarmClock = task.priority == Priority.HIGH
+        alarmManager?.let { am ->
+            try {
+                if (useAlarmClock) {
+                    val showIntent = PendingIntent.getActivity(
+                        context,
+                        requestCode,
+                        Intent(context, MainActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    am.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime, showIntent), pendingIntent)
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (am.canScheduleExactAlarms()) {
                         am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                     } else {
-                        am.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                     }
-                } catch (_: SecurityException) {
-                    // Fallback to standard inexact alarm
-                    am.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                } else {
+                    am.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                 }
+            } catch (_: SecurityException) {
+                // Fallback to standard inexact alarm
+                am.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
             }
         }
     }
@@ -122,6 +118,71 @@ class ReminderScheduler(private val context: Context) {
         for (task in database.taskDao().getAllActiveTasksSync()) {
             cancelReminder(task.id)
         }
+    }
+
+    /** The intent (with every extra the notification needs) for one reminder of one task. */
+    private fun buildReminderIntent(
+        task: TaskItem,
+        courseCode: String,
+        option: ReminderOption,
+        triggerTime: Long
+    ): Intent = reminderIntent(task.id, option).apply {
+        putExtra(TaskReminderReceiver.EXTRA_TASK_ID, task.id)
+        putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, task.title)
+        putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, courseCode)
+        putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, option.label)
+        putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, option.name)
+        putExtra(TaskReminderReceiver.EXTRA_TRIGGER_AT, triggerTime)
+        putExtra(TaskReminderReceiver.EXTRA_PRIORITY, task.priority.name)
+        putExtra(
+            TaskReminderReceiver.EXTRA_DUE_INFO,
+            "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+        )
+    }
+
+    /** True while the system still holds the alarm of this reminder (it is gone after a reboot or a force stop). */
+    private fun isAlarmSet(taskId: Long, option: ReminderOption): Boolean =
+        PendingIntent.getBroadcast(
+            context,
+            requestCodeFor(taskId, option),
+            reminderIntent(taskId, option),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        ) != null
+
+    /**
+     * Sets the missing alarms again: every upcoming reminder of an unfinished task that has none.
+     * Alarms that are in place are left alone. Returns how many tasks were fixed.
+     */
+    suspend fun rearmMissing(database: AppDatabase): Int {
+        var fixed = 0
+        for (task in database.taskDao().getAllActiveTasksSync()) {
+            if (task.status == TaskStatus.COMPLETED) continue
+            val missing = upcomingTriggers(task).filterKeys { !isAlarmSet(task.id, it) }
+            if (missing.isEmpty()) continue
+            val course = database.courseDao().getCourseByIdSync(task.courseId) ?: continue
+            // Only the missing alarms are set. Setting the whole task again would also cancel an alarm
+            // that is a few minutes late but still on its way.
+            for ((option, triggerTime) in missing) armReminder(task, course.code, option, triggerTime)
+            fixed++
+        }
+        return fixed
+    }
+
+    /**
+     * Shows a reminder whose alarm never rang, right now, through the normal receiver (so the
+     * "still open" check, the notification and the bell history all work as usual).
+     */
+    fun deliverLate(task: TaskItem, courseCode: String, option: ReminderOption, triggerTime: Long) {
+        // Take the alarm away first, so a stuck copy of it can never ring a second time.
+        cancelAlarm(requestCodeFor(task.id, option), reminderIntent(task.id, option))
+        val due = SimpleDateFormat("EEE, MMM d 'at' h:mm a", Locale.getDefault())
+            .format(Date(calculateDeadlineMillis(task)))
+        val intent = buildReminderIntent(task, courseCode, option, triggerTime).apply {
+            // "1 hour before" is no longer true. Without a label the title is just "Due: <task>".
+            removeExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL)
+            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, "Due $due")
+        }
+        context.sendBroadcast(intent)
     }
 
     fun cancelReminder(taskId: Long) {

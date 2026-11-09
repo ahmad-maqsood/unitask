@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,7 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.local.AppDatabase
+import com.example.reminder.ReminderGuard
 import com.example.reminder.ReminderHealth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Settings > Notifications & reminders > Check reminders. */
 @Composable
@@ -31,6 +36,13 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     var items by remember { mutableStateOf(ReminderHealth.check(context)) }
     var testSent by remember { mutableStateOf(false) }
+
+    // Checking also repairs: reminders that never rang are shown now and missing alarms are set again.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            runCatching { ReminderGuard.run(context, AppDatabase.getDatabase(context)) }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

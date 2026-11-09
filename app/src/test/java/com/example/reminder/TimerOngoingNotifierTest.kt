@@ -55,7 +55,9 @@ class TimerOngoingNotifierTest {
         assertEquals(Notification.VISIBILITY_PUBLIC, runningNotif.visibility)
         // Buttons are round icon buttons inside the custom view, not native text actions.
         assertNull(runningNotif.actions)
-        val runningView = runningNotif.bigContentView.apply(context, FrameLayout(context))
+        // No expanded view: it would make Android show a useless expand arrow.
+        assertNull(runningNotif.bigContentView)
+        val runningView = runningNotif.contentView.apply(context, FrameLayout(context))
         assertEquals(
             "Pause",
             runningView.findViewById<View>(R.id.timer_notif_primary).contentDescription.toString()
@@ -77,7 +79,8 @@ class TimerOngoingNotifierTest {
         val pausedNotif = updatedNotifications.last()
         assertEquals(Notification.VISIBILITY_PUBLIC, pausedNotif.visibility)
         assertNull(pausedNotif.actions)
-        val pausedView = pausedNotif.bigContentView.apply(context, FrameLayout(context))
+        assertNull(pausedNotif.bigContentView)
+        val pausedView = pausedNotif.contentView.apply(context, FrameLayout(context))
         assertEquals(
             "Resume",
             pausedView.findViewById<View>(R.id.timer_notif_primary).contentDescription.toString()

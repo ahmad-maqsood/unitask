@@ -104,9 +104,9 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             .setContentTitle(title)
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setShowWhen(false)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            // Only one view. An expanded view (even the same one) makes Android show a pointless
+            // expand arrow, because the buttons are already visible.
             .setCustomContentView(views)
-            .setCustomBigContentView(views)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

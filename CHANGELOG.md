@@ -12,6 +12,7 @@ All notable changes to UniTask are documented in this file.
 - **Bottom bar:** Deadlines has its own flag icon so it no longer looks like Timetable. Badges now appear only when something needs attention: overdue tasks on Deadlines and My tasks (red), and unread messages on Groups. The plain counts on Timetable and Courses are gone.
 - **Fewer duplicate add buttons:** removed the "Add Class" button from Timetable and the "Add Course" button from Courses. Use the + button, or the button shown when the list is empty.
 - **New app font:** the whole app now uses Plus Jakarta Sans, a friendlier and more modern typeface, with slightly tighter spacing in body text. The timer clock and code-style text keep their monospace font.
+- **Timer screen:** the time now sits inside a progress ring that shows how much of a countdown is left (a stopwatch ring goes round once a minute). The screen also shows what state the timer is in, when a running countdown will end, and has bigger Start, Pause and Reset buttons with icons.
 
 ## [4.0.0] - 08-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)

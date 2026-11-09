@@ -230,4 +230,38 @@ class TimerLogicTest {
         val idleState = TimerState(mode = TimerMode.COUNTDOWN)
         assertFalse(TimerLogic.isAlarmLate(idleState, now = 1_000_000L))
     }
+
+    @Test
+    fun countdownRingStartsFullAndEmptiesAsTimeRunsOut() {
+        val total = 10 * 60_000L
+        var s = TimerState(mode = TimerMode.COUNTDOWN, countdownTotalMillis = total)
+        assertEquals(1f, TimerLogic.ringFraction(s, now = 0L), 0.0001f)
+
+        s = TimerLogic.start(s, now = 0L)
+        assertEquals(0.5f, TimerLogic.ringFraction(s, now = 5 * 60_000L), 0.0001f)
+        assertEquals(0.9f, TimerLogic.ringFraction(s, now = 60_000L), 0.0001f)
+        // Past the end it never goes below empty.
+        assertEquals(0f, TimerLogic.ringFraction(s, now = total + 5_000L), 0.0001f)
+    }
+
+    @Test
+    fun countdownRingStaysWhereItIsWhilePaused() {
+        var s = TimerState(mode = TimerMode.COUNTDOWN, countdownTotalMillis = 10 * 60_000L)
+        s = TimerLogic.start(s, now = 0L)
+        s = TimerLogic.pause(s, now = 2 * 60_000L)
+
+        assertEquals(0.8f, TimerLogic.ringFraction(s, now = 2 * 60_000L), 0.0001f)
+        assertEquals(0.8f, TimerLogic.ringFraction(s, now = 90 * 60_000L), 0.0001f)
+    }
+
+    @Test
+    fun stopwatchRingIsEmptyWhenIdleAndGoesRoundOncePerMinute() {
+        var s = TimerState(mode = TimerMode.STOPWATCH)
+        assertEquals(0f, TimerLogic.ringFraction(s, now = 0L), 0.0001f)
+
+        s = TimerLogic.start(s, now = 0L)
+        assertEquals(0.5f, TimerLogic.ringFraction(s, now = 30_000L), 0.0001f)
+        assertEquals(0.25f, TimerLogic.ringFraction(s, now = 75_000L), 0.0001f) // 1 min 15 s
+        assertEquals(0f, TimerLogic.ringFraction(s, now = 120_000L), 0.0001f)   // exactly 2 min
+    }
 }

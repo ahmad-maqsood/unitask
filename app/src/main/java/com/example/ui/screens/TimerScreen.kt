@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +51,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -78,10 +81,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.timer.TimerController
+import com.example.util.timer.TimerHistoryLogic
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
 import com.example.reminder.CountdownNotifier
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Full-screen timer supporting a stopwatch (count up) and a countdown (count down).
@@ -97,6 +103,8 @@ fun TimerScreen(
     var fullscreen by rememberSaveable { mutableStateOf(false) }
     var keepAwakeInFullscreen by rememberSaveable { mutableStateOf(controller.keepScreenOnInFullscreen()) }
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    val sessions by controller.sessions.collectAsStateWithLifecycle()
 
     // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
     BackHandler(enabled = !fullscreen) {
@@ -104,6 +112,9 @@ fun TimerScreen(
     }
     BackHandler(enabled = fullscreen) {
         fullscreen = false
+    }
+    BackHandler(enabled = showHistory && !fullscreen) {
+        showHistory = false
     }
 
     val context = LocalContext.current
@@ -251,6 +262,13 @@ fun TimerScreen(
                 }
             }
         }
+    } else if (showHistory) {
+        TimerHistoryScreen(
+            sessions = sessions,
+            onClose = { showHistory = false },
+            onDeleteSession = { controller.deleteSession(it.startedAtMillis) },
+            onClearAll = { controller.clearHistory() }
+        )
     } else {
         Scaffold(
             modifier = Modifier
@@ -276,6 +294,15 @@ fun TimerScreen(
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = { showHistory = true },
+                            modifier = Modifier.testTag("timer_history_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = "Study history"
+                            )
+                        }
                         IconButton(
                             onClick = { fullscreen = true },
                             modifier = Modifier.testTag("timer_fullscreen_button")
@@ -421,6 +448,53 @@ fun TimerScreen(
                     onResume = { controller.start() },
                     onReset = { controller.reset() }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Quick look at today's study time; tapping it opens the full history.
+                val zone = remember { ZoneId.systemDefault() }
+                val todayMillis = remember(sessions) {
+                    TimerHistoryLogic.totalForDay(sessions, LocalDate.now(zone), zone)
+                }
+                Surface(
+                    onClick = { showHistory = true },
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .widthIn(max = 420.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .testTag("timer_today_card")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Studied today",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (todayMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(todayMillis),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Text(
+                            text = "History",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }

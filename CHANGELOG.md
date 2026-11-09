@@ -2,6 +2,11 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Study time history:** the timer now remembers your sessions. A run is saved when you tap Reset or a countdown finishes, and the new history screen shows today's total, a 7-day bar chart and every session grouped by day. Single sessions can be deleted, or the whole history cleared.
+
 ## [4.0.0] - 08-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
 

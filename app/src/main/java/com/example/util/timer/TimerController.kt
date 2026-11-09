@@ -27,11 +27,19 @@ class TimerController(
     private val store: TimerStore,
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val alarm: CountdownAlarmHook = NoCountdownAlarm,
-    private val ongoing: TimerOngoingHook = NoTimerOngoing
+    private val ongoing: TimerOngoingHook = NoTimerOngoing,
+    private val history: TimerHistoryHook = NoTimerHistory
 ) {
 
     private val _state = MutableStateFlow(store.load())
     val state: StateFlow<TimerState> = _state.asStateFlow()
+
+    /** Finished study sessions, newest first. */
+    val sessions: StateFlow<List<TimerSession>> get() = history.sessions
+
+    fun deleteSession(startedAtMillis: Long) = history.delete(startedAtMillis)
+
+    fun clearHistory() = history.clear()
 
     fun now(): Long = clock()
 
@@ -40,6 +48,11 @@ class TimerController(
         val currentTime = now()
         val updated = TimerLogic.start(current, currentTime)
         if (updated != current) {
+            // Starting from a clean timer begins a new study session; resuming from a pause
+            // continues the one already in progress.
+            if (TimerLogic.isIdle(current)) {
+                store.setSessionStartMillis(currentTime)
+            }
             store.save(updated)
             _state.value = updated
             if (updated.mode == TimerMode.COUNTDOWN) {
@@ -68,6 +81,7 @@ class TimerController(
         val current = _state.value
         val updated = TimerLogic.reset(current)
         if (updated != current) {
+            recordSession(current, completed = false)
             store.save(updated)
             _state.value = updated
             alarm.cancel()
@@ -99,6 +113,7 @@ class TimerController(
         if (current.mode == TimerMode.COUNTDOWN && TimerLogic.isRunning(current)) {
             val remaining = TimerLogic.remainingMillis(current, now())
             if (remaining <= toleranceMillis) {
+                recordSession(current, completed = true)
                 val updated = TimerLogic.finish(current)
                 store.save(updated)
                 _state.value = updated
@@ -109,7 +124,31 @@ class TimerController(
         }
         return false
     }
-    
+
+    /**
+     * Saves the run that is ending as a study session. The saved start time is cleared first,
+     * so pressing Reset after a countdown has finished cannot save the same run twice.
+     */
+    private fun recordSession(state: TimerState, completed: Boolean) {
+        val startedAt = store.sessionStartMillis() ?: return
+        store.setSessionStartMillis(null)
+        val duration = if (completed) {
+            state.countdownTotalMillis
+        } else {
+            TimerLogic.elapsedMillis(state, now())
+        }
+        if (!completed && duration < TimerHistoryLogic.MIN_SESSION_MILLIS) return
+        history.add(
+            TimerSession(
+                startedAtMillis = startedAt,
+                durationMillis = duration,
+                mode = state.mode,
+                plannedMillis = if (state.mode == TimerMode.COUNTDOWN) state.countdownTotalMillis else null,
+                completed = completed
+            )
+        )
+    }
+
     fun keepScreenOnInFullscreen(): Boolean = store.keepScreenOnInFullscreen()
 
     fun setKeepScreenOnInFullscreen(value: Boolean) = store.setKeepScreenOnInFullscreen(value)
@@ -144,7 +183,8 @@ class TimerController(
                 INSTANCE ?: TimerController(
                     store = TimerStore(appContext),
                     alarm = CountdownAlarm(appContext),
-                    ongoing = TimerOngoingNotifier(appContext)
+                    ongoing = TimerOngoingNotifier(appContext),
+                    history = TimerHistoryStore(appContext)
                 ).also { INSTANCE = it }
             }
         }

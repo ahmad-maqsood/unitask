@@ -143,6 +143,7 @@ class TimerFlowTest {
     @Test
     fun customLengthOutOfBoundsShowsErrorAndIsNotApplied() {
         composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.waitForIdle()
         composeRule.mainClock.autoAdvance = false
         composeRule.onNodeWithTag("timer_preset_custom").performClick()
         settle()
@@ -170,6 +171,7 @@ class TimerFlowTest {
     @Test
     fun customDurationQuickAddAndSetUpdatesLengthAndCustomChipLabel() {
         composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.waitForIdle()
         composeRule.mainClock.autoAdvance = false
         composeRule.onNodeWithTag("timer_preset_custom").performClick()
         settle()
@@ -193,6 +195,7 @@ class TimerFlowTest {
     @Test
     fun tappingClockWhileIdleInCountdownModeOpensCustomDialog() {
         composeRule.onNodeWithTag("timer_mode_countdown").performClick()
+        composeRule.waitForIdle()
         composeRule.mainClock.autoAdvance = false
         composeRule.onNodeWithTag("timer_clock_edit").performClick()
         settle()

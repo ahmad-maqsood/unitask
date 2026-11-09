@@ -67,10 +67,10 @@ jobs:
           cache-provider: basic
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest
 
       - name: Run Android lint
-        run: ./gradlew lintDebug --no-daemon
+        run: ./gradlew lintDebug
 
       # Reads the lint XML report and prints every problem with its file, line, column,
       # rule and explanation. Also adds annotations on the exact lines and a summary page.
@@ -81,7 +81,7 @@ jobs:
       - name: Regenerate Room schema files
         if: always()
         run: |
-          ./gradlew kspDebugKotlin --rerun --no-daemon
+          ./gradlew kspDebugKotlin --rerun
           echo "Schema files found:"
           ls -R app/schemas || echo "no app/schemas folder was created"
           

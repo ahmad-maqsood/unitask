@@ -21,6 +21,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.example.ui.theme.courseColorName
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -201,40 +206,49 @@ fun AddEditCourseDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        CourseColors.forEach { hex ->
-                            val color = Color(android.graphics.Color.parseColor(hex))
-                            val isSelected = selectedColor.equals(hex, ignoreCase = true)
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .clickable { selectedColor = hex }
-                                    .then(
-                                        if (isSelected) Modifier.border(
-                                            2.dp,
-                                            MaterialTheme.colorScheme.onSurface,
-                                            CircleShape
-                                        ) else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected color",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+FlowRow(
+    modifier = Modifier.fillMaxWidth(),
+    // The 48dp touch areas already provide the spacing between swatches.
+    horizontalArrangement = Arrangement.spacedBy(0.dp),
+    verticalArrangement = Arrangement.spacedBy(0.dp)
+) {
+    CourseColors.forEach { hex ->
+        val color = Color(android.graphics.Color.parseColor(hex))
+        val isSelected = selectedColor.equals(hex, ignoreCase = true)
+        // Outer box: 48dp touch target with a spoken name. Inner box: the 34dp visible circle.
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .selectable(
+                    selected = isSelected,
+                    role = Role.RadioButton,
+                    onClick = { selectedColor = hex }
+                )
+                .semantics { contentDescription = courseColorName(hex) },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null, // the selected state is announced by the radio button
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
                 }
             }
         },

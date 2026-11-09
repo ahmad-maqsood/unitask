@@ -607,6 +607,7 @@ fun TimetableSlotCard(
     val slot = slotWithCourse.slot
     val course = slotWithCourse.course
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
 
     val courseColor = remember(course?.colorHex) {
@@ -715,9 +716,7 @@ fun TimetableSlotCard(
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier
-                                .size(28.dp)
-                                .testTag("timetable_slot_menu_${slot.id}")
+                            modifier = Modifier.testTag("timetable_slot_menu_${slot.id}")
                         ) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Slot actions")
                         }
@@ -738,7 +737,7 @@ fun TimetableSlotCard(
                                 text = { Text("Delete Slot", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
-                                    onDeleteClick()
+                                    showDeleteConfirm = true
                                 },
                                 modifier = Modifier.testTag("timetable_slot_delete_item_${slot.id}"),
                                 leadingIcon = {
@@ -748,6 +747,14 @@ fun TimetableSlotCard(
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }
+                            )
+                        }
+                        if (showDeleteConfirm) {
+                            ConfirmDeleteDialog(
+                                title = "Delete class?",
+                                message = "${course?.code ?: "This class"} will be moved to Recently deleted. You can restore it from there.",
+                                onConfirm = onDeleteClick,
+                                onDismiss = { showDeleteConfirm = false }
                             )
                         }
                     }

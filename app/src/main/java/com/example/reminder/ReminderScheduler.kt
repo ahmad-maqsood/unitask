@@ -14,7 +14,7 @@ import com.example.data.local.Priority
 import com.example.util.HighPriorityAlarm
 import com.example.data.local.TaskStatus
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import com.example.data.local.deadlineMillis
 import java.util.Date
 import java.util.Locale
 
@@ -22,15 +22,7 @@ class ReminderScheduler(private val context: Context) {
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
-    fun calculateDeadlineMillis(task: TaskItem): Long {
-        val cal = Calendar.getInstance()
-        cal.timeInMillis = task.dueDateEpochMillis
-        cal.set(Calendar.HOUR_OF_DAY, task.dueTimeHour)
-        cal.set(Calendar.MINUTE, task.dueTimeMinute)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
-    }
+    fun calculateDeadlineMillis(task: TaskItem): Long = task.deadlineMillis
 
     /** Trigger time for each selected reminder that is still in the future. */
     private fun upcomingTriggers(task: TaskItem): Map<ReminderOption, Long> {

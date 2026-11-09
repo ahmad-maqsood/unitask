@@ -2,9 +2,11 @@ package com.example.util.drive
 
 import android.content.Context
 import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.sync.DriveBackupWorker
 import com.example.util.NotificationHistory
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit
 object DriveAutoBackup {
 
     const val WORK_NAME = "unitask_drive_backup"
+    const val PERIODIC_WORK_NAME = "unitask_drive_backup_periodic"
     const val INTERVAL_HOURS = 24L
     const val RETRY_INTERVAL_HOURS = 6L
 
@@ -62,11 +65,16 @@ object DriveAutoBackup {
     }
 
     /**
-     * Called when the app opens. Enqueues unique one-time backup work if due.
+     * Called when the app opens or a backup setting changes. Makes sure the daily background
+     * job is registered, and enqueues a one-time backup straight away if one is due.
      */
     fun onAppOpen(context: Context) {
         try {
             val prefs = DrivePrefs(context)
+            if (!prefs.isConnected || !prefs.autoEnabled) return
+
+            schedulePeriodic(context, prefs.wifiOnly)
+
             val now = System.currentTimeMillis()
             if (!shouldRun(
                     connected = prefs.isConnected,
@@ -97,11 +105,31 @@ object DriveAutoBackup {
     }
 
     /**
+     * Registers the daily background backup. Android picks the exact time, usually when the
+     * phone is idle and the network rule is met. UPDATE keeps the existing schedule and only
+     * applies a changed Wi-Fi setting, so opening the app does not restart the 24-hour wait.
+     */
+    private fun schedulePeriodic(context: Context, wifiOnly: Boolean) {
+        val request = PeriodicWorkRequestBuilder<DriveBackupWorker>(INTERVAL_HOURS, TimeUnit.HOURS)
+            .setConstraints(buildConstraints(wifiOnly))
+            .build()
+
+        WorkManager.getInstance(context.applicationContext)
+            .enqueueUniquePeriodicWork(
+                PERIODIC_WORK_NAME,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request
+            )
+    }
+
+    /**
      * Cancels any scheduled background backup work.
      */
     fun cancel(context: Context) {
         try {
-            WorkManager.getInstance(context.applicationContext).cancelUniqueWork(WORK_NAME)
+            val workManager = WorkManager.getInstance(context.applicationContext)
+            workManager.cancelUniqueWork(WORK_NAME)
+            workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
         } catch (_: Exception) {
         }
     }

@@ -11,7 +11,7 @@ import com.example.data.groups.GroupTask
 import com.example.data.local.ReminderOption
 import com.example.data.local.decodeReminderOptions
 import com.example.util.TimeFormatter
-import java.util.Calendar
+import com.example.data.local.computeDeadlineMillis
 
 /**
  * Deadline alarms for group tasks. Every phone sets its own alarms, so no server is needed.
@@ -48,15 +48,8 @@ class GroupReminderScheduler(private val context: Context) {
     private fun keyOf(groupId: String, taskId: String, option: ReminderOption) =
         "$groupId|$taskId|${option.name}"
 
-    fun deadlineMillis(task: GroupTask): Long {
-        val cal = Calendar.getInstance()
-        cal.timeInMillis = task.dueDateEpochMillis
-        cal.set(Calendar.HOUR_OF_DAY, task.dueTimeHour)
-        cal.set(Calendar.MINUTE, task.dueTimeMinute)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
-    }
+    fun deadlineMillis(task: GroupTask): Long =
+        computeDeadlineMillis(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
 
     /**
      * Makes the alarms of one group match [tasks]: sets the reminders of every task that is not

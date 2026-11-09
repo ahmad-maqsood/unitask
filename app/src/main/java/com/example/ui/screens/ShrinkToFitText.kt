@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -29,9 +30,11 @@ fun ShrinkToFitText(
     fontWeight: FontWeight? = null,
     color: Color = Color.Unspecified,
     maxLines: Int = 1,
-    minFontSize: TextUnit = 9.sp,
+    minFontSize: TextUnit = 10.sp,
     textAlign: TextAlign? = null
 ) {
+    // If the user has enlarged the system font, respect it and use an ellipsis instead of shrinking.
+    val allowShrink = LocalDensity.current.fontScale <= 1.15f
     val initialSize = remember(style.fontSize) {
         if (style.fontSize.isSpecified && style.fontSize.isSp) style.fontSize else 11.sp
     }
@@ -50,7 +53,7 @@ fun ShrinkToFitText(
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
         onTextLayout = { result ->
-            if (result.didOverflowWidth) {
+            if (allowShrink && result.didOverflowWidth) {
                 val nextValue = fontSize.value - 0.5f
                 if (nextValue >= minFontSize.value) {
                     fontSize = nextValue.sp

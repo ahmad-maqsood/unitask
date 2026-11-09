@@ -173,7 +173,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
             val dimmed = c.state == ClassState.PAST
             val place = if (c.place.isBlank()) "" else " • ${c.place}"
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(vertical = 3.dp).clickable(openAppAction(context)),
+                modifier = GlanceModifier.fillMaxWidth().padding(vertical = 6.dp).clickable(openAppAction(context)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -204,7 +204,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
             val t = row.item
             val label = if (t.label.isBlank()) "" else "${t.label}: "
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(vertical = 3.dp).clickable(openAppAction(context, t)),
+                modifier = GlanceModifier.fillMaxWidth().padding(vertical = 6.dp).clickable(openAppAction(context, t)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -223,7 +223,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
 
         is WidgetRow.Overdue -> Text(
             text = "${row.count} overdue",
-            modifier = GlanceModifier.fillMaxWidth().padding(vertical = 3.dp).clickable(openAppAction(context)),
+            modifier = GlanceModifier.fillMaxWidth().padding(vertical = 6.dp).clickable(openAppAction(context)),
             style = TextStyle(color = ColorDanger, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         )
 

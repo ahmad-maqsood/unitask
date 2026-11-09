@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import com.example.data.local.Note
 import com.example.data.local.NoteListItem
+import com.example.data.repository.NoteRepository
 
 sealed interface NotesFilter {
     object All : NotesFilter
@@ -51,10 +52,11 @@ fun sortNotes(items: List<NoteListItem>, sort: NotesSort): List<NoteListItem> {
 }
 
 fun daysLeftInTrash(deletedAt: Long, now: Long): Int {
-    if (now <= deletedAt) return 30
+    val retentionDays = NoteRepository.TRASH_DAYS
+    if (now <= deletedAt) return retentionDays
     val millisPerDay = 24L * 60 * 60 * 1000L
     val elapsedDays = (now - deletedAt) / millisPerDay
-    val remaining = 30 - elapsedDays
+    val remaining = retentionDays - elapsedDays
     return if (remaining < 0) 0 else remaining.toInt()
 }
 

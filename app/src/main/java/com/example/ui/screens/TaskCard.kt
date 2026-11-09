@@ -84,7 +84,7 @@ import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.filled.Snooze
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.reminder.SnoozeStore
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -155,7 +155,7 @@ fun TaskCard(
 
     // In-app snooze (see SnoozeStore): one extra reminder at a time the user picks.
     var showSnooze by remember { mutableStateOf(false) }
-    val snoozes by SnoozeStore.untilByTask(context).collectAsState()
+    val snoozes by SnoozeStore.untilByTask(context).collectAsStateWithLifecycle()
     val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted }
     if (showSnooze) {
         SnoozeDialog(

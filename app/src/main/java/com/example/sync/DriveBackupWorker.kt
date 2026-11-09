@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.util.drive.DriveAutoBackup
+import com.example.util.drive.DrivePrefs
 import com.example.util.drive.DriveRestClient
 import com.example.util.drive.GoogleDriveAuth
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,8 @@ class DriveBackupWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        val prefs = DrivePrefs(applicationContext)
+        if (!prefs.isConnected || !prefs.autoEnabled) return@withContext Result.success()
         try {
             val auth = GoogleDriveAuth(applicationContext)
             val outcome = DriveAutoBackup.runOnce(

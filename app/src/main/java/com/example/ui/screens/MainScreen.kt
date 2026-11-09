@@ -106,7 +106,6 @@ import androidx.compose.ui.res.painterResource
 import com.example.R
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.collectAsState
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -342,7 +341,7 @@ fun MainScreen(
     var settingsOpenRequest by remember { mutableStateOf<SettingsOpenRequest?>(null) }
 
     val db = remember { AppDatabase.getDatabase(context) }
-    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
+    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var hasShownMigrationDialogThisSession by rememberSaveable { mutableStateOf(false) }
     val drivePrefs = remember { DrivePrefs(context) }
     val usedCloudSync = drivePrefs.legacyCloudSyncUser == true
@@ -442,7 +441,7 @@ fun MainScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                minFontSize = 9.sp
+                                minFontSize = 10.sp
                             )
                         }
                     }
@@ -1240,7 +1239,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                minFontSize = 9.sp
+                minFontSize = 10.sp
             )
         }
     )

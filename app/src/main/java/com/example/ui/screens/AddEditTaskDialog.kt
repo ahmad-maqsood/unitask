@@ -1005,10 +1005,7 @@ fun AttachmentChip(
             }
 
             if (onDelete != null) {
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(24.dp)
-                ) {
+                IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Remove attachment",

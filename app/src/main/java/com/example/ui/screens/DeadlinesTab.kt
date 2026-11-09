@@ -99,7 +99,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
@@ -146,9 +146,9 @@ fun DeadlinesTab(
 
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
-    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsState(initial = emptyList())
-    val activeTasks by remember(db) { db.taskDao().getAllTasksWithCourse() }.collectAsState(initial = emptyList())
-    val activeCourses by remember(db) { db.courseDao().getAllCourses() }.collectAsState(initial = emptyList())
+    val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val activeTasks by remember(db) { db.taskDao().getAllTasksWithCourse() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val activeCourses by remember(db) { db.courseDao().getAllCourses() }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     var restoreOfferDismissed by rememberSaveable {
         mutableStateOf(DrivePrefs(context).restoreOfferDismissed)

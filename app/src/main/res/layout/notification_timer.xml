@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Custom layout for the running stopwatch/countdown notification:
-     icon | time + label | pause/resume and stop icon buttons. -->
+     time + label | pause/resume and stop icon buttons. The blue clock icon was removed so the
+     "Stopwatch \u2022 Paused" label has room to show in full. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -9,17 +10,10 @@
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
-    <ImageView
-        android:id="@+id/timer_notif_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:importantForAccessibility="no"
-        android:src="@drawable/ic_timer_notif_clock" />
-
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="4dp"
         android:layout_weight="1"
         android:orientation="vertical">
 

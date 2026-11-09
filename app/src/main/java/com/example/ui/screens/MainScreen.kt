@@ -459,11 +459,6 @@ fun MainScreen(
                     ) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
-                    ToolsButton(
-                        timerActive = timerActive,
-                        updateAvailable = updateAvailable,
-                        onClick = { showTools = true }
-                    )
                     AnnouncementBell(
                         announcements,
                         openRequest = openBellRequest,
@@ -477,6 +472,11 @@ fun MainScreen(
                             target == "tab:MYTASKS" -> viewModel.setTab(MainTab.MYTASKS)
                         }
                     }
+                    ToolsButton(
+                        timerActive = timerActive,
+                        updateAvailable = updateAvailable,
+                        onClick = { showTools = true }
+                    )
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },

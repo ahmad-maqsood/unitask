@@ -485,26 +485,7 @@ fun CourseDetailSheet(
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
-                                                IconButton(
-                                                    onClick = {
-                                                        val slotToDelete = slot
-                                                        onDeleteSlot(slotToDelete)
-                                                        scope.launch {
-                                                            snackbarHostState.currentSnackbarData?.dismiss()
-                                                            val result = snackbarHostState.showSnackbar(
-                                                                message = "Class moved to Recently deleted",
-                                                                actionLabel = "Undo",
-                                                                duration = SnackbarDuration.Short
-                                                            )
-                                                            if (result == SnackbarResult.ActionPerformed) {
-                                                                onUndoDeleteSlot(slotToDelete)
-                                                            }
-                                                        }
-                                                    },
-                                                ) {
-                                                    IconButton(
-                                                        onClick = { slotPendingDelete = slot }
-                                                    ) {
+                                                IconButton(onClick = { slotPendingDelete = slot }) {
                                                     Icon(
                                                         Icons.Default.DeleteOutline,
                                                         contentDescription = "Delete slot",

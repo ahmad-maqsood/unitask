@@ -14,6 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.example.ui.theme.courseColorName
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -138,44 +143,51 @@ fun AddEditGroupCourseDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        CourseColors.forEach { hex ->
-                            val color = try {
-                                Color(android.graphics.Color.parseColor(hex))
-                            } catch (_: Exception) {
-                                Color(0xFF4F46E5)
-                            }
-                            val isSelected = selectedColor.equals(hex, ignoreCase = true)
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .clickable { selectedColor = hex }
-                                    .then(
-                                        if (isSelected) Modifier.border(
-                                            2.dp,
-                                            MaterialTheme.colorScheme.onSurface,
-                                            CircleShape
-                                        ) else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected color",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+FlowRow(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(0.dp),
+    verticalArrangement = Arrangement.spacedBy(0.dp)
+) {
+    CourseColors.forEach { hex ->
+        val color = try {
+            Color(android.graphics.Color.parseColor(hex))
+        } catch (_: Exception) {
+            Color(0xFF4F46E5)
+        }
+        val isSelected = selectedColor.equals(hex, ignoreCase = true)
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .selectable(
+                    selected = isSelected,
+                    role = Role.RadioButton,
+                    onClick = { selectedColor = hex }
+                )
+                .semantics { contentDescription = courseColorName(hex) },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
                 }
             }
         },

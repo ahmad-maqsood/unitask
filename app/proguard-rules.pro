@@ -95,3 +95,13 @@
 -keep class com.google.zxing.** { *; }
 -dontwarn com.google.zxing.**
 -dontwarn com.google.android.gms.code.scanner.**
+
+# -----------------------------------------------------------------------------
+# 7. Remove verbose, debug and info logs from release builds
+# -----------------------------------------------------------------------------
+# Log.w and Log.e are kept on purpose, so real problems still show up.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

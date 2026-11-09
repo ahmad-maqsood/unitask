@@ -7,7 +7,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 
@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     if (state.showNoBackupDialog) {
         DriveNoBackupFoundDialog(onDismiss = { viewModel.dismissNoBackupDialog() })

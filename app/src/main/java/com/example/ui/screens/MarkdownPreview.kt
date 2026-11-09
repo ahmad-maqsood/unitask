@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -59,7 +61,9 @@ import com.example.util.markdown.Inline
 import com.example.util.markdown.MarkdownBlock
 import com.example.util.markdown.TableAlign
 import com.example.util.markdown.isSafeLinkUrl
-import com.example.util.markdown.parseMarkdown
+import com.example.util.markdown.ParsedMarkdown
+import com.example.util.markdown.blockIndexForLine
+import com.example.util.markdown.parseMarkdownIndexed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -72,42 +76,73 @@ fun MarkdownPreview(
     markdown: String,
     onToggleChecklist: (lineIndex: Int) -> Unit,
     modifier: Modifier = Modifier,
-    imageContent: (@Composable (src: String, alt: String) -> Unit)? = null
+    imageContent: (@Composable (src: String, alt: String) -> Unit)? = null,
+    // Owned by the caller when it needs to read or restore the scroll position
+    listState: LazyListState = rememberLazyListState(),
+    // When set, the preview opens at the block that holds this source line (0 based), once
+    initialSourceLine: Int? = null,
+    // Reports the source line each block starts on, so the caller can map scroll positions back
+    onBlockStartLines: ((List<Int>) -> Unit)? = null
 ) {
     val context = LocalContext.current
 
     // Background thread parsing for large text, immediate parse for short text
-    var parsedBlocks by remember {
-        mutableStateOf(if (markdown.length <= 20_000) parseMarkdown(markdown) else emptyList())
+    var parsed by remember {
+        mutableStateOf(
+            if (markdown.length <= 20_000) parseMarkdownIndexed(markdown)
+            else ParsedMarkdown(emptyList(), emptyList())
+        )
     }
 
     LaunchedEffect(markdown) {
         if (markdown.length > 20_000) {
             val result = withContext(Dispatchers.Default) {
-                parseMarkdown(markdown)
+                parseMarkdownIndexed(markdown)
             }
-            parsedBlocks = result
+            parsed = result
         } else {
-            parsedBlocks = parseMarkdown(markdown)
+            parsed = parseMarkdownIndexed(markdown)
         }
     }
 
-    SelectionContainer(modifier = modifier) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(parsedBlocks.size) { index ->
-                val block = parsedBlocks[index]
-                RenderMarkdownBlock(
-                    block = block,
-                    onToggleChecklist = onToggleChecklist,
-                    imageContent = imageContent,
-                    context = context
-                )
+    val parsedBlocks = parsed.blocks
+
+    LaunchedEffect(parsed) {
+        onBlockStartLines?.invoke(parsed.startLines)
+    }
+
+    // Jump to the requested place once, as soon as there is something to show.
+    // A later edit (such as ticking a checklist item) must not pull the scroll back.
+    var openedAtRequestedLine by remember { mutableStateOf(false) }
+    LaunchedEffect(parsed, initialSourceLine) {
+        if (!openedAtRequestedLine && parsed.blocks.isNotEmpty()) {
+            openedAtRequestedLine = true
+            if (initialSourceLine != null) {
+                listState.scrollToItem(blockIndexForLine(parsed.startLines, initialSourceLine))
             }
         }
+    }
+
+    Box(modifier = modifier) {
+        SelectionContainer(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(parsedBlocks.size) { index ->
+                    val block = parsedBlocks[index]
+                    RenderMarkdownBlock(
+                        block = block,
+                        onToggleChecklist = onToggleChecklist,
+                        imageContent = imageContent,
+                        context = context
+                    )
+                }
+            }
+        }
+        LazyListScrollbar(listState)
     }
 }
 

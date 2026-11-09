@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,13 +24,24 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
+import com.example.util.markdown.lineIndexAtOffset
+import com.example.util.markdown.offsetOfLine
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -517,6 +529,55 @@ fun NoteEditorScreen(
         mutableStateOf(isExistingNote && OPEN_EXISTING_NOTES_IN_PREVIEW)
     }
 
+    // Keeps Edit and Preview at the same place in the note
+    val previewListState = rememberLazyListState()
+    val editScrollState = rememberScrollState()
+    var previewStartLines by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var bodyLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var previewTargetLine by remember { mutableStateOf<Int?>(null) }
+    var editTargetOffset by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(noteId, viewModelSession) {
+        previewTargetLine = null
+        editTargetOffset = null
+        bodyLayout = null
+    }
+
+    fun switchToPreview() {
+        if (isPreviewMode) return
+        val text = viewModel.bodyValue.text
+        val layout = bodyLayout
+        previewTargetLine = if (layout != null && layout.layoutInput.text.text == text) {
+            // The first line showing at the top of the editor
+            val visualLine = layout.getLineForVerticalPosition(editScrollState.value.toFloat())
+            lineIndexAtOffset(text, layout.getLineStart(visualLine))
+        } else {
+            lineIndexAtOffset(text, viewModel.bodyValue.selection.start)
+        }
+        isPreviewMode = true
+    }
+
+    fun switchToEdit() {
+        if (!isPreviewMode) return
+        val line = previewStartLines.getOrNull(previewListState.firstVisibleItemIndex) ?: 0
+        editTargetOffset = offsetOfLine(viewModel.bodyValue.text, line)
+        bodyLayout = null // wait for the fresh layout of the editor
+        isPreviewMode = false
+    }
+
+    // Scrolls the editor to the place the preview was showing, once its text has been laid out
+    LaunchedEffect(isPreviewMode, bodyLayout, editTargetOffset) {
+        val target = editTargetOffset
+        val layout = bodyLayout
+        if (!isPreviewMode && target != null && layout != null) {
+            val length = layout.layoutInput.text.text.length
+            val top = layout.getLineTop(layout.getLineForOffset(target.coerceIn(0, length))).toInt()
+            withTimeoutOrNull(400) { snapshotFlow { editScrollState.maxValue }.first { it >= top } }
+            editScrollState.scrollTo(top)
+            editTargetOffset = null
+        }
+    }
+
     var isImportingImage by remember { mutableStateOf(false) }
     
     fun applyEditing(transform: (EditorText) -> EditorText) {
@@ -722,7 +783,7 @@ fun NoteEditorScreen(
 
                 // Edit mode toggle button
                 IconButton(
-                    onClick = { isPreviewMode = false },
+                    onClick = { switchToEdit() },
                     modifier = Modifier.testTag("note_mode_edit_button")
                 ) {
                     Icon(
@@ -734,7 +795,7 @@ fun NoteEditorScreen(
 
                 // Preview mode toggle button
                 IconButton(
-                    onClick = { isPreviewMode = true },
+                    onClick = { switchToPreview() },
                     modifier = Modifier.testTag("note_mode_preview_button")
                 ) {
                     Icon(
@@ -916,6 +977,9 @@ fun NoteEditorScreen(
                     imageContent = { src, alt ->
                         NoteImagePreview(src = src, alt = alt)
                     },
+                    listState = previewListState,
+                    initialSourceLine = previewTargetLine,
+                    onBlockStartLines = { previewStartLines = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -950,31 +1014,47 @@ fun NoteEditorScreen(
                     .testTag("note_title_input")
             )
 
-            TextField(
-                value = viewModel.bodyValue,
-                onValueChange = { viewModel.onBodyChange(it) },
-                placeholder = {
-                    Text(
-                        text = "Start writing",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .testTag("note_body_input")
-            )
+            ) {
+                val viewportHeight = maxHeight
+                val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(editScrollState)
+                ) {
+                    BasicTextField(
+                        value = viewModel.bodyValue,
+                        onValueChange = { viewModel.onBodyChange(it) },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        onTextLayout = { bodyLayout = it },
+                        decorationBox = { innerTextField ->
+                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                if (viewModel.bodyValue.text.isEmpty()) {
+                                    Text(
+                                        text = "Start writing",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // At least the visible height, so tapping the empty space still starts typing
+                            .heightIn(min = viewportHeight)
+                            .testTag("note_body_input")
+                    )
+                }
+                ScrollStateScrollbar(editScrollState, viewportPx)
+            }
 
             // Word and character count line
             val bodyText = viewModel.bodyValue.text

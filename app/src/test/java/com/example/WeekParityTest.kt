@@ -172,5 +172,27 @@ class WeekParityTest {
         assertEquals(WeekType.ALL, weekTypeOf("Lab"))
         assertEquals(WeekType.ALL, weekTypeOf(""))
     }
+
+    @Test
+    fun setThisWeekType_B_staysWeekB_justAfterSpringForward() {
+        val original = TimeZone.getDefault()
+        val newYork = TimeZone.getTimeZone("America/New_York")
+        TimeZone.setDefault(newYork)
+        try {
+            // Clocks went forward on Sunday 8 March 2026.
+            // Monday 9 March at 00:30 is inside the first hour after midnight.
+            val now = Calendar.getInstance(newYork).apply {
+                clear()
+                set(2026, Calendar.MARCH, 9, 0, 30, 0)
+            }.timeInMillis
+
+            WeekParity.setThisWeekType(null, WeekType.B, now)
+
+            assertEquals(WeekType.B, WeekParity.currentWeekType(null, now))
+        } finally {
+            TimeZone.setDefault(original)
+            WeekParity.setWeekAAnchor(null, null)
+        }
+    }
 }
 

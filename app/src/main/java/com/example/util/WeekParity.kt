@@ -52,11 +52,18 @@ object WeekParity {
     fun setThisWeekType(context: Context?, type: WeekType?, nowMillis: Long = System.currentTimeMillis()) {
         when (type) {
             WeekType.A -> setWeekAAnchor(context, nowMillis)
-            WeekType.B -> setWeekAAnchor(context, nowMillis - 7 * 86_400_000L)
+            WeekType.B -> setWeekAAnchor(context, oneWeekBefore(nowMillis))
             else -> setWeekAAnchor(context, null)
         }
     }
 
+    /** One calendar week earlier, so a daylight-saving change cannot shift the result by a day. */
+    private fun oneWeekBefore(millis: Long, timeZone: TimeZone = TimeZone.getDefault()): Long =
+        Calendar.getInstance(timeZone).apply {
+            timeInMillis = millis
+            add(Calendar.WEEK_OF_YEAR, -1)
+        }.timeInMillis
+        
     fun getMondayStartMillis(timeMillis: Long, timeZone: TimeZone = TimeZone.getDefault()): Long {
         val cal = Calendar.getInstance(timeZone).apply {
             this.timeInMillis = timeMillis

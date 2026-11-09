@@ -99,8 +99,9 @@ object DriveAutoBackup {
                     ExistingWorkPolicy.KEEP,
                     request
                 )
-        } catch (_: Exception) {
-            // Never throws
+        } catch (e: Exception) {
+            // Never throws, but leave a trace for debugging.
+            android.util.Log.w("UniTask", "Could not schedule the Drive backup", e)
         }
     }
 

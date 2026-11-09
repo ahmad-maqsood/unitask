@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.util.runLogged
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -236,9 +237,9 @@ fun TimetableTab(
                                     selectedWeekFilter = "Week A"
                                     onRescheduleAllReminders()
                                     scope.launch(Dispatchers.IO) {
-                                        try {
+                                        runLogged("Class reminder reschedule") {
                                             ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
-                                        } catch (_: Exception) {}
+                                        }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
@@ -252,9 +253,9 @@ fun TimetableTab(
                                     selectedWeekFilter = "Week B"
                                     onRescheduleAllReminders()
                                     scope.launch(Dispatchers.IO) {
-                                        try {
+                                        runLogged("Class reminder reschedule") {
                                             ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
-                                        } catch (_: Exception) {}
+                                        }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)

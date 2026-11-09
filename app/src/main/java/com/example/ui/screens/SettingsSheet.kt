@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.widget.Toast
+import com.example.util.runLogged
 import android.app.Activity
 import android.content.Intent
 import android.media.Ringtone
@@ -177,9 +179,8 @@ fun SettingsButton(
         ClassReminderScheduler.setEnabled(context, enabled)
         // Turning it on sets the alarms, turning it off removes them.
         scope.launch(Dispatchers.IO) {
-            try {
+            runLogged("Class reminder reschedule") {
                 ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
-            } catch (_: Exception) {
             }
         }
     }
@@ -445,9 +446,9 @@ fun SettingsButton(
                                                                     showWeekParityDialog = false
                                                                     onRescheduleAllReminders()
                                                                     scope.launch(Dispatchers.IO) {
-                                                                        try {
+                                                                        runLogged("Class reminder reschedule") {
                                                                             ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
-                                                                        } catch (_: Exception) {}
+                                                                        }
                                                                     }
                                                                 }
                                                                 .padding(vertical = 8.dp),
@@ -461,9 +462,9 @@ fun SettingsButton(
                                                                     showWeekParityDialog = false
                                                                     onRescheduleAllReminders()
                                                                     scope.launch(Dispatchers.IO) {
-                                                                        try {
+                                                                        runLogged("Class reminder reschedule") {
                                                                             ClassReminderScheduler(context).rescheduleAll(AppDatabase.getDatabase(context))
-                                                                        } catch (_: Exception) {}
+                                                                        }
                                                                     }
                                                                 }
                                                             )
@@ -585,7 +586,9 @@ fun SettingsButton(
                                         onClick = {
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
-                                            } catch (_: Exception) {}
+                                            } catch (_: Exception) {
+                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                            }
                                         },
                                         trailing = {
                                             Icon(
@@ -608,7 +611,9 @@ fun SettingsButton(
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                            } catch (_: Exception) {}
+                                            } catch (_: Exception) {
+                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                            }
                                         },
                                         trailing = {
                                             Icon(
@@ -631,7 +636,9 @@ fun SettingsButton(
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                            } catch (_: Exception) {}
+                                            } catch (_: Exception) {
+                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                            }
                                         },
                                         trailing = {
                                             Icon(
@@ -672,7 +679,9 @@ fun SettingsButton(
                                             onClick = {
                                                 try {
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
-                                                } catch (_: Exception) {}
+                                                } catch (_: Exception) {
+                                                    Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                }
                                             },
                                             modifier = Modifier
                                                 .fillMaxWidth()

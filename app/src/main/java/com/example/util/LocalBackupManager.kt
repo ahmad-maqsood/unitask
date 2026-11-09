@@ -242,6 +242,8 @@ object LocalBackupManager {
                     val bytes = try {
                         file.readBytes()
                     } catch (_: Exception) {
+                        // Count it, so the backup summary does not claim every image was saved.
+                        skippedImagesCount++
                         continue
                     }
 

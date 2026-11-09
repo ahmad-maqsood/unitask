@@ -13,6 +13,9 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
@@ -95,7 +98,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         com.example.widget.UniTaskWidget.refresh(context)
                         ReminderScheduler(context).cancelReminder(taskId)
                         SnoozeStore.clear(context, taskId, cancelAlarm = true)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        android.util.Log.w("UniTask", "Mark as done from notification failed", e)
+                        toastOnMain(context, "Could not mark the task as done")
                     } finally {
                         pending.finish()
                     }
@@ -128,7 +133,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
                             repo.flushPendingDone()
                         }
                         GroupReminderScheduler(context).cancel(groupId, taskId)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        android.util.Log.w("UniTask", "Mark as done from notification failed", e)
+                        toastOnMain(context, "Could not mark the task as done")
                     } finally {
                         pending.finish()
                     }
@@ -233,6 +240,13 @@ class TaskReminderReceiver : BroadcastReceiver() {
             return
         }
         showReminder(context, intent)
+    }
+
+    /** Shows a short message from a background thread (the receiver runs its work off the main thread). */
+    private fun toastOnMain(context: Context, message: String) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context.applicationContext, message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** Builds and shows one reminder notification. Safe to call off the main thread. */

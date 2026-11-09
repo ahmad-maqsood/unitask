@@ -70,7 +70,9 @@ class MainActivity : ComponentActivity() {
             } else if (intent.action == Intent.ACTION_VIEW) {
                 val scheme = dataUri.scheme?.lowercase()
                 if (scheme == "content") {
-                    mainViewModel.openMarkdownFile(dataUri)
+                    // A generic type (BIN) is only accepted when the file name says Markdown, text or BIN
+                    val isGenericType = intent.type?.lowercase() == "application/octet-stream"
+                    mainViewModel.openMarkdownFile(dataUri, requireTextFileName = isGenericType)
                     intent.data = null
                 }
             }
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
             if (streamUri != null && streamUri.scheme?.lowercase() == "content") {
                 val type = intent.type?.lowercase()
                 val isMarkdownType = type == "text/markdown" || type == "text/x-markdown"
-                // A generic type (BIN) is only accepted when the file name says it is Markdown or text
+                // A generic type (BIN) is only accepted when the file name says Markdown, text or BIN
                 mainViewModel.openMarkdownFile(streamUri, requireTextFileName = !isMarkdownType)
                 intent.removeExtra(Intent.EXTRA_STREAM)
             }

@@ -578,8 +578,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
             val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
-            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownName(name)) {
-                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md) or text files")
+            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
+                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
                 return@launch
             }
             when (result) {

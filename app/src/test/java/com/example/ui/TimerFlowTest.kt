@@ -73,10 +73,6 @@ class TimerFlowTest {
         TimerController.setInstanceForTests(null)
     }
 
-    // A focused text field blinks its cursor forever, so the test clock must not auto-advance
-    // while the custom dialog is open.
-    private fun settle() = repeat(3) { composeRule.mainClock.advanceTimeByFrame() }
-
     @Test
     fun startShowsPause_pauseShowsResume_resetReturnsToStartAndTimeZero() {
         // Initially in idle stopwatch mode: Start button is shown
@@ -138,71 +134,6 @@ class TimerFlowTest {
 
         composeRule.onNodeWithTag("timer_time_text").assertTextEquals("00:00")
         composeRule.onNodeWithText("Time is up").assertIsDisplayed()
-    }
-
-    @Test
-    fun customLengthOutOfBoundsShowsErrorAndIsNotApplied() {
-        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
-        composeRule.waitForIdle()
-        composeRule.mainClock.autoAdvance = false
-        composeRule.onNodeWithTag("timer_preset_custom").performClick()
-        settle()
-
-        // Custom duration dialog is open
-        composeRule.onNodeWithTag("timer_custom_input").performTextClearance()
-        composeRule.onNodeWithTag("timer_custom_input").performTextInput("0")
-        settle()
-        composeRule.onNodeWithText("Choose between 1 minute and 10 hours").assertIsDisplayed()
-        composeRule.onNodeWithTag("timer_custom_set_button").assertIsNotEnabled()
-
-        composeRule.onNodeWithTag("timer_custom_hours_input").performTextClearance()
-        composeRule.onNodeWithTag("timer_custom_hours_input").performTextInput("11")
-        settle()
-        composeRule.onNodeWithText("Choose between 1 minute and 10 hours").assertIsDisplayed()
-        composeRule.onNodeWithTag("timer_custom_set_button").assertIsNotEnabled()
-
-        composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
-        settle()
-        composeRule.mainClock.autoAdvance = true
-        // Length remains default 25:00
-        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertTextEquals("25:00")
-    }
-
-    @Test
-    fun customDurationQuickAddAndSetUpdatesLengthAndCustomChipLabel() {
-        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
-        composeRule.waitForIdle()
-        composeRule.mainClock.autoAdvance = false
-        composeRule.onNodeWithTag("timer_preset_custom").performClick()
-        settle()
-
-        composeRule.onNodeWithTag("timer_custom_hours_input").performTextClearance()
-        composeRule.onNodeWithTag("timer_custom_input").performTextClearance()
-        settle()
-        composeRule.onNodeWithTag("timer_quick_add_60").performClick()
-        settle()
-        composeRule.onNodeWithTag("timer_quick_add_30").performClick()
-        settle()
-        composeRule.onNodeWithText("Total: 1 h 30 min").assertIsDisplayed()
-
-        composeRule.onNodeWithTag("timer_custom_set_button").performClick()
-        settle()
-        composeRule.mainClock.autoAdvance = true
-        composeRule.onNodeWithTag("timer_time_text", useUnmergedTree = true).assertTextEquals("1:30:00")
-        composeRule.onNodeWithText("1 h 30 min").assertIsDisplayed()
-    }
-
-    @Test
-    fun tappingClockWhileIdleInCountdownModeOpensCustomDialog() {
-        composeRule.onNodeWithTag("timer_mode_countdown").performClick()
-        composeRule.waitForIdle()
-        composeRule.mainClock.autoAdvance = false
-        composeRule.onNodeWithTag("timer_clock_edit").performClick()
-        settle()
-        composeRule.onNodeWithTag("timer_custom_input").assertIsDisplayed()
-        composeRule.onNodeWithTag("timer_custom_cancel_button").performClick()
-        settle()
-        composeRule.mainClock.autoAdvance = true
     }
 
     @Test

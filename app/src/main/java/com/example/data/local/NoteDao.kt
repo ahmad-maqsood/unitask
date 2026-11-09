@@ -58,6 +58,10 @@ interface NoteDao {
     @Update
     suspend fun update(note: Note)
 
+    // Display setting only: does not touch updatedAt, so the note keeps its place in the list
+    @Query("UPDATE notes SET keepScreenOn = :keepScreenOn WHERE id = :id")
+    suspend fun setKeepScreenOn(id: Long, keepScreenOn: Boolean)
+
     @Query("UPDATE notes SET isDeleted = 1, deletedAt = :deletedAt, isSynced = 0 WHERE id = :id")
     suspend fun softDelete(id: Long, deletedAt: Long)
 

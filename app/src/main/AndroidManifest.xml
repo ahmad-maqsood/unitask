@@ -91,6 +91,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/x-markdown" />
             </intent-filter>
+            <!-- File managers often send a .md file as a generic binary file (shown as BIN).
+                 The app checks the file name before opening it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
         </activity>
 
         <receiver

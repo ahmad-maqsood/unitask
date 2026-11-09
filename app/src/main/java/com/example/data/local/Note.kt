@@ -21,7 +21,8 @@ data class Note(
     val deletedAt: Long = 0L,
     val isSynced: Boolean = false,     // reserved for cloud sync
     val cloudId: String = "",          // reserved for cloud sync
-    val cloudUpdatedAt: Long = 0L      // reserved: the cloud's updatedAt when we last synced
+    val cloudUpdatedAt: Long = 0L,     // reserved: the cloud's updatedAt when we last synced
+    val keepScreenOn: Boolean = false  // keep the screen awake while this note is open, off by default
 )
 
 data class NoteListItem(

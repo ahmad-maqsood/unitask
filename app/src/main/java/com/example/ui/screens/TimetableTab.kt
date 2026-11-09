@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.util.runLogged
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
@@ -68,7 +68,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -236,9 +235,9 @@ fun TimetableTab(
                                     selectedWeekFilter = "Week A"
                                     onRescheduleAllReminders()
                                     scope.launch(Dispatchers.IO) {
-                                        try {
+                                        runLogged("Class reminder reschedule") {
                                             ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
-                                        } catch (_: Exception) {}
+                                        }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
@@ -252,9 +251,9 @@ fun TimetableTab(
                                     selectedWeekFilter = "Week B"
                                     onRescheduleAllReminders()
                                     scope.launch(Dispatchers.IO) {
-                                        try {
+                                        runLogged("Class reminder reschedule") {
                                             ClassReminderScheduler(context).rescheduleAll(com.example.data.local.AppDatabase.getDatabase(context))
-                                        } catch (_: Exception) {}
+                                        }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
@@ -292,21 +291,6 @@ fun TimetableTab(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onAddSlotClick,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.testTag("timetable_add_slot_button")
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.size(4.dp))
-                            Text("Add Class", style = MaterialTheme.typography.labelMedium)
-                        }
                     }
                 }
 

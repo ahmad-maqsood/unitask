@@ -26,6 +26,7 @@ import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.groups.GroupCacheRepository
 import com.example.util.AuthStorage
+import com.example.util.runLogged
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -179,7 +180,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         if (uid != null) {
                             Log.d("MainViewModel", "Network available: sending offline ticks, refreshing groups")
                             // Done ticks made offline go out first, then everything is read again.
-                            try { GroupRepository(application).flushPendingDone() } catch (_: Exception) { }
+                            runLogged("Send offline done ticks") { GroupRepository(application).flushPendingDone() }
                             GroupRepository.localChanges.tryEmit(Unit)
                         }
                     }
@@ -196,35 +197,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Alarms can be lost (force stop, battery cleaners): set the class-start,
         // personal task, and group task alarms again every time the app opens.
         viewModelScope.launch(Dispatchers.IO) {
-            try {
+            runLogged("Class reminder reschedule") {
                 ClassReminderScheduler(application).rescheduleAll(database)
-            } catch (_: Exception) {
             }
-            try {
-                // Reminders that never rang (app force-stopped, alarms removed by a battery cleaner).
-                // This must run BEFORE the alarms are set again below.
+            // Reminders that never rang (app force-stopped, alarms removed by a battery cleaner).
+            // This must run BEFORE the alarms are set again below.
+            runLogged("Missed reminder check") {
                 com.example.reminder.MissedReminders.notifyMissed(application, database)
-            } catch (_: Exception) {
             }
-            try {
+            runLogged("Local trash purge") {
                 com.example.util.LocalTombstonePurge.purgeOnce(application, database)
-            } catch (_: Exception) {
             }
-            try {
+            runLogged("Task reminder reschedule") {
                 ReminderScheduler(application).rescheduleAll(database)
-            } catch (_: Exception) {
             }
-            try {
+            runLogged("Group reminder reschedule") {
                 GroupReminderScheduler(application).rescheduleAll()
-            } catch (_: Exception) {
             }
-            try {
+            runLogged("Daily summary reschedule") {
                 com.example.reminder.DailySummaryScheduler(application).reschedule()
-            } catch (_: Exception) {
             }
-            try {
+            runLogged("Drive auto backup on app open") {
                 com.example.util.drive.DriveAutoBackup.onAppOpen(application)
-            } catch (_: Exception) {
             }
         }
 
@@ -550,7 +544,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             supabaseUidFlow.collect { uid ->
                 if (uid != null) {
-                    try { groupRepository.flushPendingDone() } catch (_: Exception) { }
+                    runLogged("Send offline done ticks") { groupRepository.flushPendingDone() }
                 }
             }
         }
@@ -580,10 +574,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _markdownViewerState = MutableStateFlow<MarkdownViewerState?>(null)
     val markdownViewerState: StateFlow<MarkdownViewerState?> = _markdownViewerState.asStateFlow()
 
-    fun openMarkdownFile(uri: Uri) {
+    fun openMarkdownFile(uri: Uri, requireTextFileName: Boolean = false) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
             val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
+            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownName(name)) {
+                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md) or text files")
+                return@launch
+            }
             when (result) {
                 is MarkdownReadResult.Success -> {
                     _markdownViewerState.value = MarkdownViewerState.Content(
@@ -881,6 +879,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val dueTodayCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
         groupDeadlines(tasks).today.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    // Pending tasks whose deadline has already passed. This is what the Deadlines tab badge shows.
+    val overdueCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
+        groupDeadlines(tasks).overdue.size
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    // The same for personal tasks, for the My tasks tab badge.
+    val myTasksOverdueCount: StateFlow<Int> = myTasks.map { list ->
+        groupDeadlines(list).overdue.size
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     // Actions
     fun setTab(tab: MainTab) {
         _currentTab.value = tab

@@ -120,6 +120,34 @@ object TimerLogic {
         return now + remainingMillis(s, now)
     }
 
+    /** The stopwatch ring goes round once per minute. */
+    const val STOPWATCH_RING_MILLIS = 60_000L
+
+    /**
+     * How much of the timer's progress ring is filled, from 0 to 1.
+     * Countdown: the share of time still left, so the ring empties as time passes.
+     * Stopwatch: how far into the current minute it is, so the ring goes round once a minute.
+     * An idle stopwatch has an empty ring.
+     */
+    fun ringFraction(s: TimerState, now: Long): Float {
+        return when (s.mode) {
+            TimerMode.COUNTDOWN -> {
+                if (s.countdownTotalMillis <= 0L) {
+                    0f
+                } else {
+                    (remainingMillis(s, now).toFloat() / s.countdownTotalMillis.toFloat()).coerceIn(0f, 1f)
+                }
+            }
+            TimerMode.STOPWATCH -> {
+                if (isIdle(s)) {
+                    0f
+                } else {
+                    (elapsedMillis(s, now) % STOPWATCH_RING_MILLIS).toFloat() / STOPWATCH_RING_MILLIS.toFloat()
+                }
+            }
+        }
+    }
+
     fun formatClock(millis: Long, roundUp: Boolean): String {
         val nonNegative = maxOf(0L, millis)
         val rawSeconds = if (roundUp) {

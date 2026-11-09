@@ -266,4 +266,40 @@ class NoteRepositoryTest {
         repo.saveNote(id = id, title = "Plan", body = "Same text", courseId = null)
         assertFalse(repo.getNote(id)!!.isDeleted)
     }
+
+    @Test
+    fun keepScreenOnIsOffByDefaultAndCanBeTurnedOnAndOff() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Study", body = "Chapter 4", courseId = null)
+        assertFalse(repo.getNote(id)!!.keepScreenOn)
+
+        db.noteDao().update(repo.getNote(id)!!.copy(updatedAt = 1000L, isSynced = true))
+
+        repo.setKeepScreenOn(id, true)
+        val on = repo.getNote(id)!!
+        assertTrue(on.keepScreenOn)
+        // A display setting must not move the note in the list or mark it for sync
+        assertEquals(1000L, on.updatedAt)
+        assertTrue(on.isSynced)
+
+        repo.setKeepScreenOn(id, false)
+        assertFalse(repo.getNote(id)!!.keepScreenOn)
+    }
+
+    @Test
+    fun savingTextWithoutTheOptionLeavesKeepScreenOnUnchanged() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Study", body = "Chapter 4", courseId = null)
+        repo.setKeepScreenOn(id, true)
+
+        repo.saveNote(id = id, title = "Study", body = "Chapter 4 and 5", courseId = null)
+        assertTrue(repo.getNote(id)!!.keepScreenOn)
+
+        repo.saveNote(id = id, title = "Study", body = "Chapter 4, 5 and 6", courseId = null, keepScreenOn = false)
+        assertFalse(repo.getNote(id)!!.keepScreenOn)
+    }
+
+    @Test
+    fun newNoteStoresKeepScreenOnChosenBeforeFirstSave() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Exam", body = "Formulas", courseId = null, keepScreenOn = true)
+        assertTrue(repo.getNote(id)!!.keepScreenOn)
+    }
 }

@@ -30,14 +30,24 @@ sealed interface MarkdownBlock {
     ) : MarkdownBlock
 }
 
-fun parseMarkdown(source: String): List<MarkdownBlock> {
-    if (source.isEmpty()) return emptyList()
+/** Parsed blocks plus the source line (0 based) each block starts on. Both lists have the same size. */
+class ParsedMarkdown(val blocks: List<MarkdownBlock>, val startLines: List<Int>)
+
+fun parseMarkdown(source: String): List<MarkdownBlock> = parseMarkdownIndexed(source).blocks
+
+fun parseMarkdownIndexed(source: String): ParsedMarkdown {
+    if (source.isEmpty()) return ParsedMarkdown(emptyList(), emptyList())
 
     val lines = source.lines()
     val blocks = mutableListOf<MarkdownBlock>()
+    val startLines = mutableListOf<Int>()
+    var iterationStart = 0
     var lineIdx = 0
 
     while (lineIdx < lines.size) {
+        // Blocks added by the previous pass start on the line that pass began on
+        while (startLines.size < blocks.size) startLines.add(iterationStart)
+        iterationStart = lineIdx
         val line = lines[lineIdx]
 
         // 1. Blank line: skip
@@ -182,8 +192,9 @@ fun parseMarkdown(source: String): List<MarkdownBlock> {
             blocks.add(MarkdownBlock.Paragraph(inlines = parseInlines(paraText)))
         }
     }
+    while (startLines.size < blocks.size) startLines.add(iterationStart)
 
-    return blocks
+    return ParsedMarkdown(blocks, startLines)
 }
 
 private fun parseListItemLine(line: String, lineIdx: Int): MarkdownBlock? {

@@ -5,6 +5,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +25,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,6 +44,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +61,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -56,14 +69,20 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -78,10 +97,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.timer.TimerController
+import com.example.util.timer.TimerHistoryLogic
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
 import com.example.reminder.CountdownNotifier
 import kotlinx.coroutines.delay
+import kotlin.math.abs
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Full-screen timer supporting a stopwatch (count up) and a countdown (count down).
@@ -97,6 +120,8 @@ fun TimerScreen(
     var fullscreen by rememberSaveable { mutableStateOf(false) }
     var keepAwakeInFullscreen by rememberSaveable { mutableStateOf(controller.keepScreenOnInFullscreen()) }
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    val sessions by controller.sessions.collectAsStateWithLifecycle()
 
     // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
     BackHandler(enabled = !fullscreen) {
@@ -104,6 +129,9 @@ fun TimerScreen(
     }
     BackHandler(enabled = fullscreen) {
         fullscreen = false
+    }
+    BackHandler(enabled = showHistory && !fullscreen) {
+        showHistory = false
     }
 
     val context = LocalContext.current
@@ -251,6 +279,13 @@ fun TimerScreen(
                 }
             }
         }
+    } else if (showHistory) {
+        TimerHistoryScreen(
+            sessions = sessions,
+            onClose = { showHistory = false },
+            onDeleteSession = { controller.deleteSession(it.startedAtMillis) },
+            onClearAll = { controller.clearHistory() }
+        )
     } else {
         Scaffold(
             modifier = Modifier
@@ -276,6 +311,15 @@ fun TimerScreen(
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = { showHistory = true },
+                            modifier = Modifier.testTag("timer_history_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = "Study history"
+                            )
+                        }
                         IconButton(
                             onClick = { fullscreen = true },
                             modifier = Modifier.testTag("timer_fullscreen_button")
@@ -327,16 +371,39 @@ fun TimerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // Progress ring with the clock inside it. The ring shows how much of a countdown
+                // is left, or how far into the current minute a stopwatch is. It is drawn from the
+                // same wall-clock time as the clock text, so it needs no extra ticking.
+                val ringTarget = if (isFinished) 1f else TimerLogic.ringFraction(state, now)
+                var previousRing by remember { mutableFloatStateOf(ringTarget) }
+                // Glide between the one-second steps, but jump when the ring wraps or is reset.
+                val glide = isRunning && abs(ringTarget - previousRing) < 0.25f
+                val ringProgress by animateFloatAsState(
+                    targetValue = ringTarget,
+                    animationSpec = if (glide) tween(durationMillis = 1000, easing = LinearEasing) else snap(),
+                    label = "timerRing"
+                )
+                SideEffect { previousRing = ringTarget }
 
-                // Large monospace clock display.
+                val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+                val ringColor = when {
+                    isFinished -> MaterialTheme.colorScheme.tertiary
+                    isPaused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else -> MaterialTheme.colorScheme.primary
+                }
+
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val fontSize = (maxWidth.value * 0.22f).coerceIn(48f, 96f).sp
+                    val ringSize = minOf(maxWidth, 300.dp).coerceAtLeast(200.dp)
+                    val ringStroke = 12.dp
+                    // Fit the clock inside the ring: leave room for the stroke and a gap, and
+                    // shrink the text when it is longer (for example 1:30:00).
+                    val innerWidth = ringSize.value - 4 * ringStroke.value
+                    val fontSize = (innerWidth * 0.92f / (timeText.length * 0.62f)).coerceIn(28f, 76f).sp
                     val isClockTappable = state.mode == TimerMode.COUNTDOWN && isIdle
                     val clockModifier = if (isClockTappable) {
                         Modifier
@@ -347,32 +414,88 @@ fun TimerScreen(
                     } else {
                         Modifier
                     }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = clockModifier
+
+                    Box(
+                        modifier = Modifier
+                            .size(ringSize)
+                            .testTag("timer_ring"),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = timeText,
-                            fontSize = fontSize,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            maxLines = 1,
-                            modifier = Modifier.testTag("timer_time_text")
-                        )
-                        if (state.mode == TimerMode.COUNTDOWN && isFinished) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val strokePx = ringStroke.toPx()
+                            val arcSize = Size(size.width - strokePx, size.height - strokePx)
+                            val topLeft = Offset(strokePx / 2f, strokePx / 2f)
+                            drawArc(
+                                color = trackColor,
+                                startAngle = -90f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokePx, cap = StrokeCap.Round)
+                            )
+                            if (ringProgress > 0f) {
+                                drawArc(
+                                    color = ringColor,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * ringProgress.coerceIn(0f, 1f),
+                                    useCenter = false,
+                                    topLeft = topLeft,
+                                    size = arcSize,
+                                    style = Stroke(width = strokePx, cap = StrokeCap.Round)
+                                )
+                            }
+                        }
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = clockModifier
+                        ) {
                             Text(
-                                text = "Time is up",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = timeText,
+                                fontSize = fontSize,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                modifier = Modifier.testTag("timer_time_text")
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = timerStatusLabel(state.mode, isRunning, isPaused, isFinished),
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = if (isFinished) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // When a countdown is running, say when it ends. The slot keeps its height when
+                // empty so the screen does not jump on Start.
+                val endMillis = TimerLogic.scheduledEndTimeMillis(state)
+                Box(
+                    modifier = Modifier.height(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (endMillis != null) {
+                        val endText = remember(endMillis) {
+                            java.text.DateFormat
+                                .getTimeInstance(java.text.DateFormat.SHORT)
+                                .format(java.util.Date(endMillis))
+                        }
+                        Text(
+                            text = "Ends at $endText",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("timer_end_time")
+                        )
+                    }
+                }
 
                 // Preset duration chips for Countdown mode. Disabled unless idle.
                 if (state.mode == TimerMode.COUNTDOWN) {
@@ -419,8 +542,56 @@ fun TimerScreen(
                     onStart = { controller.start() },
                     onPause = { controller.pause() },
                     onResume = { controller.start() },
-                    onReset = { controller.reset() }
+                    onReset = { controller.reset() },
+                    large = true
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Quick look at today's study time; tapping it opens the full history.
+                val zone = remember { ZoneId.systemDefault() }
+                val todayMillis = remember(sessions) {
+                    TimerHistoryLogic.totalForDay(sessions, LocalDate.now(zone), zone)
+                }
+                Surface(
+                    onClick = { showHistory = true },
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .widthIn(max = 420.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .testTag("timer_today_card")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Studied today",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (todayMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(todayMillis),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Text(
+                            text = "History",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }
@@ -564,6 +735,20 @@ fun TimerScreen(
     }
 }
 
+/** The short line shown under the clock inside the ring. */
+private fun timerStatusLabel(
+    mode: TimerMode,
+    isRunning: Boolean,
+    isPaused: Boolean,
+    isFinished: Boolean
+): String = when {
+    isFinished -> "Time is up"
+    isRunning -> if (mode == TimerMode.COUNTDOWN) "Focus time" else "Studying"
+    isPaused -> "Paused"
+    mode == TimerMode.COUNTDOWN -> "Tap to change"
+    else -> "Ready"
+}
+
 @Composable
 private fun TimerControlButtons(
     isIdle: Boolean,
@@ -572,8 +757,19 @@ private fun TimerControlButtons(
     onStart: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    // The normal screen uses taller buttons; full screen keeps the compact size.
+    large: Boolean = false
 ) {
+    val buttonHeight = if (large) 64.dp else 52.dp
+    val labelStyle = if (large) {
+        MaterialTheme.typography.titleMedium
+    } else {
+        MaterialTheme.typography.labelLarge
+    }
+    // When Reset is shown next to the main button, the main button gets more of the row.
+    val mainWeight = if (large && !isIdle) 1.5f else 1f
+
     Row(
         // Buttons share the row, so they fit narrow phones; the cap keeps them sensible in landscape.
         modifier = Modifier
@@ -588,10 +784,12 @@ private fun TimerControlButtons(
                 onClick = onReset,
                 modifier = Modifier
                     .weight(1f)
-                    .height(52.dp)
+                    .height(buttonHeight)
                     .testTag("timer_reset_button")
             ) {
-                Text("Reset")
+                Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(22.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Reset", style = labelStyle)
             }
         }
 
@@ -600,33 +798,39 @@ private fun TimerControlButtons(
                 Button(
                     onClick = onStart,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
+                        .weight(mainWeight)
+                        .height(buttonHeight)
                         .testTag("timer_start_button")
                 ) {
-                    Text("Start")
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Start", style = labelStyle)
                 }
             }
             isRunning -> {
                 Button(
                     onClick = onPause,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
+                        .weight(mainWeight)
+                        .height(buttonHeight)
                         .testTag("timer_pause_button")
                 ) {
-                    Text("Pause")
+                    Icon(Icons.Default.Pause, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pause", style = labelStyle)
                 }
             }
             isPaused -> {
                 Button(
                     onClick = onResume,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
+                        .weight(mainWeight)
+                        .height(buttonHeight)
                         .testTag("timer_resume_button")
                 ) {
-                    Text("Resume")
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Resume", style = labelStyle)
                 }
             }
         }

@@ -332,3 +332,5 @@ UniTask is a personal project, but community contributions and pull requests are
 ## License
 
 Released under the [MIT License](LICENSE).
+
+The app font, Plus Jakarta Sans, is licensed under the SIL Open Font License 1.1. See [docs/licenses/PlusJakartaSans-OFL.txt](docs/licenses/PlusJakartaSans-OFL.txt).

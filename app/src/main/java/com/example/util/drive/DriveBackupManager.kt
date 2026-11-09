@@ -286,8 +286,9 @@ object DriveBackupManager {
                     if (age > THIRTY_DAYS_MS) {
                         try {
                             store.delete(f.id)
-                        } catch (_: Exception) {
-                            // Prune failures are ignored
+                        } catch (e: Exception) {
+                            // A failed prune is not fatal: it is tried again on the next backup.
+                            android.util.Log.w("UniTask", "Drive prune failed", e)
                         }
                     }
                 }
@@ -383,8 +384,9 @@ object DriveBackupManager {
                     }
                     validData = data
                     break
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                     // slot damaged, try fallback slot
+                    android.util.Log.w("UniTask", "Drive backup slot unreadable, trying the other one", e)
                 }
             }
 

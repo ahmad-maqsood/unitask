@@ -134,5 +134,23 @@ class GroupDeadlinesTest {
         assertEquals(1, sections.done.size)
         assertEquals("Finished Task", sections.done.first().task.title)
     }
+
+    @Test
+    fun overdueSectionIsWhatTheDeadlinesBadgeCounts() {
+        // Fixed nowMillis: October 28, 2026 at 14:00
+        val nowMillis = createCalendar(2026, Calendar.OCTOBER, 28, 14, 0).timeInMillis
+
+        val tasks = listOf(
+            createTask(1L, "Overdue yesterday", 2026, Calendar.OCTOBER, 27, 18, 0),
+            createTask(2L, "Overdue earlier today", 2026, Calendar.OCTOBER, 28, 10, 0),
+            createTask(3L, "Finished long ago", 2026, Calendar.OCTOBER, 20, 9, 0, status = TaskStatus.COMPLETED),
+            createTask(4L, "Due later today", 2026, Calendar.OCTOBER, 28, 18, 0),
+            createTask(5L, "Due tomorrow", 2026, Calendar.OCTOBER, 29, 9, 0)
+        )
+
+        // Finished tasks and tasks still ahead must not count as overdue.
+        assertEquals(2, groupDeadlines(tasks, nowMillis).overdue.size)
+        assertEquals(0, groupDeadlines(emptyList(), nowMillis).overdue.size)
+    }
 }
 

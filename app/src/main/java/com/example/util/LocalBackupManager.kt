@@ -23,6 +23,8 @@ import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.ReminderScheduler
 import com.example.util.drive.SettingsSnapshot
 import com.example.util.markdown.referencedImageNames
+import com.example.util.timer.TimerHistoryStore
+import com.example.util.timer.TimerSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -48,7 +50,9 @@ data class BackupCounts(
     val skippedImages: Int = 0,
     val attachments: Int = 0,
     val skippedAttachments: Int = 0,
-    val settingsApplied: Int = 0
+    val settingsApplied: Int = 0,
+    /** Study sessions: how many were saved into a backup, or added back by a restore. */
+    val sessions: Int = 0
 )
 
 /**
@@ -83,7 +87,9 @@ sealed class BackupResult {
  * signing in. An optional password encrypts the content (AES-256-GCM, key from PBKDF2).
  *
  * Restoring MERGES: what is already on the phone is kept, missing items are added, and items the
- * user deleted earlier come back. Attachment files are not part of the backup.
+ * user deleted earlier come back. Study sessions from the timer are merged the same way: ones
+ * already on the phone are kept and only missing ones are added. Attachment files are not part of
+ * this file backup.
  */
 object LocalBackupManager {
 
@@ -92,6 +98,7 @@ object LocalBackupManager {
     private const val MAX_FILE_BYTES = 20 * 1024 * 1024
     const val MAX_BACKUP_IMAGE_BYTES: Long = 20L * 1024 * 1024
     const val MAX_ATTACHMENT_BYTES: Long = 25L * 1024 * 1024
+    private const val MAX_RESTORED_SESSIONS = 5_000
     private val ATTACHMENT_NAME_REGEX = Regex("^[A-Za-z0-9._-]{1,200}$")
 
     fun isValidAttachmentName(name: String): Boolean {
@@ -200,6 +207,7 @@ object LocalBackupManager {
                         .put("body", n.body)
                         .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
                         .put("isPinned", n.isPinned)
+                        .put("keepScreenOn", n.keepScreenOn)
                         .put("createdAt", n.createdAt)
                         .put("updatedAt", n.updatedAt)
                 )
@@ -225,6 +233,15 @@ object LocalBackupManager {
                 .put("tasks", taskArray)
                 .put("notes", noteArray)
 
+            // Study history. The key is left out when there is none, so a backup of someone who
+            // never used the timer is byte-for-byte what it was before this existed.
+            val studySessions = TimerHistoryStore.get(context).sessions.value
+            if (studySessions.isNotEmpty()) {
+                val sessionArray = JSONArray()
+                studySessions.forEach { sessionArray.put(TimerHistoryStore.sessionToJson(it)) }
+                data.put("timerSessions", sessionArray)
+            }
+
             var exportedImagesCount = 0
             var skippedImagesCount = 0
 
@@ -242,6 +259,8 @@ object LocalBackupManager {
                     val bytes = try {
                         file.readBytes()
                     } catch (_: Exception) {
+                        // Count it, so the backup summary does not claim every image was saved.
+                        skippedImagesCount++
                         continue
                     }
 
@@ -329,7 +348,8 @@ object LocalBackupManager {
                     images = exportedImagesCount,
                     skippedImages = skippedImagesCount,
                     attachments = exportedAttachmentsCount,
-                    skippedAttachments = skippedAttachmentsCount
+                    skippedAttachments = skippedAttachmentsCount,
+                    sessions = studySessions.size
                 ),
                 referencedImages = existingImages,
                 referencedAttachments = referencedAttachments
@@ -654,6 +674,7 @@ object LocalBackupManager {
                 val title = o.optString("title").take(NoteRepository.MAX_TITLE)
                 val body = o.optString("body").take(NoteRepository.MAX_BODY)
                 val isPinned = o.optBoolean("isPinned", false)
+                val keepScreenOn = o.optBoolean("keepScreenOn", false)
                 val createdAt = o.optLong("createdAt", System.currentTimeMillis())
                 val updatedAt = o.optLong("updatedAt", createdAt)
 
@@ -669,6 +690,7 @@ object LocalBackupManager {
                     body = body,
                     courseId = courseId,
                     isPinned = isPinned,
+                    keepScreenOn = keepScreenOn,
                     createdAt = createdAt,
                     updatedAt = updatedAt,
                     isDeleted = false,
@@ -856,6 +878,24 @@ object LocalBackupManager {
             0
         }
 
+        // ---- study history (merged: sessions already on this phone are kept)
+        val sessionArray = data.optJSONArray("timerSessions")
+        val addedSessions = if (sessionArray != null) {
+            val parsed = ArrayList<TimerSession>()
+            for (i in 0 until minOf(sessionArray.length(), MAX_RESTORED_SESSIONS)) {
+                val o = sessionArray.optJSONObject(i) ?: continue
+                val session = try {
+                    TimerHistoryStore.sessionFromJson(o)
+                } catch (_: Exception) {
+                    null
+                }
+                if (session != null) parsed.add(session)
+            }
+            TimerHistoryStore.get(context).addAll(parsed)
+        } else {
+            0
+        }
+
         // Data is safe in Room now: put alarms back.
         reminderScheduler.rescheduleAll(db)
         ClassReminderScheduler(context).rescheduleAll(db)
@@ -870,7 +910,8 @@ object LocalBackupManager {
             skippedImages = skippedImages,
             attachments = addedAttachments,
             skippedAttachments = skippedAttachments,
-            settingsApplied = settingsApplied
+            settingsApplied = settingsApplied,
+            sessions = addedSessions
         )
     }
 

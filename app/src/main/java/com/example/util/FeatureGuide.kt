@@ -43,7 +43,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 40,
-            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap + Add Class and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
+            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap the + button, then Add Class Slot, and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
         ),
         AppFeature(
             "Bi-Weekly Timetable (Week A/B)", "Support for classes that alternate weekly.", "swap", 45,
@@ -63,11 +63,11 @@ object FeatureGuide {
         ),
         AppFeature(
             "Courses", "Keep your subjects, instructors, and colors in one place.", "school", 70,
-            "1. Open the Courses tab.\n2. Tap Add Course and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
+            "1. Open the Courses tab.\n2. Tap the + button, then Add Course, and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
         ),
         AppFeature(
             "Archive a semester", "Hide completed courses into an archive while preserving their history.", "archive", 74,
-            "1. Open the Courses tab and tap the three-dot menu next to Add Course.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
+            "1. Open the Courses tab and tap the three-dot menu at the top right.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
         ),
         AppFeature(
             "Search", "Find tasks, notes, courses and settings with multi-word search. Archived items and these help guides can be included too.", "search", 76,
@@ -147,7 +147,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "timer", 150,
-            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it."
+            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted. The ring around the time shows how much of a countdown is left, and a running countdown also shows when it will end.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it.\n8. Every run of at least 10 seconds is saved as a study session when you tap Reset or a countdown finishes. Tap the history icon at the top, or the Studied today card, to see your totals, the last 7 days and each session. Delete one session with its bin icon, or clear everything with the sweep icon."
         ),
         AppFeature(
             "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "restore_trash", 155,

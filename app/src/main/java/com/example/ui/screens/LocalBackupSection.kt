@@ -69,6 +69,9 @@ internal fun describe(counts: BackupCounts): String {
         val word = if (counts.skippedAttachments == 1) "attachment could not be downloaded" else "attachments could not be downloaded"
         result += ", ${counts.skippedAttachments} $word"
     }
+    if (counts.sessions > 0) {
+        result += if (counts.sessions == 1) ", 1 study session" else ", ${counts.sessions} study sessions"
+    }
     if (counts.settingsApplied > 0) {
         result += ", app settings restored"
     }

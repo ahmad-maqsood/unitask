@@ -122,8 +122,10 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
             } else {
                 DriveAuthResult.Failed("Connection cancelled", retryable = false)
             }
-        } catch (_: Exception) {
-            DriveAuthResult.Failed("Connection cancelled", retryable = false)
+        } catch (e: Exception) {
+            // A real error (no Play services, network) must not be shown as if the person cancelled.
+            android.util.Log.w("UniTask", "Drive authorization result failed", e)
+            mapAuthException(e)
         }
     }
 

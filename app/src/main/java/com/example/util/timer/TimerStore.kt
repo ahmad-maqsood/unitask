@@ -86,6 +86,33 @@ class TimerStore(context: Context) {
         }
     }
     
+    /** When the current run was first started, or null when no run is in progress. */
+    fun sessionStartMillis(): Long? {
+        return try {
+            if (prefs.contains(KEY_SESSION_START_MILLIS)) {
+                prefs.getLong(KEY_SESSION_START_MILLIS, 0L)
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun setSessionStartMillis(value: Long?) {
+        try {
+            val editor = prefs.edit()
+            if (value != null) {
+                editor.putLong(KEY_SESSION_START_MILLIS, value)
+            } else {
+                editor.remove(KEY_SESSION_START_MILLIS)
+            }
+            editor.apply()
+        } catch (_: Exception) {
+            // Never throw on preference save failures.
+        }
+    }
+
     fun keepScreenOnInFullscreen(): Boolean {
         return try {
             prefs.getBoolean(KEY_KEEP_SCREEN_ON_FULLSCREEN, true)
@@ -110,6 +137,7 @@ class TimerStore(context: Context) {
         private const val KEY_RUNNING_SINCE_MILLIS = "running_since_millis"
         private const val KEY_LAST_COUNTDOWN_MINUTES = "last_countdown_minutes"
         private const val KEY_KEEP_SCREEN_ON_FULLSCREEN = "keep_screen_on_fullscreen"
+        private const val KEY_SESSION_START_MILLIS = "session_start_millis"
         private const val DEFAULT_COUNTDOWN_MINUTES = 25
     }
 }

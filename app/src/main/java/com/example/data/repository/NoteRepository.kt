@@ -33,7 +33,13 @@ class NoteRepository(private val noteDao: NoteDao) {
         noteDao.getNoteById(id)
     }
 
-    suspend fun saveNote(id: Long, title: String, body: String, courseId: Long? = null): Long = withContext(Dispatchers.IO) {
+    suspend fun saveNote(
+        id: Long,
+        title: String,
+        body: String,
+        courseId: Long? = null,
+        keepScreenOn: Boolean? = null // null leaves an existing note's setting unchanged
+    ): Long = withContext(Dispatchers.IO) {
         val trimmedTitle = title.take(MAX_TITLE)
         val trimmedBody = body.take(MAX_BODY)
 
@@ -54,7 +60,8 @@ class NoteRepository(private val noteDao: NoteDao) {
                 courseId = courseId,
                 createdAt = now,
                 updatedAt = now,
-                isSynced = false
+                isSynced = false,
+                keepScreenOn = keepScreenOn ?: false
             )
             return@withContext noteDao.insert(newNote)
         } else {
@@ -66,7 +73,8 @@ class NoteRepository(private val noteDao: NoteDao) {
                     courseId = courseId,
                     createdAt = now,
                     updatedAt = now,
-                    isSynced = false
+                    isSynced = false,
+                    keepScreenOn = keepScreenOn ?: false
                 )
                 return@withContext noteDao.insert(newNote)
             }
@@ -86,7 +94,8 @@ class NoteRepository(private val noteDao: NoteDao) {
                 updatedAt = now,
                 isDeleted = false,
                 deletedAt = 0L,
-                isSynced = false
+                isSynced = false,
+                keepScreenOn = keepScreenOn ?: existing.keepScreenOn
             )
             noteDao.update(updated)
             return@withContext id
@@ -98,6 +107,10 @@ class NoteRepository(private val noteDao: NoteDao) {
         if (note.isPinned == pinned) return@withContext
         val now = System.currentTimeMillis()
         noteDao.update(note.copy(isPinned = pinned, updatedAt = now, isSynced = false))
+    }
+
+    suspend fun setKeepScreenOn(id: Long, keepScreenOn: Boolean) = withContext(Dispatchers.IO) {
+        noteDao.setKeepScreenOn(id, keepScreenOn)
     }
 
     suspend fun moveToTrash(id: Long) = withContext(Dispatchers.IO) {

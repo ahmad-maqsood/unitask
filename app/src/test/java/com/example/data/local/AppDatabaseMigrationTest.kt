@@ -243,4 +243,31 @@ class AppDatabaseMigrationTest {
             db.close()
         }
     }
+
+    @Test
+    fun migrating14To15AddsKeepScreenOnOffForExistingNotes() {
+        val old = helper.createDatabase("migration-test-14-15", 14)
+        old.execSQL(
+            "INSERT INTO notes (id, title, body, courseId, isPinned, createdAt, updatedAt, isDeleted, deletedAt, isSynced, cloudId, cloudUpdatedAt) " +
+                "VALUES (1, 'Lecture 1', 'Intro to graphs', NULL, 0, 1700000000000, 1700000000000, 0, 0, 0, '', 0)"
+        )
+        old.close()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-14-15")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            db.openHelper.writableDatabase
+                .query("SELECT title, body, keepScreenOn FROM notes WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old note is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Lecture 1", cursor.getString(0))
+                    assertEquals("Intro to graphs", cursor.getString(1))
+                    assertEquals(0, cursor.getInt(2))
+                }
+        } finally {
+            db.close()
+        }
+    }
 }

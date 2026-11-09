@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,6 +76,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -95,6 +97,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
@@ -181,6 +185,9 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     var isPinned by mutableStateOf(false)
         private set
 
+    var keepScreenOn by mutableStateOf(false)
+        private set
+
     var isLoaded by mutableStateOf(false)
         private set
 
@@ -215,6 +222,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
         bodyValue = TextFieldValue("")
         selectedCourseId = null
         isPinned = false
+        keepScreenOn = false
         editHistory.clear()
         updateHistoryState()
         lastTypingTime = 0L
@@ -240,6 +248,7 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                     bodyValue = TextFieldValue(note.body, TextRange(note.body.length))
                     selectedCourseId = note.courseId
                     isPinned = note.isPinned
+                    keepScreenOn = note.keepScreenOn
                     rememberOwnVersion(note.title, note.body)
                 }
                 editHistory.clear()
@@ -426,7 +435,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             id = idToSave,
             title = t,
             body = b,
-            courseId = cId
+            courseId = cId,
+            keepScreenOn = keepScreenOn
         )
         if (saveSession != currentSession) return@withLock savedId
         if (savedId > 0L && currentId == 0L) {
@@ -451,6 +461,21 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
                 }
             } else {
                 repository.setPinned(currentId, target)
+            }
+        }
+    }
+
+    /**
+     * Turns "Keep screen on" on or off for this note. A note that is not saved yet keeps the
+     * choice in memory and stores it with its first save.
+     */
+    fun toggleKeepScreenOn(enabled: Boolean) {
+        if (keepScreenOn == enabled) return
+        keepScreenOn = enabled
+        val id = currentId
+        if (id > 0L) {
+            viewModelScope.launch {
+                repository.setKeepScreenOn(id, enabled)
             }
         }
     }
@@ -588,6 +613,14 @@ fun NoteEditorScreen(
                 Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    // Keeps the screen awake only while this note is open and its option is on
+    val hostView = LocalView.current
+    val keepScreenOn = viewModel.keepScreenOn
+    DisposableEffect(hostView, keepScreenOn) {
+        hostView.keepScreenOn = keepScreenOn
+        onDispose { hostView.keepScreenOn = false }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -811,6 +844,32 @@ fun NoteEditorScreen(
                     onSelectCourse = { viewModel.setCourse(it) }
                 )
             }
+        }
+
+        // Visible in every note, in both Edit and Preview mode
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = viewModel.keepScreenOn,
+                    role = Role.Switch,
+                    onValueChange = { viewModel.toggleKeepScreenOn(it) }
+                )
+                .padding(horizontal = 16.dp, vertical = 2.dp)
+                .testTag("note_keep_screen_on_row"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Keep screen on",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Switch(
+                checked = viewModel.keepScreenOn,
+                onCheckedChange = null,
+                modifier = Modifier.testTag("note_keep_screen_on_switch")
+            )
         }
 
         if (isPreviewMode) {

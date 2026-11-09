@@ -207,6 +207,7 @@ object LocalBackupManager {
                         .put("body", n.body)
                         .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
                         .put("isPinned", n.isPinned)
+                        .put("keepScreenOn", n.keepScreenOn)
                         .put("createdAt", n.createdAt)
                         .put("updatedAt", n.updatedAt)
                 )
@@ -673,6 +674,7 @@ object LocalBackupManager {
                 val title = o.optString("title").take(NoteRepository.MAX_TITLE)
                 val body = o.optString("body").take(NoteRepository.MAX_BODY)
                 val isPinned = o.optBoolean("isPinned", false)
+                val keepScreenOn = o.optBoolean("keepScreenOn", false)
                 val createdAt = o.optLong("createdAt", System.currentTimeMillis())
                 val updatedAt = o.optLong("updatedAt", createdAt)
 
@@ -688,6 +690,7 @@ object LocalBackupManager {
                     body = body,
                     courseId = courseId,
                     isPinned = isPinned,
+                    keepScreenOn = keepScreenOn,
                     createdAt = createdAt,
                     updatedAt = updatedAt,
                     isDeleted = false,

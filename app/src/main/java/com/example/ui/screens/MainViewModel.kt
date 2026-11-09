@@ -875,6 +875,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val dueTodayCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
         groupDeadlines(tasks).today.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    // Pending tasks whose deadline has already passed. This is what the Deadlines tab badge shows.
+    val overdueCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
+        groupDeadlines(tasks).overdue.size
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    // The same for personal tasks, for the My tasks tab badge.
+    val myTasksOverdueCount: StateFlow<Int> = myTasks.map { list ->
+        groupDeadlines(list).overdue.size
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     // Actions
     fun setTab(tab: MainTab) {
         _currentTab.value = tab

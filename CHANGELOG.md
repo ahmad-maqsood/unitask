@@ -8,6 +8,10 @@ All notable changes to UniTask are documented in this file.
 - **Study time history:** the timer now remembers your sessions. A run is saved when you tap Reset or a countdown finishes, and the new history screen shows today's total, a 7-day bar chart and every session grouped by day. Single sessions can be deleted, or the whole history cleared.
 - **History in backups:** study sessions are now saved in both the Google Drive backup and the backup file, and merged back on restore without creating duplicates.
 
+### Improved
+- **Bottom bar:** Deadlines has its own flag icon so it no longer looks like Timetable. Badges now appear only when something needs attention: overdue tasks on Deadlines and My tasks (red), and unread messages on Groups. The plain counts on Timetable and Courses are gone.
+- **Fewer duplicate add buttons:** removed the "Add Class" button from Timetable and the "Add Course" button from Courses. Use the + button, or the button shown when the list is empty.
+
 ## [4.0.0] - 08-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
 

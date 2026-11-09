@@ -43,7 +43,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 40,
-            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap + Add Class and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
+            "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap the + button, then Add Class Slot, and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
         ),
         AppFeature(
             "Bi-Weekly Timetable (Week A/B)", "Support for classes that alternate weekly.", "swap", 45,
@@ -63,11 +63,11 @@ object FeatureGuide {
         ),
         AppFeature(
             "Courses", "Keep your subjects, instructors, and colors in one place.", "school", 70,
-            "1. Open the Courses tab.\n2. Tap Add Course and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
+            "1. Open the Courses tab.\n2. Tap the + button, then Add Course, and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
         ),
         AppFeature(
             "Archive a semester", "Hide completed courses into an archive while preserving their history.", "archive", 74,
-            "1. Open the Courses tab and tap the three-dot menu next to Add Course.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
+            "1. Open the Courses tab and tap the three-dot menu at the top right.\n2. Tap Archive courses, select completed courses, name the semester, and confirm.\n3. View Archived semesters from the menu or bottom of the list to restore or delete forever."
         ),
         AppFeature(
             "Search", "Find tasks, notes, courses and settings with multi-word search. Archived items and these help guides can be included too.", "search", 76,

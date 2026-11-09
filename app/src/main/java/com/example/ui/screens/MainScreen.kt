@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
@@ -290,6 +290,8 @@ fun MainScreen(
     val courseFilter by viewModel.courseFilter.collectAsStateWithLifecycle()
     val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
     val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
+    val overdueCount by viewModel.overdueCount.collectAsStateWithLifecycle()
+    val myTasksOverdueCount by viewModel.myTasksOverdueCount.collectAsStateWithLifecycle()
     val completedCount by viewModel.completedCount.collectAsStateWithLifecycle()
     val dueTodayCount by viewModel.dueTodayCount.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -322,7 +324,6 @@ fun MainScreen(
     val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
     val openBellRequest by viewModel.openBellRequest.collectAsStateWithLifecycle()
     val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
-    val myTasksPendingCount by viewModel.myTasksPendingCount.collectAsStateWithLifecycle()
     val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
     val myTaskToEdit by viewModel.myTaskToEdit.collectAsStateWithLifecycle()
 
@@ -501,16 +502,18 @@ fun MainScreen(
                         selected = currentTab == MainTab.DEADLINES,
                         onClick = { viewModel.setTab(MainTab.DEADLINES) },
                         label = "Deadlines",
-                        icon = Icons.Default.AccessTime,
-                        count = pendingCount,
-                        testTag = "tab_deadlines"
+                        icon = Icons.Default.Flag,
+                        // Only overdue work gets a badge, because that is what needs attention.
+                        count = overdueCount,
+                        testTag = "tab_deadlines",
+                        badgeContainerColor = MaterialTheme.colorScheme.error,
+                        badgeContentColor = MaterialTheme.colorScheme.onError
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.TIMETABLE,
                         onClick = { viewModel.setTab(MainTab.TIMETABLE) },
                         label = "Timetable",
                         icon = Icons.Default.Schedule,
-                        count = allLectureSlots.size,
                         testTag = "tab_timetable"
                     )
                     MainNavBarItem(
@@ -518,7 +521,6 @@ fun MainScreen(
                         onClick = { viewModel.setTab(MainTab.COURSES) },
                         label = "Courses",
                         icon = Icons.Default.School,
-                        count = coursesWithCounts.size,
                         testTag = "tab_courses"
                     )
                     MainNavBarItem(
@@ -536,8 +538,10 @@ fun MainScreen(
                         onClick = { viewModel.setTab(MainTab.MYTASKS) },
                         label = "My tasks",
                         icon = Icons.Default.TaskAlt,
-                        count = myTasksPendingCount,
-                        testTag = "tab_mytasks"
+                        count = myTasksOverdueCount,
+                        testTag = "tab_mytasks",
+                        badgeContainerColor = MaterialTheme.colorScheme.error,
+                        badgeContentColor = MaterialTheme.colorScheme.onError
                     )
                 }
             }
@@ -1211,8 +1215,8 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
     onClick: () -> Unit,
     label: String,
     icon: ImageVector,
-    count: Int,
     testTag: String,
+    count: Int = 0,
     badgeContainerColor: Color = MaterialTheme.colorScheme.primary,
     badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {

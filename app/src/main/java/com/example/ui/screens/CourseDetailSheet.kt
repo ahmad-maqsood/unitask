@@ -105,7 +105,8 @@ fun CourseDetailSheet(
     val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
-
+    var slotPendingDelete by remember { mutableStateOf<LectureSlot?>(null) }
+    
     LaunchedEffect(showDeleteConfirm) {
         if (showDeleteConfirm) {
             try {
@@ -135,6 +136,28 @@ fun CourseDetailSheet(
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    slotPendingDelete?.let { slotToDelete ->
+        ConfirmDeleteDialog(
+            title = "Delete class?",
+            message = "This class will be moved to Recently deleted. You can restore it from there.",
+            onConfirm = {
+                onDeleteSlot(slotToDelete)
+                scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Class moved to Recently deleted",
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        onUndoDeleteSlot(slotToDelete)
+                    }
+                }
+            },
+            onDismiss = { slotPendingDelete = null }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -453,8 +476,7 @@ fun CourseDetailSheet(
 
                                             Row {
                                                 IconButton(
-                                                    onClick = { onEditSlot(slot) },
-                                                    modifier = Modifier.size(32.dp)
+                                                    onClick = { onEditSlot(slot) }
                                                 ) {
                                                     Icon(
                                                         Icons.Default.Edit,
@@ -479,8 +501,10 @@ fun CourseDetailSheet(
                                                             }
                                                         }
                                                     },
-                                                    modifier = Modifier.size(32.dp)
                                                 ) {
+                                                    IconButton(
+                                                        onClick = { slotPendingDelete = slot }
+                                                    ) {
                                                     Icon(
                                                         Icons.Default.DeleteOutline,
                                                         contentDescription = "Delete slot",

@@ -112,3 +112,18 @@ val CourseColors = listOf(
     "#2563EB", // Blue
     "#DB2777"  // Pink
 )
+
+/** Spoken names for the course colors, used for screen readers. */
+private val CourseColorNames = mapOf(
+    "#4F46E5" to "Indigo",
+    "#059669" to "Emerald",
+    "#D97706" to "Amber",
+    "#DC2626" to "Red",
+    "#9333EA" to "Purple",
+    "#0891B2" to "Cyan",
+    "#2563EB" to "Blue",
+    "#DB2777" to "Pink"
+)
+
+fun courseColorName(hex: String): String =
+    CourseColorNames.entries.firstOrNull { it.key.equals(hex, ignoreCase = true) }?.value ?: "Custom color"

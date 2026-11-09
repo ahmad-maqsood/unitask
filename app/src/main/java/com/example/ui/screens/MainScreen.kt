@@ -441,7 +441,7 @@ fun MainScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                minFontSize = 9.sp
+                                minFontSize = 10.sp
                             )
                         }
                     }
@@ -1239,7 +1239,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                minFontSize = 9.sp
+                minFontSize = 10.sp
             )
         }
     )

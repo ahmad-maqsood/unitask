@@ -83,7 +83,7 @@ fun ReminderChipGrid(
                                 ShrinkToFitText(
                                     text = opt.chipLabel(),
                                     style = MaterialTheme.typography.labelMedium,
-                                    minFontSize = 9.sp,
+                                    minFontSize = 10.sp,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.fillMaxWidth()
                                 )

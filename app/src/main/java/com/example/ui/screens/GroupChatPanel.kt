@@ -61,6 +61,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -596,6 +599,14 @@ private fun ChatBubble(
                                             offsetX.snapTo(newOffset)
                                         }
                                     }
+                                }
+                            )
+                        }
+                        .semantics {
+                            customActions = listOf(
+                                CustomAccessibilityAction("Reply") {
+                                    onSwipeReply()
+                                    true
                                 }
                             )
                         }

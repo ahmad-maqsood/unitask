@@ -142,8 +142,8 @@ object FeatureGuide {
             "1. While editing a note, tap the toolbar buttons above the keyboard for headings, bold, italic, lists, quotes, inline code, links and tables.\n2. Tap the image icon on the toolbar to add photos from your gallery (up to 50 images per note).\n3. Tap the Preview icon in the top bar to see how your note renders.\n4. Interactive checklists can be ticked or unticked directly in Preview.\n5. Tap the Edit icon in the top bar to return to editing."
         ),
         AppFeature(
-            "Share, Backup and Sync for Notes", "Share notes, import files, back up notes locally and sync with your cloud account.", "sync", 145,
-            "1. In the note editor, open the three dots menu, tap Share, and choose a file type.\n2. In the notes list, open the top-right menu and tap Import .md or .txt file.\n3. Open Markdown files from other apps via Open with and Share, and save the preview to Notes.\n4. Notes are included automatically in local backups and in Export My Data under Settings.\n5. When you are signed in, notes sync to the cloud with conflict protection.\n6. Note images stay saved on your phone and are kept in local backups, but are not uploaded to the cloud."
+            "Share and Back Up Notes", "Share notes, import files and keep your notes safe with local backups.", "sync", 145,
+            "1. In the note editor, open the three dots menu, tap Share, and choose a file type.\n2. In the notes list, open the top-right menu and tap Import .md or .txt file.\n3. Open Markdown files from other apps via Open with and Share, and save the preview to Notes.\n4. Notes are included automatically in backups and in Export My Data under Settings.\n5. Notes are stored on this phone only and are not synced to an account. Make a backup before switching phones.\n6. Note images stay saved on your phone and are kept in your backups."
         ),
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "timer", 150,

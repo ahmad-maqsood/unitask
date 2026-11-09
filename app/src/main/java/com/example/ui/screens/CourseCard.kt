@@ -157,9 +157,7 @@ fun CourseCard(
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("course_menu_${course.id}")
+                            modifier = Modifier.testTag("course_menu_${course.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,

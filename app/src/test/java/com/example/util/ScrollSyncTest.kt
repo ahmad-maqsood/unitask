@@ -16,7 +16,7 @@ class ScrollSyncTest {
         val parsed = parseMarkdownIndexed(doc)
         assertEquals(parsed.blocks.size, parsed.startLines.size)
         // heading, paragraph, rule, code block, bullet a, bullet b
-        assertEquals(listOf(0, 2, 5, 7, 11, 12), parsed.startLines)
+        assertEquals(listOf(0, 2, 5, 7, 12, 13), parsed.startLines)
     }
 
     @Test
@@ -54,7 +54,7 @@ class ScrollSyncTest {
 
     @Test
     fun blockForLinePicksTheBlockThatContainsIt() {
-        val starts = listOf(0, 2, 5, 7, 11, 12)
+        val starts = listOf(0, 2, 5, 7, 12, 13)
         assertEquals(0, blockIndexForLine(starts, 0))
         assertEquals(1, blockIndexForLine(starts, 3)) // second line of the paragraph
         assertEquals(3, blockIndexForLine(starts, 9)) // inside the code block

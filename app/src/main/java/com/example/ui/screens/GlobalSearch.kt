@@ -5,6 +5,7 @@ import com.example.data.local.NoteListItem
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
+import com.example.util.AppFeature
 
 /**
  * Wrapper for an item that belongs to an archived semester.
@@ -56,10 +57,12 @@ data class SearchResults(
     val tasks: List<SearchTaskResult>,
     val notes: List<SearchNoteResult>,
     val courses: List<SearchCourseResult>,
-    val settings: List<SettingsSearchEntry> = emptyList()
+    val settings: List<SettingsSearchEntry> = emptyList(),
+    val guides: List<AppFeature> = emptyList()
 ) {
-    val isEmpty: Boolean get() = tasks.isEmpty() && notes.isEmpty() && courses.isEmpty() && settings.isEmpty()
-    val totalCount: Int get() = tasks.size + notes.size + courses.size + settings.size
+    val isEmpty: Boolean
+        get() = tasks.isEmpty() && notes.isEmpty() && courses.isEmpty() && settings.isEmpty() && guides.isEmpty()
+    val totalCount: Int get() = tasks.size + notes.size + courses.size + settings.size + guides.size
 }
 
 /**
@@ -173,6 +176,18 @@ fun matchesCourse(course: Course, words: List<String>): Boolean {
 }
 
 /**
+ * Checks if a "Learn to use the app" guide matches all query words across its title,
+ * short description and steps.
+ */
+fun matchesGuide(feature: AppFeature, words: List<String>): Boolean {
+    return words.all { word ->
+        feature.title.contains(word, ignoreCase = true) ||
+        feature.description.contains(word, ignoreCase = true) ||
+        feature.howTo.contains(word, ignoreCase = true)
+    }
+}
+
+/**
  * Performs global multi-word search over tasks, notes, and courses.
  * An item matches when EVERY word in the query is found in any of its searchable fields.
  * Empty or blank query returns empty results.
@@ -187,7 +202,8 @@ fun searchEverything(
     archivedTasks: List<ArchivedItem<TaskWithCourse>> = emptyList(),
     archivedNotes: List<ArchivedItem<NoteListItem>> = emptyList(),
     archivedCourses: List<ArchivedItem<Course>> = emptyList(),
-    settingsEntries: List<SettingsSearchEntry> = emptyList()
+    settingsEntries: List<SettingsSearchEntry> = emptyList(),
+    guideEntries: List<AppFeature> = emptyList()
 ): SearchResults {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) {
@@ -253,10 +269,16 @@ fun searchEverything(
 
     val settingsResults = settingsEntries.filter { matchesSetting(it, words) }
 
+    // Guides whose title matches come first. The sort is stable, so the rest keep guide order.
+    val guideResults = guideEntries
+        .filter { matchesGuide(it, words) }
+        .sortedByDescending { guide -> words.all { guide.title.contains(it, ignoreCase = true) } }
+
     return SearchResults(
         tasks = taskResults,
         notes = noteResults,
         courses = courseResults,
-        settings = settingsResults
+        settings = settingsResults,
+        guides = guideResults
     )
 }

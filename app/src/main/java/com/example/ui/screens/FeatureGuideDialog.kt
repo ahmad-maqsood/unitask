@@ -8,16 +8,45 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Coffee
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwipeRight
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,8 +77,11 @@ import androidx.compose.ui.unit.sp
 import com.example.util.AppFeature
 import com.example.util.FeatureGuide
 
-/** The icon names you can type in the Supabase "icon" column. Unknown names show a star. */
-private fun featureIcon(name: String): ImageVector? = when (name.trim().lowercase()) {
+/**
+ * The icon names a feature in FeatureGuide can use. Anything else is shown as text
+ * (for example an emoji), and an empty name shows a star.
+ */
+internal fun featureIcon(name: String): ImageVector? = when (name.trim().lowercase()) {
     "assignment" -> Icons.Default.Assignment
     "schedule" -> Icons.Default.Schedule
     "school" -> Icons.Default.School
@@ -59,16 +91,54 @@ private fun featureIcon(name: String): ImageVector? = when (name.trim().lowercas
     "calendar" -> Icons.Default.CalendarMonth
     "backup" -> Icons.Default.Backup
     "sun" -> Icons.Default.WbSunny
+    "checklist" -> Icons.Default.Checklist
+    "done_all" -> Icons.Default.DoneAll
+    "task_alt" -> Icons.Default.TaskAlt
+    "snooze" -> Icons.Default.Snooze
+    "swap" -> Icons.Default.SwapHoriz
+    "coffee" -> Icons.Default.Coffee
+    "share" -> Icons.Default.Share
+    "warning" -> Icons.Default.Warning
+    "archive" -> Icons.Default.Archive
+    "search" -> Icons.Default.Search
+    "qr_code" -> Icons.Default.QrCode
+    "admin" -> Icons.Default.AdminPanelSettings
+    "cloud_off" -> Icons.Default.CloudOff
+    "account" -> Icons.Default.AccountCircle
+    "download" -> Icons.Default.Download
+    "campaign" -> Icons.Default.Campaign
+    "repeat" -> Icons.Default.Repeat
+    "swipe" -> Icons.Default.SwipeRight
+    "widgets" -> Icons.Default.Widgets
+    "history" -> Icons.Default.History
+    "notifications_active" -> Icons.Default.NotificationsActive
+    "auto_delete" -> Icons.Default.AutoDelete
+    "palette" -> Icons.Default.Palette
+    "edit_note" -> Icons.Default.EditNote
+    "code" -> Icons.Default.Code
+    "sync" -> Icons.Default.Sync
+    "timer" -> Icons.Default.Timer
+    "restore_trash" -> Icons.Default.RestoreFromTrash
     "star", "" -> Icons.Default.Star
     else -> null
 }
 
+/**
+ * The "Learn to use UniTask" list. When [initialFeatureTitle] matches a feature (for example
+ * after tapping it in global search) the list scrolls to it and opens it.
+ */
 @Composable
-fun FeatureGuideDialog(onDismiss: () -> Unit) {
+fun FeatureGuideDialog(onDismiss: () -> Unit, initialFeatureTitle: String? = null) {
     val features = FeatureGuide.all
-    var expandedIndex by remember { mutableStateOf(-1) }
+    val startIndex = remember(initialFeatureTitle) {
+        features.indexOfFirst { it.title == initialFeatureTitle }
+    }
+    var expandedIndex by remember { mutableStateOf(startIndex) }
+    val listState = rememberLazyListState()
 
-
+    LaunchedEffect(startIndex) {
+        if (startIndex >= 0) listState.scrollToItem(startIndex)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -82,6 +152,7 @@ fun FeatureGuideDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.padding(bottom = 10.dp)
                 )
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.weight(1f, fill = false),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {

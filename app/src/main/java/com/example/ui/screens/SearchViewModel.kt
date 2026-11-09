@@ -11,6 +11,7 @@ import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.repository.NoteRepository
 import com.example.reminder.ReminderScheduler
+import com.example.util.FeatureGuide
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +84,9 @@ class SearchViewModel(
     private val _includeArchived = MutableStateFlow(false)
     val includeArchived: StateFlow<Boolean> = _includeArchived.asStateFlow()
 
+    private val _includeGuides = MutableStateFlow(false)
+    val includeGuides: StateFlow<Boolean> = _includeGuides.asStateFlow()
+
     private val _groupTasks = MutableStateFlow<List<TaskWithCourse>>(emptyList())
 
     fun onSearchQueryChange(query: String) {
@@ -93,10 +97,15 @@ class SearchViewModel(
         _includeArchived.value = include
     }
 
-    /** Clears the query and the archived switch so the next visit starts fresh. */
+    fun setIncludeGuides(include: Boolean) {
+        _includeGuides.value = include
+    }
+
+    /** Clears the query and both switches so the next visit starts fresh. */
     fun resetSearch() {
         _searchQuery.value = ""
         _includeArchived.value = false
+        _includeGuides.value = false
     }
 
     fun setGroupTasks(tasks: List<TaskWithCourse>) {
@@ -162,27 +171,35 @@ class SearchViewModel(
         )
     }
 
-    // Search query debounced by 200 ms, paired with the includeArchived toggle.
-    private val searchParamsFlow: Flow<Pair<String, Boolean>> = combine(
+    private data class SearchParams(
+        val query: String,
+        val includeArchived: Boolean,
+        val includeGuides: Boolean
+    )
+
+    // Search query debounced by 200 ms, paired with the two include toggles.
+    private val searchParamsFlow: Flow<SearchParams> = combine(
         _searchQuery.debounce(200L),
-        _includeArchived
-    ) { query, includeArchived ->
-        query to includeArchived
+        _includeArchived,
+        _includeGuides
+    ) { query, includeArchived, includeGuides ->
+        SearchParams(query, includeArchived, includeGuides)
     }
 
     val results: StateFlow<SearchResults> = combine(
         searchParamsFlow,
         searchDataFlow
-    ) { (query, includeArchived), data ->
+    ) { params, data ->
         searchEverything(
-            query = query,
+            query = params.query,
             tasks = data.tasks,
             notes = data.notes,
             courses = data.courses,
-            archivedTasks = if (includeArchived) data.archived.tasks else emptyList(),
-            archivedNotes = if (includeArchived) data.archived.notes else emptyList(),
-            archivedCourses = if (includeArchived) data.archived.courses else emptyList(),
-            settingsEntries = allSettingsSearchEntries
+            archivedTasks = if (params.includeArchived) data.archived.tasks else emptyList(),
+            archivedNotes = if (params.includeArchived) data.archived.notes else emptyList(),
+            archivedCourses = if (params.includeArchived) data.archived.courses else emptyList(),
+            settingsEntries = allSettingsSearchEntries,
+            guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList()
         )
     }
         .flowOn(Dispatchers.Default)

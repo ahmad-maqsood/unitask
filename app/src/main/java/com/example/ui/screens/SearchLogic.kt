@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
+import com.example.util.AppFeature
 
 /**
  * Target actions when a search result row is tapped.
@@ -21,6 +22,9 @@ sealed class SearchNavigationTarget {
 
     /** Opens the Settings sheet on the page that holds the setting, or the sign in sheet for the account row. */
     data class OpenSetting(val page: SettingsPage?, val opensAccount: Boolean) : SearchNavigationTarget()
+
+    /** Opens "Learn to use the app" on the guide with this title. */
+    data class OpenGuide(val featureTitle: String) : SearchNavigationTarget()
 
     /** Opens an alert dialog notifying that the item belongs to an archived semester. */
     data class ShowArchivedDialog(val semesterName: String) : SearchNavigationTarget()
@@ -66,6 +70,13 @@ fun resolveCourseClickTarget(result: SearchCourseResult): SearchNavigationTarget
  */
 fun resolveSettingClickTarget(entry: SettingsSearchEntry): SearchNavigationTarget {
     return SearchNavigationTarget.OpenSetting(entry.page, entry.opensAccount)
+}
+
+/**
+ * Pure function determining the navigation action when a guide search result is clicked.
+ */
+fun resolveGuideClickTarget(feature: AppFeature): SearchNavigationTarget {
+    return SearchNavigationTarget.OpenGuide(feature.title)
 }
 
 /**

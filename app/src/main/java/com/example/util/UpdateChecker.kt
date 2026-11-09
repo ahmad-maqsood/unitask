@@ -1,6 +1,8 @@
 package com.example.util
 
 import android.content.Context
+import org.json.JSONObject
+import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -11,7 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 sealed class UpdateResult {
-    data class Available(val latestVersion: String, val pageUrl: String) : UpdateResult()
+    /** [notes] is the release description from GitHub as plain text, or null if it could not be loaded. */
+    data class Available(
+        val latestVersion: String,
+        val pageUrl: String,
+        val notes: String? = null
+    ) : UpdateResult()
     data class UpToDate(val currentVersion: String) : UpdateResult()
     data class Failed(val message: String) : UpdateResult()
 }
@@ -25,6 +32,12 @@ object UpdateChecker {
 
     private const val RELEASES_PAGE =
         "https://github.com/ahmad-maqsood/unitask/releases/latest"
+
+    private const val RELEASE_BY_TAG_API =
+        "https://api.github.com/repos/ahmad-maqsood/unitask/releases/tags/"
+
+    /** The notes of the newest release, kept so the 10 minute re-checks do not ask GitHub again. */
+    @Volatile private var cachedNotes: Pair<String, String>? = null
 
     fun currentVersion(context: Context): String = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
@@ -63,7 +76,7 @@ object UpdateChecker {
                     UpdateResult.Failed("No release has been published on GitHub yet.")
                 } else if (isNewer(tag, current)) {
                     val page = if (location.startsWith("http")) location else RELEASES_PAGE
-                    UpdateResult.Available(tag, page)
+                    UpdateResult.Available(tag, page, releaseNotes(tag, current))
                 } else {
                     UpdateResult.UpToDate(current)
                 }
@@ -80,6 +93,57 @@ object UpdateChecker {
         } finally {
             connection?.disconnect()
         }
+    }
+
+    /**
+     * The "what's new" text of release [tag], read from GitHub. Asked only when a newer release exists.
+     * Returns null on any problem (no internet, limit reached, empty description): the pop-up then
+     * simply shows no notes. Blocking, so call it off the main thread.
+     */
+    private fun releaseNotes(tag: String, current: String): String? {
+        cachedNotes?.let { if (it.first == tag) return it.second }
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = (URL(RELEASE_BY_TAG_API + URLEncoder.encode(tag, "UTF-8")).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8_000
+                readTimeout = 8_000
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/vnd.github+json")
+                setRequestProperty("User-Agent", "UniTask-Android/$current")
+            }
+            if (connection.responseCode == 200) {
+                val json = connection.inputStream.bufferedReader().use { it.readText() }
+                val notes = releaseNotesToPlainText(JSONObject(json).optString("body", ""))
+                    .ifBlank { null }
+                if (notes != null) cachedNotes = tag to notes
+                notes
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    /**
+     * Turns a release description written in Markdown into plain text a dialog can show:
+     * no # headings, ** bold **, links or images, and "-" bullets become "•". Long text is cut at [maxChars].
+     */
+    fun releaseNotesToPlainText(markdown: String, maxChars: Int = 3000): String {
+        var s = markdown.replace("\r\n", "\n").replace("\r", "\n")
+        s = s.replace(Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL), "")
+        s = s.replace(Regex("!\\[[^\\]]*]\\([^)]*\\)"), "")
+        s = s.replace(Regex("\\[([^\\]]+)]\\([^)]*\\)"), "$1")
+        s = s.replace(Regex("(?m)^[ ]{0,3}#{1,6}[ \\t]*"), "")
+        s = s.replace(Regex("(?m)^[ \\t]*[-*+][ \\t]+"), "• ")
+        s = s.replace(Regex("(\\*\\*|__)(.+?)\\1"), "$2")
+        s = s.replace("`", "")
+        s = s.replace(Regex("\\n{3,}"), "\n\n").trim()
+        if (s.length > maxChars) s = s.take(maxChars).trimEnd() + "…"
+        return s
     }
 
     private val _available = MutableStateFlow<UpdateResult.Available?>(null)

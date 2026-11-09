@@ -299,12 +299,10 @@ class ExampleRobolectricTest {
     }
 
     @Test
-    fun `test reminder schedules alarm and triggers notification in receiver`() = runBlocking {
+    fun `test reminder schedules alarm at the deadline`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
         val shadowAlarmManager = org.robolectric.Shadows.shadowOf(alarmManager)
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        val shadowNotificationManager = org.robolectric.Shadows.shadowOf(notificationManager)
 
         val cal = java.util.Calendar.getInstance().apply {
             add(java.util.Calendar.DAY_OF_YEAR, 1)
@@ -327,19 +325,21 @@ class ExampleRobolectricTest {
         val scheduler = com.example.reminder.ReminderScheduler(context)
         scheduler.scheduleReminder(task, "CS 101")
 
-        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
-        println("DEBUG: scheduledAlarms size = ${scheduledAlarms.size}")
-        for (a in scheduledAlarms) {
-            println("DEBUG: alarm = triggerAtTime=${a.triggerAtTime}, operation=${a.operation}")
-            a.operation?.send()
-        }
-        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        // The scheduler should arm exactly the alarm it says is next, and it must be in the future.
+        val expectedTrigger = scheduler.calculateReminderMillis(task)
+        assertNotNull("The task has an upcoming reminder", expectedTrigger)
+        assertTrue("The reminder is in the future", expectedTrigger!! > System.currentTimeMillis())
 
-        val notifications = shadowNotificationManager.allNotifications
-        println("DEBUG: notifications size = ${notifications.size}")
-        for (n in notifications) {
-            println("DEBUG: notification = ${n.extras.getString(android.app.Notification.EXTRA_TITLE)}")
-        }
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertTrue("Expected an alarm to be scheduled", scheduledAlarms.isNotEmpty())
+        assertTrue(
+            "Expected an alarm at the reminder time",
+            scheduledAlarms.any { it.triggerAtTime == expectedTrigger }
+        )
+
+        // Cancelling should remove the alarm again.
+        scheduler.cancelReminder(task.id)
+        assertTrue("Expected the alarm to be cancelled", shadowAlarmManager.scheduledAlarms.isEmpty())
     }
 
     @Test

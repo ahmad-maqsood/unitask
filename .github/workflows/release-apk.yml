@@ -149,7 +149,7 @@ jobs:
 
       - name: Run unit tests
         if: ${{ !inputs.test_release_notes }}
-        run: ./gradlew testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest
 
       - name: Upload test report
         if: failure()
@@ -178,7 +178,7 @@ jobs:
           KEYSTORE_PATH: ${{ runner.temp }}/my-upload-key.jks
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease
 
       - name: Upload APK
         if: ${{ !inputs.test_release_notes }}

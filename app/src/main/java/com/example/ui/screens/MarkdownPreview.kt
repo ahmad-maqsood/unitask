@@ -56,7 +56,11 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.widthIn
 import com.example.util.markdown.Inline
 import com.example.util.markdown.MarkdownBlock
 import com.example.util.markdown.TableAlign
@@ -128,21 +132,46 @@ fun MarkdownPreview(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 items(parsedBlocks.size) { index ->
                     val block = parsedBlocks[index]
-                    RenderMarkdownBlock(
-                        block = block,
-                        onToggleChecklist = onToggleChecklist,
-                        imageContent = imageContent,
-                        context = context
-                    )
+                    Box(modifier = Modifier.padding(top = blockGap(parsedBlocks.getOrNull(index - 1), block))) {
+                        RenderMarkdownBlock(
+                            block = block,
+                            onToggleChecklist = onToggleChecklist,
+                            imageContent = imageContent,
+                            context = context
+                        )
+                    }
                 }
             }
         }
         LazyListScrollbar(listState)
+    }
+}
+
+private fun isListItem(block: MarkdownBlock?): Boolean =
+    block is MarkdownBlock.BulletItem || block is MarkdownBlock.NumberedItem || block is MarkdownBlock.ChecklistItem
+
+/**
+ * Space above a block. Headings get room above them so sections stand apart, and the items of
+ * one list sit close together instead of being spaced like separate paragraphs.
+ */
+private fun blockGap(previous: MarkdownBlock?, current: MarkdownBlock): Dp {
+    if (previous == null) return 0.dp
+    return when {
+        current is MarkdownBlock.Heading -> when {
+            previous is MarkdownBlock.Heading -> 8.dp
+            current.level == 1 -> 28.dp
+            current.level == 2 -> 24.dp
+            current.level == 3 -> 18.dp
+            else -> 14.dp
+        }
+        previous is MarkdownBlock.ChecklistItem && current is MarkdownBlock.ChecklistItem -> 0.dp
+        isListItem(previous) && isListItem(current) -> 4.dp
+        previous is MarkdownBlock.Heading -> 8.dp
+        else -> 12.dp
     }
 }
 
@@ -158,23 +187,38 @@ private fun RenderMarkdownBlock(
 
     when (block) {
         is MarkdownBlock.Heading -> {
+            // Clearly bigger and bolder than the 16sp body text, one step per level
+            val base = MaterialTheme.typography.bodyLarge
             val headingStyle = when (block.level) {
-                1 -> MaterialTheme.typography.titleLarge
-                2 -> MaterialTheme.typography.titleMedium
-                3 -> MaterialTheme.typography.titleSmall
-                else -> MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-            }.copy(color = MaterialTheme.colorScheme.onSurface)
-
-            RenderInlineText(
-                inlines = block.inlines,
-                baseStyle = headingStyle,
-                primaryColor = primaryColor,
-                codeBgColor = codeBgColor,
-                context = context,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 2.dp)
+                1 -> base.copy(fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
+                2 -> base.copy(fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold)
+                3 -> base.copy(fontSize = 19.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold)
+                4 -> base.copy(fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
+                5 -> base.copy(fontWeight = FontWeight.Bold)
+                else -> base.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold)
+            }.copy(
+                color = if (block.level >= 6) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurface
             )
+
+            Column(modifier = Modifier.fillMaxWidth()) {
+                RenderInlineText(
+                    inlines = block.inlines,
+                    baseStyle = headingStyle,
+                    primaryColor = primaryColor,
+                    codeBgColor = codeBgColor,
+                    context = context,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (block.level <= 2) {
+                    // A faint line under the two biggest headings, lighter than a --- rule
+                    HorizontalDivider(
+                        modifier = Modifier.padding(top = 6.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                        thickness = 1.dp
+                    )
+                }
+            }
         }
 
         is MarkdownBlock.Paragraph -> {
@@ -196,7 +240,11 @@ private fun RenderMarkdownBlock(
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = "\u2022",
+                    text = when (block.depth) {
+                        0 -> "\u2022"
+                        1 -> "\u25E6"
+                        else -> "\u25AA"
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(end = 8.dp)
@@ -223,7 +271,8 @@ private fun RenderMarkdownBlock(
                     text = "${block.number}.",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(end = 8.dp)
+                    // Same width for 1. and 10. so the item text lines up
+                    modifier = Modifier.widthIn(min = 26.dp).padding(end = 8.dp)
                 )
                 RenderInlineText(
                     inlines = block.inlines,
@@ -518,6 +567,7 @@ private fun AnnotatedString.Builder.appendInlines(
                 pushStyle(
                     SpanStyle(
                         fontFamily = FontFamily.Monospace,
+                        fontSize = 0.9.em,
                         background = codeBgColor
                     )
                 )

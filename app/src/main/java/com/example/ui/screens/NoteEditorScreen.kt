@@ -942,7 +942,7 @@ fun NoteEditorScreen(
             ) {
                 Text(
                     text = viewModel.title.ifBlank { "Untitled Note" },
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (viewModel.title.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
@@ -1020,6 +1020,8 @@ fun NoteEditorScreen(
                     .weight(1f)
             ) {
                 val viewportHeight = maxHeight
+                val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                val editorTransformation = remember(markerColor) { MarkdownEditorTransformation(markerColor) }
                 val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
                 Column(
                     modifier = Modifier
@@ -1033,6 +1035,7 @@ fun NoteEditorScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         ),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        visualTransformation = editorTransformation,
                         onTextLayout = { bodyLayout = it },
                         decorationBox = { innerTextField ->
                             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {

@@ -148,6 +148,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import com.example.ui.theme.rememberCourseColor
 
 // When true, opening an existing note starts in Preview mode.
 // Set this to false to always open existing notes in Edit mode.
@@ -715,15 +716,7 @@ fun NoteEditorScreen(
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
 
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
-    val courseColor = remember(selectedCourse?.colorHex) {
-        selectedCourse?.colorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(selectedCourse?.colorHex)
 
     Column(
         modifier = Modifier
@@ -1321,11 +1314,7 @@ private fun CoursePickerPill(
                 }
             )
             courses.forEach { course ->
-                val cColor = try {
-                    Color(android.graphics.Color.parseColor(course.colorHex))
-                } catch (_: Exception) {
-                    Color(0xFF4F46E5)
-                }
+                val cColor = rememberCourseColor(course.colorHex)
                 DropdownMenuItem(
                     text = { Text("${course.code} - ${course.name}") },
                     leadingIcon = {

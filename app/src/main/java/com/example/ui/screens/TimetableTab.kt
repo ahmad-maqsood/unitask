@@ -90,6 +90,7 @@ import com.example.data.local.TaskWithCourse
 import java.util.Calendar
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import com.example.ui.theme.rememberCourseColor
 @Composable
 fun TimetableTab(
     allSlots: List<LectureSlotWithCourse>,
@@ -633,13 +634,7 @@ fun TimetableSlotCard(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    val courseColor = remember(course?.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course?.colorHex ?: "#4F46E5"))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val pendingCourseTasks = remember(allTasks, slot.courseId) {
         allTasks.filter { it.task.courseId == slot.courseId && it.task.status != com.example.data.local.TaskStatus.COMPLETED }

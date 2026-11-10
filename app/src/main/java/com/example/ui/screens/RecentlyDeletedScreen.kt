@@ -61,6 +61,7 @@ import com.example.data.local.NoteListItem
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
 import kotlinx.coroutines.launch
+import com.example.ui.theme.rememberCourseColor
 
 /**
  * Screen showing items in the trash (Tasks, Notes and Classes) with tabs to restore or delete forever.
@@ -415,15 +416,7 @@ private fun DeletedTaskCard(
     val course = item.course
     val isMy = course?.isMyTasksCourse() == true
     val courseLabel = if (isMy) "My tasks" else course?.code.orEmpty()
-    val courseColor = remember(course?.colorHex) {
-        course?.colorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val daysLeft = remember(task.deletedAt, now) {
         daysLeftInTrash(task.deletedAt, now)
@@ -553,15 +546,7 @@ private fun DeletedNoteCard(
         formatTrashDaysLeft(daysLeft)
     }
 
-    val courseColor = remember(item.courseColorHex) {
-        item.courseColorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(item.courseColorHex)
 
     Card(
         shape = RoundedCornerShape(14.dp),
@@ -671,15 +656,7 @@ private fun DeletedClassCard(
     val course = item.course
     val courseCode = course?.code.orEmpty()
     val courseName = course?.name.orEmpty()
-    val courseColor = remember(course?.colorHex) {
-        course?.colorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val daysLeft = remember(slot.deletedAt, now) {
         daysLeftInTrash(slot.deletedAt, now)

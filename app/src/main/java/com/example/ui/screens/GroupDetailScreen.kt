@@ -95,6 +95,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.example.data.local.computeDeadlineMillis
+import com.example.ui.theme.rememberCourseColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1177,13 +1178,7 @@ private fun GroupCourseCard(
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val courseColor = remember(course.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course.colorHex))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course.colorHex)
 
     Card(
         modifier = modifier

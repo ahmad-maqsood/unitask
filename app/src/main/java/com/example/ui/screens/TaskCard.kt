@@ -94,6 +94,7 @@ import java.util.Locale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.layout.defaultMinSize
+import com.example.ui.theme.rememberCourseColor
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -113,15 +114,7 @@ fun TaskCard(
     val haptics = rememberAppHaptics()
     var showMenu by remember { mutableStateOf(false) }
 
-    val courseColor = remember(course?.colorHex) {
-        course?.colorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val isMyTask = course?.isMyTasksCourse() == true
     val leftStripColor = if (isMyTask) {

@@ -104,6 +104,7 @@ import androidx.compose.ui.text.input.ImeAction
 import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
+import com.example.ui.theme.rememberCourseColor
 
 /** Text for the "Remind me" row: "Off", one label, or the earliest label plus how many more. */
 private fun reminderSummary(options: Set<ReminderOption>): String {
@@ -381,11 +382,7 @@ fun AddEditTaskDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     if (selectedCourse != null) {
-                                        val cColor = try {
-                                            Color(android.graphics.Color.parseColor(selectedCourse.colorHex))
-                                        } catch (_: Exception) {
-                                            Color(0xFF4F46E5)
-                                        }
+                                        val cColor = rememberCourseColor(selectedCourse.colorHex)
                                         Row(
                                             modifier = Modifier.weight(1f, fill = false),
                                             verticalAlignment = Alignment.CenterVertically,
@@ -422,11 +419,7 @@ fun AddEditTaskDialog(
                                 onDismissRequest = { courseDropdownExpanded = false }
                             ) {
                                 courses.forEach { c ->
-                                    val cColor = try {
-                                        Color(android.graphics.Color.parseColor(c.colorHex))
-                                    } catch (_: Exception) {
-                                        Color(0xFF4F46E5)
-                                    }
+                                    val cColor = rememberCourseColor(c.colorHex)
                                     DropdownMenuItem(
                                         text = {
                                             Row(

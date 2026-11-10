@@ -93,6 +93,7 @@ import com.example.util.DateFormats
 import java.util.Calendar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.example.ui.theme.rememberCourseColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -375,13 +376,7 @@ fun NotesScreen(
                     items(courses, key = { it.id }) { course ->
                         val isSelected = selectedFilter is NotesFilter.Course &&
                             (selectedFilter as NotesFilter.Course).courseId == course.id
-                        val courseColor = remember(course.colorHex) {
-                            try {
-                                Color(android.graphics.Color.parseColor(course.colorHex))
-                            } catch (_: Exception) {
-                                Color(0xFF4F46E5)
-                            }
-                        }
+                        val courseColor = rememberCourseColor(course.colorHex)
                         FilterChip(
                             selected = isSelected,
                             onClick = { viewModel.setFilter(NotesFilter.Course(course.id)) },
@@ -598,15 +593,7 @@ private fun NoteCard(
     val previewText = remember(item.note.body) { notePreviewText(item.note.body, maxLines = 2) }
     val updatedLabel = remember(item.note.updatedAt) { formatNoteDate(item.note.updatedAt) }
 
-    val courseColor = remember(item.courseColorHex) {
-        item.courseColorHex?.let {
-            try {
-                Color(android.graphics.Color.parseColor(it))
-            } catch (_: Exception) {
-                Color(0xFF4F46E5)
-            }
-        } ?: Color(0xFF4F46E5)
-    }
+    val courseColor = rememberCourseColor(item.courseColorHex)
 
     Card(
         shape = RoundedCornerShape(14.dp),

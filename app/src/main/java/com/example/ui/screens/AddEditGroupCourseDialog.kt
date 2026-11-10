@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupCourse
 import com.example.ui.theme.CourseColors
+import com.example.ui.theme.rememberCourseColor
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -149,11 +150,7 @@ FlowRow(
     verticalArrangement = Arrangement.spacedBy(0.dp)
 ) {
     CourseColors.forEach { hex ->
-        val color = try {
-            Color(android.graphics.Color.parseColor(hex))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
+        val color = rememberCourseColor(hex)
         val isSelected = selectedColor.equals(hex, ignoreCase = true)
         Box(
             modifier = Modifier

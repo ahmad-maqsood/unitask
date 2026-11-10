@@ -102,6 +102,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
 import com.example.data.local.isMyTasksCourse
 import com.example.util.drive.DrivePrefs
+import com.example.ui.theme.rememberCourseColor
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeadlinesTab(
@@ -452,13 +453,7 @@ fun DeadlinesTab(
 
                     items(courses, key = { it.id }) { course ->
                         val isSelected = courseFilter == course.id
-                        val courseColor = remember(course.colorHex) {
-                            try {
-                                Color(android.graphics.Color.parseColor(course.colorHex))
-                            } catch (_: Exception) {
-                                Color(0xFF4F46E5)
-                            }
-                        }
+                        val courseColor = rememberCourseColor(course.colorHex)
 
                         Surface(
                             shape = RoundedCornerShape(16.dp),

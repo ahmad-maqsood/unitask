@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.local.Course
 import com.example.data.local.CourseWithTaskCount
+import com.example.ui.theme.rememberCourseColor
 
 @Composable
 fun CourseCard(
@@ -62,13 +63,7 @@ fun CourseCard(
     val course = courseWithCount.course
     var showMenu by remember { mutableStateOf(false) }
 
-    val courseColor = remember(course.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course.colorHex))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course.colorHex)
     val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }

@@ -2,6 +2,41 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.1.0] - 10-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.1.0)
+
+### Added
+- New full-screen timer design featuring a watch-style dial, progress-tracking ticks, gradient arc, and inner orbit animation.
+- Study history tracking with support for local and Google Drive backups.
+- 'Keep screen on' feature for individual notes.
+- 'Undo' action for deleted tasks in Course Detail and Deadlines screens.
+- Haptic feedback for screen interactions, including toggles, checkboxes, and swipe actions.
+- Global search functionality now includes a dedicated Settings section.
+- Support for opening .md files shared from external file managers, including those identified as generic binary files.
+- 'Reminder Guard' safety net to restore missing alarms after reboots or battery cleaning.
+
+### Improved
+- Timer notifications now feature round, icon-based buttons for Pause/Resume and Stop.
+- Notes can now be shared directly from the list view via the three-dot menu.
+- UI navigation redesign: 'Tools' menu renamed to 'More', featuring a new search icon and update notification badges.
+- Markdown rendering improvements, including better dark mode visibility, clearer headings, and synchronized scroll positions for Edit/Preview modes.
+- 'ShrinkToFitText' implementation scales text size instead of truncating with ellipses in task cards and priority badges.
+- Timetable export feature moved to a dedicated card at the end of the list.
+- Update pop-up now fetches and displays release notes directly from GitHub.
+
+### Fixed
+- Resolved issue where empty 'Deadlines and reminders' notification groups remained in the tray.
+- Fixed search box overlapping with the status bar in edge-to-edge mode.
+- Corrected layout issues on small screens (under 420dp) and prevented 'New code' button cutoff.
+- Fixed note search result previews to display line breaks as spaces.
+- Removed redundant, non-functional expand arrow from timer notifications.
+
+### Developer & project maintenance
+- Enabled predictive back gestures (`enableOnBackInvokedCallback`).
+- Updated ProGuard rules to strip verbose logs from release builds.
+- Updated database schema to version 15.
+- Enhanced automated release notes workflow using Gemini and improved screenshot automation.
+
 ## [4.0.0] - 08-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
 

@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -103,6 +102,10 @@ import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
 import com.example.ui.theme.rememberCourseColor
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.heightIn
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -283,20 +286,79 @@ fun AddEditTaskDialog(
         }
         onDismiss()
     }
-    AlertDialog(
+    Dialog(
         onDismissRequest = cleanupAndDismiss,
-        title = {
-            Text(
-                text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar: close, title and Save. It stays on screen, so Save never scrolls away
+                // or ends up behind the keyboard.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = cleanupAndDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("task_cancel_button")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                    Text(
+                        text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
+                    )
+                    Button(
+                        onClick = {
+                            val isTitleEmpty = title.isBlank()
+                            val isCourseEmpty = selectedCourseId == 0L || selectedCourse == null
+                            if (isTitleEmpty) titleError = true
+                            if (isCourseEmpty) courseError = true
+
+                            if (!isTitleEmpty && !isCourseEmpty) {
+                                onSave(
+                                    title,
+                                    buildDescriptionWithChecklist(description, checklist),
+                                    selectedCourseId,
+                                    selectedDueDateMillis,
+                                    dueHour,
+                                    dueMinute,
+                                    priority,
+                                    status,
+                                    reminderOptions,
+                                    newAttachments
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .testTag("task_save_button")
+                    ) {
+                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                    }
+                }
+                HorizontalDivider()
+
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Course Picker
@@ -818,44 +880,9 @@ fun AddEditTaskDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val isTitleEmpty = title.isBlank()
-                    val isCourseEmpty = selectedCourseId == 0L || selectedCourse == null
-                    if (isTitleEmpty) titleError = true
-                    if (isCourseEmpty) courseError = true
-
-                    if (!isTitleEmpty && !isCourseEmpty) {
-                        onSave(
-                            title,
-                            buildDescriptionWithChecklist(description, checklist),
-                            selectedCourseId,
-                            selectedDueDateMillis,
-                            dueHour,
-                            dueMinute,
-                            priority,
-                            status,
-                            reminderOptions,
-                            newAttachments
-                        )
-                    }
-                },
-                modifier = Modifier.testTag("task_save_button")
-            ) {
-                Text(if (taskToEdit != null) "Save" else "Add Task")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = cleanupAndDismiss,
-                modifier = Modifier.testTag("task_cancel_button")
-            ) {
-                Text("Cancel")
             }
         }
-    )
+    }
 }
 
 @Composable

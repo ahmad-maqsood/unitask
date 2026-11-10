@@ -38,6 +38,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.layout.onSizeChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import com.example.util.markdown.lineIndexAtOffset
@@ -579,6 +580,33 @@ fun NoteEditorScreen(
         }
     }
 
+    // Keeps the line you are typing on in view. The editor is one tall text field inside a scrolling
+    // column, so without this the cursor moves below the visible area when you press Enter.
+    var editViewportPx by remember { mutableStateOf(0f) }
+    val cursorDensity = LocalDensity.current
+    LaunchedEffect(bodyLayout, viewModel.bodyValue.selection, viewModel.bodyValue.text, editViewportPx, isPreviewMode) {
+        val layout = bodyLayout ?: return@LaunchedEffect
+        if (isPreviewMode || editTargetOffset != null || editViewportPx <= 0f) return@LaunchedEffect
+        val bodyText = viewModel.bodyValue.text
+        // Wait for the layout of the current text, otherwise the cursor position would be stale
+        if (layout.layoutInput.text.text != bodyText) return@LaunchedEffect
+        val cursor = viewModel.bodyValue.selection.end.coerceIn(0, bodyText.length)
+        val rect = layout.getCursorRect(cursor)
+        val topPadding = with(cursorDensity) { 12.dp.toPx() } // the editor's top padding
+        val margin = with(cursorDensity) { 24.dp.toPx() }
+        val cursorTop = rect.top + topPadding
+        val cursorBottom = rect.bottom + topPadding
+        val current = editScrollState.value
+        val target = when {
+            cursorBottom + margin > current + editViewportPx -> (cursorBottom + margin - editViewportPx).toInt()
+            cursorTop - margin < current -> (cursorTop - margin).coerceAtLeast(0f).toInt()
+            else -> return@LaunchedEffect
+        }
+        // A new last line only counts toward the scroll range after the next layout pass
+        withTimeoutOrNull(300) { snapshotFlow { editScrollState.maxValue }.first { it >= target } }
+        editScrollState.scrollTo(target.coerceAtMost(editScrollState.maxValue))
+    }
+
     var isImportingImage by remember { mutableStateOf(false) }
     
     fun applyEditing(transform: (EditorText) -> EditorText) {
@@ -1019,6 +1047,7 @@ fun NoteEditorScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .onSizeChanged { editViewportPx = it.height.toFloat() }
                         .verticalScroll(editScrollState)
                 ) {
                     BasicTextField(

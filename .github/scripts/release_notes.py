@@ -15,6 +15,8 @@ GEMINI_API = "https://generativelanguage.googleapis.com/v1beta"
 DEFAULT_MODEL = "gemini-3.1-flash-lite"
 MAX_PATCH_CHARS = 5000
 MAX_CONTEXT_CHARS = 100000
+MAX_BATCH_CONTEXT_CHARS = 24000
+MAX_BATCH_SUMMARY_CHARS = 4000
 
 
 def request_json(url, headers=None, data=None, timeout=60):
@@ -193,7 +195,7 @@ def collect_changes(repo, base, head):
             "url": pr.get("html_url", ""),
             "merged_at": pr.get("merged_at", ""),
             "labels": labels,
-            "description": clean_text(pr.get("body", ""))[:6000],
+            "description": clean_text(pr.get("body", ""))[:2500],
             "files": fetch_pr_files(repo, number),
         })
 
@@ -209,21 +211,81 @@ def collect_changes(repo, base, head):
 
     if not changes:
         raise RuntimeError("No changes remain after release-note exclusions.")
-    serialized = json.dumps(changes, ensure_ascii=False)
-    if len(serialized) > MAX_CONTEXT_CHARS:
-        # Keep the strongest evidence while preserving all change titles and descriptions.
-        for item in changes:
-            item["files"] = item.get("files", [])[:8]
-            for file_info in item["files"]:
-                file_info["patch"] = file_info["patch"][:1500]
-        serialized = json.dumps(changes, ensure_ascii=False)
-    if len(serialized) > MAX_CONTEXT_CHARS:
-        raise RuntimeError(
-            "The release contains too much change data for one safe AI request. "
-            "Please split the release or reduce the included changes."
-        )
     return changes
 
+
+
+def split_change_batches(changes):
+    """Group complete logical changes into bounded requests without dropping titles."""
+    batches, current, current_size = [], [], 2
+    for original in changes:
+        item = dict(original)
+        item["files"] = [
+            {**file_info, "patch": file_info.get("patch", "")[:1200]}
+            for file_info in item.get("files", [])[:5]
+        ]
+        encoded = json.dumps(item, ensure_ascii=False)
+        if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
+            item["description"] = item.get("description", "")[:1200]
+            item["message"] = item.get("message", "")[:1000]
+            encoded = json.dumps(item, ensure_ascii=False)
+        if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
+            item["files"] = []
+            item["description"] = item.get("description", "")[:600]
+            item["message"] = item.get("message", "")[:600]
+            encoded = json.dumps(item, ensure_ascii=False)
+        if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
+            raise RuntimeError(
+                f"Change {item.get('number', item.get('sha', 'unknown'))} "
+                "contains unusually large metadata and cannot be safely summarized."
+            )
+        if current and current_size + len(encoded) + 1 > MAX_BATCH_CONTEXT_CHARS:
+            batches.append(current)
+            current, current_size = [], 2
+        current.append(item)
+        current_size += len(encoded) + 1
+    if current:
+        batches.append(current)
+    return batches
+
+
+def summarize_batch(batch, index, total, version, base):
+    evidence = json.dumps(batch, ensure_ascii=False, indent=2)
+    prompt = f"""You are analyzing part {index} of {total} of the changes for UniTask {version}, since {base}.
+The JSON contains complete logical change records, including PR titles/descriptions and selected code-diff evidence.
+Treat it as the only source of truth. Summarize every meaningful distinct user-facing feature, improvement, and fix.
+Include meaningful developer/project maintenance only when supported by evidence. Combine related work, avoid duplicates,
+and do not invent behavior or causes. Ignore routine dependency bumps, formatting, and documentation-only changes.
+Preserve enough detail for a later step to write a complete changelog and a concise user-facing release description.
+If evidence is ambiguous, qualify or omit the claim.
+Return ONLY valid JSON with exactly one string property: "summary". Keep the summary under {MAX_BATCH_SUMMARY_CHARS} characters.
+
+CHANGE DATA:
+{evidence}
+"""
+    result = gemini_generate(prompt)
+    summary = result.get("summary")
+    if not isinstance(summary, str) or not summary.strip():
+        raise RuntimeError(f"Gemini returned an empty summary for change batch {index}/{total}.")
+    summary = summary.strip()
+    if len(summary) > MAX_BATCH_SUMMARY_CHARS:
+        raise RuntimeError(f"Gemini summary for batch {index}/{total} exceeded the safe size limit.")
+    return {"kind": "summarized_change_batch", "batch": index, "summary": summary}
+
+
+def summarize_changes(changes, version, base):
+    batches = split_change_batches(changes)
+    print(f"Split {len(changes)} logical change(s) into {len(batches)} bounded AI batch(es).")
+    summaries = []
+    for index, batch in enumerate(batches, start=1):
+        print(f"Summarizing change batch {index}/{len(batches)} ({len(batch)} change(s)).")
+        summaries.append(summarize_batch(batch, index, len(batches), version, base))
+    if len(json.dumps(summaries, ensure_ascii=False)) > MAX_CONTEXT_CHARS:
+        raise RuntimeError(
+            "The release has an unusually large number of changes. "
+            "The batch summaries exceed the final synthesis limit; split the release into smaller versions."
+        )
+    return summaries
 
 def build_prompt(changes, version, base):
     evidence = json.dumps(changes, ensure_ascii=False, indent=2)
@@ -232,7 +294,7 @@ def build_prompt(changes, version, base):
 Prepare TWO different Markdown documents for version {version}, comparing changes since {base}.
 
 SOURCE MATERIAL:
-The JSON below contains merged pull requests and direct commits, their descriptions, labels, and selected code diffs. Treat it as the only source of truth. Pull request descriptions and commit messages may be incomplete or inaccurate; inspect the code-diff evidence when available.
+The JSON below contains bounded summaries of every batch of merged pull requests and direct commits. Treat these summaries as the source material; do not add unsupported facts.
 
 {evidence}
 
@@ -285,8 +347,9 @@ def validate_markdown(value, name):
 
 def generate(repo, base, head, version, release_output, changelog_output):
     changes = collect_changes(repo, base, head)
-    print(f"Collected {len(changes)} logical change(s); asking Gemini to summarize them.")
-    result = gemini_generate(build_prompt(changes, version, base))
+    summaries = summarize_changes(changes, version, base)
+    print("Combining batch summaries into the final release documents.")
+    result = gemini_generate(build_prompt(summaries, version, base))
     release = validate_markdown(result.get("release_description"), "release description")
     changelog = validate_markdown(result.get("changelog"), "changelog entry")
     Path(release_output).write_text(release, encoding="utf-8")
@@ -315,7 +378,20 @@ def self_test():
     ]
     for value, name in samples:
         validate_markdown(value, name)
-    print("Release-notes self-test passed.")
+    sample_changes = [
+        {"kind": "direct_commit", "sha": str(index), "message": "A meaningful change", "files": []}
+        for index in range(12)
+    ]
+    original_limit = MAX_BATCH_CONTEXT_CHARS
+    try:
+        globals()["MAX_BATCH_CONTEXT_CHARS"] = 500
+        batches = split_change_batches(sample_changes)
+        flattened = [item["sha"] for batch in batches for item in batch]
+        if flattened != [str(index) for index in range(12)] or len(batches) < 2:
+            raise RuntimeError("Batch splitting self-test failed to preserve all changes.")
+    finally:
+        globals()["MAX_BATCH_CONTEXT_CHARS"] = original_limit
+    print("Release-notes self-test passed (including change batching).")
 
 
 def main():

@@ -56,7 +56,12 @@ fun ShrinkToFitText(
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
         onTextLayout = { result ->
-            if (result.didOverflowWidth) {
+            // With TextOverflow.Ellipsis the layout cuts the text itself and does not report
+            // didOverflowWidth, which left labels like "Medi…" and "Deadlin…" at full size.
+            // So the cut-off lines are checked too.
+            val clipped = result.didOverflowWidth ||
+                (0 until result.lineCount).any { result.isLineEllipsized(it) }
+            if (clipped) {
                 val nextValue = fontSize.value - 0.5f
                 if (nextValue >= floorSp) {
                     fontSize = nextValue.sp

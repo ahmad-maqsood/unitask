@@ -323,7 +323,7 @@ fun AddEditLectureSlotDialog(
                                     val clean = classroom.replace("[Week A]", "").replace("[Week B]", "").trim()
                                     classroom = if (tag.isEmpty()) clean else if (clean.isEmpty()) tag else "$clean $tag"
                                 },
-                                label = { Text(freq, style = MaterialTheme.typography.labelSmall) },
+                                label = { ShrinkToFitText(text = freq, style = MaterialTheme.typography.labelSmall) },
                                 modifier = Modifier.weight(1f)
                             )
                         }

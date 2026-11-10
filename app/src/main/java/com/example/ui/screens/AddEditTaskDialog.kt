@@ -721,7 +721,7 @@ fun AddEditTaskDialog(
                             FilterChip(
                                 selected = status == s,
                                 onClick = { status = s },
-                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                label = { ShrinkToFitText(text = label, style = MaterialTheme.typography.labelSmall) },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("status_chip_${s.name}")

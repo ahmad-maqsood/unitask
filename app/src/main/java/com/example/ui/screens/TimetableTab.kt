@@ -351,7 +351,7 @@ fun TimetableTab(
                         FilterChip(
                             selected = selectedWeekFilter == w,
                             onClick = { selectedWeekFilter = w },
-                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            label = { ShrinkToFitText(text = if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.weight(1f)
                         )
                     }

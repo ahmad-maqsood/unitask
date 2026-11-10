@@ -14,8 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,7 +36,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.DeleteSweep
@@ -70,7 +67,6 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
@@ -331,8 +327,6 @@ fun MainScreen(
 
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
-    // FAB Speed-dial menu expanded state
-    var isFabMenuExpanded by remember { mutableStateOf(false) }
     val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
     var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
     // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
@@ -393,10 +387,9 @@ fun MainScreen(
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
-    // Back closes the speed-dial menu first, then returns to Deadlines, and only then asks to exit.
+    // Back closes search and archived semesters first, then returns to Deadlines, and only then asks to exit.
     BackHandler {
         when {
-            isFabMenuExpanded -> isFabMenuExpanded = false
             showArchivedSemesters -> showArchivedSemesters = false
             showSearch -> showSearch = false
             currentTab != MainTab.DEADLINES -> viewModel.setTab(MainTab.DEADLINES)
@@ -449,23 +442,15 @@ fun MainScreen(
                             }
                         }
 
-                        Column(modifier = Modifier.weight(1f, fill = false)) {
-                            Text(
-                                text = "UniTask",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            ShrinkToFitText(
-                                text = "University Task Manager",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                minFontSize = 10.sp
-                            )
-                        }
+                        Text(
+                            text = "UniTask",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                     }
                 },
                 actions = {
@@ -560,138 +545,36 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
+            // One plain button per tab that adds what the tab lists (Groups has its own buttons).
             if (currentTab != MainTab.GROUPS) {
-                if (currentTab == MainTab.MYTASKS) {
-                    FloatingActionButton(
-                        onClick = { viewModel.openMyTaskDialog(null) },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                        modifier = Modifier.testTag("main_fab_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add task"
-                        )
-                    }
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        AnimatedVisibility(
-                            visible = isFabMenuExpanded,
-                            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                            exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.End,
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shadowElevation = 3.dp
-                                    ) {
-                                        Text(
-                                            text = "Add Course",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                    SmallFloatingActionButton(
-                                        onClick = {
-                                            isFabMenuExpanded = false
-                                            viewModel.openAddCourseDialog()
-                                        },
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.testTag("fab_add_course_option")
-                                    ) {
-                                        Icon(Icons.Default.School, contentDescription = "Add Course")
-                                    }
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shadowElevation = 3.dp
-                                    ) {
-                                        Text(
-                                            text = "Add Class Slot",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                    SmallFloatingActionButton(
-                                        onClick = {
-                                            isFabMenuExpanded = false
-                                            viewModel.openAddSlotDialog()
-                                        },
-                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        modifier = Modifier.testTag("fab_add_slot_option")
-                                    ) {
-                                        Icon(Icons.Default.Schedule, contentDescription = "Add Class Slot")
-                                    }
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shadowElevation = 3.dp
-                                    ) {
-                                        Text(
-                                            text = "Add Assignment",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                    SmallFloatingActionButton(
-                                        onClick = {
-                                            isFabMenuExpanded = false
-                                            viewModel.openAddTaskDialog()
-                                        },
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.testTag("fab_add_task_option")
-                                    ) {
-                                        Icon(Icons.Default.Assignment, contentDescription = "Add Assignment")
-                                    }
-                                }
-                            }
+                // A class needs a course and the class dialog cannot create one, so with no
+                // real courses yet the Timetable button starts with the course instead.
+                val hasRealCourses = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() }
+                val fabDescription = when (currentTab) {
+                    MainTab.DEADLINES -> "Add assignment"
+                    MainTab.TIMETABLE -> if (hasRealCourses) "Add class slot" else "Add course"
+                    MainTab.COURSES -> "Add course"
+                    else -> "Add task"
+                }
+                FloatingActionButton(
+                    onClick = {
+                        when (currentTab) {
+                            MainTab.DEADLINES -> viewModel.openAddTaskDialog()
+                            MainTab.TIMETABLE ->
+                                if (hasRealCourses) viewModel.openAddSlotDialog() else viewModel.openAddCourseDialog()
+                            MainTab.COURSES -> viewModel.openAddCourseDialog()
+                            else -> viewModel.openMyTaskDialog(null)
                         }
-
-                        FloatingActionButton(
-                            onClick = {
-                                isFabMenuExpanded = !isFabMenuExpanded
-                            },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                            modifier = Modifier.testTag("main_fab_button")
-                        ) {
-                            Icon(
-                                imageVector = if (isFabMenuExpanded) Icons.Default.Close else Icons.Default.Add,
-                                contentDescription = if (isFabMenuExpanded) "Close add menu" else "Add task or course"
-                            )
-                        }
-                    }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                    modifier = Modifier.testTag("main_fab_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = fabDescription
+                    )
                 }
             }
         },

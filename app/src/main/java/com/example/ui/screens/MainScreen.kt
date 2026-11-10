@@ -340,17 +340,23 @@ fun MainScreen(
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
-    // The timer notification asks for the Timer screen through the ViewModel.
+    var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
+    var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
+    // The timer notification asks for the Timer screen through the ViewModel. Other full-screen
+    // panels are closed first, because some are drawn above the Timer and would hide it.
     LaunchedEffect(openTimerRequest) {
         if (openTimerRequest) {
             showTools = false
+            showNotes = false
+            showRecentlyDeleted = false
+            showArchivedSemesters = false
+            showArchiveCoursesSheet = false
+            showSearch = false
             showTimer = true
             viewModel.onTimerOpened()
         }
     }
-    var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
-    var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
-    var showSearch by rememberSaveable { mutableStateOf(false) }
     var settingsOpenRequest by remember { mutableStateOf<SettingsOpenRequest?>(null) }
     var updateAvailable by remember { mutableStateOf(false) }
 

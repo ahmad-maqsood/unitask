@@ -347,7 +347,7 @@ private fun DrawScope.drawDial(
     // Ambient glow. It is drawn past the dial's bounds, which is not clipped.
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(accent.copy(alpha = 0.30f * glow), Color.Transparent),
+            colors = listOf(accent.scaled(0.30f * glow), Color.Transparent),
             center = c,
             radius = r * 1.55f
         ),
@@ -365,7 +365,7 @@ private fun DrawScope.drawDial(
         val inner = outer - r * (if (long) 0.075f else 0.04f)
         val lit = progress > 0f && (i / 60f) < progress
         val tickColor = if (lit) {
-            accent.copy(alpha = if (long) 1f else 0.75f)
+            accent.scaled(if (long) 1f else 0.75f)
         } else {
             onSurface.copy(alpha = if (long) 0.32f else 0.14f)
         }
@@ -397,7 +397,7 @@ private fun DrawScope.drawDial(
             drawArc(
                 brush = Brush.sweepGradient(
                     colorStops = arrayOf(
-                        0f to accent.copy(alpha = 0.25f),
+                        0f to accent.scaled(0.25f),
                         head to accent,
                         1f to accent
                     ),
@@ -417,7 +417,7 @@ private fun DrawScope.drawDial(
             c.x + cos(headAngle).toFloat() * arcRadius,
             c.y + sin(headAngle).toFloat() * arcRadius
         )
-        drawCircle(color = accent.copy(alpha = 0.30f), radius = arcStroke * 1.35f, center = headCenter)
+        drawCircle(color = accent.scaled(0.30f), radius = arcStroke * 1.35f, center = headCenter)
         drawCircle(color = Color.White, radius = arcStroke * 0.42f, center = headCenter)
     }
 
@@ -433,7 +433,7 @@ private fun DrawScope.drawDial(
     val dotDegrees = -90f + 360f * secProgress
     if (running) {
         drawArc(
-            color = accent.copy(alpha = 0.55f),
+            color = accent.scaled(0.55f),
             startAngle = dotDegrees,
             sweepAngle = if (countdown) 50f else -50f,
             useCenter = false,
@@ -447,10 +447,13 @@ private fun DrawScope.drawDial(
         c.x + cos(dotAngle).toFloat() * orbitRadius,
         c.y + sin(dotAngle).toFloat() * orbitRadius
     )
-    drawCircle(color = accent.copy(alpha = 0.28f), radius = r * 0.045f, center = dotCenter)
+    drawCircle(color = accent.scaled(0.28f), radius = r * 0.045f, center = dotCenter)
     drawCircle(
-        color = accent.copy(alpha = if (running) 1f else 0.5f),
+        color = accent.scaled(if (running) 1f else 0.5f),
         radius = r * 0.022f,
         center = dotCenter
     )
 }
+
+/** Multiplies the colour's alpha, so a dimmed (paused) accent stays dimmed in every element. */
+private fun Color.scaled(factor: Float): Color = copy(alpha = alpha * factor)

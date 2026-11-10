@@ -314,7 +314,7 @@ fun DeadlinesTab(
                         ShrinkToFitText(
                             text = "Search tasks or courses",
                             style = MaterialTheme.typography.bodyLarge,
-                            minFontSize = 12.sp
+                            minFontSize = 11.sp
                         )
                     },
                     leadingIcon = {

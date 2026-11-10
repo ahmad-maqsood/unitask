@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.local.Course
 import com.example.data.local.Priority
 import com.example.data.local.ReminderOption
@@ -580,10 +581,11 @@ fun AddEditTaskDialog(
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
+                                ShrinkToFitText(
                                     text = formattedDate,
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    minFontSize = 9.sp
                                 )
                             }
                         }
@@ -610,10 +612,11 @@ fun AddEditTaskDialog(
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
+                                ShrinkToFitText(
                                     text = timeStr,
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    minFontSize = 9.sp
                                 )
                             }
                         }
@@ -671,7 +674,7 @@ fun AddEditTaskDialog(
                             FilterChip(
                                 selected = priority == p,
                                 onClick = { priority = p },
-                                label = { Text(p.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                label = { ShrinkToFitText(text = p.name.lowercase().replaceFirstChar { it.uppercase() }, minFontSize = 10.sp) },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("priority_chip_${p.name}")

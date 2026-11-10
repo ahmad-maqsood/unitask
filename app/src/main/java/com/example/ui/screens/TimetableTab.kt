@@ -69,7 +69,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -357,18 +356,6 @@ fun TimetableTab(
                         )
                     }
                 }
-
-                // Calendar export: a labelled button, so nobody has to guess what a share icon does.
-                TextButton(
-                    onClick = { exportTimetableToIcs(context, allSlots) },
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .testTag("timetable_export_ics_button")
-                ) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.size(6.dp))
-                    Text("Add timetable to calendar", style = MaterialTheme.typography.labelLarge)
-                }
             }
         }
 
@@ -461,6 +448,58 @@ fun TimetableTab(
                     }
                 }
 
+            }
+        }
+
+        // Calendar export sits at the end of the list, away from the day and week filters, so it
+        // is clear that it adds the whole timetable and not just the day shown above.
+        if (allSlots.isNotEmpty()) item(key = "export_timetable_card") {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { exportTimetableToIcs(context, allSlots) }
+                    .testTag("timetable_export_ics_button"),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Add full timetable to calendar",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Exports every class from all days and weeks, not only the day shown above.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

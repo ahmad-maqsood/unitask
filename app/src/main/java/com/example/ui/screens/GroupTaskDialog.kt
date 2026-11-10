@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.util.DateFormats
 import com.example.util.HighPriorityAlarm
 import com.example.data.groups.GroupCourse
@@ -328,10 +329,11 @@ fun GroupTaskDialog(
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
+                                ShrinkToFitText(
                                     text = formattedDate,
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    minFontSize = 9.sp
                                 )
                             }
                         }
@@ -356,10 +358,11 @@ fun GroupTaskDialog(
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
+                                ShrinkToFitText(
                                     text = formattedTime,
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    minFontSize = 9.sp
                                 )
                             }
                         }

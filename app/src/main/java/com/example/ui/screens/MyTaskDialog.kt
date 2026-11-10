@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.local.Priority
 import com.example.data.local.ReminderOption
 import com.example.data.local.RepeatRule
@@ -367,10 +368,11 @@ fun MyTaskDialog(
                                     )
                                     Column {
                                         if (selectedDueDateMillis != null) {
-                                            Text(
+                                            ShrinkToFitText(
                                                 text = DateFormats.fullDate(selectedDueDateMillis!!),
                                                 style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.Medium,
+                                                minFontSize = 9.sp
                                             )
                                         } else {
                                             Text(
@@ -439,10 +441,11 @@ fun MyTaskDialog(
                                     )
                                     Column {
                                         if (timeStr != null) {
-                                            Text(
+                                            ShrinkToFitText(
                                                 text = timeStr,
                                                 style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.Medium,
+                                                minFontSize = 9.sp
                                             )
                                         } else {
                                             Text(
@@ -548,7 +551,7 @@ fun MyTaskDialog(
                             FilterChip(
                                 selected = priority == p,
                                 onClick = { priority = p },
-                                label = { Text(p.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                label = { ShrinkToFitText(text = p.name.lowercase().replaceFirstChar { it.uppercase() }, minFontSize = 10.sp) },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("my_task_priority_${p.name}")

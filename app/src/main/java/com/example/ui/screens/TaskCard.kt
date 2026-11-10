@@ -110,6 +110,7 @@ fun TaskCard(
     val task = taskWithCourse.task
     val course = taskWithCourse.course
     val context = LocalContext.current
+    val haptics = rememberAppHaptics()
     var showMenu by remember { mutableStateOf(false) }
 
     val courseColor = remember(course?.colorHex) {
@@ -143,16 +144,6 @@ fun TaskCard(
     val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status) {
         task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
     }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    if (showDeleteConfirm) {
-        ConfirmDeleteDialog(
-            title = "Delete task?",
-            message = "\"${task.title}\" will be removed from this phone.",
-            onConfirm = { onDeleteClick(task) },
-            onDismiss = { showDeleteConfirm = false }
-        )
-    }
-
     // In-app snooze (see SnoozeStore): one extra reminder at a time the user picks.
     var showSnooze by remember { mutableStateOf(false) }
     val snoozes by SnoozeStore.untilByTask(context).collectAsStateWithLifecycle()
@@ -196,92 +187,14 @@ fun TaskCard(
                     .weight(1f)
                     .padding(start = 20.dp, top = 10.dp, end = 14.dp, bottom = 12.dp)
             ) {
-                // Top row: Course tag badge & Priority & Menu
+                // Top row: Priority & Menu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f, fill = false),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        // Priority Badge
-                        PriorityBadge(priority = task.priority)
-
-                        // Repeat Badge
-                        if (task.repeat != RepeatRule.NONE) {
-                            val repeatShortLabel = when (task.repeat) {
-                                RepeatRule.DAILY -> "Daily"
-                                RepeatRule.WEEKDAYS -> "Weekdays"
-                                RepeatRule.WEEKLY -> "Weekly"
-                                RepeatRule.BIWEEKLY -> "Every 2 wks"
-                                RepeatRule.MONTHLY -> "Monthly"
-                                RepeatRule.YEARLY -> "Yearly"
-                                RepeatRule.NONE -> ""
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Repeat,
-                                        contentDescription = "Repeats: $repeatShortLabel",
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = repeatShortLabel,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-
-                        // Reminder Icon indicator
-                        if (task.reminderOptions.isNotEmpty()) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // Attachment Count Indicator
-                        if (taskWithCourse.attachments.isNotEmpty()) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.AttachFile,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = "${taskWithCourse.attachments.size}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // Priority badge. Repeat and reminders sit lower in the card, next to the due date.
+                    PriorityBadge(priority = task.priority)
 
                     Box {
                         IconButton(
@@ -341,7 +254,8 @@ fun TaskCard(
                                     text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
-                                        showDeleteConfirm = true
+                                        // No confirm dialog: callers show an Undo bar instead.
+                                        onDeleteClick(task)
                                     },
                                     modifier = Modifier.testTag("task_delete_menu_item"),
                                     leadingIcon = {
@@ -506,13 +420,19 @@ fun TaskCard(
                                             .fillMaxWidth()
                                             .defaultMinSize(minHeight = 40.dp)
                                             .clip(RoundedCornerShape(6.dp))
-                                            .clickable { onChecklistToggle(task, item.lineIndex) }
+                                            .clickable {
+                                                haptics.tick()
+                                                onChecklistToggle(task, item.lineIndex)
+                                            }
                                             .padding(vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Checkbox(
                                             checked = item.checked,
-                                            onCheckedChange = { onChecklistToggle(task, item.lineIndex) },
+                                            onCheckedChange = {
+                                                haptics.tick()
+                                                onChecklistToggle(task, item.lineIndex)
+                                            },
                                             modifier = Modifier.size(40.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
@@ -597,6 +517,71 @@ fun TaskCard(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Repeat and reminders on one line with the due info. It wraps instead of squeezing
+                // the top row. Attachments already show as file chips above, so no count here.
+                if (task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (task.repeat != RepeatRule.NONE) {
+                            val repeatShortLabel = when (task.repeat) {
+                                RepeatRule.DAILY -> "Daily"
+                                RepeatRule.WEEKDAYS -> "Weekdays"
+                                RepeatRule.WEEKLY -> "Weekly"
+                                RepeatRule.BIWEEKLY -> "Every 2 wks"
+                                RepeatRule.MONTHLY -> "Monthly"
+                                RepeatRule.YEARLY -> "Yearly"
+                                RepeatRule.NONE -> ""
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Repeat,
+                                        contentDescription = "Repeats: $repeatShortLabel",
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = repeatShortLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+                        if (task.reminderOptions.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.defaultMinSize(minHeight = 22.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.NotificationsActive,
+                                    contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "${task.reminderOptions.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
 
                 // Shown while an in-app snooze is waiting. Tap it to change the time.
                 if (snoozedUntil != null) {
@@ -727,6 +712,7 @@ fun StatusToggleChip(
     }
 
     val actionDescription = if (isDone) "Mark not done" else "Mark done"
+    val haptics = rememberAppHaptics()
 
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -737,7 +723,10 @@ fun StatusToggleChip(
             .clip(RoundedCornerShape(20.dp))
             .clickable(
                 onClickLabel = actionDescription,
-                onClick = onClick
+                onClick = {
+                    haptics.tick()
+                    onClick()
+                }
             )
     ) {
         Row(

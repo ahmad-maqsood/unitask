@@ -89,6 +89,7 @@ fun CourseDetailSheet(
     onStatusCycle: (TaskItem) -> Unit,
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
+    onUndoDeleteTask: (TaskItem) -> Unit = {},
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
@@ -549,7 +550,20 @@ fun CourseDetailSheet(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
                         onEditClick = onEditTask,
-                        onDeleteClick = onDeleteTask,
+                        onDeleteClick = { deleted ->
+                            onDeleteTask(deleted)
+                            scope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Task moved to Recently deleted",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    onUndoDeleteTask(deleted)
+                                }
+                            }
+                        },
                         onChecklistToggle = onChecklistToggle
                     )
                 }

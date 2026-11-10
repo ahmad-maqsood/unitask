@@ -621,13 +621,16 @@ fun MainScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dismiss",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clickable { showNotificationBanner = false }
-                        )
+                        IconButton(
+                            onClick = { showNotificationBanner = false },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Dismiss",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }

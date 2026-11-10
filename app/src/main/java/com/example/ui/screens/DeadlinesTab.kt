@@ -513,11 +513,11 @@ fun DeadlinesTab(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         IconButton(
                             onClick = { isCalendarView = !isCalendarView },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = if (isCalendarView) Icons.Default.ViewList else Icons.Default.CalendarMonth,
@@ -532,7 +532,7 @@ fun DeadlinesTab(
                                 IconButton(
                                     onClick = { sortMenuExpanded = true },
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(48.dp)
                                         .testTag("sort_button")
                                 ) {
                                     Icon(
@@ -571,7 +571,7 @@ fun DeadlinesTab(
                                     isBatchMode = !isBatchMode
                                     if (!isBatchMode) selectedTaskIds.clear()
                                 },
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Checklist,
@@ -656,7 +656,7 @@ fun DeadlinesTab(
                                         selectedTaskIds.clear()
                                         isBatchMode = false
                                     },
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(Icons.Default.Close, contentDescription = "Close batch mode", modifier = Modifier.size(16.dp))
                                 }

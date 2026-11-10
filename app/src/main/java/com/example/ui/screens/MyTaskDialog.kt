@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -349,7 +350,14 @@ fun MyTaskDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    .heightIn(min = 48.dp)
+                                    .padding(
+                                        start = 10.dp,
+                                        top = 10.dp,
+                                        bottom = 10.dp,
+                                        // The clear button supplies the right-hand spacing while it is shown.
+                                        end = if (selectedDueDateMillis != null) 0.dp else 10.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -390,7 +398,8 @@ fun MyTaskDialog(
                                 if (selectedDueDateMillis != null) {
                                     IconButton(
                                         onClick = { selectedDueDateMillis = null },
-                                        modifier = Modifier.size(24.dp)
+                                        // 34 x 48 dp tap area. Wider would squeeze the date text in the half-width card.
+                                        modifier = Modifier.size(width = 34.dp, height = 48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
@@ -422,7 +431,14 @@ fun MyTaskDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    .heightIn(min = 48.dp)
+                                    .padding(
+                                        start = 10.dp,
+                                        top = 10.dp,
+                                        bottom = 10.dp,
+                                        // The clear button supplies the right-hand spacing while it is shown.
+                                        end = if (!isTimeMissing) 0.dp else 10.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -466,7 +482,8 @@ fun MyTaskDialog(
                                             dueHour = null
                                             dueMinute = null
                                         },
-                                        modifier = Modifier.size(24.dp)
+                                        // 34 x 48 dp tap area. Wider would squeeze the time text in the narrow card.
+                                        modifier = Modifier.size(width = 34.dp, height = 48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,

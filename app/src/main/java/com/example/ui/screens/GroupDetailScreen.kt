@@ -555,7 +555,7 @@ fun GroupDetailScreen(
                                         IconButton(
                                             onClick = { menuOpen = true },
                                             modifier = Modifier
-                                                .size(32.dp)
+                                                .size(48.dp)
                                                 .testTag("member_menu_${member.uid}")
                                         ) {
                                             Icon(Icons.Default.MoreVert, contentDescription = "Member options")
@@ -801,7 +801,7 @@ fun GroupTaskRow(
                 IconButton(
                     onClick = onToggleDone,
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(48.dp)
                         .testTag("group_task_done_checkbox_${task.id}")
                 ) {
                     Icon(
@@ -860,7 +860,7 @@ fun GroupTaskRow(
                             IconButton(
                                 onClick = onEdit,
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(48.dp)
                                     .testTag("group_task_edit_${task.id}")
                             ) {
                                 Icon(Icons.Default.Edit, contentDescription = "Edit task", modifier = Modifier.size(18.dp))
@@ -868,7 +868,7 @@ fun GroupTaskRow(
                             IconButton(
                                 onClick = { showDeleteConfirm = true },
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(48.dp)
                                     .testTag("group_task_delete_${task.id}")
                             ) {
                                 Icon(
@@ -1250,7 +1250,7 @@ private fun GroupCourseCard(
                             IconButton(
                                 onClick = { showMenu = true },
                                 modifier = Modifier
-                                    .size(28.dp)
+                                    .size(48.dp)
                                     .testTag("group_course_menu_${course.id}")
                             ) {
                                 Icon(

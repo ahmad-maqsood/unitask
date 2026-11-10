@@ -5,11 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -70,20 +65,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -103,7 +92,6 @@ import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
 import com.example.reminder.CountdownNotifier
 import kotlinx.coroutines.delay
-import kotlin.math.abs
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -341,27 +329,10 @@ fun TimerScreen(
                     }
                 }
 
-                // Progress ring with the clock inside it. The ring shows how much of a countdown
-                // is left, or how far into the current minute a stopwatch is. It is drawn from the
-                // same wall-clock time as the clock text, so it needs no extra ticking.
-                val ringTarget = if (isFinished) 1f else TimerLogic.ringFraction(state, now)
-                var previousRing by remember { mutableFloatStateOf(ringTarget) }
-                // Glide between the one-second steps, but jump when the ring wraps or is reset.
-                val glide = isRunning && abs(ringTarget - previousRing) < 0.25f
-                val ringProgress by animateFloatAsState(
-                    targetValue = ringTarget,
-                    animationSpec = if (glide) tween(durationMillis = 1000, easing = LinearEasing) else snap(),
-                    label = "timerRing"
-                )
-                SideEffect { previousRing = ringTarget }
-
-                val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
-                val ringColor = when {
-                    isFinished -> MaterialTheme.colorScheme.tertiary
-                    isPaused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    else -> MaterialTheme.colorScheme.primary
-                }
-
+                // The same watch-style dial as in full screen, with the clock inside it. The ring
+                // shows how much of a countdown is left, or how far into the current minute a
+                // stopwatch is. It is drawn from the same wall-clock time as the clock text, so it
+                // needs no extra ticking.
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -369,11 +340,10 @@ fun TimerScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     val ringSize = minOf(maxWidth, 300.dp).coerceAtLeast(200.dp)
-                    val ringStroke = 12.dp
-                    // Fit the clock inside the ring: leave room for the stroke and a gap, and
-                    // shrink the text when it is longer (for example 1:30:00).
-                    val innerWidth = ringSize.value - 4 * ringStroke.value
-                    val fontSize = (innerWidth * 0.92f / (timeText.length * 0.62f)).coerceIn(28f, 76f).sp
+                    // The clock sits inside the orbit ring, which is 0.66 of the dial radius.
+                    // The text shrinks when it is longer (for example 1:30:00).
+                    val innerWidth = ringSize.value * 0.56f
+                    val fontSize = (innerWidth * 0.95f / (timeText.length * 0.62f)).coerceIn(28f, 76f).sp
                     val isClockTappable = state.mode == TimerMode.COUNTDOWN && isIdle
                     val clockModifier = if (isClockTappable) {
                         Modifier
@@ -385,38 +355,14 @@ fun TimerScreen(
                         Modifier
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(ringSize)
-                            .testTag("timer_ring"),
-                        contentAlignment = Alignment.Center
+                    TimerDial(
+                        state = state,
+                        now = now,
+                        isRunning = isRunning,
+                        isPaused = isPaused,
+                        isFinished = isFinished,
+                        size = ringSize
                     ) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val strokePx = ringStroke.toPx()
-                            val arcSize = Size(size.width - strokePx, size.height - strokePx)
-                            val topLeft = Offset(strokePx / 2f, strokePx / 2f)
-                            drawArc(
-                                color = trackColor,
-                                startAngle = -90f,
-                                sweepAngle = 360f,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokePx, cap = StrokeCap.Round)
-                            )
-                            if (ringProgress > 0f) {
-                                drawArc(
-                                    color = ringColor,
-                                    startAngle = -90f,
-                                    sweepAngle = 360f * ringProgress.coerceIn(0f, 1f),
-                                    useCenter = false,
-                                    topLeft = topLeft,
-                                    size = arcSize,
-                                    style = Stroke(width = strokePx, cap = StrokeCap.Round)
-                                )
-                            }
-                        }
-
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
@@ -425,18 +371,19 @@ fun TimerScreen(
                             Text(
                                 text = timeText,
                                 fontSize = fontSize,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontFamily = FontFamily.Monospace,
                                 maxLines = 1,
                                 modifier = Modifier.testTag("timer_time_text")
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = timerStatusLabel(state.mode, isRunning, isPaused, isFinished),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
+                                text = timerStatusLabel(state.mode, isRunning, isPaused, isFinished).uppercase(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp,
                                 color = if (isFinished) {
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.tertiary
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 }

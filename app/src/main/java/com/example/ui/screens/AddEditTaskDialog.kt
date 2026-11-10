@@ -701,31 +701,33 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Status
-                Column {
-                    Text(
-                        text = "Status",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        TaskStatus.entries.forEach { s ->
-                            val label = when (s) {
-                                TaskStatus.PENDING -> "Pending"
-                                TaskStatus.COMPLETED -> "Done"
+                // Status. A new task always starts as Pending, so the choice only matters when editing.
+                if (taskToEdit != null) {
+                    Column {
+                        Text(
+                            text = "Status",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            TaskStatus.entries.forEach { s ->
+                                val label = when (s) {
+                                    TaskStatus.PENDING -> "Pending"
+                                    TaskStatus.COMPLETED -> "Done"
+                                }
+                                FilterChip(
+                                    selected = status == s,
+                                    onClick = { status = s },
+                                    label = { ShrinkToFitText(text = label, style = MaterialTheme.typography.labelSmall) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("status_chip_${s.name}")
+                                )
                             }
-                            FilterChip(
-                                selected = status == s,
-                                onClick = { status = s },
-                                label = { ShrinkToFitText(text = label, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("status_chip_${s.name}")
-                            )
                         }
                     }
                 }

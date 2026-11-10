@@ -33,8 +33,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -105,14 +103,6 @@ import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
 import com.example.ui.theme.rememberCourseColor
-
-/** Text for the "Remind me" row: "Off", one label, or the earliest label plus how many more. */
-private fun reminderSummary(options: Set<ReminderOption>): String {
-    if (options.isEmpty()) return "Off"
-    val sorted = options.sortedBy { it.offsetMinutes }
-    val first = sorted.first().label
-    return if (sorted.size == 1) first else "$first +${sorted.size - 1} more"
-}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -211,7 +201,6 @@ fun AddEditTaskDialog(
     var isAttachingFile by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
-    var showReminderPicker by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     if (showDatePicker) {
@@ -254,38 +243,6 @@ fun AddEditTaskDialog(
                 dueHour = hour
                 dueMinute = minute
                 showTimePicker = false
-            }
-        )
-    }
-
-    if (showReminderPicker) {
-        AlertDialog(
-            onDismissRequest = { showReminderPicker = false },
-            title = { Text("Remind me", fontWeight = FontWeight.Bold) },
-            text = {
-                ReminderChipGrid(
-                    selected = reminderOptions,
-                    onSelectedChange = { reminderOptions = it },
-                    testTagPrefix = "reminder_chip"
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showReminderPicker = false },
-                    modifier = Modifier.testTag("reminder_done_button")
-                ) {
-                    Text("Done")
-                }
-            },
-            dismissButton = {
-                if (reminderOptions.isNotEmpty()) {
-                    TextButton(
-                        onClick = { reminderOptions = emptySet() },
-                        modifier = Modifier.testTag("clear_reminders_button")
-                    ) {
-                        Text("Clear all")
-                    }
-                }
             }
         )
     }
@@ -766,52 +723,15 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Reminders: one row that shows the current choice and opens a small picker.
-                OutlinedCard(
-                    onClick = { showReminderPicker = true },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("reminder_row")
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Remind me",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = reminderSummary(reminderOptions),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (reminderOptions.isEmpty()) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
+                // Reminders: one row that opens a small picker (shared with the other task dialogs).
+                ReminderPickerRow(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    chipTagPrefix = "reminder_chip",
+                    rowTestTag = "reminder_row",
+                    clearTestTag = "clear_reminders_button",
+                    doneTestTag = "reminder_done_button"
+                )
 
                 // Attachments: one compact row. Saved and new files only take space once they exist.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

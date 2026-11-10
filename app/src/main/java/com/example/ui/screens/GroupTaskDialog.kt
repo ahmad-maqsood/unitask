@@ -410,33 +410,15 @@ fun GroupTaskDialog(
                 }
 
                 // Reminders: every member of the group gets an alert at each time you pick
-                Column {
-                    Text(
-                        text = "Reminders",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (reminderOptions.isEmpty()) {
-                            "No reminders. Tap times below to add some."
-                        } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected. Everyone tagged gets them."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (reminderOptions.isEmpty()) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    ReminderChipGrid(
-                        selected = reminderOptions,
-                        onSelectedChange = { reminderOptions = it },
-                        testTagPrefix = "group_reminder_chip"   // use the prefix from the table for each file
-                    )
-                }
+                ReminderPickerRow(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    chipTagPrefix = "group_reminder_chip",
+                    rowTestTag = "group_reminder_row",
+                    clearTestTag = "group_clear_reminders_button",
+                    doneTestTag = "group_reminder_done_button",
+                    pickerNote = "Everyone tagged gets these alerts."
+                )
 
                 // Tag members: only tagged members see this task on their Deadlines tab
                 Column {

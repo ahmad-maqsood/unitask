@@ -690,57 +690,15 @@ fun MyTaskDialog(
                     }
                 }
 
-                // Notification Reminders (Multiple selections allowed)
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Notification Reminders",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        if (reminderOptions.isNotEmpty()) {
-                            TextButton(
-                                onClick = { reminderOptions = emptySet() },
-                                modifier = Modifier.testTag("my_task_clear_reminders_button")
-                            ) {
-                                Text("Clear all", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (reminderOptions.isEmpty()) {
-                            "Select times to receive alerts, or none."
-                        } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                        fontWeight = if (reminderOptions.isEmpty()) FontWeight.Normal else FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    ReminderChipGrid(
-                        selected = reminderOptions,
-                        onSelectedChange = { reminderOptions = it },
-                        testTagPrefix = "my_task_reminder_chip"   // use the prefix from the table for each file
-                    )
-                }
+                // Reminders: one row that opens a small picker (several times can still be chosen)
+                ReminderPickerRow(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    chipTagPrefix = "my_task_reminder_chip",
+                    rowTestTag = "my_task_reminder_row",
+                    clearTestTag = "my_task_clear_reminders_button",
+                    doneTestTag = "my_task_reminder_done_button"
+                )
             }
         },
         confirmButton = {

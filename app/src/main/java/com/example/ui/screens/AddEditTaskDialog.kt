@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.AlertDialog
@@ -47,7 +48,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -104,6 +104,14 @@ import androidx.compose.ui.text.input.ImeAction
 import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
+
+/** Text for the "Remind me" row: "Off", one label, or the earliest label plus how many more. */
+private fun reminderSummary(options: Set<ReminderOption>): String {
+    if (options.isEmpty()) return "Off"
+    val sorted = options.sortedBy { it.offsetMinutes }
+    val first = sorted.first().label
+    return if (sorted.size == 1) first else "$first +${sorted.size - 1} more"
+}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -202,6 +210,7 @@ fun AddEditTaskDialog(
     var isAttachingFile by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showReminderPicker by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     if (showDatePicker) {
@@ -244,6 +253,38 @@ fun AddEditTaskDialog(
                 dueHour = hour
                 dueMinute = minute
                 showTimePicker = false
+            }
+        )
+    }
+
+    if (showReminderPicker) {
+        AlertDialog(
+            onDismissRequest = { showReminderPicker = false },
+            title = { Text("Remind me", fontWeight = FontWeight.Bold) },
+            text = {
+                ReminderChipGrid(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    testTagPrefix = "reminder_chip"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showReminderPicker = false },
+                    modifier = Modifier.testTag("reminder_done_button")
+                ) {
+                    Text("Done")
+                }
+            },
+            dismissButton = {
+                if (reminderOptions.isNotEmpty()) {
+                    TextButton(
+                        onClick = { reminderOptions = emptySet() },
+                        modifier = Modifier.testTag("clear_reminders_button")
+                    ) {
+                        Text("Clear all")
+                    }
+                }
             }
         )
     }
@@ -732,185 +773,134 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Local Notification Reminders (Multiple selections allowed)
-                Column {
+                // Reminders: one row that shows the current choice and opens a small picker.
+                OutlinedCard(
+                    onClick = { showReminderPicker = true },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("reminder_row")
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Notification Reminders",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        if (reminderOptions.isNotEmpty()) {
-                            TextButton(
-                                onClick = { reminderOptions = emptySet() },
-                                modifier = Modifier.testTag("clear_reminders_button")
-                            ) {
-                                Text("Clear all", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Remind me",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = reminderSummary(reminderOptions),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (reminderOptions.isEmpty()) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (reminderOptions.isEmpty()) {
-                            "Select multiple times to receive multiple alerts, or none."
-                        } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                        fontWeight = if (reminderOptions.isEmpty()) FontWeight.Normal else FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    ReminderChipGrid(
-                        selected = reminderOptions,
-                        onSelectedChange = { reminderOptions = it },
-                        testTagPrefix = "reminder_chip"   // use the prefix from the table for each file
-                    )
                 }
 
-                // Offline File Attachments Section
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+
+                // Attachments: one compact row. Saved and new files only take space once they exist.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val attachedCount = existingAttachments.size + newAttachments.size
+                    OutlinedCard(
+                        onClick = {
+                            filePickerLauncher.launch(
+                                arrayOf(
+                                    "application/pdf",
+                                    "image/*",
+                                    "text/*",
+                                    "application/msword",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    "*/*"
+                                )
+                            )
+                        },
+                        enabled = !isAttachingFile,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("attach_file_button")
                     ) {
                         Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AttachFile,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Attachments",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                filePickerLauncher.launch(
-                                    arrayOf(
-                                        "application/pdf",
-                                        "image/*",
-                                        "text/*",
-                                        "application/msword",
-                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                        "*/*"
-                                    )
-                                )
-                            },
-                            enabled = !isAttachingFile,
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("attach_file_button")
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (isAttachingFile) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
+                                    modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Text("Importing...", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
                             } else {
-                                Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.size(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.AttachFile,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isAttachingFile) "Importing..." else "Attach file",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (attachedCount > 0 && !isAttachingFile) {
                                 Text(
-                                    "Attach File",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    softWrap = false
+                                    text = "$attachedCount attached",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
                     }
 
-                    Text(
-                        text = "Files are saved locally on this device only.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
                     // Existing attachments
-                    if (existingAttachments.isNotEmpty()) {
-                        Text(
-                            text = "Saved files:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    existingAttachments.forEach { att ->
+                        AttachmentChip(
+                            fileName = att.fileName,
+                            fileSize = att.fileSize,
+                            mimeType = att.mimeType,
+                            onDelete = { onDeleteExistingAttachment?.invoke(att) }
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            existingAttachments.forEach { att ->
-                                AttachmentChip(
-                                    fileName = att.fileName,
-                                    fileSize = att.fileSize,
-                                    mimeType = att.mimeType,
-                                    onDelete = { onDeleteExistingAttachment?.invoke(att) }
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
                     }
 
                     // Newly attached files (pending save)
-                    if (newAttachments.isNotEmpty()) {
-                        Text(
-                            text = "New files to attach:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            newAttachments.forEach { att ->
-                                AttachmentChip(
-                                    fileName = att.fileName,
-                                    fileSize = att.fileSize,
-                                    mimeType = att.mimeType,
-                                    onDelete = {
-                                        coroutineScope.launch {
-                                            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
-                                        }
-                                        newAttachments = newAttachments - att
-                                    }
-                                )
+                    newAttachments.forEach { att ->
+                        AttachmentChip(
+                            fileName = att.fileName,
+                            fileSize = att.fileSize,
+                            mimeType = att.mimeType,
+                            onDelete = {
+                                coroutineScope.launch {
+                                    AttachmentManager.deleteAttachmentFile(context, att.relativePath)
+                                }
+                                newAttachments = newAttachments - att
                             }
-                        }
-                    }
-
-                    if (existingAttachments.isEmpty() && newAttachments.isEmpty()) {
-                        Text(
-                            text = "No files attached. Attach PDFs, syllabus sheets, or rubric images for offline viewing.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }

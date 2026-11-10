@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,7 +49,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -79,6 +77,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.key
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.Surface
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
@@ -166,20 +170,80 @@ fun MyTaskDialog(
         )
     }
 
-    AlertDialog(
+    val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
+    val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (taskToEdit != null) "Edit My Task" else "Add My Task",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar: close, title and Save. It stays on screen, so Save never scrolls away
+                // or ends up behind the keyboard.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("my_task_cancel_button")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                    Text(
+                        text = if (taskToEdit != null) "Edit My Task" else "Add My Task",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
+                    )
+                    Button(
+                        onClick = {
+                            if (title.isBlank()) {
+                                titleError = true
+                            } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
+                                onSave(
+                                    title.trim(),
+                                    buildDescriptionWithChecklist(description, checklist).trim(),
+                                    selectedDueDateMillis!!,
+                                    dueHour!!,
+                                    dueMinute!!,
+                                    priority,
+                                    reminderOptions,
+                                    repeatRule,
+                                    autoDeleteWhenDone
+                                )
+                            }
+                        },
+                        enabled = isSaveEnabled,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .defaultMinSize(minHeight = 48.dp)
+                            .testTag("my_task_save_button")
+                    ) {
+                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                    }
+                }
+                HorizontalDivider()
+
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Title
@@ -351,7 +415,14 @@ fun MyTaskDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    .heightIn(min = 48.dp)
+                                    .padding(
+                                        start = 10.dp,
+                                        top = 10.dp,
+                                        bottom = 10.dp,
+                                        // The clear button supplies the right-hand spacing while it is shown.
+                                        end = if (selectedDueDateMillis != null) 0.dp else 10.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -392,7 +463,8 @@ fun MyTaskDialog(
                                 if (selectedDueDateMillis != null) {
                                     IconButton(
                                         onClick = { selectedDueDateMillis = null },
-                                        modifier = Modifier.size(24.dp)
+                                        // 34 x 48 dp tap area. Wider would squeeze the date text in the half-width card.
+                                        modifier = Modifier.size(width = 34.dp, height = 48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
@@ -424,7 +496,14 @@ fun MyTaskDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    .heightIn(min = 48.dp)
+                                    .padding(
+                                        start = 10.dp,
+                                        top = 10.dp,
+                                        bottom = 10.dp,
+                                        // The clear button supplies the right-hand spacing while it is shown.
+                                        end = if (!isTimeMissing) 0.dp else 10.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -468,7 +547,8 @@ fun MyTaskDialog(
                                             dueHour = null
                                             dueMinute = null
                                         },
-                                        modifier = Modifier.size(24.dp)
+                                        // 34 x 48 dp tap area. Wider would squeeze the time text in the narrow card.
+                                        modifier = Modifier.size(width = 34.dp, height = 48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
@@ -488,19 +568,19 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("Today") {
+                        QuickDateChip("Today", selected = isDaysFromToday(selectedDueDateMillis, 0)) {
                             val c = Calendar.getInstance()
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Tomorrow") {
+                        QuickDateChip("Tomorrow", selected = isDaysFromToday(selectedDueDateMillis, 1)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("In 3 Days") {
+                        QuickDateChip("In 3 Days", selected = isDaysFromToday(selectedDueDateMillis, 3)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 3) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Next Week") {
+                        QuickDateChip("Next Week", selected = isDaysFromToday(selectedDueDateMillis, 7)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
                         }
@@ -512,23 +592,23 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("12:00 PM") {
+                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) {
                             dueHour = 12
                             dueMinute = 0
                         }
-                        QuickDateChip("11:59 PM") {
+                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) {
                             dueHour = 23
                             dueMinute = 59
                         }
-                        QuickDateChip("9:00 AM") {
+                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) {
                             dueHour = 9
                             dueMinute = 0
                         }
-                        QuickDateChip("1:00 PM") {
+                        QuickDateChip("1:00 PM", selected = dueHour == 13 && dueMinute == 0) {
                             dueHour = 13
                             dueMinute = 0
                         }
-                        QuickDateChip("5:00 PM") {
+                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) {
                             dueHour = 17
                             dueMinute = 0
                         }
@@ -675,117 +755,19 @@ fun MyTaskDialog(
                     }
                 }
 
-                // Notification Reminders (Multiple selections allowed)
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Notification Reminders",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        if (reminderOptions.isNotEmpty()) {
-                            TextButton(
-                                onClick = { reminderOptions = emptySet() },
-                                modifier = Modifier.testTag("my_task_clear_reminders_button")
-                            ) {
-                                Text("Clear all", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (reminderOptions.isEmpty()) {
-                            "Select times to receive alerts, or none."
-                        } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                        fontWeight = if (reminderOptions.isEmpty()) FontWeight.Normal else FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    ReminderChipGrid(
-                        selected = reminderOptions,
-                        onSelectedChange = { reminderOptions = it },
-                        testTagPrefix = "my_task_reminder_chip"   // use the prefix from the table for each file
-                    )
-                }
+                // Reminders: one row that opens a small picker (several times can still be chosen)
+                ReminderPickerRow(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    chipTagPrefix = "my_task_reminder_chip",
+                    rowTestTag = "my_task_reminder_row",
+                    clearTestTag = "my_task_clear_reminders_button",
+                    doneTestTag = "my_task_reminder_done_button"
+                )
             }
-        },
-        confirmButton = {
-            val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
-            val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
-
-            Button(
-                onClick = {
-                    if (title.isBlank()) {
-                        titleError = true
-                    } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
-                        onSave(
-                            title.trim(),
-                            buildDescriptionWithChecklist(description, checklist).trim(),
-                            selectedDueDateMillis!!,
-                            dueHour!!,
-                            dueMinute!!,
-                            priority,
-                            reminderOptions,
-                            repeatRule,
-                            autoDeleteWhenDone
-                        )
-                    }
-                },
-                enabled = isSaveEnabled,
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp)
-                    .testTag("my_task_save_button")
-            ) {
-                Text(if (taskToEdit != null) "Save" else "Add Task")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp)
-                    .testTag("my_task_cancel_button")
-            ) {
-                Text("Cancel")
             }
         }
-    )
-}
-
-@Composable
-private fun QuickDateChip(label: String, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-        )
     }
 }
+
 

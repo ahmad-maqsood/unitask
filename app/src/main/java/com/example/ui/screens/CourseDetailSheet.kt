@@ -71,6 +71,7 @@ import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskWithCourse
+import com.example.ui.theme.rememberCourseColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,13 +97,7 @@ fun CourseDetailSheet(
     BackHandler { onBack() }
 
     val course = courseWithCount.course
-    val courseColor = remember(course.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course.colorHex))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course.colorHex)
     val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }

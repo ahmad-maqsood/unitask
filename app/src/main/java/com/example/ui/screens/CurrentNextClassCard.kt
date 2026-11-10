@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
 import com.example.ui.theme.ActiveClassGreen
+import com.example.ui.theme.rememberCourseColor
 
 data class HighlightedClassInfo(
     val slotWithCourse: LectureSlotWithCourse,
@@ -67,13 +68,7 @@ fun CurrentNextClassCard(
     val course = classInfo.slotWithCourse.course
     val slot = classInfo.slotWithCourse.slot
 
-    val courseColor = remember(course?.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course?.colorHex ?: "#4F46E5"))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val timeRangeText = remember(slot.startHour, slot.startMinute, slot.endHour, slot.endMinute) {
         com.example.util.TimeFormatter.formatTimeRange(slot.startHour, slot.startMinute, slot.endHour, slot.endMinute)

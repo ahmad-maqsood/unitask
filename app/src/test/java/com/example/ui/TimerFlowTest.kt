@@ -133,7 +133,7 @@ class TimerFlowTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("timer_time_text").assertTextEquals("00:00")
-        composeRule.onNodeWithText("Time is up").assertIsDisplayed()
+        composeRule.onNodeWithText("TIME IS UP").assertIsDisplayed()
     }
 
     @Test

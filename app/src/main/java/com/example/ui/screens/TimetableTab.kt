@@ -79,7 +79,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,6 +89,7 @@ import com.example.data.local.TaskWithCourse
 import java.util.Calendar
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import com.example.ui.theme.rememberCourseColor
 @Composable
 fun TimetableTab(
     allSlots: List<LectureSlotWithCourse>,
@@ -351,7 +351,7 @@ fun TimetableTab(
                         FilterChip(
                             selected = selectedWeekFilter == w,
                             onClick = { selectedWeekFilter = w },
-                            label = { Text(if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            label = { ShrinkToFitText(text = if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -633,13 +633,7 @@ fun TimetableSlotCard(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    val courseColor = remember(course?.colorHex) {
-        try {
-            Color(android.graphics.Color.parseColor(course?.colorHex ?: "#4F46E5"))
-        } catch (_: Exception) {
-            Color(0xFF4F46E5)
-        }
-    }
+    val courseColor = rememberCourseColor(course?.colorHex)
 
     val pendingCourseTasks = remember(allTasks, slot.courseId) {
         allTasks.filter { it.task.courseId == slot.courseId && it.task.status != com.example.data.local.TaskStatus.COMPLETED }

@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -59,9 +58,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -106,6 +102,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
 import com.example.data.local.isMyTasksCourse
 import com.example.util.drive.DrivePrefs
+import com.example.ui.theme.rememberCourseColor
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeadlinesTab(
@@ -177,7 +174,11 @@ fun DeadlinesTab(
     val pendingCountStr by remember(pendingCount) { derivedStateOf { pendingCount.toString() } }
     val completedCountStr by remember(completedCount) { derivedStateOf { completedCount.toString() } }
     val dueTodayCountStr by remember(dueTodayCount) { derivedStateOf { dueTodayCount.toString() } }
-    val allTasksLabel by remember(tasks.size) { derivedStateOf { "All (${tasks.size})" } }
+    // Counts for the status chips. They are the same totals as the stats card, so they stay
+    // the same whichever chip is selected.
+    val allTasksLabel by remember(pendingCount, completedCount) { derivedStateOf { "All (${pendingCount + completedCount})" } }
+    val pendingChipLabel by remember(pendingCount) { derivedStateOf { "Pending ($pendingCount)" } }
+    val doneChipLabel by remember(completedCount) { derivedStateOf { "Done ($completedCount)" } }
     val sections = remember(tasks) { groupDeadlines(tasks) }
     // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
     val coroutineScope = rememberCoroutineScope()
@@ -322,88 +323,38 @@ fun DeadlinesTab(
             }
         }
 
-        // Search Bar & Sort Button
-        item(key = "search_and_sort_bar") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = onSearchChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("task_search_input"),
-                    placeholder = {
-                        // Shrinks to fit so the hint is not cut as "Search tasks or co…".
-                        ShrinkToFitText(
-                            text = "Search tasks or courses",
-                            style = MaterialTheme.typography.bodyLarge,
-                            minFontSize = 11.sp
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search icon"
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(
-                                onClick = { onSearchChange("") },
-                                modifier = Modifier.testTag("task_search_clear_button")
-                            ) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-
-                // Sort Dropdown Button
-                Box {
-                    OutlinedCard(
+        // Shown only while a search is active. The search box is gone from this tab, but
+        // opening a group task from global search still filters the list by its title, so the
+        // filter has to be visible and easy to clear.
+        if (searchQuery.isNotEmpty()) {
+            item(key = "active_search_banner") {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
                         modifier = Modifier
-                            .clickable { sortMenuExpanded = true }
-                            .testTag("sort_button"),
-                        shape = RoundedCornerShape(14.dp)
+                            .fillMaxWidth()
+                            .padding(start = 14.dp, end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier.padding(12.dp),
-                            contentAlignment = Alignment.Center
+                        Text(
+                            text = "Showing: $searchQuery",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { onSearchChange("") },
+                            modifier = Modifier.testTag("task_search_clear_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort tasks",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = sortMenuExpanded,
-                        onDismissRequest = { sortMenuExpanded = false }
-                    ) {
-                        TaskSortOption.entries.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = option.label,
-                                        fontWeight = if (option == sortOption) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (option == sortOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                onClick = {
-                                    onSortOptionSelect(option)
-                                    sortMenuExpanded = false
-                                }
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -429,7 +380,7 @@ fun DeadlinesTab(
                     FilterChip(
                         selected = statusFilter == TaskStatus.PENDING,
                         onClick = { onStatusFilterSelect(TaskStatus.PENDING) },
-                        label = { Text("Pending") },
+                        label = { Text(pendingChipLabel) },
                         modifier = Modifier.testTag("filter_status_pending")
                     )
                 }
@@ -437,7 +388,7 @@ fun DeadlinesTab(
                     FilterChip(
                         selected = statusFilter == TaskStatus.COMPLETED,
                         onClick = { onStatusFilterSelect(TaskStatus.COMPLETED) },
-                        label = { Text("Done") },
+                        label = { Text(doneChipLabel) },
                         modifier = Modifier.testTag("filter_status_completed")
                     )
                 }
@@ -502,13 +453,7 @@ fun DeadlinesTab(
 
                     items(courses, key = { it.id }) { course ->
                         val isSelected = courseFilter == course.id
-                        val courseColor = remember(course.colorHex) {
-                            try {
-                                Color(android.graphics.Color.parseColor(course.colorHex))
-                            } catch (_: Exception) {
-                                Color(0xFF4F46E5)
-                            }
-                        }
+                        val courseColor = rememberCourseColor(course.colorHex)
 
                         Surface(
                             shape = RoundedCornerShape(16.dp),
@@ -555,16 +500,19 @@ fun DeadlinesTab(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f, fill = false)
+                        // One line, so the title never wraps next to the icons.
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         IconButton(
                             onClick = { isCalendarView = !isCalendarView },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = if (isCalendarView) Icons.Default.ViewList else Icons.Default.CalendarMonth,
@@ -575,12 +523,50 @@ fun DeadlinesTab(
                         }
 
                         if (!isCalendarView) {
+                            Box {
+                                IconButton(
+                                    onClick = { sortMenuExpanded = true },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .testTag("sort_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Sort,
+                                        contentDescription = "Sort tasks, currently ${sortOption.label}",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = sortMenuExpanded,
+                                    onDismissRequest = { sortMenuExpanded = false }
+                                ) {
+                                    TaskSortOption.entries.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = option.label,
+                                                    fontWeight = if (option == sortOption) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (option == sortOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            onClick = {
+                                                onSortOptionSelect(option)
+                                                sortMenuExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!isCalendarView) {
                             IconButton(
                                 onClick = {
                                     isBatchMode = !isBatchMode
                                     if (!isBatchMode) selectedTaskIds.clear()
                                 },
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Checklist,
@@ -589,16 +575,6 @@ fun DeadlinesTab(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                        }
-
-                        if (!isCalendarView && !isBatchMode) {
-                            Text(
-                                text = sortOption.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
                         }
                     }
                 }
@@ -675,7 +651,7 @@ fun DeadlinesTab(
                                         selectedTaskIds.clear()
                                         isBatchMode = false
                                     },
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(Icons.Default.Close, contentDescription = "Close batch mode", modifier = Modifier.size(16.dp))
                                 }

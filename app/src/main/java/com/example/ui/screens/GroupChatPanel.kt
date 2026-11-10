@@ -267,7 +267,7 @@ fun GroupChatPanel(
                                 searchQuery = ""
                                 isSearchActive = false
                             },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(Icons.Default.Close, contentDescription = "Clear search", modifier = Modifier.size(16.dp))
                         }
@@ -439,7 +439,7 @@ fun GroupChatPanel(
                         }
                         IconButton(
                             onClick = { replyingTo = null },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,

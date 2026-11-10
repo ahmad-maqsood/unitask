@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,9 +34,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -47,7 +46,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -69,7 +67,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -104,6 +101,11 @@ import androidx.compose.ui.text.input.ImeAction
 import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
 import com.example.util.splitNotesAndChecklist
+import com.example.ui.theme.rememberCourseColor
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.heightIn
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -284,20 +286,79 @@ fun AddEditTaskDialog(
         }
         onDismiss()
     }
-    AlertDialog(
+    Dialog(
         onDismissRequest = cleanupAndDismiss,
-        title = {
-            Text(
-                text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar: close, title and Save. It stays on screen, so Save never scrolls away
+                // or ends up behind the keyboard.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = cleanupAndDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("task_cancel_button")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                    Text(
+                        text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
+                    )
+                    Button(
+                        onClick = {
+                            val isTitleEmpty = title.isBlank()
+                            val isCourseEmpty = selectedCourseId == 0L || selectedCourse == null
+                            if (isTitleEmpty) titleError = true
+                            if (isCourseEmpty) courseError = true
+
+                            if (!isTitleEmpty && !isCourseEmpty) {
+                                onSave(
+                                    title,
+                                    buildDescriptionWithChecklist(description, checklist),
+                                    selectedCourseId,
+                                    selectedDueDateMillis,
+                                    dueHour,
+                                    dueMinute,
+                                    priority,
+                                    status,
+                                    reminderOptions,
+                                    newAttachments
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .testTag("task_save_button")
+                    ) {
+                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                    }
+                }
+                HorizontalDivider()
+
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Course Picker
@@ -340,11 +401,7 @@ fun AddEditTaskDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     if (selectedCourse != null) {
-                                        val cColor = try {
-                                            Color(android.graphics.Color.parseColor(selectedCourse.colorHex))
-                                        } catch (_: Exception) {
-                                            Color(0xFF4F46E5)
-                                        }
+                                        val cColor = rememberCourseColor(selectedCourse.colorHex)
                                         Row(
                                             modifier = Modifier.weight(1f, fill = false),
                                             verticalAlignment = Alignment.CenterVertically,
@@ -381,11 +438,7 @@ fun AddEditTaskDialog(
                                 onDismissRequest = { courseDropdownExpanded = false }
                             ) {
                                 courses.forEach { c ->
-                                    val cColor = try {
-                                        Color(android.graphics.Color.parseColor(c.colorHex))
-                                    } catch (_: Exception) {
-                                        Color(0xFF4F46E5)
-                                    }
+                                    val cColor = rememberCourseColor(c.colorHex)
                                     DropdownMenuItem(
                                         text = {
                                             Row(
@@ -628,19 +681,19 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("Today") {
+                        QuickDateChip("Today", selected = isDaysFromToday(selectedDueDateMillis, 0)) {
                             val c = Calendar.getInstance()
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Tomorrow") {
+                        QuickDateChip("Tomorrow", selected = isDaysFromToday(selectedDueDateMillis, 1)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("In 3 Days") {
+                        QuickDateChip("In 3 Days", selected = isDaysFromToday(selectedDueDateMillis, 3)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 3) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Next Week") {
+                        QuickDateChip("Next Week", selected = isDaysFromToday(selectedDueDateMillis, 7)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
                         }
@@ -651,10 +704,10 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("9:00 AM") { dueHour = 9; dueMinute = 0 }
-                        QuickDateChip("12:00 PM") { dueHour = 12; dueMinute = 0 }
-                        QuickDateChip("5:00 PM") { dueHour = 17; dueMinute = 0 }
-                        QuickDateChip("11:59 PM") { dueHour = 23; dueMinute = 59 }
+                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) { dueHour = 9; dueMinute = 0 }
+                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) { dueHour = 12; dueMinute = 0 }
+                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) { dueHour = 17; dueMinute = 0 }
+                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) { dueHour = 23; dueMinute = 59 }
                     }
                 }
 
@@ -701,256 +754,135 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Status
-                Column {
-                    Text(
-                        text = "Status",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        TaskStatus.entries.forEach { s ->
-                            val label = when (s) {
-                                TaskStatus.PENDING -> "Pending"
-                                TaskStatus.COMPLETED -> "Done"
-                            }
-                            FilterChip(
-                                selected = status == s,
-                                onClick = { status = s },
-                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("status_chip_${s.name}")
-                            )
-                        }
-                    }
-                }
-
-                // Local Notification Reminders (Multiple selections allowed)
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                // Status. A new task always starts as Pending, so the choice only matters when editing.
+                if (taskToEdit != null) {
+                    Column {
+                        Text(
+                            text = "Status",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Notification Reminders",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        if (reminderOptions.isNotEmpty()) {
-                            TextButton(
-                                onClick = { reminderOptions = emptySet() },
-                                modifier = Modifier.testTag("clear_reminders_button")
-                            ) {
-                                Text("Clear all", style = MaterialTheme.typography.labelSmall)
+                            TaskStatus.entries.forEach { s ->
+                                val label = when (s) {
+                                    TaskStatus.PENDING -> "Pending"
+                                    TaskStatus.COMPLETED -> "Done"
+                                }
+                                FilterChip(
+                                    selected = status == s,
+                                    onClick = { status = s },
+                                    label = { ShrinkToFitText(text = label, style = MaterialTheme.typography.labelSmall) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("status_chip_${s.name}")
+                                )
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (reminderOptions.isEmpty()) {
-                            "Select multiple times to receive multiple alerts, or none."
-                        } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected (alerts will fire at each time)"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                        fontWeight = if (reminderOptions.isEmpty()) FontWeight.Normal else FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    ReminderChipGrid(
-                        selected = reminderOptions,
-                        onSelectedChange = { reminderOptions = it },
-                        testTagPrefix = "reminder_chip"   // use the prefix from the table for each file
-                    )
                 }
 
-                // Offline File Attachments Section
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                // Reminders: one row that opens a small picker (shared with the other task dialogs).
+                ReminderPickerRow(
+                    selected = reminderOptions,
+                    onSelectedChange = { reminderOptions = it },
+                    chipTagPrefix = "reminder_chip",
+                    rowTestTag = "reminder_row",
+                    clearTestTag = "clear_reminders_button",
+                    doneTestTag = "reminder_done_button"
+                )
+
+                // Attachments: one compact row. Saved and new files only take space once they exist.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val attachedCount = existingAttachments.size + newAttachments.size
+                    OutlinedCard(
+                        onClick = {
+                            filePickerLauncher.launch(
+                                arrayOf(
+                                    "application/pdf",
+                                    "image/*",
+                                    "text/*",
+                                    "application/msword",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    "*/*"
+                                )
+                            )
+                        },
+                        enabled = !isAttachingFile,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("attach_file_button")
                     ) {
                         Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AttachFile,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Attachments",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                filePickerLauncher.launch(
-                                    arrayOf(
-                                        "application/pdf",
-                                        "image/*",
-                                        "text/*",
-                                        "application/msword",
-                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                        "*/*"
-                                    )
-                                )
-                            },
-                            enabled = !isAttachingFile,
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("attach_file_button")
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (isAttachingFile) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
+                                    modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Text("Importing...", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
                             } else {
-                                Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.size(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.AttachFile,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isAttachingFile) "Importing..." else "Attach file",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (attachedCount > 0 && !isAttachingFile) {
                                 Text(
-                                    "Attach File",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    softWrap = false
+                                    text = "$attachedCount attached",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
                     }
 
-                    Text(
-                        text = "Files are saved locally on this device only.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
                     // Existing attachments
-                    if (existingAttachments.isNotEmpty()) {
-                        Text(
-                            text = "Saved files:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    existingAttachments.forEach { att ->
+                        AttachmentChip(
+                            fileName = att.fileName,
+                            fileSize = att.fileSize,
+                            mimeType = att.mimeType,
+                            onDelete = { onDeleteExistingAttachment?.invoke(att) }
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            existingAttachments.forEach { att ->
-                                AttachmentChip(
-                                    fileName = att.fileName,
-                                    fileSize = att.fileSize,
-                                    mimeType = att.mimeType,
-                                    onDelete = { onDeleteExistingAttachment?.invoke(att) }
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
                     }
 
                     // Newly attached files (pending save)
-                    if (newAttachments.isNotEmpty()) {
-                        Text(
-                            text = "New files to attach:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            newAttachments.forEach { att ->
-                                AttachmentChip(
-                                    fileName = att.fileName,
-                                    fileSize = att.fileSize,
-                                    mimeType = att.mimeType,
-                                    onDelete = {
-                                        coroutineScope.launch {
-                                            AttachmentManager.deleteAttachmentFile(context, att.relativePath)
-                                        }
-                                        newAttachments = newAttachments - att
-                                    }
-                                )
+                    newAttachments.forEach { att ->
+                        AttachmentChip(
+                            fileName = att.fileName,
+                            fileSize = att.fileSize,
+                            mimeType = att.mimeType,
+                            onDelete = {
+                                coroutineScope.launch {
+                                    AttachmentManager.deleteAttachmentFile(context, att.relativePath)
+                                }
+                                newAttachments = newAttachments - att
                             }
-                        }
-                    }
-
-                    if (existingAttachments.isEmpty() && newAttachments.isEmpty()) {
-                        Text(
-                            text = "No files attached. Attach PDFs, syllabus sheets, or rubric images for offline viewing.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val isTitleEmpty = title.isBlank()
-                    val isCourseEmpty = selectedCourseId == 0L || selectedCourse == null
-                    if (isTitleEmpty) titleError = true
-                    if (isCourseEmpty) courseError = true
-
-                    if (!isTitleEmpty && !isCourseEmpty) {
-                        onSave(
-                            title,
-                            buildDescriptionWithChecklist(description, checklist),
-                            selectedCourseId,
-                            selectedDueDateMillis,
-                            dueHour,
-                            dueMinute,
-                            priority,
-                            status,
-                            reminderOptions,
-                            newAttachments
-                        )
-                    }
-                },
-                modifier = Modifier.testTag("task_save_button")
-            ) {
-                Text(if (taskToEdit != null) "Save" else "Add Task")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = cleanupAndDismiss,
-                modifier = Modifier.testTag("task_cancel_button")
-            ) {
-                Text("Cancel")
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -1021,20 +953,3 @@ fun AttachmentChip(
     }
 }
 
-@Composable
-private fun QuickDateChip(label: String, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
-}

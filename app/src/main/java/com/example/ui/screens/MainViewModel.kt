@@ -672,6 +672,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onBellOpened() {
         _openBellRequest.value = false
     }
+
+    // Set when the running timer notification is tapped; MainScreen opens the Timer screen.
+    private val _openTimerRequest = MutableStateFlow(false)
+    val openTimerRequest: StateFlow<Boolean> = _openTimerRequest.asStateFlow()
+
+    fun openTimer() {
+        _openTimerRequest.value = true
+    }
+
+    fun onTimerOpened() {
+        _openTimerRequest.value = false
+    }
     // Class schedule shown on the Deadlines tab. Re-evaluated every minute and on pull to refresh.
     // Today's classes that have not ended and started no more than STALE_CLASS_MINUTES ago are
     // shown. When nothing is left today, the full schedule of the next day with classes is shown.

@@ -97,6 +97,10 @@ class MainActivity : ComponentActivity() {
             mainViewModel.openBell()
             intent.removeExtra("open_bell")
         }
+        if (intent.getBooleanExtra(EXTRA_OPEN_TIMER, false)) {
+            mainViewModel.openTimer()
+            intent.removeExtra(EXTRA_OPEN_TIMER)
+        }
         val groupId = intent.getStringExtra("open_group_id")
         val openChat = intent.getBooleanExtra("open_group_chat", false)
         val openedTaskId = intent.getLongExtra("opened_task_id", -1L)
@@ -164,5 +168,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        /** Boolean extra: open the Timer screen when the activity is launched or re-used. */
+        const val EXTRA_OPEN_TIMER = "open_timer"
     }
 }

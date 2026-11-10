@@ -33,12 +33,15 @@ fun ShrinkToFitText(
     minFontSize: TextUnit = 10.sp,
     textAlign: TextAlign? = null
 ) {
-    // If the user has enlarged the system font, respect it and use an ellipsis instead of shrinking.
-    val allowShrink = LocalDensity.current.fontScale <= 1.15f
+    // With an enlarged system font, text used to be cut with an ellipsis ("Deadlin…"). Now it
+    // shrinks too, but the smallest size is lowered in step with the font scale, so the text on
+    // screen is never smaller than it would be at a 1.15x font scale.
+    val fontScale = LocalDensity.current.fontScale
+    val floorSp = if (fontScale > 1.15f) minFontSize.value * 1.15f / fontScale else minFontSize.value
     val initialSize = remember(style.fontSize) {
         if (style.fontSize.isSpecified && style.fontSize.isSp) style.fontSize else 11.sp
     }
-    var fontSize by remember(text, initialSize, fontWeight) {
+    var fontSize by remember(text, initialSize, fontWeight, floorSp) {
         mutableStateOf(initialSize)
     }
 
@@ -53,9 +56,9 @@ fun ShrinkToFitText(
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
         onTextLayout = { result ->
-            if (allowShrink && result.didOverflowWidth) {
+            if (result.didOverflowWidth) {
                 val nextValue = fontSize.value - 0.5f
-                if (nextValue >= minFontSize.value) {
+                if (nextValue >= floorSp) {
                     fontSize = nextValue.sp
                 }
             }

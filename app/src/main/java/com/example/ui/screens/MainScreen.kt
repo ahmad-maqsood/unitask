@@ -323,6 +323,7 @@ fun MainScreen(
     val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
     val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
     val openBellRequest by viewModel.openBellRequest.collectAsStateWithLifecycle()
+    val openTimerRequest by viewModel.openTimerRequest.collectAsStateWithLifecycle()
     val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
     val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
     val myTaskToEdit by viewModel.myTaskToEdit.collectAsStateWithLifecycle()
@@ -339,6 +340,14 @@ fun MainScreen(
     var showTools by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
+    // The timer notification asks for the Timer screen through the ViewModel.
+    LaunchedEffect(openTimerRequest) {
+        if (openTimerRequest) {
+            showTools = false
+            showTimer = true
+            viewModel.onTimerOpened()
+        }
+    }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
@@ -1257,7 +1266,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                minFontSize = 10.sp
+                minFontSize = 9.sp
             )
         }
     )

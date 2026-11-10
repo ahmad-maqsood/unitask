@@ -36,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,7 +49,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -488,19 +486,19 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("Today") {
+                        QuickDateChip("Today", selected = isDaysFromToday(selectedDueDateMillis, 0)) {
                             val c = Calendar.getInstance()
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Tomorrow") {
+                        QuickDateChip("Tomorrow", selected = isDaysFromToday(selectedDueDateMillis, 1)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("In 3 Days") {
+                        QuickDateChip("In 3 Days", selected = isDaysFromToday(selectedDueDateMillis, 3)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 3) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Next Week") {
+                        QuickDateChip("Next Week", selected = isDaysFromToday(selectedDueDateMillis, 7)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
                         }
@@ -512,23 +510,23 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("12:00 PM") {
+                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) {
                             dueHour = 12
                             dueMinute = 0
                         }
-                        QuickDateChip("11:59 PM") {
+                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) {
                             dueHour = 23
                             dueMinute = 59
                         }
-                        QuickDateChip("9:00 AM") {
+                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) {
                             dueHour = 9
                             dueMinute = 0
                         }
-                        QuickDateChip("1:00 PM") {
+                        QuickDateChip("1:00 PM", selected = dueHour == 13 && dueMinute == 0) {
                             dueHour = 13
                             dueMinute = 0
                         }
-                        QuickDateChip("5:00 PM") {
+                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) {
                             dueHour = 17
                             dueMinute = 0
                         }
@@ -771,21 +769,4 @@ fun MyTaskDialog(
     )
 }
 
-@Composable
-private fun QuickDateChip(label: String, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-        )
-    }
-}
 

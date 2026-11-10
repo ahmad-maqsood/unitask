@@ -381,7 +381,7 @@ fun DeadlinesTab(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort tasks",
+                                contentDescription = "Sort tasks, currently ${sortOption.label}",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -555,7 +555,10 @@ fun DeadlinesTab(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f, fill = false)
+                        // One line, so the title never wraps next to the icons.
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
 
                     Row(
@@ -589,16 +592,6 @@ fun DeadlinesTab(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                        }
-
-                        if (!isCalendarView && !isBatchMode) {
-                            Text(
-                                text = sortOption.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
                         }
                     }
                 }

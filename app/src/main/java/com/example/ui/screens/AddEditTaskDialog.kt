@@ -628,19 +628,19 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("Today") {
+                        QuickDateChip("Today", selected = isDaysFromToday(selectedDueDateMillis, 0)) {
                             val c = Calendar.getInstance()
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Tomorrow") {
+                        QuickDateChip("Tomorrow", selected = isDaysFromToday(selectedDueDateMillis, 1)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("In 3 Days") {
+                        QuickDateChip("In 3 Days", selected = isDaysFromToday(selectedDueDateMillis, 3)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 3) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Next Week") {
+                        QuickDateChip("Next Week", selected = isDaysFromToday(selectedDueDateMillis, 7)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
                         }
@@ -651,10 +651,10 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("9:00 AM") { dueHour = 9; dueMinute = 0 }
-                        QuickDateChip("12:00 PM") { dueHour = 12; dueMinute = 0 }
-                        QuickDateChip("5:00 PM") { dueHour = 17; dueMinute = 0 }
-                        QuickDateChip("11:59 PM") { dueHour = 23; dueMinute = 59 }
+                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) { dueHour = 9; dueMinute = 0 }
+                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) { dueHour = 12; dueMinute = 0 }
+                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) { dueHour = 17; dueMinute = 0 }
+                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) { dueHour = 23; dueMinute = 59 }
                     }
                 }
 
@@ -767,7 +767,7 @@ fun AddEditTaskDialog(
                         text = if (reminderOptions.isEmpty()) {
                             "Select multiple times to receive multiple alerts, or none."
                         } else {
-                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected (alerts will fire at each time)"
+                            "${reminderOptions.size} reminder${if (reminderOptions.size > 1) "s" else ""} selected"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (reminderOptions.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
@@ -1021,20 +1021,3 @@ fun AttachmentChip(
     }
 }
 
-@Composable
-private fun QuickDateChip(label: String, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
-}

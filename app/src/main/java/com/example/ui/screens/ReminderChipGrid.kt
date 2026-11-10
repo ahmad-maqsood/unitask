@@ -166,11 +166,13 @@ fun ReminderPickerRow(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
             )
+            // The label is measured first and never wraps; the summary takes the rest and shortens with "..."
             Text(
                 text = "Remind me",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
+                maxLines = 1,
+                softWrap = false
             )
             Text(
                 text = reminderSummary(selected),
@@ -181,7 +183,9 @@ fun ReminderPickerRow(
                     MaterialTheme.colorScheme.primary
                 },
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f)
             )
             Icon(
                 imageVector = Icons.Default.KeyboardArrowRight,

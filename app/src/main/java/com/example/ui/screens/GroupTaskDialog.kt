@@ -59,6 +59,24 @@ import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import com.example.data.groups.GroupMember
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material.icons.filled.Check
 import com.example.data.local.ReminderOption
 import com.example.data.local.encodeReminderOptions
@@ -179,298 +197,57 @@ fun GroupTaskDialog(
         )
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = if (taskToEdit == null) Icons.Default.Assignment else Icons.Default.Edit,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = if (taskToEdit == null) "New Group Task" else "Edit Group Task",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Task Title
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = {
-                        title = it.take(200)
-                        if (it.isNotBlank()) titleError = false
-                    },
-                    label = { Text("Task Title *") },
-                    placeholder = { Text("e.g. Project Milestone 1") },
-                    isError = titleError,
-                    supportingText = if (titleError) {
-                        { Text("Title is required") }
-                    } else null,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("group_task_title_input")
-                )
+    // Course picker and tag picker state
+    var courseMenuOpen by remember { mutableStateOf(false) }
+    var customCourse by rememberSaveable {
+        mutableStateOf(
+            courseLabel.isNotBlank() && groupCourses.none { it.code.equals(courseLabel, ignoreCase = true) }
+        )
+    }
+    var showTagPicker by rememberSaveable { mutableStateOf(false) }
+    val sortedMembers = remember(members) { members.sortedBy { it.displayName.lowercase() } }
 
-                // Course / Subject Selection & Custom Label
-                Column {
+    if (showTagPicker) {
+        AlertDialog(
+            onDismissRequest = { showTagPicker = false },
+            title = { Text("Tag members", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
-                        text = "Course / Subject (optional)",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        text = "Only tagged members see this task in their Deadlines. Everyone in the group can still see it in the group.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (groupCourses.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            groupCourses.forEach { c ->
-                                val isSelected = courseLabel.equals(c.code, ignoreCase = true)
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        courseLabel = if (isSelected) "" else c.code
-                                    },
-                                    leadingIcon = if (isSelected) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    } else null,
-                                    label = {
-                                        Text(
-                                            text = "${c.code} (${c.name})",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    },
-                                    modifier = Modifier.testTag("group_task_course_chip_${c.code}")
-                                )
-                            }
-                        }
-                    }
                     Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedTextField(
-                        value = courseLabel,
-                        onValueChange = { courseLabel = it.take(60) },
-                        label = { Text("Course Code / Name") },
-                        placeholder = { Text("e.g. CS 301, Physics Lab") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("group_task_course_label_input")
-                    )
-                }
-
-                // Description
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it.take(2000) },
-                    label = { Text("Description & Notes (optional)") },
-                    placeholder = { Text("e.g. Prepare slides and code demo") },
-                    maxLines = 4,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("group_task_description_input")
-                )
-
-                // Due Date & Time Section
-                Column {
-                    Text(
-                        text = "Due Date & Time",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val formattedDate = DateFormats.fullDate(selectedDueDateMillis)
-
-                        OutlinedCard(
-                            modifier = Modifier
-                                .weight(1.3f)
-                                .clickable {
-                                    showDatePicker = true
-                                }
-                                .testTag("group_task_date_picker_button"),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                ShrinkToFitText(
-                                    text = formattedDate,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    minFontSize = 9.sp
-                                )
-                            }
-                        }
-
-                        // Time Selector
-                        val formattedTime = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
-                        OutlinedCard(
-                            modifier = Modifier
-                                .weight(0.9f)
-                                .clickable { showTimePicker = true }
-                                .testTag("group_task_time_picker_button"),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                ShrinkToFitText(
-                                    text = formattedTime,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    minFontSize = 9.sp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Priority
-                Column {
-                    Text(
-                        text = "Priority",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf("LOW", "MEDIUM", "HIGH").forEach { p ->
-                            FilterChip(
-                                selected = priority == p,
-                                onClick = { priority = p },
-                                label = { Text(p) },
-                                modifier = Modifier.testTag("group_task_priority_chip_$p")
-                            )
-                        }
-                    }
-                    val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
-                    if (priority == "HIGH") {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (highAlarmOn) {
-                                "High priority tasks ring like an alarm for everyone in the group."
-                            } else {
-                                "Members who turn on \"Alarm for high priority tasks\" in Settings get an alarm for this."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (highAlarmOn) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                    }
-                }
-
-                // Reminders: every member of the group gets an alert at each time you pick
-                ReminderPickerRow(
-                    selected = reminderOptions,
-                    onSelectedChange = { reminderOptions = it },
-                    chipTagPrefix = "group_reminder_chip",
-                    rowTestTag = "group_reminder_row",
-                    clearTestTag = "group_clear_reminders_button",
-                    doneTestTag = "group_reminder_done_button",
-                    pickerNote = "Everyone tagged gets these alerts."
-                )
-
-                // Tag members: only tagged members see this task on their Deadlines tab
-                Column {
-                    Text(
-                        text = "Tag members",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = when {
-                            tagError -> "Pick @all or at least one member."
-                            tagAll -> "@all: everyone in the group sees this in their Deadlines."
-                            else -> "${taggedUids.size} tagged. Only they see this in their Deadlines."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (tagError) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        FilterChip(
-                            selected = tagAll,
-                            onClick = {
+                            .clickable {
                                 tagAll = true
                                 taggedUids = emptySet()
                                 tagError = false
-                            },
-                            leadingIcon = if (tagAll) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            } else null,
-                            label = { Text("@all", style = MaterialTheme.typography.labelSmall) },
-                            modifier = Modifier.testTag("group_task_tag_all")
-                        )
-                        members.sortedBy { it.displayName.lowercase() }.forEach { m ->
-                            val isTagged = !tagAll && m.uid in taggedUids
-                            FilterChip(
-                                selected = isTagged,
-                                onClick = {
+                            }
+                            .heightIn(min = 48.dp)
+                            .testTag("group_task_tag_all"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = tagAll, onCheckedChange = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("@all (everyone)", fontWeight = FontWeight.SemiBold)
+                    }
+                    sortedMembers.forEach { m ->
+                        val isTagged = !tagAll && m.uid in taggedUids
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
                                     tagError = false
                                     if (tagAll) {
                                         // Leaving @all: the creator of a new task starts out tagged
-                                        // and can tap their own chip to untag themselves.
+                                        // and can tap their own row to untag themselves.
                                         tagAll = false
                                         taggedUids = if (taskToEdit == null && currentUid.isNotBlank()) {
                                             setOf(currentUid)
@@ -479,67 +256,439 @@ fun GroupTaskDialog(
                                         }
                                     }
                                     taggedUids = if (m.uid in taggedUids) taggedUids - m.uid else taggedUids + m.uid
-                                },
-                                leadingIcon = if (isTagged) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                } else null,
-                                label = {
-                                    Text(
-                                        text = "@" + m.displayName.ifBlank { "Student" } +
-                                            if (m.uid == currentUid) " (you)" else "",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                modifier = Modifier.testTag("group_task_tag_${m.uid}")
+                                }
+                                .heightIn(min = 48.dp)
+                                .testTag("group_task_tag_${m.uid}"),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = isTagged, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = m.displayName.ifBlank { "Student" } +
+                                    if (m.uid == currentUid) " (you)" else "",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTagPicker = false }) { Text("Done") }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (title.isBlank()) {
-                        titleError = true
-                        return@Button
+        )
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar: close, title and Save. It stays on screen, so Save never scrolls away
+                // or ends up behind the keyboard.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("group_task_cancel_button")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
                     }
-                    if (!tagAll && taggedUids.isEmpty()) {
-                        tagError = true
-                        return@Button
-                    }
-                    onSave(
-                        title.trim(),
-                        description.trim().ifEmpty { null },
-                        courseLabel.trim().ifEmpty { null },
-                        selectedDueDateMillis,
-                        dueHour,
-                        dueMinute,
-                        priority,
-                        encodeReminderOptions(reminderOptions),
-                        if (tagAll) emptyList() else taggedUids.toList()
+                    Text(
+                        text = if (taskToEdit == null) "New Group Task" else "Edit Group Task",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
                     )
-                },
-                modifier = Modifier.testTag("group_task_save_button")
-            ) {
-                Text(if (taskToEdit == null) "Create Task" else "Save Changes")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag("group_task_cancel_button")
-            ) {
-                Text("Cancel")
+                    Button(
+                        onClick = {
+                            if (title.isBlank()) {
+                                titleError = true
+                                return@Button
+                            }
+                            if (!tagAll && taggedUids.isEmpty()) {
+                                tagError = true
+                                return@Button
+                            }
+                            onSave(
+                                title.trim(),
+                                description.trim().ifEmpty { null },
+                                courseLabel.trim().ifEmpty { null },
+                                selectedDueDateMillis,
+                                dueHour,
+                                dueMinute,
+                                priority,
+                                encodeReminderOptions(reminderOptions),
+                                if (tagAll) emptyList() else taggedUids.toList()
+                            )
+                        },
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .testTag("group_task_save_button")
+                    ) {
+                        Text(if (taskToEdit == null) "Create Task" else "Save Changes")
+                    }
+                }
+                HorizontalDivider()
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Task Title
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = {
+                            title = it.take(200)
+                            if (it.isNotBlank()) titleError = false
+                        },
+                        label = { Text("Task Title *") },
+                        placeholder = { Text("e.g. Project Milestone 1") },
+                        isError = titleError,
+                        supportingText = if (titleError) {
+                            { Text("Title is required") }
+                        } else null,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("group_task_title_input")
+                    )
+
+                    // Course / Subject: one row that opens a menu, however many courses the group has
+                    Column {
+                        if (groupCourses.isNotEmpty()) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                OutlinedCard(
+                                    onClick = { courseMenuOpen = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("group_task_course_row")
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 48.dp)
+                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Course",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1
+                                        )
+                                        val matched = groupCourses.firstOrNull { it.code.equals(courseLabel, ignoreCase = true) }
+                                        val summary = when {
+                                            matched != null -> "${matched.code} (${matched.name})"
+                                            customCourse -> courseLabel.ifBlank { "Other" }
+                                            else -> "None"
+                                        }
+                                        Text(
+                                            text = summary,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (summary == "None") {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            },
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.KeyboardArrowDown,
+                                            contentDescription = "Choose course",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                DropdownMenu(
+                                    expanded = courseMenuOpen,
+                                    onDismissRequest = { courseMenuOpen = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("None") },
+                                        onClick = {
+                                            courseLabel = ""
+                                            customCourse = false
+                                            courseMenuOpen = false
+                                        },
+                                        modifier = Modifier.testTag("group_task_course_none")
+                                    )
+                                    groupCourses.forEach { c ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = "${c.code} (${c.name})",
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            },
+                                            trailingIcon = if (courseLabel.equals(c.code, ignoreCase = true)) {
+                                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null,
+                                            onClick = {
+                                                courseLabel = c.code
+                                                customCourse = false
+                                                courseMenuOpen = false
+                                            },
+                                            modifier = Modifier.testTag("group_task_course_chip_${c.code}")
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("Other (type my own)") },
+                                        onClick = {
+                                            if (groupCourses.any { it.code.equals(courseLabel, ignoreCase = true) }) courseLabel = ""
+                                            customCourse = true
+                                            courseMenuOpen = false
+                                        },
+                                        modifier = Modifier.testTag("group_task_course_other")
+                                    )
+                                }
+                            }
+                        }
+                        // The free text field only shows when the group has no courses or "Other" is chosen
+                        if (groupCourses.isEmpty() || customCourse) {
+                            if (groupCourses.isNotEmpty()) Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = courseLabel,
+                                onValueChange = { courseLabel = it.take(60) },
+                                label = { Text("Course Code / Name (optional)") },
+                                placeholder = { Text("e.g. CS 301, Physics Lab") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("group_task_course_label_input")
+                            )
+                        }
+                    }
+
+                    // Description
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it.take(2000) },
+                        label = { Text("Description & Notes (optional)") },
+                        placeholder = { Text("e.g. Prepare slides and code demo") },
+                        minLines = 2,
+                        maxLines = 6,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("group_task_description_input")
+                    )
+
+                    // Due Date & Time Section
+                    Column {
+                        Text(
+                            text = "Due Date & Time",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val formattedDate = DateFormats.fullDate(selectedDueDateMillis)
+
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .weight(1.3f)
+                                    .clickable {
+                                        showDatePicker = true
+                                    }
+                                    .testTag("group_task_date_picker_button"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .heightIn(min = 48.dp)
+                                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    ShrinkToFitText(
+                                        text = formattedDate,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        minFontSize = 9.sp
+                                    )
+                                }
+                            }
+
+                            // Time Selector
+                            val formattedTime = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .weight(0.9f)
+                                    .clickable { showTimePicker = true }
+                                    .testTag("group_task_time_picker_button"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .heightIn(min = 48.dp)
+                                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    ShrinkToFitText(
+                                        text = formattedTime,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        minFontSize = 9.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Priority
+                    Column {
+                        Text(
+                            text = "Priority",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("LOW", "MEDIUM", "HIGH").forEach { p ->
+                                FilterChip(
+                                    selected = priority == p,
+                                    onClick = { priority = p },
+                                    label = { Text(p) },
+                                    modifier = Modifier.testTag("group_task_priority_chip_$p")
+                                )
+                            }
+                        }
+                        val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
+                        if (priority == "HIGH") {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (highAlarmOn) {
+                                    "High priority tasks ring like an alarm for everyone in the group."
+                                } else {
+                                    "Members who turn on \"Alarm for high priority tasks\" in Settings get an alarm for this."
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (highAlarmOn) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+
+                    // Reminders: every member of the group gets an alert at each time you pick
+                    ReminderPickerRow(
+                        selected = reminderOptions,
+                        onSelectedChange = { reminderOptions = it },
+                        chipTagPrefix = "group_reminder_chip",
+                        rowTestTag = "group_reminder_row",
+                        clearTestTag = "group_clear_reminders_button",
+                        doneTestTag = "group_reminder_done_button",
+                        pickerNote = "Everyone tagged gets these alerts."
+                    )
+
+                    // Tag members: one row that opens a checklist. Only tagged members see this
+                    // task on their Deadlines tab.
+                    Column {
+                        OutlinedCard(
+                            onClick = { showTagPicker = true },
+                            shape = RoundedCornerShape(12.dp),
+                            border = if (tagError) BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                            else CardDefaults.outlinedCardBorder(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("group_task_tag_row")
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Tag members",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = if (tagAll) "@all" else "${taggedUids.size} tagged",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = when {
+                                tagError -> "Pick @all or at least one member."
+                                tagAll -> "Everyone in the group sees this in their Deadlines."
+                                else -> "Only tagged members see this in their Deadlines."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (tagError) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
             }
         }
-    )
+    }
 }

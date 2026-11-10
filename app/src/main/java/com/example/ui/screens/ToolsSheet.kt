@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -80,13 +80,13 @@ fun ToolsButton(
                 }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Apps,
+                    imageVector = Icons.Default.MoreVert,
                     contentDescription = description
                 )
             }
         } else {
             Icon(
-                imageVector = Icons.Default.Apps,
+                imageVector = Icons.Default.MoreVert,
                 contentDescription = description
             )
         }

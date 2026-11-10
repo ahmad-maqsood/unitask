@@ -110,7 +110,7 @@ jobs:
           retention-days: 7
 
       - name: Create pull request with refreshed screenshots
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: automation/update-readme-screenshots

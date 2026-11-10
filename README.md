@@ -94,7 +94,7 @@ UniTask follows the system theme or can be set to light or dark, with ten accent
   </tr>
 </table>
 
-<p align="center"><sub>Automatically captured from UniTask 4.0.0 using fictional demo data on an Android emulator.</sub></p>
+<p align="center"><sub>Automatically captured from UniTask 4.1.0 using fictional demo data on an Android emulator.</sub></p>
 
 Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**Group chat**](docs/screenshots/group_chat.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
 

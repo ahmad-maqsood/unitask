@@ -563,6 +563,7 @@ fun DeadlinesTab(
                                     }
                                 }
                             }
+                        }
 
                         if (!isCalendarView) {
                             IconButton(

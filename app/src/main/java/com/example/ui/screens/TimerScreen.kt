@@ -195,7 +195,7 @@ fun TimerScreen(
     }
 
     if (fullscreen) {
-        // Full screen mode: shows only the time, Time is up text, compact controls, and exit button.
+        // Full screen mode: a dial with the time, round controls, and the keep-awake and exit buttons.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -237,48 +237,17 @@ fun TimerScreen(
                 }
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val fontSize = minOf(maxWidth.value * 0.25f, maxHeight.value * 0.45f).coerceIn(48f, 160f).sp
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = timeText,
-                        fontSize = fontSize,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 1,
-                        modifier = Modifier.testTag("timer_time_text")
-                    )
-                    if (state.mode == TimerMode.COUNTDOWN && isFinished) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Time is up",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    TimerControlButtons(
-                        isIdle = isIdle,
-                        isRunning = isRunning,
-                        isPaused = isPaused,
-                        onStart = { controller.start() },
-                        onPause = { controller.pause() },
-                        onResume = { controller.start() },
-                        onReset = { controller.reset() }
-                    )
-                }
-            }
+            // Dial and round controls; see TimerFullscreen.kt.
+            FullscreenTimerContent(
+                state = state,
+                now = now,
+                timeText = timeText,
+                isIdle = isIdle,
+                isRunning = isRunning,
+                isPaused = isPaused,
+                isFinished = isFinished,
+                controller = controller
+            )
         }
     } else if (showHistory) {
         TimerHistoryScreen(
@@ -737,7 +706,7 @@ fun TimerScreen(
 }
 
 /** The short line shown under the clock inside the ring. */
-private fun timerStatusLabel(
+internal fun timerStatusLabel(
     mode: TimerMode,
     isRunning: Boolean,
     isPaused: Boolean,

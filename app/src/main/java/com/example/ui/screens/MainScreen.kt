@@ -713,6 +713,7 @@ fun MainScreen(
                             onSetStatus = { task, status -> viewModel.setTaskStatus(task, status) },
                             onEditTask = { viewModel.openEditTaskDialog(it) },
                             onDeleteTask = { viewModel.deleteTask(it) },
+                            onUndoDeleteTask = { viewModel.undoDeleteTask(it) },
                             onAddTaskClick = { viewModel.openAddTaskDialog() },
                             highlightedClassInfo = highlightedClassInfo,
                             onHighlightedClassTaskClick = { viewModel.openEditTaskDialog(it.task) },
@@ -837,6 +838,7 @@ fun MainScreen(
                     onStatusCycle = { viewModel.cycleTaskStatus(it) },
                     onEditTask = { viewModel.openEditTaskDialog(it) },
                     onDeleteTask = { viewModel.deleteTask(it) },
+                    onUndoDeleteTask = { viewModel.undoDeleteTask(it) },
                     onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
                 )
             }

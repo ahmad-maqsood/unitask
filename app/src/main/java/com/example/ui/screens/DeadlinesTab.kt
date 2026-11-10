@@ -128,6 +128,7 @@ fun DeadlinesTab(
     onSetStatus: (TaskItem, TaskStatus) -> Unit = { _, _ -> },
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
+    onUndoDeleteTask: (TaskItem) -> Unit = {},
     onAddTaskClick: () -> Unit,
     highlightedClassInfo: List<HighlightedClassInfo> = emptyList(),
     onHighlightedClassTaskClick: ((TaskWithCourse) -> Unit)? = null,
@@ -200,6 +201,31 @@ fun DeadlinesTab(
                     }
                     if (result == SnackbarResult.ActionPerformed) {
                         onSetStatus(task, oldStatus)
+                    }
+                } finally {
+                    host.currentSnackbarData?.dismiss()
+                }
+            }
+        }
+    }
+    // Deleting from a card's menu has no confirm dialog: the task moves to Recently deleted
+    // and an Undo bar shows for 5 seconds, like the swipe-to-done bar above.
+    val handleCardDelete: (TaskItem) -> Unit = { task ->
+        swipeSnackbarJob?.cancel()
+        onDeleteTask(task)
+        val host = snackbarHostState
+        if (host != null) {
+            swipeSnackbarJob = coroutineScope.launch {
+                try {
+                    val result = withTimeoutOrNull(5000L) {
+                        host.showSnackbar(
+                            message = "Task moved to Recently deleted",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Indefinite
+                        )
+                    }
+                    if (result == SnackbarResult.ActionPerformed) {
+                        onUndoDeleteTask(task)
                     }
                 } finally {
                     host.currentSnackbarData?.dismiss()
@@ -666,7 +692,7 @@ fun DeadlinesTab(
                     tasks = tasks,
                     onStatusCycle = onStatusCycle,
                     onEditTask = onEditTask,
-                    onDeleteTask = onDeleteTask,
+                    onDeleteTask = handleCardDelete,
                     groupEntries = groupEntries,
                     onSwipeToggleDone = handleSwipeToggleDone,
                     onChecklistToggle = onChecklistToggle
@@ -769,7 +795,7 @@ fun DeadlinesTab(
                         },
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
-                        onDeleteTask = onDeleteTask,
+                        onDeleteTask = handleCardDelete,
                         onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
@@ -796,7 +822,7 @@ fun DeadlinesTab(
                         },
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
-                        onDeleteTask = onDeleteTask,
+                        onDeleteTask = handleCardDelete,
                         onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
@@ -823,7 +849,7 @@ fun DeadlinesTab(
                         },
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
-                        onDeleteTask = onDeleteTask,
+                        onDeleteTask = handleCardDelete,
                         onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
@@ -850,7 +876,7 @@ fun DeadlinesTab(
                         },
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
-                        onDeleteTask = onDeleteTask,
+                        onDeleteTask = handleCardDelete,
                         onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
@@ -877,7 +903,7 @@ fun DeadlinesTab(
                         },
                         onStatusCycle = onStatusCycle,
                         onEditTask = onEditTask,
-                        onDeleteTask = onDeleteTask,
+                        onDeleteTask = handleCardDelete,
                         onSwipeToggleDone = handleSwipeToggleDone,
                         modifier = Modifier.animateItem(),
                         groupEntry = groupEntries[taskWithCourse.task.id],
@@ -897,7 +923,7 @@ fun DeadlinesTab(
                     },
                     onStatusCycle = onStatusCycle,
                     onEditTask = onEditTask,
-                    onDeleteTask = onDeleteTask,
+                    onDeleteTask = handleCardDelete,
                     onSwipeToggleDone = handleSwipeToggleDone,
                     modifier = Modifier.animateItem(),
                     groupEntry = groupEntries[taskWithCourse.task.id],

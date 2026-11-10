@@ -110,6 +110,7 @@ fun TaskCard(
     val task = taskWithCourse.task
     val course = taskWithCourse.course
     val context = LocalContext.current
+    val haptics = rememberAppHaptics()
     var showMenu by remember { mutableStateOf(false) }
 
     val courseColor = remember(course?.colorHex) {
@@ -419,13 +420,19 @@ fun TaskCard(
                                             .fillMaxWidth()
                                             .defaultMinSize(minHeight = 40.dp)
                                             .clip(RoundedCornerShape(6.dp))
-                                            .clickable { onChecklistToggle(task, item.lineIndex) }
+                                            .clickable {
+                                                haptics.tick()
+                                                onChecklistToggle(task, item.lineIndex)
+                                            }
                                             .padding(vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Checkbox(
                                             checked = item.checked,
-                                            onCheckedChange = { onChecklistToggle(task, item.lineIndex) },
+                                            onCheckedChange = {
+                                                haptics.tick()
+                                                onChecklistToggle(task, item.lineIndex)
+                                            },
                                             modifier = Modifier.size(40.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
@@ -705,6 +712,7 @@ fun StatusToggleChip(
     }
 
     val actionDescription = if (isDone) "Mark not done" else "Mark done"
+    val haptics = rememberAppHaptics()
 
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -715,7 +723,10 @@ fun StatusToggleChip(
             .clip(RoundedCornerShape(20.dp))
             .clickable(
                 onClickLabel = actionDescription,
-                onClick = onClick
+                onClick = {
+                    haptics.tick()
+                    onClick()
+                }
             )
     ) {
         Row(

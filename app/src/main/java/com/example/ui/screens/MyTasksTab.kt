@@ -489,14 +489,17 @@ private fun SwipeableTaskItem(
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val task = taskWithCourse.task
+    val haptics = rememberAppHaptics()
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.StartToEnd -> {
+                    haptics.firm()
                     onSwipeTickDone(task)
                     false
                 }
                 SwipeToDismissBoxValue.EndToStart -> {
+                    haptics.firm()
                     onSwipeDelete(task)
                     true
                 }

@@ -1100,6 +1100,7 @@ private fun SelectableTaskCard(
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val checklistToggle = if (groupEntry == null) onChecklistToggle else null
+    val haptics = rememberAppHaptics()
     if (isBatchMode) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1107,10 +1108,18 @@ private fun SelectableTaskCard(
         ) {
             Checkbox(
                 checked = isSelected,
-                onCheckedChange = { onToggleSelect() },
+                onCheckedChange = {
+                    haptics.tick()
+                    onToggleSelect()
+                },
                 modifier = Modifier.padding(end = 4.dp)
             )
-            Box(modifier = Modifier.weight(1f).clickable { onToggleSelect() }) {
+            Box(
+                modifier = Modifier.weight(1f).clickable {
+                    haptics.tick()
+                    onToggleSelect()
+                }
+            ) {
                 TaskCard(
                     taskWithCourse = taskWithCourse,
                     onStatusCycle = onStatusCycle,
@@ -1167,9 +1176,13 @@ private fun SwipeDoneTaskCard(
     // The swipe state lives on after the task changes, so always read the newest values.
     val latestTask by rememberUpdatedState(task)
     val latestOnSwipe by rememberUpdatedState(onSwipeToggleDone)
+    val haptics = rememberAppHaptics()
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.StartToEnd) latestOnSwipe(latestTask)
+            if (value == SwipeToDismissBoxValue.StartToEnd) {
+                haptics.firm()
+                latestOnSwipe(latestTask)
+            }
             false // always snap back; the task itself moves to its new section
         }
     )

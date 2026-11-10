@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -78,6 +77,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.key
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.Surface
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import com.example.util.DraftChecklistItem
 import com.example.util.buildDescriptionWithChecklist
@@ -165,20 +170,80 @@ fun MyTaskDialog(
         )
     }
 
-    AlertDialog(
+    val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
+    val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (taskToEdit != null) "Edit My Task" else "Add My Task",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar: close, title and Save. It stays on screen, so Save never scrolls away
+                // or ends up behind the keyboard.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("my_task_cancel_button")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                    Text(
+                        text = if (taskToEdit != null) "Edit My Task" else "Add My Task",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
+                    )
+                    Button(
+                        onClick = {
+                            if (title.isBlank()) {
+                                titleError = true
+                            } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
+                                onSave(
+                                    title.trim(),
+                                    buildDescriptionWithChecklist(description, checklist).trim(),
+                                    selectedDueDateMillis!!,
+                                    dueHour!!,
+                                    dueMinute!!,
+                                    priority,
+                                    reminderOptions,
+                                    repeatRule,
+                                    autoDeleteWhenDone
+                                )
+                            }
+                        },
+                        enabled = isSaveEnabled,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .defaultMinSize(minHeight = 48.dp)
+                            .testTag("my_task_save_button")
+                    ) {
+                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                    }
+                }
+                HorizontalDivider()
+
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Title
@@ -700,48 +765,9 @@ fun MyTaskDialog(
                     doneTestTag = "my_task_reminder_done_button"
                 )
             }
-        },
-        confirmButton = {
-            val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
-            val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
-
-            Button(
-                onClick = {
-                    if (title.isBlank()) {
-                        titleError = true
-                    } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
-                        onSave(
-                            title.trim(),
-                            buildDescriptionWithChecklist(description, checklist).trim(),
-                            selectedDueDateMillis!!,
-                            dueHour!!,
-                            dueMinute!!,
-                            priority,
-                            reminderOptions,
-                            repeatRule,
-                            autoDeleteWhenDone
-                        )
-                    }
-                },
-                enabled = isSaveEnabled,
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp)
-                    .testTag("my_task_save_button")
-            ) {
-                Text(if (taskToEdit != null) "Save" else "Add Task")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp)
-                    .testTag("my_task_cancel_button")
-            ) {
-                Text("Cancel")
             }
         }
-    )
+    }
 }
 
 

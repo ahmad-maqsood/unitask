@@ -173,7 +173,11 @@ fun DeadlinesTab(
     val pendingCountStr by remember(pendingCount) { derivedStateOf { pendingCount.toString() } }
     val completedCountStr by remember(completedCount) { derivedStateOf { completedCount.toString() } }
     val dueTodayCountStr by remember(dueTodayCount) { derivedStateOf { dueTodayCount.toString() } }
-    val allTasksLabel by remember(tasks.size) { derivedStateOf { "All (${tasks.size})" } }
+    // Counts for the status chips. They are the same totals as the stats card, so they stay
+    // the same whichever chip is selected.
+    val allTasksLabel by remember(pendingCount, completedCount) { derivedStateOf { "All (${pendingCount + completedCount})" } }
+    val pendingChipLabel by remember(pendingCount) { derivedStateOf { "Pending ($pendingCount)" } }
+    val doneChipLabel by remember(completedCount) { derivedStateOf { "Done ($completedCount)" } }
     val sections = remember(tasks) { groupDeadlines(tasks) }
     // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
     val coroutineScope = rememberCoroutineScope()
@@ -375,7 +379,7 @@ fun DeadlinesTab(
                     FilterChip(
                         selected = statusFilter == TaskStatus.PENDING,
                         onClick = { onStatusFilterSelect(TaskStatus.PENDING) },
-                        label = { Text("Pending") },
+                        label = { Text(pendingChipLabel) },
                         modifier = Modifier.testTag("filter_status_pending")
                     )
                 }
@@ -383,7 +387,7 @@ fun DeadlinesTab(
                     FilterChip(
                         selected = statusFilter == TaskStatus.COMPLETED,
                         onClick = { onStatusFilterSelect(TaskStatus.COMPLETED) },
-                        label = { Text("Done") },
+                        label = { Text(doneChipLabel) },
                         modifier = Modifier.testTag("filter_status_completed")
                     )
                 }

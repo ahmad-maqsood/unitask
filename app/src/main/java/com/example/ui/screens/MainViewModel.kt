@@ -578,8 +578,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
             val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
-            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownName(name)) {
-                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md) or text files")
+            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
+                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
                 return@launch
             }
             when (result) {
@@ -671,6 +671,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onBellOpened() {
         _openBellRequest.value = false
+    }
+
+    // Set when the running timer notification is tapped; MainScreen opens the Timer screen.
+    private val _openTimerRequest = MutableStateFlow(false)
+    val openTimerRequest: StateFlow<Boolean> = _openTimerRequest.asStateFlow()
+
+    fun openTimer() {
+        _openTimerRequest.value = true
+    }
+
+    fun onTimerOpened() {
+        _openTimerRequest.value = false
     }
     // Class schedule shown on the Deadlines tab. Re-evaluated every minute and on pull to refresh.
     // Today's classes that have not ended and started no more than STALE_CLASS_MINUTES ago are

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -194,7 +195,7 @@ fun TimerScreen(
     }
 
     if (fullscreen) {
-        // Full screen mode: shows only the time, Time is up text, compact controls, and exit button.
+        // Full screen mode: a dial with the time, round controls, and the keep-awake and exit buttons.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -236,48 +237,17 @@ fun TimerScreen(
                 }
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val fontSize = minOf(maxWidth.value * 0.25f, maxHeight.value * 0.45f).coerceIn(48f, 160f).sp
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = timeText,
-                        fontSize = fontSize,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 1,
-                        modifier = Modifier.testTag("timer_time_text")
-                    )
-                    if (state.mode == TimerMode.COUNTDOWN && isFinished) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Time is up",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    TimerControlButtons(
-                        isIdle = isIdle,
-                        isRunning = isRunning,
-                        isPaused = isPaused,
-                        onStart = { controller.start() },
-                        onPause = { controller.pause() },
-                        onResume = { controller.start() },
-                        onReset = { controller.reset() }
-                    )
-                }
-            }
+            // Dial and round controls; see TimerFullscreen.kt.
+            FullscreenTimerContent(
+                state = state,
+                now = now,
+                timeText = timeText,
+                isIdle = isIdle,
+                isRunning = isRunning,
+                isPaused = isPaused,
+                isFinished = isFinished,
+                controller = controller
+            )
         }
     } else if (showHistory) {
         TimerHistoryScreen(
@@ -358,7 +328,7 @@ fun TimerScreen(
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_stopwatch")
                     ) {
-                        Text("Stopwatch")
+                        ShrinkToFitText(text = "Stopwatch", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                     SegmentedButton(
                         selected = state.mode == TimerMode.COUNTDOWN,
@@ -367,7 +337,7 @@ fun TimerScreen(
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_countdown")
                     ) {
-                        Text("Countdown")
+                        ShrinkToFitText(text = "Countdown", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                 }
 
@@ -736,7 +706,7 @@ fun TimerScreen(
 }
 
 /** The short line shown under the clock inside the ring. */
-private fun timerStatusLabel(
+internal fun timerStatusLabel(
     mode: TimerMode,
     isRunning: Boolean,
     isPaused: Boolean,
@@ -768,7 +738,9 @@ private fun TimerControlButtons(
         MaterialTheme.typography.labelLarge
     }
     // When Reset is shown next to the main button, the main button gets more of the row.
-    val mainWeight = if (large && !isIdle) 1.5f else 1f
+    val mainWeight = if (!isIdle) 1.5f else 1f
+    // Tighter side padding so labels such as "Reset" stay on one line with a large system font.
+    val buttonPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
 
     Row(
         // Buttons share the row, so they fit narrow phones; the cap keeps them sensible in landscape.
@@ -785,11 +757,12 @@ private fun TimerControlButtons(
                 modifier = Modifier
                     .weight(1f)
                     .height(buttonHeight)
-                    .testTag("timer_reset_button")
+                    .testTag("timer_reset_button"),
+                contentPadding = buttonPadding
             ) {
                 Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(22.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset", style = labelStyle)
+                Spacer(modifier = Modifier.width(6.dp))
+                ShrinkToFitText(text = "Reset", style = labelStyle, minFontSize = 11.sp)
             }
         }
 
@@ -800,11 +773,12 @@ private fun TimerControlButtons(
                     modifier = Modifier
                         .weight(mainWeight)
                         .height(buttonHeight)
-                        .testTag("timer_start_button")
+                        .testTag("timer_start_button"),
+                    contentPadding = buttonPadding
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start", style = labelStyle)
+                    ShrinkToFitText(text = "Start", style = labelStyle, minFontSize = 11.sp)
                 }
             }
             isRunning -> {
@@ -813,11 +787,12 @@ private fun TimerControlButtons(
                     modifier = Modifier
                         .weight(mainWeight)
                         .height(buttonHeight)
-                        .testTag("timer_pause_button")
+                        .testTag("timer_pause_button"),
+                    contentPadding = buttonPadding
                 ) {
                     Icon(Icons.Default.Pause, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pause", style = labelStyle)
+                    ShrinkToFitText(text = "Pause", style = labelStyle, minFontSize = 11.sp)
                 }
             }
             isPaused -> {
@@ -826,11 +801,12 @@ private fun TimerControlButtons(
                     modifier = Modifier
                         .weight(mainWeight)
                         .height(buttonHeight)
-                        .testTag("timer_resume_button")
+                        .testTag("timer_resume_button"),
+                    contentPadding = buttonPadding
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Resume", style = labelStyle)
+                    ShrinkToFitText(text = "Resume", style = labelStyle, minFontSize = 11.sp)
                 }
             }
         }

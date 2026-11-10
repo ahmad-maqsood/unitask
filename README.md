@@ -85,12 +85,12 @@ UniTask is a personal project, created to solve everyday planning problems for i
 
 ### Themes
 
-UniTask follows the system theme or can be set to light or dark, with six accent colours chosen in Settings.
+UniTask follows the system theme or can be set to light or dark, with ten accent colours chosen in Settings.
 
 <table align="center">
   <tr>
     <td align="center"><a href="docs/screenshots/theme_dark.jpg"><img src="docs/screenshots/theme_dark.jpg" width="220" alt="Dark theme" /></a><br/><sub><b>Dark theme</b><br/>Deadlines in dark mode</sub></td>
-    <td align="center"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Six accent colours, shown here in Rose</sub></td>
+    <td align="center"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Ten accent colours, shown here in Rose</sub></td>
   </tr>
 </table>
 
@@ -189,7 +189,7 @@ You can also open the cloned folder in Android Studio and let Gradle sync before
 
 ### Personalisation
 
-- Light, dark or system theme, and six accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange and Violet.
+- Light, dark or system theme, and ten accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite and Mocha.
 - Themed icon on Android 13 and newer.
 - Notification sounds: the phone default, four built-in sounds or any ringtone on the phone. Each sound has its own notification channel, so Android remembers the volume you set.
 

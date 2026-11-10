@@ -69,5 +69,17 @@ class MarkdownFileReaderTest {
         assertFalse(MarkdownFileReader.looksLikeMarkdownName(""))
         assertFalse(MarkdownFileReader.looksLikeMarkdownName(null))
     }
+
+    @Test
+    fun looksLikeMarkdownOrBinNameAcceptsBinButNotOtherFiles() {
+        assertTrue(MarkdownFileReader.looksLikeMarkdownOrBinName("notes.bin"))
+        assertTrue(MarkdownFileReader.looksLikeMarkdownOrBinName("Notes.BIN"))
+        assertTrue(MarkdownFileReader.looksLikeMarkdownOrBinName("notes.md.bin"))
+        assertTrue(MarkdownFileReader.looksLikeMarkdownOrBinName("a.md"))
+
+        assertFalse(MarkdownFileReader.looksLikeMarkdownOrBinName("photo.png"))
+        assertFalse(MarkdownFileReader.looksLikeMarkdownOrBinName("bin"))
+        assertFalse(MarkdownFileReader.looksLikeMarkdownOrBinName(null))
+    }
 }
 

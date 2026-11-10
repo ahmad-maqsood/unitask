@@ -70,7 +70,9 @@ class MainActivity : ComponentActivity() {
             } else if (intent.action == Intent.ACTION_VIEW) {
                 val scheme = dataUri.scheme?.lowercase()
                 if (scheme == "content") {
-                    mainViewModel.openMarkdownFile(dataUri)
+                    // A generic type (BIN) is only accepted when the file name says Markdown, text or BIN
+                    val isGenericType = intent.type?.lowercase() == "application/octet-stream"
+                    mainViewModel.openMarkdownFile(dataUri, requireTextFileName = isGenericType)
                     intent.data = null
                 }
             }
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
             if (streamUri != null && streamUri.scheme?.lowercase() == "content") {
                 val type = intent.type?.lowercase()
                 val isMarkdownType = type == "text/markdown" || type == "text/x-markdown"
-                // A generic type (BIN) is only accepted when the file name says it is Markdown or text
+                // A generic type (BIN) is only accepted when the file name says Markdown, text or BIN
                 mainViewModel.openMarkdownFile(streamUri, requireTextFileName = !isMarkdownType)
                 intent.removeExtra(Intent.EXTRA_STREAM)
             }
@@ -94,6 +96,10 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra("open_bell", false)) {
             mainViewModel.openBell()
             intent.removeExtra("open_bell")
+        }
+        if (intent.getBooleanExtra(EXTRA_OPEN_TIMER, false)) {
+            mainViewModel.openTimer()
+            intent.removeExtra(EXTRA_OPEN_TIMER)
         }
         val groupId = intent.getStringExtra("open_group_id")
         val openChat = intent.getBooleanExtra("open_group_chat", false)
@@ -162,5 +168,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        /** Boolean extra: open the Timer screen when the activity is launched or re-used. */
+        const val EXTRA_OPEN_TIMER = "open_timer"
     }
 }

@@ -142,6 +142,7 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
     private fun openAppIntent(): PendingIntent {
         val intent = Intent(appContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_OPEN_TIMER, true)
         }
         return PendingIntent.getActivity(
             appContext,

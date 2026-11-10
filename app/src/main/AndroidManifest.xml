@@ -78,6 +78,18 @@
                 <data android:pathPattern=".*\\..*\\.md" />
                 <data android:pathPattern=".*\\.markdown" />
                 <data android:pathPattern=".*\\..*\\.markdown" />
+                <data android:pathPattern=".*\\.bin" />
+                <data android:pathPattern=".*\\..*\\.bin" />
+            </intent-filter>
+
+            <!-- Open with: a Markdown file that arrived as a generic BIN file (for example sent from
+                 Windows). Tapping a file sends VIEW, not SEND, so it needs its own filter.
+                 The app checks that the content is text before showing it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/octet-stream" />
             </intent-filter>
 
             <!-- Share to UniTask: markdown files -->

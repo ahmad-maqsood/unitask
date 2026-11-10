@@ -41,6 +41,16 @@ object MarkdownFileReader {
     }
 
     /**
+     * Like [looksLikeMarkdownName], but also accepts a generic ".bin" name. Used only when the
+     * file arrived with a generic type, for example a Markdown file sent from Windows that
+     * ended up as BIN. Real binary files are still refused later because they contain NUL bytes.
+     */
+    fun looksLikeMarkdownOrBinName(name: String?): Boolean {
+        if (name.isNullOrBlank()) return false
+        return looksLikeMarkdownName(name) || name.lowercase().endsWith(".bin")
+    }
+
+    /**
      * Reads a byte array into a MarkdownReadResult.
      * Pure function for testing without Android dependencies.
      */

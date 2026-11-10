@@ -130,7 +130,7 @@ object FeatureGuide {
             "1. In My tasks, add a task or edit one.\n2. Leave Repeat on 'Does not repeat'.\n3. Switch on 'Delete when done' and save.\n4. Tick the task done. It moves to Recently deleted after that day, where you can still restore it."
         ),
         AppFeature(
-            "Accent Colours", "Choose one of six accent colours for the app.", "palette", 95,
+            "Accent Colours", "Choose one of ten accent colours for the app.", "palette", 95,
             "1. Open Settings, then General.\n2. Tap an Accent colour swatch."
         ),
         AppFeature(

@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
@@ -323,6 +324,7 @@ fun MainScreen(
     val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
     val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
     val openBellRequest by viewModel.openBellRequest.collectAsStateWithLifecycle()
+    val openTimerRequest by viewModel.openTimerRequest.collectAsStateWithLifecycle()
     val myTasks by viewModel.myTasks.collectAsStateWithLifecycle()
     val isMyTaskDialogOpen by viewModel.isMyTaskDialogOpen.collectAsStateWithLifecycle()
     val myTaskToEdit by viewModel.myTaskToEdit.collectAsStateWithLifecycle()
@@ -342,6 +344,20 @@ fun MainScreen(
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
+    // The timer notification asks for the Timer screen through the ViewModel. Other full-screen
+    // panels are closed first, because some are drawn above the Timer and would hide it.
+    LaunchedEffect(openTimerRequest) {
+        if (openTimerRequest) {
+            showTools = false
+            showNotes = false
+            showRecentlyDeleted = false
+            showArchivedSemesters = false
+            showArchiveCoursesSheet = false
+            showSearch = false
+            showTimer = true
+            viewModel.onTimerOpened()
+        }
+    }
     var settingsOpenRequest by remember { mutableStateOf<SettingsOpenRequest?>(null) }
     var updateAvailable by remember { mutableStateOf(false) }
 
@@ -459,11 +475,6 @@ fun MainScreen(
                     ) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
-                    ToolsButton(
-                        timerActive = timerActive,
-                        updateAvailable = updateAvailable,
-                        onClick = { showTools = true }
-                    )
                     AnnouncementBell(
                         announcements,
                         openRequest = openBellRequest,
@@ -477,6 +488,11 @@ fun MainScreen(
                             target == "tab:MYTASKS" -> viewModel.setTab(MainTab.MYTASKS)
                         }
                     }
+                    ToolsButton(
+                        timerActive = timerActive,
+                        updateAvailable = updateAvailable,
+                        onClick = { showTools = true }
+                    )
                     SettingsButton(
                         currentUser = currentUser,
                         onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
@@ -503,11 +519,10 @@ fun MainScreen(
                         onClick = { viewModel.setTab(MainTab.DEADLINES) },
                         label = "Deadlines",
                         icon = Icons.Default.Flag,
-                        // Only overdue work gets a badge, because that is what needs attention.
-                        count = overdueCount,
-                        testTag = "tab_deadlines",
-                        badgeContainerColor = MaterialTheme.colorScheme.error,
-                        badgeContentColor = MaterialTheme.colorScheme.onError
+                        // Only overdue work is flagged, because that is what needs attention.
+                        // A glowing dot is enough; the numbers are on the tab itself.
+                        showDot = overdueCount > 0,
+                        testTag = "tab_deadlines"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.TIMETABLE,
@@ -538,10 +553,8 @@ fun MainScreen(
                         onClick = { viewModel.setTab(MainTab.MYTASKS) },
                         label = "My tasks",
                         icon = Icons.Default.TaskAlt,
-                        count = myTasksOverdueCount,
-                        testTag = "tab_mytasks",
-                        badgeContainerColor = MaterialTheme.colorScheme.error,
-                        badgeContentColor = MaterialTheme.colorScheme.onError
+                        showDot = myTasksOverdueCount > 0,
+                        testTag = "tab_mytasks"
                     )
                 }
             }
@@ -1216,9 +1229,12 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
     label: String,
     icon: ImageVector,
     testTag: String,
+    // A number badge, kept for unread group messages.
     count: Int = 0,
     badgeContainerColor: Color = MaterialTheme.colorScheme.primary,
-    badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary
+    badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    // A glowing dot with no number, for tabs that only need to say "look here" (overdue tasks).
+    showDot: Boolean = false
 ) {
     NavigationBarItem(
         selected = selected,
@@ -1232,23 +1248,39 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         icon = {
-            BadgedBox(
-                badge = {
-                    if (count > 0) {
-                        Badge(
-                            containerColor = badgeContainerColor,
-                            contentColor = badgeContentColor
-                        ) {
-                            Text(if (count > 99) "99+" else "$count")
+            if (showDot) {
+                Box {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "$label, overdue tasks",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    OverdueGlowDot(
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 3.dp, y = (-3).dp)
+                    )
+                }
+            } else {
+                BadgedBox(
+                    badge = {
+                        if (count > 0) {
+                            Badge(
+                                containerColor = badgeContainerColor,
+                                contentColor = badgeContentColor
+                            ) {
+                                Text(if (count > 99) "99+" else "$count")
+                            }
                         }
                     }
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    modifier = Modifier.size(24.dp)
-                )
             }
         },
         label = {
@@ -1257,7 +1289,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                minFontSize = 10.sp
+                minFontSize = 9.sp
             )
         }
     )

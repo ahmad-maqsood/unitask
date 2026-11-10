@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
 import com.example.ui.theme.ActiveClassGreen
@@ -128,14 +129,12 @@ fun CurrentNextClassCard(
                             color = Color.White,
                             modifier = Modifier.size(8.dp)
                         ) {}
-                        Text(
+                        ShrinkToFitText(
                             text = if (classInfo.isActiveNow) "CURRENT CLASS IN PROGRESS" else "NEXT UPCOMING CLASS",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            minFontSize = 9.sp,
                             modifier = Modifier.weight(1f, fill = false)
                         )
                     }
@@ -310,13 +309,12 @@ fun CurrentNextClassCard(
                                         tint = courseColor,
                                         modifier = Modifier.size(18.dp)
                                     )
-                                    Text(
+                                    ShrinkToFitText(
                                         text = pendingTasksCountLabel,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        minFontSize = 10.sp
                                     )
                                 }
 
@@ -394,13 +392,12 @@ fun CurrentNextClassCard(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Text(
+                                ShrinkToFitText(
                                     text = "No pending assignments",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    minFontSize = 10.sp
                                 )
                             }
                         }

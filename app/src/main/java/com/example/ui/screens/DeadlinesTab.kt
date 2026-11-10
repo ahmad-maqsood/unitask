@@ -78,6 +78,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.startOfLocalDay
 import com.example.data.local.Course
@@ -309,10 +310,11 @@ fun DeadlinesTab(
                         .weight(1f)
                         .testTag("task_search_input"),
                     placeholder = {
-                        Text(
+                        // Shrinks to fit so the hint is not cut as "Search tasks or co…".
+                        ShrinkToFitText(
                             text = "Search tasks or courses",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            style = MaterialTheme.typography.bodyLarge,
+                            minFontSize = 11.sp
                         )
                     },
                     leadingIcon = {

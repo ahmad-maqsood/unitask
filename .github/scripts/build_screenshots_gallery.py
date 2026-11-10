@@ -31,7 +31,7 @@ SCREENS = [
 # Shown in their own "Themes" table below the main gallery.
 THEME_SCREENS = [
     ("theme_dark", "Dark theme", "Deadlines in dark mode"),
-    ("theme_accent", "Accent colours", "Six accent colours, shown here in Rose"),
+    ("theme_accent", "Accent colours", "Ten accent colours, shown here in Rose"),
 ]
 ALL_SCREENS = SCREENS + THEME_SCREENS
 
@@ -89,7 +89,7 @@ def main():
     section = (
         "## Screenshots\n\n"
         + table
-        + "\n\n### Themes\n\nUniTask follows the system theme or can be set to light or dark, with six accent colours chosen in Settings.\n\n"
+        + "\n\n### Themes\n\nUniTask follows the system theme or can be set to light or dark, with ten accent colours chosen in Settings.\n\n"
         + themes_table
         + f'\n\n<p align="center"><sub>Automatically captured from UniTask {version} '
           "using fictional demo data on an Android emulator.</sub></p>\n\n"

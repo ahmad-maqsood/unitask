@@ -7,8 +7,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -130,7 +132,10 @@ fun ToolsSheet(
             // Two-column grid of tool tiles.
             tools.chunked(2).forEach { rowTools ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    // Tiles in a row share the tallest tile's height, since labels can wrap.
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     for (tool in rowTools) {
@@ -161,6 +166,7 @@ private fun ToolTile(
 ) {
     Card(
         modifier = modifier
+            .fillMaxHeight()
             .testTag(tool.testTag)
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onSelect),
@@ -194,7 +200,8 @@ private fun ToolTile(
                 text = tool.label,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
+                // Long names like "Recently deleted" wrap to a second line instead of being cut.
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -203,7 +210,7 @@ private fun ToolTile(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minLines = 2,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
         }

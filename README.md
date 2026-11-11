@@ -40,7 +40,7 @@ UniTask helps students keep track of what is due, when classes start and what th
 - **Coursework.** Deadlines with priorities, reminders and attachments, colour-coded courses and repeating tasks.
 - **Timetable.** Weekly or bi-weekly schedule with a live next-class card and `.ics` export.
 - **Notes.** Markdown notes with a preview mode, course tags and photos. Deleted notes stay in the trash for 30 days.
-- **Study timer.** Stopwatch and countdown that alerts you when time is up, even if the app is closed.
+- **Study timer.** Stopwatch, countdown and Pomodoro (focus and break rounds) that alert you when time is up, even if the app is closed.
 - **Study groups.** Shared tasks and real-time chat, joined with a QR code, an invite link or a code.
 - **Backup.** Optional private backup to your own Google Drive, and password-protected local backups.
 
@@ -160,7 +160,7 @@ You can also open the cloned folder in Android Studio and let Gradle sync before
 
 ### Study timer
 
-- **Stopwatch and countdown.** Track study sessions with a stopwatch or a 15, 25, 45 or 60-minute countdown, or set a custom duration. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
+- **Stopwatch, countdown and Pomodoro.** Track study sessions with a stopwatch, a 15, 25, 45 or 60-minute countdown (or a custom duration), or Pomodoro mode with focus rounds and short and long breaks you can adjust. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
 
 ### Timetable
 

@@ -53,7 +53,12 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
         val running = TimerLogic.isRunning(state)
         val totalMinutes = maxOf(1L, state.countdownTotalMillis / 60_000L)
 
-        val title = if (countdown) "Countdown" else "Stopwatch"
+        val phase = state.pomodoroPhase
+        val title = when {
+            phase != null -> phase.label
+            countdown -> "Countdown"
+            else -> "Stopwatch"
+        }
         val views = RemoteViews(appContext.packageName, R.layout.notification_timer)
         views.setTextViewText(R.id.timer_notif_label, title)
 
@@ -67,7 +72,11 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             val base = SystemClock.elapsedRealtime() + (whenMillis - now)
             views.setTextViewText(
                 R.id.timer_notif_label,
-                if (countdown) "$totalMinutes minute countdown" else title
+                when {
+                    phase != null -> "$title • $totalMinutes min"
+                    countdown -> "$totalMinutes minute countdown"
+                    else -> title
+                }
             )
             views.setViewVisibility(R.id.timer_notif_chronometer, View.VISIBLE)
             views.setViewVisibility(R.id.timer_notif_paused_text, View.GONE)

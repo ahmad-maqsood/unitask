@@ -27,11 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.reminder.CountdownNotifier
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
@@ -57,7 +59,7 @@ fun FullscreenTimerContent(
 ) {
     val colors = MaterialTheme.colorScheme
     val accent = if (isFinished) colors.tertiary else colors.primary
-    val statusText = timerStatusLabel(state.mode, isRunning, isPaused, isFinished)
+    val statusText = timerStatusLabel(state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase)
 
     BoxWithConstraints(
         modifier = modifier
@@ -145,11 +147,15 @@ private fun FullscreenTimerPanel(
     align: Alignment.Horizontal
 ) {
     val colors = MaterialTheme.colorScheme
+    val context = LocalContext.current
     val countdown = state.mode == TimerMode.COUNTDOWN
-    val modeText = if (countdown) {
-        "COUNTDOWN · " + TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
-    } else {
-        "STOPWATCH"
+    val modeText = when {
+        state.pomodoroPhase != null ->
+            "POMODORO · ROUND ${state.pomodoroRound} · " +
+                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
+        countdown ->
+            "COUNTDOWN · " + TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
+        else -> "STOPWATCH"
     }
     val endMillis = TimerLogic.scheduledEndTimeMillis(state)
 
@@ -196,6 +202,35 @@ private fun FullscreenTimerPanel(
                 contentColor = if (isFinished) colors.onTertiary else colors.onPrimary
             )
             when {
+                isFinished && state.pomodoroPhase != null -> {
+                    // Pomodoro phase done: a small reset, and the big button starts the next phase.
+                    FilledTonalIconButton(
+                        onClick = { controller.reset() },
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .testTag("timer_reset_button")
+                    ) {
+                        Icon(Icons.Default.Replay, contentDescription = "Reset", modifier = Modifier.size(28.dp))
+                    }
+                    FilledIconButton(
+                        onClick = {
+                            CountdownNotifier.cancelFinished(context)
+                            controller.start()
+                        },
+                        shape = CircleShape,
+                        colors = buttonColors,
+                        modifier = Modifier
+                            .size(88.dp)
+                            .testTag("timer_next_phase_button")
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = if (state.pomodoroPhase.isBreak) "Start focus" else "Start break",
+                            modifier = Modifier.size(44.dp)
+                        )
+                    }
+                }
                 isFinished -> {
                     // Time is up: the one useful action is to start over.
                     FilledIconButton(

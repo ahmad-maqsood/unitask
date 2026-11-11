@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
 import com.example.util.HighPriorityAlarm
+import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 
@@ -31,6 +32,7 @@ object CountdownNotifier {
     private const val REQUEST_CODE_SILENCE = 9924
     private const val REQUEST_CODE_STOP = 9925
     const val EXTRA_TOTAL_MILLIS = "extra_countdown_total_millis"
+    const val EXTRA_POMODORO_PHASE = "extra_countdown_pomodoro_phase"
     const val CHANNEL_ID_SILENT = "unitask_countdown_finished_silent_v1"
 
     private fun ensureChannel(nm: NotificationManager) {
@@ -71,11 +73,12 @@ object CountdownNotifier {
         }
     }
 
-    private fun scheduleSilenceAlarm(context: Context, totalMillis: Long) {
+    private fun scheduleSilenceAlarm(context: Context, totalMillis: Long, phase: PomodoroPhase?) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val silenceIntent = Intent(context, TimerActionReceiver::class.java).apply {
             action = TimerActionReceiver.ACTION_SILENCE_COUNTDOWN
             putExtra(EXTRA_TOTAL_MILLIS, totalMillis)
+            if (phase != null) putExtra(EXTRA_POMODORO_PHASE, phase.name)
         }
         val silencePending = PendingIntent.getBroadcast(
             context,
@@ -118,7 +121,13 @@ object CountdownNotifier {
         }
     }
 
-    fun notifyFinished(context: Context, totalMillis: Long, ring: Boolean = true) {
+    /** [phase] is set when the countdown was a Pomodoro focus or break, so the text can say so. */
+    fun notifyFinished(
+        context: Context,
+        totalMillis: Long,
+        ring: Boolean = true,
+        phase: PomodoroPhase? = null
+    ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -159,11 +168,20 @@ object CountdownNotifier {
         )
 
         val n = maxOf(1L, totalMillis / 60_000L)
-        val text = "Your $n minute countdown is done."
+        val title = when {
+            phase == null -> "Countdown finished"
+            phase.isBreak -> "Break over"
+            else -> "Focus session done"
+        }
+        val text = when {
+            phase == null -> "Your $n minute countdown is done."
+            phase.isBreak -> "Your $n minute break is over. Ready to focus?"
+            else -> "You focused for $n minutes. Time for a break."
+        }
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setContentTitle("Countdown finished")
+            .setContentTitle(title)
             .setContentText(text)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -186,7 +204,7 @@ object CountdownNotifier {
         val notification = builder.build()
         if (ring) {
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
-            scheduleSilenceAlarm(context, totalMillis)
+            scheduleSilenceAlarm(context, totalMillis, phase)
         }
 
         nm.notify(NOTIFICATION_ID, notification)
@@ -197,7 +215,7 @@ object CountdownNotifier {
         val before = controller.state.value
         val ring = !TimerLogic.isAlarmLate(before, controller.now())
         if (!controller.markFinishedIfDue(toleranceMillis)) return false
-        notifyFinished(context, before.countdownTotalMillis, ring)
+        notifyFinished(context, before.countdownTotalMillis, ring, before.pomodoroPhase)
         return true
     }
 

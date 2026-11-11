@@ -36,6 +36,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Lightbulb
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -86,6 +88,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.util.timer.PomodoroLogic
+import com.example.util.timer.PomodoroPhase
+import com.example.util.timer.PomodoroSettings
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerHistoryLogic
 import com.example.util.timer.TimerLogic
@@ -110,6 +115,8 @@ fun TimerScreen(
     var keepAwakeInFullscreen by rememberSaveable { mutableStateOf(controller.keepScreenOnInFullscreen()) }
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showPomodoroDialog by rememberSaveable { mutableStateOf(false) }
+    var pomodoroSettings by remember { mutableStateOf(controller.pomodoroSettings()) }
     val sessions by controller.sessions.collectAsStateWithLifecycle()
 
     // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
@@ -303,7 +310,7 @@ fun TimerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Mode switch: Stopwatch vs Countdown. Disabled while the timer is in progress.
+                // Mode switch: Stopwatch, Countdown or Pomodoro. Disabled while the timer is in progress.
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -312,20 +319,29 @@ fun TimerScreen(
                     SegmentedButton(
                         selected = state.mode == TimerMode.STOPWATCH,
                         onClick = { controller.setMode(TimerMode.STOPWATCH) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_stopwatch")
                     ) {
                         ShrinkToFitText(text = "Stopwatch", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                     SegmentedButton(
-                        selected = state.mode == TimerMode.COUNTDOWN,
+                        selected = state.mode == TimerMode.COUNTDOWN && state.pomodoroPhase == null,
                         onClick = { controller.setMode(TimerMode.COUNTDOWN) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_countdown")
                     ) {
                         ShrinkToFitText(text = "Countdown", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
+                    }
+                    SegmentedButton(
+                        selected = state.pomodoroPhase != null,
+                        onClick = { controller.enablePomodoro() },
+                        shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                        enabled = isIdle,
+                        modifier = Modifier.testTag("timer_mode_pomodoro")
+                    ) {
+                        ShrinkToFitText(text = "Pomodoro", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                 }
 
@@ -344,12 +360,16 @@ fun TimerScreen(
                     // The text shrinks when it is longer (for example 1:30:00).
                     val innerWidth = ringSize.value * 0.56f
                     val fontSize = (innerWidth * 0.95f / (timeText.length * 0.62f)).coerceIn(28f, 76f).sp
+                    val isPomodoro = state.pomodoroPhase != null
                     val isClockTappable = state.mode == TimerMode.COUNTDOWN && isIdle
                     val clockModifier = if (isClockTappable) {
                         Modifier
                             .testTag("timer_clock_edit")
-                            .clickable(onClickLabel = "Change countdown length", role = Role.Button) {
-                                showCustomDialog = true
+                            .clickable(
+                                onClickLabel = if (isPomodoro) "Change Pomodoro lengths" else "Change countdown length",
+                                role = Role.Button
+                            ) {
+                                if (isPomodoro) showPomodoroDialog = true else showCustomDialog = true
                             }
                     } else {
                         Modifier
@@ -378,7 +398,9 @@ fun TimerScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = timerStatusLabel(state.mode, isRunning, isPaused, isFinished).uppercase(),
+                                text = timerStatusLabel(
+                                    state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase
+                                ).uppercase(),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 2.sp,
@@ -414,8 +436,54 @@ fun TimerScreen(
                     }
                 }
 
+                // Pomodoro: which round we are in, the lengths (tap to change) and a Skip button.
+                if (state.pomodoroPhase != null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Round ${state.pomodoroRound} of ${pomodoroSettings.roundsBeforeLongBreak}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("timer_pomodoro_round")
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilterChip(
+                                selected = false,
+                                onClick = { showPomodoroDialog = true },
+                                label = {
+                                    Text(
+                                        "${pomodoroSettings.focusMinutes} / " +
+                                            "${pomodoroSettings.shortBreakMinutes} / " +
+                                            "${pomodoroSettings.longBreakMinutes} min"
+                                    )
+                                },
+                                enabled = isIdle,
+                                modifier = Modifier.testTag("timer_pomodoro_settings")
+                            )
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    CountdownNotifier.cancelFinished(context)
+                                    controller.skipPomodoroPhase()
+                                },
+                                label = { Text("Skip") },
+                                modifier = Modifier.testTag("timer_pomodoro_skip")
+                            )
+                        }
+                    }
+                }
+
                 // Preset duration chips for Countdown mode. Disabled unless idle.
-                if (state.mode == TimerMode.COUNTDOWN) {
+                if (state.mode == TimerMode.COUNTDOWN && state.pomodoroPhase == null) {
                     val presetMinutes = listOf(15, 25, 45, 60)
                     val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
                     val currentTotalMinutes = (state.countdownTotalMillis / 60_000L).toInt()
@@ -460,6 +528,12 @@ fun TimerScreen(
                     onPause = { controller.pause() },
                     onResume = { controller.start() },
                     onReset = { controller.reset() },
+                    finishedLabel = if (isFinished) PomodoroLogic.nextActionLabel(state, pomodoroSettings) else null,
+                    onFinishedStart = {
+                        // Silence the "phase done" alert, then begin the next focus or break.
+                        CountdownNotifier.cancelFinished(context)
+                        controller.start()
+                    },
                     large = true
                 )
 
@@ -511,6 +585,18 @@ fun TimerScreen(
                 }
             }
         }
+    }
+
+    if (showPomodoroDialog) {
+        PomodoroSettingsDialog(
+            initial = pomodoroSettings,
+            onDismiss = { showPomodoroDialog = false },
+            onConfirm = { newSettings ->
+                controller.setPomodoroSettings(newSettings)
+                pomodoroSettings = controller.pomodoroSettings()
+                showPomodoroDialog = false
+            }
+        )
     }
 
     if (showCustomDialog) {
@@ -652,13 +738,129 @@ fun TimerScreen(
     }
 }
 
+/** Lets the user change the Pomodoro lengths and how many focus rounds come before the long break. */
+@Composable
+private fun PomodoroSettingsDialog(
+    initial: PomodoroSettings,
+    onDismiss: () -> Unit,
+    onConfirm: (PomodoroSettings) -> Unit
+) {
+    var focus by rememberSaveable { mutableStateOf(initial.focusMinutes) }
+    var shortBreak by rememberSaveable { mutableStateOf(initial.shortBreakMinutes) }
+    var longBreak by rememberSaveable { mutableStateOf(initial.longBreakMinutes) }
+    var rounds by rememberSaveable { mutableStateOf(initial.roundsBeforeLongBreak) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pomodoro") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PomodoroStepperRow(
+                    label = "Focus",
+                    valueText = "$focus min",
+                    tag = "timer_pomodoro_focus",
+                    onMinus = { focus = (focus - 5).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
+                    onPlus = { focus = (focus + 5).coerceAtMost(PomodoroSettings.MAX_FOCUS_MINUTES) }
+                )
+                PomodoroStepperRow(
+                    label = "Short break",
+                    valueText = "$shortBreak min",
+                    tag = "timer_pomodoro_short",
+                    onMinus = { shortBreak = (shortBreak - 1).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
+                    onPlus = { shortBreak = (shortBreak + 1).coerceAtMost(PomodoroSettings.MAX_BREAK_MINUTES) }
+                )
+                PomodoroStepperRow(
+                    label = "Long break",
+                    valueText = "$longBreak min",
+                    tag = "timer_pomodoro_long",
+                    onMinus = { longBreak = (longBreak - 5).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
+                    onPlus = { longBreak = (longBreak + 5).coerceAtMost(PomodoroSettings.MAX_BREAK_MINUTES) }
+                )
+                PomodoroStepperRow(
+                    label = "Rounds before long break",
+                    valueText = "$rounds",
+                    tag = "timer_pomodoro_rounds",
+                    onMinus = { rounds = (rounds - 1).coerceAtLeast(PomodoroSettings.MIN_ROUNDS) },
+                    onPlus = { rounds = (rounds + 1).coerceAtMost(PomodoroSettings.MAX_ROUNDS) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        PomodoroSettings(
+                            focusMinutes = focus,
+                            shortBreakMinutes = shortBreak,
+                            longBreakMinutes = longBreak,
+                            roundsBeforeLongBreak = rounds
+                        )
+                    )
+                },
+                modifier = Modifier.testTag("timer_pomodoro_save_button")
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("timer_pomodoro_cancel_button")
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+/** One line of the Pomodoro dialog: a label, the value, and minus / plus buttons. */
+@Composable
+private fun PomodoroStepperRow(
+    label: String,
+    valueText: String,
+    tag: String,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onMinus, modifier = Modifier.testTag(tag + "_minus")) {
+            Icon(Icons.Default.Remove, contentDescription = "Less $label")
+        }
+        Text(
+            text = valueText,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .widthIn(min = 56.dp)
+                .testTag(tag + "_value"),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        IconButton(onClick = onPlus, modifier = Modifier.testTag(tag + "_plus")) {
+            Icon(Icons.Default.Add, contentDescription = "More $label")
+        }
+    }
+}
+
 /** The short line shown under the clock inside the ring. */
 internal fun timerStatusLabel(
     mode: TimerMode,
     isRunning: Boolean,
     isPaused: Boolean,
-    isFinished: Boolean
+    isFinished: Boolean,
+    pomodoroPhase: PomodoroPhase? = null
 ): String = when {
+    // Pomodoro: "Focus", "Short break", "Long break", "Paused", "Focus done" or "Break over".
+    pomodoroPhase != null -> PomodoroLogic.statusLabel(pomodoroPhase, isPaused, isFinished)
     isFinished -> "Time is up"
     isRunning -> if (mode == TimerMode.COUNTDOWN) "Focus time" else "Studying"
     isPaused -> "Paused"
@@ -675,6 +877,9 @@ private fun TimerControlButtons(
     onPause: () -> Unit,
     onResume: () -> Unit,
     onReset: () -> Unit,
+    // Pomodoro: text of the main button once a phase has finished ("Start break"); null otherwise.
+    finishedLabel: String? = null,
+    onFinishedStart: () -> Unit = {},
     // The normal screen uses taller buttons; full screen keeps the compact size.
     large: Boolean = false
 ) {
@@ -754,6 +959,20 @@ private fun TimerControlButtons(
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     ShrinkToFitText(text = "Resume", style = labelStyle, minFontSize = 11.sp)
+                }
+            }
+            finishedLabel != null -> {
+                Button(
+                    onClick = onFinishedStart,
+                    modifier = Modifier
+                        .weight(mainWeight)
+                        .height(buttonHeight)
+                        .testTag("timer_next_phase_button"),
+                    contentPadding = buttonPadding
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    ShrinkToFitText(text = finishedLabel, style = labelStyle, minFontSize = 11.sp)
                 }
             }
         }

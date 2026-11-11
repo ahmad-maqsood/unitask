@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
@@ -126,7 +127,8 @@ fun buildToolsList(
     onOpenTimer: () -> Unit,
     onOpenRecentlyDeleted: () -> Unit,
     onOpenSettings: () -> Unit,
-    updateAvailable: Boolean = false
+    updateAvailable: Boolean = false,
+    onOpenHelp: () -> Unit = {}
 ): List<ToolEntry> = listOf(
     ToolEntry(
         label = "Notes",
@@ -148,6 +150,13 @@ fun buildToolsList(
         icon = Icons.Default.DeleteSweep,
         testTag = "tools_tile_recently_deleted",
         onClick = onOpenRecentlyDeleted
+    ),
+    ToolEntry(
+        label = "Help",
+        description = "Learn how to use UniTask",
+        icon = Icons.AutoMirrored.Filled.HelpOutline,
+        testTag = "tools_tile_help",
+        onClick = onOpenHelp
     ),
     ToolEntry(
         label = "Settings",
@@ -333,6 +342,7 @@ fun MainScreen(
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
@@ -383,7 +393,8 @@ fun MainScreen(
         onOpenTimer = { showTimer = true },
         onOpenRecentlyDeleted = { showRecentlyDeleted = true },
         onOpenSettings = { settingsOpenRequest = SettingsOpenRequest(null) },
-        updateAvailable = updateAvailable
+        updateAvailable = updateAvailable,
+        onOpenHelp = { showHelp = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -956,6 +967,10 @@ fun MainScreen(
             tools = tools,
             onDismiss = { showTools = false }
         )
+    }
+
+    if (showHelp) {
+        FeatureGuideDialog(onDismiss = { showHelp = false })
     }
 
     if (showNotes) {

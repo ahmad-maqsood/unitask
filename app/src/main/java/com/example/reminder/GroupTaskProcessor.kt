@@ -234,9 +234,7 @@ class GroupTaskProcessor(context: Context) {
     private fun encodeTask(t: GroupTask): String =
         "${t.id}$SEP${computeDeadlineMillis(t.dueDateEpochMillis, t.dueTimeHour, t.dueTimeMinute)}$SEP${t.title}"
 
-    private fun formatDue(millis: Long): String =
-        java.text.SimpleDateFormat("EEE, d MMM h:mm a", java.util.Locale.getDefault())
-            .format(java.util.Date(millis))
+    private fun formatDue(millis: Long): String = com.example.util.DateFormats.dayFirstDateClock(millis)
 
     /** "Deadline moved" and "Task deleted" notices, by comparing with what this phone saw last time. */
     private fun announceChangedTasks(snapshot: GroupSnapshot) {

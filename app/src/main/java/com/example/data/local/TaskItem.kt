@@ -115,3 +115,27 @@ fun startOfLocalDay(millis: Long): Long =
 
 val TaskItem.deadlineMillis: Long
     get() = computeDeadlineMillis(dueDateEpochMillis, dueTimeHour, dueTimeMinute)
+
+
+/**
+ * "Ring alarm" is stored as HIGH priority. The priority column stays as it is, so the database,
+ * cloud sync, backups and other members' app versions all keep working without any change.
+ */
+val TaskItem.ringsAlarm: Boolean
+    get() = priority == Priority.HIGH
+
+/**
+ * The priority to save for the Ring alarm switch. Switch on is HIGH. Switch off is MEDIUM, except
+ * that a LOW value the person never changed is kept as it was.
+ */
+fun priorityForRingAlarm(ring: Boolean, original: Priority?): Priority = when {
+    ring -> Priority.HIGH
+    original == null || original == Priority.HIGH -> Priority.MEDIUM
+    else -> original
+}
+
+/** Same as [priorityForRingAlarm] for group tasks, which keep the priority as text. */
+fun priorityNameForRingAlarm(ring: Boolean, originalName: String?): String {
+    val original = originalName?.let { name -> Priority.entries.firstOrNull { it.name == name } }
+    return priorityForRingAlarm(ring, original).name
+}

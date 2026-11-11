@@ -17,10 +17,8 @@ import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.deadlineMillis
 import com.example.reminder.SnoozeStore
-import java.text.SimpleDateFormat
+import com.example.util.DateFormats
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 /** One time the user can snooze to. */
 data class SnoozeChoice(val label: String, val atMillis: Long)
@@ -56,11 +54,11 @@ fun formatSnoozeTime(millis: Long): String {
         a.get(Calendar.YEAR) == b.get(Calendar.YEAR) &&
             a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
 
-    val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(target.time)
+    val time = DateFormats.clock(millis)
     return when {
         sameDay(target, today) -> "Today, $time"
         sameDay(target, tomorrow) -> "Tomorrow, $time"
-        else -> "${SimpleDateFormat("MMM d", Locale.getDefault()).format(target.time)}, $time"
+        else -> "${DateFormats.monthDay(millis)}, $time"
     }
 }
 
@@ -71,8 +69,7 @@ private fun buildSnoozeEntry(
 ): SnoozeStore.Entry {
     val task = taskWithCourse.task
     // A full date, not "Today": the reminder may ring days after it was made.
-    val dueInfo = "Due " + SimpleDateFormat("EEE, MMM d 'at' h:mm a", Locale.getDefault())
-        .format(Date(task.deadlineMillis))
+    val dueInfo = "Due " + DateFormats.shortDateAtClock(task.deadlineMillis)
     return SnoozeStore.Entry(
         key = task.id,
         until = until,

@@ -1,7 +1,6 @@
 package com.example.util.drive
 
 import android.app.AlarmManager
-import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
@@ -14,7 +13,6 @@ import com.example.ui.theme.AccentTheme
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
 import com.example.util.BackupResult
-import com.example.util.HighPriorityAlarm
 import com.example.util.LocalBackupManager
 import com.example.util.NotificationSound
 import com.example.util.WeekParity
@@ -103,7 +101,6 @@ class DriveSettingsTest {
             "dailySummaryHour",
             "dailySummaryMinute",
             "classStartNotificationsEnabled",
-            "highPriorityAlarmEnabled",
             "notesSort",
             "timerLastCountdownMinutes",
             "timerKeepScreenOnFullscreen"
@@ -150,9 +147,6 @@ class DriveSettingsTest {
         ClassReminderScheduler.setEnabled(context, false)
         ClassReminderScheduler(context).rescheduleAll(db)
 
-        HighPriorityAlarm.setEnabled(context, true)
-        HighPriorityAlarm.ensureChannel(context)
-
         NotificationSound.setChoice(context, "s3")
 
         context.getSharedPreferences("notes_prefs", Context.MODE_PRIVATE)
@@ -175,7 +169,6 @@ class DriveSettingsTest {
         DailySummaryScheduler.setTime(context, 7, 0)
         DailySummaryScheduler(context).cancel()
         ClassReminderScheduler.setEnabled(context, true)
-        HighPriorityAlarm.setEnabled(context, false)
         NotificationSound.setChoice(context, NotificationSound.CHOICE_SYSTEM)
         context.getSharedPreferences("notes_prefs", Context.MODE_PRIVATE)
             .edit()
@@ -189,7 +182,6 @@ class DriveSettingsTest {
         assertEquals(AccentTheme.INDIGO, ThemePreference.accent)
         assertFalse(DailySummaryScheduler.isEnabled(context))
         assertTrue(ClassReminderScheduler.isEnabled(context))
-        assertFalse(HighPriorityAlarm.isEnabled(context))
 
         // Restore from Drive
         val restoreRes = DriveBackupManager.restore(context, fakeStore)
@@ -213,10 +205,6 @@ class DriveSettingsTest {
         assertNotNull(shadowAm.nextScheduledAlarm)
 
         assertFalse(ClassReminderScheduler.isEnabled(context))
-
-        assertTrue(HighPriorityAlarm.isEnabled(context))
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        assertNotNull(nm.getNotificationChannel(HighPriorityAlarm.CHANNEL_ID))
 
         assertEquals("s3", NotificationSound.choice(context))
 

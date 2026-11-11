@@ -27,4 +27,28 @@ object DateFormats {
 
     /** 09:30 AM (chat bubbles) */
     fun chatClock(millis: Long) = format("hh:mm a", millis)
+
+    /** Mon, Nov 4 at 9:30 AM */
+    fun shortDateAtClock(millis: Long) = format("EEE, MMM d 'at' h:mm a", millis)
+
+    /** Nov 4, 9:30 AM */
+    fun monthDayClock(millis: Long) = format("MMM d, h:mm a", millis)
+
+    /** November 2026 */
+    fun monthYear(millis: Long) = format("MMMM yyyy", millis)
+
+    /** Monday, November 4 */
+    fun longWeekdayMonthDay(millis: Long) = format("EEEE, MMMM d", millis)
+
+    /** 21:30 (24-hour, used for backup times) */
+    fun clock24(millis: Long) = format("HH:mm", millis)
+
+    /** Nov 4, 21:30 (24-hour, used for backup times) */
+    fun monthDayClock24(millis: Long) = format("MMM d, HH:mm", millis)
+
+    /** Mon, 4 Nov (day first) */
+    fun dayFirstDate(millis: Long) = format("EEE, d MMM", millis)
+
+    /** Mon, 4 Nov 9:30 AM (day first) */
+    fun dayFirstDateClock(millis: Long) = format("EEE, d MMM h:mm a", millis)
 }

@@ -13,10 +13,8 @@ import com.example.MainActivity
 import com.example.data.local.Priority
 import com.example.util.HighPriorityAlarm
 import com.example.data.local.TaskStatus
-import java.text.SimpleDateFormat
+import com.example.util.DateFormats
 import com.example.data.local.deadlineMillis
-import java.util.Date
-import java.util.Locale
 
 class ReminderScheduler(private val context: Context) {
 
@@ -167,8 +165,7 @@ class ReminderScheduler(private val context: Context) {
     fun deliverLate(task: TaskItem, courseCode: String, option: ReminderOption, triggerTime: Long) {
         // Take the alarm away first, so a stuck copy of it can never ring a second time.
         cancelAlarm(requestCodeFor(task.id, option), reminderIntent(task.id, option))
-        val due = SimpleDateFormat("EEE, MMM d 'at' h:mm a", Locale.getDefault())
-            .format(Date(calculateDeadlineMillis(task)))
+        val due = DateFormats.shortDateAtClock(calculateDeadlineMillis(task))
         val intent = buildReminderIntent(task, courseCode, option, triggerTime).apply {
             // "1 hour before" is no longer true. Without a label the title is just "Due: <task>".
             removeExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL)

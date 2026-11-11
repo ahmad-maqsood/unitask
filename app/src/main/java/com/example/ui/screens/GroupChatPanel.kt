@@ -81,7 +81,6 @@ import androidx.compose.ui.unit.dp
 import com.example.util.DateFormats
 import com.example.data.groups.GroupMessage
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale

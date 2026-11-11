@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -91,7 +92,6 @@ import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupTask
 import androidx.compose.material.icons.filled.School
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.example.data.local.computeDeadlineMillis
@@ -771,11 +771,9 @@ fun GroupTaskRow(
         com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)
     }
 
-    val priorityColor = when (task.priority) {
-        "HIGH" -> MaterialTheme.colorScheme.error
-        "LOW" -> Color(0xFF10B981)
-        else -> Color(0xFFF59E0B)
-    }
+    // The alarm only rings at a reminder time, so it needs a reminder and a task that is not done yet.
+    val showAlarmChip = task.priority == "HIGH" && !isDone && com.example.reminder.GroupReminderScheduler.optionsFor(task).isNotEmpty()
+    val hasTopRow = canModify || !task.courseLabel.isNullOrBlank() || showAlarmChip
 
     Card(
         colors = CardDefaults.cardColors(
@@ -842,18 +840,31 @@ fun GroupTaskRow(
                                 }
                             }
 
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = priorityColor.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = task.priority,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    color = priorityColor,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
+                            if (showAlarmChip) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Alarm,
+                                            contentDescription = "Rings like an alarm",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = "Alarm",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -882,7 +893,7 @@ fun GroupTaskRow(
                         }
                     }
 
-                    Spacer(Modifier.height(4.dp))
+                    if (hasTopRow) Spacer(Modifier.height(4.dp))
 
                     Text(
                         text = task.title,

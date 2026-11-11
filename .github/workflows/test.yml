@@ -78,6 +78,21 @@ jobs:
         if: always()
         run: python3 .github/scripts/lint_report.py app/build/reports/lint-results-debug.xml
 
+      # The release build shrinks the code with R8, which can break things (for example a missing
+      # ProGuard rule) that the debug build never shows. This builds the release APK with a
+      # throwaway key made here, so no real secrets are used and nothing is published.
+      - name: Build release APK (checks R8 shrinking)
+        if: always()
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/ci-throwaway.jks
+          STORE_PASSWORD: ci-throwaway
+          KEY_PASSWORD: ci-throwaway
+        run: |
+          keytool -genkeypair -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" -alias upload -keyalg RSA -keysize 2048 -validity 2 \
+            -dname "CN=UniTask CI"
+          ./gradlew assembleRelease
+
       - name: Regenerate Room schema files
         if: always()
         run: |

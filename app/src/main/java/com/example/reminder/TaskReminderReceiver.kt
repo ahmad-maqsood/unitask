@@ -304,7 +304,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
             else -> dueInfo
         }
 
-        val isAlarm = priority == "HIGH" && HighPriorityAlarm.isEnabled(context)
+        // "Ring alarm" on a task is saved as HIGH priority (see TaskItem.ringsAlarm).
+        val isAlarm = priority == "HIGH"
         val isSilence = intent.action == ACTION_SILENCE_ALARM
         if (isAlarm || isSilence) HighPriorityAlarm.ensureChannel(context)
 

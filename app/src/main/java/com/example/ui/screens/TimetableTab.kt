@@ -29,7 +29,6 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -82,6 +81,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.local.ringsAlarm
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
 import com.example.data.local.LectureSlotWithCourse
@@ -894,7 +894,7 @@ fun TimetableSlotCard(
                                                         .weight(1f)
                                                         .padding(end = 8.dp)
                                                 )
-                                                PriorityBadge(priority = t.task.priority)
+                                                if (t.task.ringsAlarm) AlarmBadge()
                                             }
                                         }
                                     }

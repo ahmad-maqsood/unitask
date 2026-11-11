@@ -80,13 +80,13 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
-import com.example.util.HighPriorityAlarm
+import com.example.data.local.priorityForRingAlarm
+import com.example.data.local.ringsAlarm
 import com.example.util.DateFormats
 import com.example.util.AttachmentManager
 import com.example.util.SavedAttachmentInfo
 import com.example.util.applyPickedDate
 import com.example.util.localMillisToPickerUtcMillis
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -170,7 +170,7 @@ fun AddEditTaskDialog(
 
     var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 12) }
     var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 0) }
-    var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
+    var ringAlarm by rememberSaveable { mutableStateOf(taskToEdit?.ringsAlarm == true) }
     var status by rememberSaveable { mutableStateOf(taskToEdit?.status ?: TaskStatus.PENDING) }
     var reminderOptions by rememberSaveable(
         stateSaver = listSaver<Set<ReminderOption>, String>(
@@ -337,7 +337,7 @@ fun AddEditTaskDialog(
                                     selectedDueDateMillis,
                                     dueHour,
                                     dueMinute,
-                                    priority,
+                                    priorityForRingAlarm(ringAlarm, taskToEdit?.priority),
                                     status,
                                     reminderOptions,
                                     newAttachments
@@ -711,49 +711,6 @@ fun AddEditTaskDialog(
                     }
                 }
 
-                // Priority
-                Column {
-                    Text(
-                        text = "Priority",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Priority.entries.forEach { p ->
-                            FilterChip(
-                                selected = priority == p,
-                                onClick = { priority = p },
-                                label = { ShrinkToFitText(text = p.name.lowercase().replaceFirstChar { it.uppercase() }, minFontSize = 10.sp) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("priority_chip_${p.name}")
-                            )
-                        }
-                    }
-                    val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
-                    if (priority == Priority.HIGH) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (highAlarmOn) {
-                                "High priority tasks ring like an alarm."
-                            } else {
-                                "Turn on \"Alarm for high priority tasks\" in Settings to make this ring like an alarm."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (highAlarmOn) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                    }
-                }
-
                 // Status. A new task always starts as Pending, so the choice only matters when editing.
                 if (taskToEdit != null) {
                     Column {
@@ -793,6 +750,14 @@ fun AddEditTaskDialog(
                     rowTestTag = "reminder_row",
                     clearTestTag = "clear_reminders_button",
                     doneTestTag = "reminder_done_button"
+                )
+
+                // Ring alarm: the reminders above ring like an alarm
+                RingAlarmToggleRow(
+                    checked = ringAlarm,
+                    onCheckedChange = { ringAlarm = it },
+                    hasReminders = reminderOptions.isNotEmpty(),
+                    testTag = "ring_alarm_row"
                 )
 
                 // Attachments: one compact row. Saved and new files only take space once they exist.

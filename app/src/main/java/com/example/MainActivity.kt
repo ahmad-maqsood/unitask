@@ -32,9 +32,8 @@ class MainActivity : ComponentActivity() {
         // Moves repeating tasks that were ticked on an earlier day to their next date, and makes
         // sure the midnight alarm is set. Covers a missed alarm.
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
+            com.example.util.runLogged("Repeat rollover on start") {
                 com.example.reminder.RepeatRolloverReceiver.rolloverAndReschedule(applicationContext)
-            } catch (_: Exception) {
             }
         }
     }
@@ -127,11 +126,11 @@ class MainActivity : ComponentActivity() {
         ThemePreference.load(applicationContext)
 
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
+            com.example.util.runLogged("Orphaned attachment cleanup") {
                 val db = com.example.data.local.AppDatabase.getDatabase(applicationContext)
                 val known = db.taskAttachmentDao().getAllRelativePaths().toSet()
                 com.example.util.AttachmentManager.deleteOrphanedFiles(applicationContext, known)
-            } catch (_: Exception) {}
+            }
         }
 
         if (savedInstanceState == null) {

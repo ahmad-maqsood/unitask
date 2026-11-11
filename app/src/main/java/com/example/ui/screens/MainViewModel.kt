@@ -13,6 +13,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.CourseWithTaskCount
 import com.example.data.local.Priority
+import com.example.data.local.ringsAlarm
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -113,7 +114,7 @@ enum class TaskSourceFilter { GROUP, PERSONAL }
 enum class TaskSortOption(val label: String) {
     DUE_DATE_ASC("Due Date (Earliest)"),
     DUE_DATE_DESC("Due Date (Latest)"),
-    PRIORITY_HIGH_FIRST("Priority (High to Low)"),
+    ALARM_FIRST("Alarm tasks first"),
     TITLE_ASC("Title (A-Z)")
 }
 
@@ -866,9 +867,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val sorted = when (sort) {
             TaskSortOption.DUE_DATE_ASC -> withDeadline.sortedBy { it.second }.map { it.first }
             TaskSortOption.DUE_DATE_DESC -> withDeadline.sortedByDescending { it.second }.map { it.first }
-            TaskSortOption.PRIORITY_HIGH_FIRST -> withDeadline
+            TaskSortOption.ALARM_FIRST -> withDeadline
                 .sortedWith(
-                    compareByDescending<Pair<TaskWithCourse, Long>> { it.first.task.priority.ordinal }
+                    compareBy<Pair<TaskWithCourse, Long>> { if (it.first.task.ringsAlarm) 0 else 1 }
                         .thenBy { it.second }
                 )
                 .map { it.first }

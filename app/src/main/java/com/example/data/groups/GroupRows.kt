@@ -125,6 +125,8 @@ internal fun GroupTaskRow.toGroupTask(): GroupTask = GroupTask(
 
 @Serializable
 internal data class CreateGroupTaskPayload(
+    /** Made on the phone, so a new task has its real id from the start. */
+    val id: String,
     @SerialName("group_id") val groupId: String,
     val title: String,
     val description: String? = null,

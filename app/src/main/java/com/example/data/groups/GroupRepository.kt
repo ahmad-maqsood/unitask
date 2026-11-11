@@ -186,6 +186,12 @@ class GroupRepository(private val context: Context) {
     companion object {
         private val outboxMutexes = ConcurrentHashMap<String, Mutex>()
         private val inFlightSends = ConcurrentHashMap.newKeySet<String>()
+
+        /** Chat messages still being sent (temporary "local-" id to its send job). */
+        private val sendJobs = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+
+        /** Messages deleted while still being sent: delete the saved copy as soon as the send finishes. */
+        private val deleteAfterSend = ConcurrentHashMap.newKeySet<String>()
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 30_000L
@@ -1090,6 +1096,9 @@ class GroupRepository(private val context: Context) {
                     saveQueuedOutboxMessages(groupId, updatedQueued)
                 }
                 if (savedId != null) {
+                    if (deleteAfterSend.remove(localMessage.id)) {
+                        deleteMessage(groupId, savedId, onFailure)
+                    }
                     pendingMessages.update { list ->
                         list.map { if (it.id == localMessage.id) it.copy(id = savedId) else it }
                     }
@@ -1106,7 +1115,11 @@ class GroupRepository(private val context: Context) {
                 onFailure(friendlySendError(e))
             } finally {
                 inFlightSends.remove(localMessage.id)
+                deleteAfterSend.remove(localMessage.id)
             }
+        }.also { job ->
+            sendJobs[localMessage.id] = job
+            job.invokeOnCompletion { sendJobs.remove(localMessage.id) }
         }
     }
 
@@ -1117,6 +1130,9 @@ class GroupRepository(private val context: Context) {
             saveQueuedOutboxMessages(groupId, updated)
             pendingMessages.update { list -> list.filter { it.id != messageId } }
             localChanges.tryEmit(Unit)
+            // If the message is still being sent, it will land on the server anyway. Wait for that,
+            // then delete the saved copy, so it does not come back and need a second delete.
+            if (sendJobs.containsKey(messageId)) deleteAfterSend.add(messageId)
             return
         }
         val myUid = currentSupabaseUid()
@@ -1443,8 +1459,29 @@ class GroupRepository(private val context: Context) {
     fun setTaskDone(uid: String, groupId: String, taskId: String, isDone: Boolean) {
         val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
         if (myUid.isNullOrBlank() || groupId.isBlank() || taskId.isBlank()) return
-        // A task that is still being saved has no server id yet.
-        if (taskId.startsWith("local-")) return
+        // A task that is still being saved has no server id yet. Wait for the save, look up the
+        // real id, then tick it. Before, the tap was ignored and had to be repeated.
+        if (taskId.startsWith("local-")) {
+            val localTask = pendingTasks.value.firstOrNull { it.id == taskId } ?: return
+            CoroutineScope(Dispatchers.IO).launch {
+                pendingInserts[taskId]?.join()
+                val realId = try {
+                    SupabaseProvider.client.postgrest["group_tasks"].select {
+                        filter {
+                            eq("group_id", groupId)
+                            eq("created_by", localTask.createdBy)
+                            eq("title", localTask.title)
+                            eq("due_date_epoch_millis", localTask.dueDateEpochMillis)
+                        }
+                    }.decodeList<GroupTaskRow>().firstOrNull()?.id
+                } catch (e: Exception) {
+                    Log.w(TAG, "setTaskDone could not find the saved task: ${e.message}")
+                    null
+                }
+                if (!realId.isNullOrBlank()) setTaskDone(uid, groupId, realId, isDone)
+            }
+            return
+        }
 
         // Tick (or untick) on screen at once; the server catches up a moment later.
         pendingDone.update { it + (taskId to (isDone to System.currentTimeMillis())) }
@@ -1840,13 +1877,33 @@ class GroupRepository(private val context: Context) {
             assignedTo = cleanAssigned
         )
 
+        // A task that was just added still has a temporary "local-" id, which the server does not
+        // know. Wait for its save to finish, then find the real row by its original fields.
+        val localTask = if (taskId.startsWith("local-")) {
+            pendingTasks.value.firstOrNull { it.id == taskId }
+        } else null
+        if (taskId.startsWith("local-") && localTask == null) return
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                pendingInserts[taskId]?.join()
                 SupabaseProvider.client.postgrest["group_tasks"].update(payload) {
                     filter {
-                        eq("id", taskId)
-                        eq("group_id", groupId)
+                        if (localTask != null) {
+                            eq("group_id", groupId)
+                            eq("created_by", localTask.createdBy)
+                            eq("title", localTask.title)
+                            eq("due_date_epoch_millis", localTask.dueDateEpochMillis)
+                        } else {
+                            eq("id", taskId)
+                            eq("group_id", groupId)
+                        }
                     }
+                }
+                if (localTask != null) {
+                    // The saved row now has the edited fields, so the old placeholder would no longer
+                    // match it and would show up as a second copy of the task.
+                    pendingTasks.update { list -> list.filter { it.id != taskId } }
                 }
                 localChanges.tryEmit(Unit)
             } catch (e: Exception) {

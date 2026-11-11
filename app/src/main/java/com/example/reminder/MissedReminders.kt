@@ -17,9 +17,7 @@ import com.example.data.local.ReminderOption
 import com.example.data.local.TaskStatus
 import com.example.data.local.deadlineMillis
 import com.example.util.NotificationHistory
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.util.DateFormats
 
 /** One reminder alarm that was set and is waiting to ring. */
 data class ArmedReminder(val taskId: Long, val optionName: String, val triggerAt: Long)
@@ -153,12 +151,11 @@ object MissedReminders {
         }
         if (missed.isEmpty()) return
 
-        val format = SimpleDateFormat("EEE, MMM d 'at' h:mm a", Locale.getDefault())
         val lines = mutableListOf<String>()
         for (taskId in missed.map { it.taskId }.distinct()) {
             val task = database.taskDao().getTaskById(taskId) ?: continue
             if (task.status == TaskStatus.COMPLETED) continue
-            lines += "${task.title}: due ${format.format(Date(task.deadlineMillis))}"
+            lines += "${task.title}: due ${DateFormats.shortDateAtClock(task.deadlineMillis)}"
         }
         if (lines.isEmpty()) return
 

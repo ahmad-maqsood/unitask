@@ -9,10 +9,8 @@ import com.example.data.local.startOfLocalDay
 import com.example.reminder.GroupTaskProcessor
 import com.example.util.TimeFormatter
 import com.example.util.isSlotActive
-import java.text.SimpleDateFormat
+import com.example.util.DateFormats
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 enum class ClassState { PAST, NOW, UPCOMING }
 
@@ -125,7 +123,7 @@ object TodayOverviewLoader {
         val overdue = pending.count { it.deadlineMillis < startOfToday }
 
         return TodayOverview(
-            dateText = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(Date(nowMillis)),
+            dateText = DateFormats.dayFirstDate(nowMillis),
             classes = classes,
             tasks = dueToday,
             overdueCount = overdue

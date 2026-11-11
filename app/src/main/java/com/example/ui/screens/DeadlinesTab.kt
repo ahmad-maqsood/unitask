@@ -1,9 +1,7 @@
 package com.example.ui.screens
 
 import java.util.Calendar
-import java.util.Date
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.example.util.DateFormats
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -1230,14 +1228,13 @@ private fun DeadlinesCalendarView(
     var currentMonth by remember { mutableIntStateOf(cal.get(Calendar.MONTH)) }
     var selectedDayEpoch by remember { mutableStateOf(startOfLocalDay(System.currentTimeMillis())) }
 
-    val monthFormatter = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
     val displayMonth = remember(currentYear, currentMonth) {
         val c = Calendar.getInstance().apply {
             set(Calendar.YEAR, currentYear)
             set(Calendar.MONTH, currentMonth)
             set(Calendar.DAY_OF_MONTH, 1)
         }
-        monthFormatter.format(c.time)
+        DateFormats.monthYear(c.timeInMillis)
     }
 
     val daysInMonth = remember(currentYear, currentMonth) {
@@ -1386,7 +1383,7 @@ private fun DeadlinesCalendarView(
 
     Spacer(modifier = Modifier.height(10.dp))
     val selectedDateStr = remember(selectedDayEpoch) {
-        SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date(selectedDayEpoch))
+        DateFormats.longWeekdayMonthDay(selectedDayEpoch)
     }
     Text(
         text = "Due on $selectedDateStr (${tasksOnSelectedDay.size})",

@@ -51,9 +51,7 @@ import com.example.util.Announcements
 import com.example.util.AppNotification
 import com.example.util.NotificationHistory
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.util.DateFormats
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.material3.Button
@@ -585,9 +583,8 @@ private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
 }
 
 private fun announcementMeta(item: Announcement): String {
-    val format = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
     val parts = mutableListOf<String>()
-    item.createdAtMillis?.let { parts.add("Posted " + format.format(Date(it))) }
-    item.expiresAtMillis?.let { parts.add("Expires " + format.format(Date(it))) }
+    item.createdAtMillis?.let { parts.add("Posted " + DateFormats.monthDayClock(it)) }
+    item.expiresAtMillis?.let { parts.add("Expires " + DateFormats.monthDayClock(it)) }
     return parts.joinToString(" · ")
 }

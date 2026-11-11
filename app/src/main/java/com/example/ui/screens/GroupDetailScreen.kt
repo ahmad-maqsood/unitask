@@ -91,7 +91,6 @@ import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupTask
 import androidx.compose.material.icons.filled.School
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.example.data.local.computeDeadlineMillis

@@ -86,7 +86,6 @@ import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.filled.Snooze
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.reminder.SnoozeStore
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.example.data.local.deadlineMillis
 import java.util.Date

@@ -83,7 +83,6 @@ import com.example.data.local.encodeReminderOptions
 import com.example.reminder.GroupReminderScheduler
 import com.example.util.applyPickedDate
 import com.example.util.localMillisToPickerUtcMillis
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale

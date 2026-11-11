@@ -28,10 +28,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
+import com.example.util.DateFormats
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 sealed class DriveConnectionState {
     object NotConnected : DriveConnectionState()
@@ -600,13 +598,13 @@ class DriveBackupViewModel(
             if (millis <= 0L) return ""
             val now = Calendar.getInstance()
             val then = Calendar.getInstance().apply { timeInMillis = millis }
-            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(millis))
+            val timeStr = DateFormats.clock24(millis)
             return when {
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
                     now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) -> "Today $timeStr"
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
                     now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> "Yesterday $timeStr"
-                else -> SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(millis))
+                else -> DateFormats.monthDayClock24(millis)
             }
         }
 

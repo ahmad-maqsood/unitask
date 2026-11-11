@@ -66,7 +66,6 @@ import com.example.data.local.repeat
 import com.example.util.DateFormats
 import com.example.util.HighPriorityAlarm
 import com.example.util.TimeFormatter
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale

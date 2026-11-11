@@ -86,7 +86,6 @@ import com.example.util.AttachmentManager
 import com.example.util.SavedAttachmentInfo
 import com.example.util.applyPickedDate
 import com.example.util.localMillisToPickerUtcMillis
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale

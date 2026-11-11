@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -22,6 +24,10 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,9 +37,46 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.util.GetStartedStep
 
+/** One line of the card: a normal step, or the phone settings joined into one line. */
+private data class GetStartedRow(
+    val tag: String,
+    val title: String,
+    val hint: String,
+    val isDone: Boolean,
+    /** The step to start when this line is tapped (for the settings line, the next setting still off). */
+    val target: GetStartedStep
+)
+
+private fun buildRows(steps: List<GetStartedStep>, done: Set<GetStartedStep>): List<GetStartedRow> {
+    val rows = steps.filter { !it.isSystem }.map { step ->
+        GetStartedRow(
+            tag = "get_started_step_${step.name}",
+            title = step.title,
+            hint = step.hint,
+            isDone = step in done,
+            target = step
+        )
+    }.toMutableList()
+
+    // Notifications, battery and auto-start are shown as one "Make reminders reliable" line at the
+    // bottom. Tapping it walks through the settings one at a time.
+    val system = steps.filter { it.isSystem }
+    if (system.isNotEmpty()) {
+        val left = system.filter { it !in done }
+        rows += GetStartedRow(
+            tag = "get_started_step_SYSTEM",
+            title = "Make reminders reliable",
+            hint = if (left.isEmpty()) "All set" else "${system.size - left.size} of ${system.size} phone settings on",
+            isDone = left.isEmpty(),
+            target = left.firstOrNull() ?: system.first()
+        )
+    }
+    return rows
+}
+
 /**
- * The "Get started" checklist at the top of Deadlines. Steps tick themselves, so the card only
- * shows what is done and what is left, with a one line hint for each step still to do.
+ * The "Get started" card at the top of Deadlines. It starts small: a progress line and just the next
+ * thing to do. Tap the arrow to see every step. Steps tick themselves.
  */
 @Composable
 fun GetStartedCard(
@@ -43,7 +86,11 @@ fun GetStartedCard(
     steps: List<GetStartedStep> = GetStartedStep.entries,
     onStepClick: ((GetStartedStep) -> Unit)? = null
 ) {
-    val doneCount = steps.count { it in done }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val rows = buildRows(steps, done)
+    val doneCount = rows.count { it.isDone }
+    val visibleRows = if (expanded) rows else rows.filter { !it.isDone }.take(1)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -55,16 +102,29 @@ fun GetStartedCard(
     ) {
         Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 4.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { expanded = !expanded }
+                        .testTag("get_started_toggle")
+                ) {
                     Text(
                         text = "Get started",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "$doneCount of ${steps.size} done",
+                        text = "$doneCount of ${rows.size} done",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Show fewer steps" else "Show all steps",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 IconButton(
@@ -80,7 +140,7 @@ fun GetStartedCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = { doneCount / steps.size.toFloat() },
+                progress = { if (rows.isEmpty()) 0f else doneCount / rows.size.toFloat() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 12.dp)
@@ -92,8 +152,7 @@ fun GetStartedCard(
                 modifier = Modifier.padding(end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                steps.forEach { step ->
-                    val isDone = step in done
+                visibleRows.forEach { row ->
                     Row(
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -101,27 +160,27 @@ fun GetStartedCard(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .then(
-                                if (!isDone && onStepClick != null) Modifier.clickable { onStepClick(step) } else Modifier
+                                if (!row.isDone && onStepClick != null) Modifier.clickable { onStepClick(row.target) } else Modifier
                             )
-                            .testTag("get_started_step_${step.name}")
+                            .testTag(row.tag)
                     ) {
                         Icon(
-                            imageVector = if (isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                            contentDescription = if (isDone) "Done" else "Not done yet",
-                            tint = if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            imageVector = if (row.isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            contentDescription = if (row.isDone) "Done" else "Not done yet",
+                            tint = if (row.isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp)
                         )
                         Column {
                             Text(
-                                text = step.title,
+                                text = row.title,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
-                                textDecoration = if (isDone) TextDecoration.LineThrough else null,
-                                color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                                textDecoration = if (row.isDone) TextDecoration.LineThrough else null,
+                                color = if (row.isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                             )
-                            if (!isDone) {
+                            if (!row.isDone) {
                                 Text(
-                                    text = if (onStepClick != null) "Tap to start" else step.hint,
+                                    text = if (onStepClick != null && !row.target.isSystem) "Tap to start" else row.hint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

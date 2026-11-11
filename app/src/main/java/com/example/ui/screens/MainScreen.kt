@@ -113,6 +113,8 @@ import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import com.example.util.BackgroundAccess
+import com.example.util.GetStartedPrefs
+import com.example.util.GetStartedStep
 import com.example.util.drive.DriveMigrationPrompt
 import com.example.util.drive.DrivePrefs
 import com.example.util.timer.TimerController
@@ -387,6 +389,11 @@ fun MainScreen(
     // so the top bar does NOT recompose every second. No ticking value is observed here.
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
     val timerActive = !TimerLogic.isIdle(timerState)
+    // The Get started "Try the timer" step is saved here, because Deadlines may not be on screen
+    // when the timer is started or when it finishes.
+    LaunchedEffect(timerActive) {
+        if (timerActive) GetStartedPrefs(context).markDone(setOf(GetStartedStep.TIMER))
+    }
 
     val tools = buildToolsList(
         onOpenNotes = { showNotes = true },
@@ -734,7 +741,25 @@ fun MainScreen(
                             groupEntries = groupEntryByItemId,
                             isLoading = !tasksLoaded,
                             snackbarHostState = snackbarHostState,
-                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
+                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) },
+                            onGetStartedStepClick = { step ->
+                                when (step) {
+                                    GetStartedStep.COURSE -> {
+                                        viewModel.setTab(MainTab.COURSES)
+                                        viewModel.openAddCourseDialog()
+                                    }
+                                    GetStartedStep.DEADLINE, GetStartedStep.REMINDER -> viewModel.openAddTaskDialog()
+                                    GetStartedStep.CLASS -> {
+                                        viewModel.setTab(MainTab.TIMETABLE)
+                                        if (allCourses.any { !it.isDeleted && !it.isMyTasksCourse() }) {
+                                            viewModel.openAddSlotDialog()
+                                        } else {
+                                            viewModel.openAddCourseDialog()
+                                        }
+                                    }
+                                    GetStartedStep.TIMER -> showTimer = true
+                                }
+                            }
                         )
                     }
 

@@ -88,6 +88,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.isMyTasksCourse
 import com.example.util.GetStartedLogic
 import com.example.util.GetStartedPrefs
+import com.example.util.GetStartedStep
 import com.example.util.drive.DrivePrefs
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
@@ -124,6 +125,7 @@ fun DeadlinesTab(
     snackbarHostState: SnackbarHostState? = null,
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null,
+    onGetStartedStepClick: ((GetStartedStep) -> Unit)? = null,
     isAppEmpty: Boolean? = null,
     driveBackupViewModel: DriveBackupViewModel = viewModel()
 ) {
@@ -167,8 +169,7 @@ fun DeadlinesTab(
     )
     LaunchedEffect(getStartedDetected) {
         if (!getStartedDone.containsAll(getStartedDetected)) {
-            getStartedDone = getStartedDone + getStartedDetected
-            getStartedPrefs.doneSteps = getStartedDone
+            getStartedDone = getStartedPrefs.markDone(getStartedDetected)
         }
     }
     val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedDone)
@@ -255,6 +256,7 @@ fun DeadlinesTab(
             item(key = "get_started_card") {
                 GetStartedCard(
                     done = getStartedDone,
+                    onStepClick = onGetStartedStepClick,
                     onDismiss = {
                         getStartedDismissed = true
                         getStartedPrefs.dismissed = true

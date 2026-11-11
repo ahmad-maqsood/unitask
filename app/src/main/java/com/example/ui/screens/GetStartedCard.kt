@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,7 +39,8 @@ import com.example.util.GetStartedStep
 fun GetStartedCard(
     done: Set<GetStartedStep>,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onStepClick: ((GetStartedStep) -> Unit)? = null
 ) {
     val steps = GetStartedStep.entries
     Card(
@@ -94,7 +96,13 @@ fun GetStartedCard(
                     Row(
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.testTag("get_started_step_${step.name}")
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .then(
+                                if (!isDone && onStepClick != null) Modifier.clickable { onStepClick(step) } else Modifier
+                            )
+                            .testTag("get_started_step_${step.name}")
                     ) {
                         Icon(
                             imageVector = if (isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
@@ -112,7 +120,7 @@ fun GetStartedCard(
                             )
                             if (!isDone) {
                                 Text(
-                                    text = step.hint,
+                                    text = if (onStepClick != null) "Tap to start" else step.hint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

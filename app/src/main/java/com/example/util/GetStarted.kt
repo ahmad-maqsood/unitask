@@ -52,6 +52,17 @@ class GetStartedPrefs(context: Context) {
         }
         set(value) = prefs.edit().putStringSet(KEY_DONE, value.map { it.name }.toSet()).apply()
 
+    /**
+     * Adds [steps] to the saved ticks without losing any already saved, and returns the full set.
+     * Safe to call from more than one screen, for example the timer step is saved from the main
+     * screen while the card is saved from Deadlines.
+     */
+    fun markDone(steps: Set<GetStartedStep>): Set<GetStartedStep> {
+        val merged = doneSteps + steps
+        if (merged != doneSteps) doneSteps = merged
+        return merged
+    }
+
     private companion object {
         const val KEY_DISMISSED = "dismissed"
         const val KEY_DONE = "done_steps"

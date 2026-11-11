@@ -88,6 +88,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.util.AppTip
 import com.example.util.timer.PomodoroLogic
 import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.PomodoroSettings
@@ -310,6 +311,12 @@ fun TimerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // First visit hint with a link to the Timer guide
+                OneTimeTip(
+                    tip = AppTip.TIMER,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+
                 // Mode switch: Stopwatch, Countdown or Pomodoro. Disabled while the timer is in progress.
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier

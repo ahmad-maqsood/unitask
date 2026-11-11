@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Sort
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
+import com.example.util.AppTip
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteExportFormat
@@ -392,6 +393,12 @@ fun NotesScreen(
                     }
                 }
             }
+
+            // First visit hint with a link to the Notes guide
+            OneTimeTip(
+                tip = AppTip.NOTES,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
 
             // Notes list or empty state
             if (notes.isEmpty()) {

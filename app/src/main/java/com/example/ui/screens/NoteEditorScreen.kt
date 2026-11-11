@@ -40,6 +40,9 @@ import com.example.util.markdown.lineIndexAtOffset
 import com.example.util.markdown.offsetOfLine
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.runtime.CompositionLocalProvider
+import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.ArrowBack
@@ -166,8 +169,38 @@ fun NoteEditorScreen(
     val editScrollState = rememberScrollState()
     var previewStartLines by remember { mutableStateOf<List<Int>>(emptyList()) }
     var bodyLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var editViewportPx by remember { mutableStateOf(0f) }
     var previewTargetLine by remember { mutableStateOf<Int?>(null) }
     var editTargetOffset by remember { mutableStateOf<Int?>(null) }
+
+    // Find in note. The matches come from the note text; Edit and Preview both show them.
+    var showFind by rememberSaveable { mutableStateOf(false) }
+    var findQuery by rememberSaveable { mutableStateOf("") }
+    var findIndex by rememberSaveable { mutableStateOf(0) }
+    val findMatches = remember(viewModel.bodyValue.text, findQuery, showFind) {
+        if (showFind) NoteFind.matches(viewModel.bodyValue.text, findQuery) else emptyList()
+    }
+    val currentFindMatch = if (findMatches.isEmpty()) -1 else findIndex.coerceIn(0, findMatches.size - 1)
+    val density = LocalDensity.current
+    // Bring the current match into view: in Edit by scrolling to its text, in Preview to the block it is in.
+    LaunchedEffect(showFind, findQuery, findIndex, isPreviewMode) {
+        if (!showFind || currentFindMatch < 0) return@LaunchedEffect
+        val offset = findMatches[currentFindMatch]
+        val text = viewModel.bodyValue.text
+        if (isPreviewMode) {
+            val line = lineIndexAtOffset(text, offset)
+            if (previewStartLines.isNotEmpty()) {
+                previewListState.animateScrollToItem(
+                    com.example.util.markdown.blockIndexForLine(previewStartLines, line)
+                )
+            }
+        } else {
+            val layout = bodyLayout ?: return@LaunchedEffect
+            if (layout.layoutInput.text.text != text || offset >= text.length) return@LaunchedEffect
+            val top = layout.getBoundingBox(offset).top + with(density) { 12.dp.toPx() }
+            editScrollState.animateScrollTo((top - editViewportPx * 0.3f).toInt().coerceAtLeast(0))
+        }
+    }
 
     LaunchedEffect(noteId, viewModelSession) {
         previewTargetLine = null
@@ -212,7 +245,6 @@ fun NoteEditorScreen(
 
     // Keeps the line you are typing on in view. The editor is one tall text field inside a scrolling
     // column, so without this the cursor moves below the visible area when you press Enter.
-    var editViewportPx by remember { mutableStateOf(0f) }
     val cursorDensity = LocalDensity.current
     LaunchedEffect(bodyLayout, viewModel.bodyValue.selection, viewModel.bodyValue.text, editViewportPx, isPreviewMode) {
         val layout = bodyLayout ?: return@LaunchedEffect
@@ -367,6 +399,10 @@ fun NoteEditorScreen(
     BackHandler(enabled = true) {
         handleClose()
     }
+    // Registered after the one above, so Back closes the find bar first
+    BackHandler(enabled = showFind) {
+        showFind = false
+    }
 
     var showCoursePicker by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
@@ -472,6 +508,20 @@ fun NoteEditorScreen(
                         onDismissRequest = { showOverflowMenu = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text("Find in note") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.testTag("note_menu_find"),
+                            onClick = {
+                                showOverflowMenu = false
+                                showFind = true
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text(if (viewModel.isPinned) "Unpin" else "Pin") },
                             leadingIcon = {
                                 Icon(
@@ -558,6 +608,21 @@ fun NoteEditorScreen(
             }
         }
 
+        if (showFind) {
+            NoteFindBar(
+                query = findQuery,
+                onQueryChange = {
+                    findQuery = it
+                    findIndex = 0
+                },
+                currentMatch = currentFindMatch.coerceAtLeast(0),
+                totalMatches = findMatches.size,
+                onPrevious = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = false) },
+                onNext = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = true) },
+                onClose = { showFind = false }
+            )
+        }
+
         // Visible in every note, in both Edit and Preview mode
         Row(
             modifier = Modifier
@@ -614,6 +679,7 @@ fun NoteEditorScreen(
                     )
                 }
 
+                CompositionLocalProvider(LocalNoteFindQuery provides (if (showFind) findQuery else "")) {
                 WithNoteTextScale(noteTextScale) {
                     MarkdownPreview(
                         markdown = viewModel.bodyValue.text,
@@ -637,6 +703,7 @@ fun NoteEditorScreen(
                             .fillMaxWidth()
                             .weight(1f)
                     )
+                }
                 }
             }
         } else {
@@ -676,7 +743,11 @@ fun NoteEditorScreen(
             ) {
                 val viewportHeight = maxHeight
                 val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                val editorTransformation = remember(markerColor) { MarkdownEditorTransformation(markerColor) }
+                val darkCode = isDarkTheme()
+                val activeFindQuery = if (showFind) findQuery else ""
+                val editorTransformation = remember(markerColor, darkCode, activeFindQuery, currentFindMatch) {
+                    MarkdownEditorTransformation(markerColor, darkCode, activeFindQuery, currentFindMatch)
+                }
                 val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
                 Column(
                     modifier = Modifier

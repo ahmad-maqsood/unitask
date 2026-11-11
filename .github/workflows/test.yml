@@ -82,6 +82,7 @@ jobs:
       # ProGuard rule) that the debug build never shows. This builds the release APK with a
       # throwaway key made here, so no real secrets are used and nothing is published.
       - name: Build release APK (checks R8 shrinking)
+        if: always()
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/ci-throwaway.jks
           STORE_PASSWORD: ci-throwaway

@@ -4,17 +4,17 @@ import android.content.Context
 
 /** The steps of the "Get started" checklist on the Deadlines screen, in the order they are shown. */
 enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boolean = false) {
-    COURSE("Add a course", "Courses tab, then tap +"),
-    DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
-    REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline"),
-    CLASS("Add a class", "Timetable tab, then tap +"),
-    TIMER("Try the timer", "More menu, then Timer"),
-
     // Phone settings. These are read live from the phone, never saved as ticked, so a step
     // un-ticks again if the person turns the setting back off.
     NOTIFICATIONS("Allow notifications", "So reminders and group alerts can reach you", isSystem = true),
     BATTERY("Turn off battery optimization", "Lets reminders ring on time in the background", isSystem = true),
-    AUTOSTART("Enable auto-start", "Keeps reminders working after your phone restarts", isSystem = true)
+    AUTOSTART("Enable auto-start", "Keeps reminders working after your phone restarts", isSystem = true),
+
+    COURSE("Add a course", "Courses tab, then tap +"),
+    DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
+    REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline"),
+    CLASS("Add a class", "Timetable tab, then tap +"),
+    TIMER("Try the timer", "More menu, then Timer")
 }
 
 object GetStartedLogic {

@@ -153,6 +153,16 @@ fun NoteEditorScreen(
 
     // Keeps Edit and Preview at the same place in the note
     val previewListState = rememberLazyListState()
+
+    // Pinch with two fingers to change the text size. It is remembered between notes and launches.
+    var noteTextScale by remember { mutableStateOf(loadNoteTextScale(context)) }
+    LaunchedEffect(noteTextScale) {
+        kotlinx.coroutines.delay(400)
+        saveNoteTextScale(context, noteTextScale)
+    }
+    val onPinchZoom: (Float) -> Unit = { zoom ->
+        noteTextScale = (noteTextScale * zoom).coerceIn(NOTE_TEXT_SCALE_MIN, NOTE_TEXT_SCALE_MAX)
+    }
     val editScrollState = rememberScrollState()
     var previewStartLines by remember { mutableStateOf<List<Int>>(emptyList()) }
     var bodyLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
@@ -580,6 +590,7 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .pinchToZoomText(onPinchZoom)
             ) {
                 Text(
                     text = viewModel.title.ifBlank { "Untitled Note" },
@@ -603,28 +614,30 @@ fun NoteEditorScreen(
                     )
                 }
 
-                MarkdownPreview(
-                    markdown = viewModel.bodyValue.text,
-                    onToggleChecklist = { lineIndex ->
-                        viewModel.checkpointBeforeToolbar()
-                        val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
-                        viewModel.updateBody(
-                            TextFieldValue(
-                                text = newText,
-                                selection = viewModel.bodyValue.selection
+                WithNoteTextScale(noteTextScale) {
+                    MarkdownPreview(
+                        markdown = viewModel.bodyValue.text,
+                        onToggleChecklist = { lineIndex ->
+                            viewModel.checkpointBeforeToolbar()
+                            val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
+                            viewModel.updateBody(
+                                TextFieldValue(
+                                    text = newText,
+                                    selection = viewModel.bodyValue.selection
+                                )
                             )
-                        )
-                    },
-                    imageContent = { src, alt ->
-                        NoteImagePreview(src = src, alt = alt)
-                    },
-                    listState = previewListState,
-                    initialSourceLine = previewTargetLine,
-                    onBlockStartLines = { previewStartLines = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
+                        },
+                        imageContent = { src, alt ->
+                            NoteImagePreview(src = src, alt = alt)
+                        },
+                        listState = previewListState,
+                        initialSourceLine = previewTargetLine,
+                        onBlockStartLines = { previewStartLines = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                }
             }
         } else {
             // Edit mode: Title input field, Body input field, Character limit, Formatting toolbar
@@ -659,6 +672,7 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .pinchToZoomText(onPinchZoom)
             ) {
                 val viewportHeight = maxHeight
                 val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -670,33 +684,35 @@ fun NoteEditorScreen(
                         .onSizeChanged { editViewportPx = it.height.toFloat() }
                         .verticalScroll(editScrollState)
                 ) {
-                    BasicTextField(
-                        value = viewModel.bodyValue,
-                        onValueChange = { viewModel.onBodyChange(it) },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        visualTransformation = editorTransformation,
-                        onTextLayout = { bodyLayout = it },
-                        decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                                if (viewModel.bodyValue.text.isEmpty()) {
-                                    Text(
-                                        text = "Start writing",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    )
+                    WithNoteTextScale(noteTextScale) {
+                        BasicTextField(
+                            value = viewModel.bodyValue,
+                            onValueChange = { viewModel.onBodyChange(it) },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            visualTransformation = editorTransformation,
+                            onTextLayout = { bodyLayout = it },
+                            decorationBox = { innerTextField ->
+                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                    if (viewModel.bodyValue.text.isEmpty()) {
+                                        Text(
+                                            text = "Start writing",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                    innerTextField()
                                 }
-                                innerTextField()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            // At least the visible height, so tapping the empty space still starts typing
-                            .heightIn(min = viewportHeight)
-                            .testTag("note_body_input")
-                    )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                // At least the visible height, so tapping the empty space still starts typing
+                                .heightIn(min = viewportHeight)
+                                .testTag("note_body_input")
+                        )
+                    }
                 }
                 ScrollStateScrollbar(editScrollState, viewportPx)
             }

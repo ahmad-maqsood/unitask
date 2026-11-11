@@ -197,6 +197,9 @@ class GroupRepository(private val context: Context) {
         /** Tasks added on this phone that the server has not confirmed yet. */
         private val pendingTasks = MutableStateFlow<List<GroupTask>>(emptyList())
 
+        /** Saves of just-added tasks that are still running (temporary "local-" id to its save job). */
+        private val pendingInserts = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+
         /** Done ticks changed on this phone that the server has not confirmed yet (task id to Pair(wanted isDone, timestamp)). */
         private val pendingDone = MutableStateFlow<Map<String, Pair<Boolean, Long>>>(emptyMap())
         private const val PENDING_DONE_MAX_AGE_MILLIS = 10_000L
@@ -1772,7 +1775,7 @@ class GroupRepository(private val context: Context) {
             list.filter { System.currentTimeMillis() - (it.createdAt?.toDate()?.time ?: 0L) < PENDING_MAX_AGE_MILLIS } + localTask
         }
 
-        CoroutineScope(Dispatchers.IO).launch {
+        val insertJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 SupabaseProvider.client.postgrest["group_tasks"].insert(payload)
                 localChanges.tryEmit(Unit)
@@ -1782,6 +1785,9 @@ class GroupRepository(private val context: Context) {
                 onFailure(e)
             }
         }
+        // Remember the save, so a delete tapped before it finishes can wait for it.
+        pendingInserts[localTask.id] = insertJob
+        insertJob.invokeOnCompletion { pendingInserts.remove(localTask.id) }
     }
 
     /**
@@ -1875,6 +1881,10 @@ class GroupRepository(private val context: Context) {
         }
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // If the task is still being saved, wait for that to finish first. Otherwise this
+                // delete finds nothing on the server and the task shows up again once the save
+                // lands, so it had to be deleted twice.
+                pendingInserts[taskId]?.join()
                 SupabaseProvider.client.postgrest["group_tasks"].delete {
                     filter {
                         if (localTask != null) {

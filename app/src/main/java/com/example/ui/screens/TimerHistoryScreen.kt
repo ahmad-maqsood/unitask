@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,7 +61,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.Locale
 
 /**
  * Study history: a summary of today and the last week, then every saved session grouped by day.
@@ -273,6 +273,7 @@ private fun SummaryStat(label: String, value: String, modifier: Modifier = Modif
 
 @Composable
 private fun WeekChartCard(days: List<Pair<LocalDate, Long>>, today: LocalDate) {
+    val locale = LocalConfiguration.current.locales[0]
     val maxMillis = days.maxOfOrNull { it.second } ?: 0L
     Card(
         modifier = Modifier
@@ -298,7 +299,7 @@ private fun WeekChartCard(days: List<Pair<LocalDate, Long>>, today: LocalDate) {
             ) {
                 days.forEach { (date, millis) ->
                     DayBar(
-                        label = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                        label = date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
                         millis = millis,
                         fraction = if (maxMillis == 0L) 0f else millis.toFloat() / maxMillis.toFloat(),
                         isToday = date == today,
@@ -362,10 +363,11 @@ private fun DayBar(
 
 @Composable
 private fun DayHeader(day: LocalDate, today: LocalDate, totalMillis: Long) {
+    val locale = LocalConfiguration.current.locales[0]
     val title = when (day) {
         today -> "Today"
         today.minusDays(1) -> "Yesterday"
-        else -> day.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+        else -> day.format(DateTimeFormatter.ofPattern("EEE, d MMM", locale))
     }
     Row(
         modifier = Modifier

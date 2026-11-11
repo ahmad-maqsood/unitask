@@ -8,7 +8,6 @@ import com.example.ui.screens.NotesSort
 import com.example.ui.theme.AccentTheme
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
-import com.example.util.HighPriorityAlarm
 import com.example.util.NotificationSound
 import com.example.util.WeekParity
 import com.example.util.timer.TimerLogic
@@ -56,9 +55,6 @@ object SettingsSnapshot {
 
         // Class reminders
         obj.put("classStartNotificationsEnabled", ClassReminderScheduler.isEnabled(context))
-
-        // High priority alarm
-        obj.put("highPriorityAlarmEnabled", HighPriorityAlarm.isEnabled(context))
 
         // Notes sort
         val notesPrefs = context.getSharedPreferences("notes_prefs", Context.MODE_PRIVATE)
@@ -180,18 +176,6 @@ object SettingsSnapshot {
                 ClassReminderScheduler.setEnabled(context, raw)
                 val db = AppDatabase.getDatabase(context)
                 ClassReminderScheduler(context).rescheduleAll(db)
-                appliedCount++
-            }
-        }
-
-        // High priority alarm
-        if (settings.has("highPriorityAlarmEnabled")) {
-            val raw = settings.opt("highPriorityAlarmEnabled")
-            if (raw is Boolean) {
-                HighPriorityAlarm.setEnabled(context, raw)
-                if (raw) {
-                    HighPriorityAlarm.ensureChannel(context)
-                }
                 appliedCount++
             }
         }

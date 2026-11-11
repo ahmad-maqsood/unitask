@@ -109,14 +109,6 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
         keywords = listOf("daily summary time", "clock", "hour")
     ),
     SettingsSearchEntry(
-        id = "high_priority_alarm",
-        title = "Alarm for high priority tasks",
-        summary = "High priority reminders ring like an alarm",
-        pageLabel = "Notifications & reminders",
-        page = SettingsPage.Notifications,
-        keywords = listOf("alarm", "ring", "urgent", "important", "loud")
-    ),
-    SettingsSearchEntry(
         id = "drive_backup",
         title = "Google Drive backup",
         summary = "Back up and restore your data with Google Drive",

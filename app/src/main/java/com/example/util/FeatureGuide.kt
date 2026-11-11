@@ -19,7 +19,7 @@ object FeatureGuide {
     val all: List<AppFeature> = listOf(
         AppFeature(
             "Deadlines & Urgency", "Track assignments and tasks grouped by urgency: Overdue, Today, Tomorrow, Upcoming, and Completed.", "assignment", 10,
-            "1. Open the Deadlines tab.\n2. Tap + Add Assignment.\n3. Fill in the title, course, due date, time, priority and reminders.\n4. Tasks group automatically by urgency when sorted by date."
+            "1. Open the Deadlines tab.\n2. Tap + Add Assignment.\n3. Fill in the title, course, due date, time and reminders. Turn on Ring alarm if the reminders should ring like an alarm.\n4. Tasks group automatically by urgency when sorted by date."
         ),
         AppFeature(
             "Calendar View", "Toggle between list view and a monthly calendar view to visualize deadlines.", "calendar", 15,

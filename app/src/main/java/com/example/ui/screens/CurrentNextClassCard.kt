@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.local.ringsAlarm
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
 import com.example.ui.theme.ActiveClassGreen
@@ -357,7 +358,7 @@ fun CurrentNextClassCard(
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                     modifier = Modifier.weight(1f)
                                                 )
-                                                PriorityBadge(priority = taskWithCourse.task.priority)
+                                                if (taskWithCourse.task.ringsAlarm) AlarmBadge()
                                             }
                                         }
                                     }

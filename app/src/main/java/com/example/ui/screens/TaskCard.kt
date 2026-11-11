@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -57,27 +58,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.util.DateFormats
-import com.example.data.local.Priority
 import com.example.data.local.RepeatRule
 import com.example.data.local.isMyTasksCourse
 import com.example.data.local.repeat
 import com.example.data.groups.GroupTaskEntry
 import com.example.util.AttachmentManager
 import com.example.data.local.TaskItem
+import com.example.data.local.ringsAlarm
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
-import com.example.ui.theme.PriorityHighBgDark
-import com.example.ui.theme.PriorityHighBgLight
-import com.example.ui.theme.PriorityHighFgDark
-import com.example.ui.theme.PriorityHighFgLight
-import com.example.ui.theme.PriorityLowBgDark
-import com.example.ui.theme.PriorityLowBgLight
-import com.example.ui.theme.PriorityLowFgDark
-import com.example.ui.theme.PriorityLowFgLight
-import com.example.ui.theme.PriorityMediumBgDark
-import com.example.ui.theme.PriorityMediumBgLight
-import com.example.ui.theme.PriorityMediumFgDark
-import com.example.ui.theme.PriorityMediumFgLight
 import com.example.ui.theme.StatusDoneBgDark
 import com.example.ui.theme.StatusDoneBgLight
 import com.example.ui.theme.StatusDoneFgDark
@@ -116,15 +105,7 @@ fun TaskCard(
     val courseColor = rememberCourseColor(course?.colorHex)
 
     val isMyTask = course?.isMyTasksCourse() == true
-    val leftStripColor = if (isMyTask) {
-        when (task.priority) {
-            Priority.LOW -> Color(0xFF16A34A) // green
-            Priority.MEDIUM -> Color(0xFFD97706) // amber
-            Priority.HIGH -> Color(0xFFDC2626) // red
-        }
-    } else {
-        courseColor
-    }
+    val leftStripColor = courseColor
 
     val isCompleted = task.status == TaskStatus.COMPLETED
 
@@ -179,14 +160,82 @@ fun TaskCard(
                     .weight(1f)
                     .padding(start = 20.dp, top = 10.dp, end = 14.dp, bottom = 12.dp)
             ) {
-                // Top row: Priority & Menu
+                // The course badge and the title are each written once. The top row shows the course badge
+                // (or the title, for My tasks) beside the menu button, so no empty row is left above the title.
+                val showCourseBadge = !isMyTask
+                val titleContent: @Composable () -> Unit = {
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        ),
+                        color = if (isCompleted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                val courseBadgeContent: @Composable () -> Unit = {
+                    val badgeText = remember(course, groupEntry) {
+                        if (course == null) {
+                            "General"
+                        } else if (groupEntry != null) {
+                            val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
+                            if (hasSpecificCourse) {
+                                if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                    "${groupEntry.groupName} • ${course.code} • ${course.name}"
+                                } else {
+                                    "${groupEntry.groupName} • ${course.code}"
+                                }
+                            } else {
+                                groupEntry.groupName
+                            }
+                        } else {
+                            if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
+                                "${course.code} • ${course.name}"
+                            } else {
+                                course.code
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = courseColor.copy(alpha = 0.15f),
+                        contentColor = courseColor
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (groupEntry != null) {
+                                Icon(
+                                    imageVector = Icons.Default.Groups,
+                                    contentDescription = "Group task",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Priority badge. Repeat and reminders sit lower in the card, next to the due date.
-                    PriorityBadge(priority = task.priority)
+                    Box(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        if (showCourseBadge) courseBadgeContent() else titleContent()
+                    }
 
                     Box {
                         IconButton(
@@ -263,76 +312,10 @@ fun TaskCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Course badge on its own line so the whole course name can be read.
-                // Hidden for My tasks since they belong to the special My tasks section.
-                if (course?.isMyTasksCourse() != true) {
-                    val badgeText = remember(course, groupEntry) {
-                        if (course == null) {
-                            "General"
-                        } else if (groupEntry != null) {
-                            val hasSpecificCourse = !course.code.equals(groupEntry.groupName, ignoreCase = true)
-                            if (hasSpecificCourse) {
-                                if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                                    "${groupEntry.groupName} • ${course.code} • ${course.name}"
-                                } else {
-                                    "${groupEntry.groupName} • ${course.code}"
-                                }
-                            } else {
-                                groupEntry.groupName
-                            }
-                        } else {
-                            if (course.name.isNotBlank() && !course.name.equals(course.code, ignoreCase = true)) {
-                                "${course.code} • ${course.name}"
-                            } else {
-                                course.code
-                            }
-                        }
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = courseColor.copy(alpha = 0.15f),
-                        contentColor = courseColor
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (groupEntry != null) {
-                                Icon(
-                                    imageVector = Icons.Default.Groups,
-                                    contentDescription = "Group task",
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                            Text(
-                                text = badgeText,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
+                if (showCourseBadge) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    titleContent()
                 }
-
-                // Task Title
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
-                    ),
-                    color = if (isCompleted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
 
                 if (groupEntry != null) {
                     Spacer(modifier = Modifier.height(3.dp))
@@ -512,11 +495,38 @@ fun TaskCard(
 
                 // Repeat and reminders on one line with the due info. It wraps instead of squeezing
                 // the top row. Attachments already show as file chips above, so no count here.
-                if (task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty()) {
+                // The alarm only rings at a reminder time, so the chip needs a reminder and an open task.
+                val showAlarmChip = task.ringsAlarm && !isCompleted && task.reminderOptions.isNotEmpty()
+                if (task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty() || showAlarmChip) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        if (showAlarmChip) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Alarm,
+                                        contentDescription = "Rings like an alarm",
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = "Alarm",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
                         if (task.repeat != RepeatRule.NONE) {
                             val repeatShortLabel = when (task.repeat) {
                                 RepeatRule.DAILY -> "Daily"
@@ -643,39 +653,20 @@ fun TaskCard(
     }
 }
 
+/** A small alarm icon for compact task rows. Shown only for tasks that ring an alarm. */
 @Composable
-fun PriorityBadge(priority: Priority) {
-    val dark = isDarkTheme()
-    val (bgColor, textColor, label) = when (priority) {
-        Priority.HIGH -> Triple(
-            if (dark) PriorityHighBgDark else PriorityHighBgLight,
-            if (dark) PriorityHighFgDark else PriorityHighFgLight,
-            "High"
-        )
-        Priority.MEDIUM -> Triple(
-            if (dark) PriorityMediumBgDark else PriorityMediumBgLight,
-            if (dark) PriorityMediumFgDark else PriorityMediumFgLight,
-            "Medium"
-        )
-        Priority.LOW -> Triple(
-            if (dark) PriorityLowBgDark else PriorityLowBgLight,
-            if (dark) PriorityLowFgDark else PriorityLowFgLight,
-            "Low"
-        )
-    }
-
+fun AlarmBadge() {
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = bgColor,
-        contentColor = textColor
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+        contentColor = MaterialTheme.colorScheme.onErrorContainer
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        Icon(
+            imageVector = Icons.Default.Alarm,
+            contentDescription = "Rings like an alarm",
+            modifier = Modifier
+                .padding(horizontal = 5.dp, vertical = 2.dp)
+                .size(14.dp)
         )
     }
 }

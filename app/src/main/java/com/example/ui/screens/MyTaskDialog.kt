@@ -64,7 +64,8 @@ import com.example.data.local.RepeatRule
 import com.example.data.local.TaskItem
 import com.example.data.local.repeat
 import com.example.util.DateFormats
-import com.example.util.HighPriorityAlarm
+import com.example.data.local.priorityForRingAlarm
+import com.example.data.local.ringsAlarm
 import com.example.util.TimeFormatter
 import java.util.Calendar
 import java.util.Date
@@ -133,7 +134,7 @@ fun MyTaskDialog(
         mutableStateOf<Int?>(taskToEdit?.dueTimeMinute)
     }
 
-    var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: Priority.MEDIUM) }
+    var ringAlarm by rememberSaveable { mutableStateOf(taskToEdit?.ringsAlarm == true) }
 
     var reminderOptions by rememberSaveable(
         stateSaver = listSaver<Set<ReminderOption>, String>(
@@ -219,7 +220,7 @@ fun MyTaskDialog(
                                     selectedDueDateMillis!!,
                                     dueHour!!,
                                     dueMinute!!,
-                                    priority,
+                                    priorityForRingAlarm(ringAlarm, taskToEdit?.priority),
                                     reminderOptions,
                                     repeatRule,
                                     autoDeleteWhenDone
@@ -614,42 +615,6 @@ fun MyTaskDialog(
                     }
                 }
 
-                // Priority
-                Column {
-                    Text(
-                        text = "Priority",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Priority.entries.forEach { p ->
-                            FilterChip(
-                                selected = priority == p,
-                                onClick = { priority = p },
-                                label = { ShrinkToFitText(text = p.name.lowercase().replaceFirstChar { it.uppercase() }, minFontSize = 10.sp) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("my_task_priority_${p.name}")
-                            )
-                        }
-                    }
-
-                    val isHighPriorityAlarmEnabled = remember { HighPriorityAlarm.isEnabled(context) }
-                    if (priority == Priority.HIGH && isHighPriorityAlarmEnabled) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "High priority tasks ring like an alarm.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                    }
-                }
-
                 // Repeat Rule
                 Column {
                     Text(
@@ -762,6 +727,14 @@ fun MyTaskDialog(
                     rowTestTag = "my_task_reminder_row",
                     clearTestTag = "my_task_clear_reminders_button",
                     doneTestTag = "my_task_reminder_done_button"
+                )
+
+                // Ring alarm: the reminders above ring like an alarm
+                RingAlarmToggleRow(
+                    checked = ringAlarm,
+                    onCheckedChange = { ringAlarm = it },
+                    hasReminders = reminderOptions.isNotEmpty(),
+                    testTag = "my_task_ring_alarm_row"
                 )
             }
             }

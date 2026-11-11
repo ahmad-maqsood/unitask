@@ -9,14 +9,11 @@ import android.net.Uri
 import android.os.Build
 
 /**
- * "Alarm for high priority tasks": when this is on, reminders of HIGH priority tasks ring like an
- * alarm (alarm sound and volume, repeating, vibrating) instead of the normal notification sound.
- * Off by default. The setting is kept in SharedPreferences, next to the other settings.
+ * The "Ring alarm" switch on a task is saved as HIGH priority (see TaskItem.ringsAlarm). Reminders of
+ * those tasks ring like an alarm (alarm sound and volume, repeating, vibrating) instead of the
+ * normal notification sound. This object holds the alarm sound, vibration and notification channels.
  */
 object HighPriorityAlarm {
-    private const val PREFS = "unitask_settings"
-    private const val KEY_ENABLED = "high_priority_alarm_enabled"
-
     // Do not start this with another channel's id: NotificationSound.deleteOtherChannels
     // removes channels whose id starts with "<baseId>_".
     const val CHANNEL_ID = "unitask_high_priority_alarm_v1"
@@ -26,15 +23,6 @@ object HighPriorityAlarm {
     const val RING_MILLIS = 60_000L
 
     val VIBRATION_PATTERN = longArrayOf(0, 700, 400, 700, 400, 700)
-
-    private fun prefs(context: Context) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
-    fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
-
-    fun setEnabled(context: Context, value: Boolean) {
-        prefs(context).edit().putBoolean(KEY_ENABLED, value).apply()
-    }
 
     /** The phone's alarm sound, or its ringtone / notification sound if there is no alarm sound. */
     fun soundUri(): Uri =

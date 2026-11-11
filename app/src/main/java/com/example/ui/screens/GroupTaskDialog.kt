@@ -54,7 +54,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.util.DateFormats
-import com.example.util.HighPriorityAlarm
+import com.example.data.local.priorityNameForRingAlarm
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import com.example.data.groups.GroupMember
@@ -126,7 +126,7 @@ fun GroupTaskDialog(
 
     var dueHour by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeHour ?: 12) }
     var dueMinute by rememberSaveable { mutableIntStateOf(taskToEdit?.dueTimeMinute ?: 0) }
-    var priority by rememberSaveable { mutableStateOf(taskToEdit?.priority ?: "MEDIUM") }
+    var ringAlarm by rememberSaveable { mutableStateOf(taskToEdit?.priority == "HIGH") }
     // New tasks start with the usual three alerts. Old tasks show what they really use today.
     var reminderOptions by rememberSaveable(
         stateSaver = listSaver<Set<ReminderOption>, String>(
@@ -331,7 +331,7 @@ fun GroupTaskDialog(
                                 selectedDueDateMillis,
                                 dueHour,
                                 dueMinute,
-                                priority,
+                                priorityNameForRingAlarm(ringAlarm, taskToEdit?.priority),
                                 encodeReminderOptions(reminderOptions),
                                 if (tagAll) emptyList() else taggedUids.toList()
                             )
@@ -580,46 +580,6 @@ fun GroupTaskDialog(
                         }
                     }
 
-                    // Priority
-                    Column {
-                        Text(
-                            text = "Priority",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf("LOW", "MEDIUM", "HIGH").forEach { p ->
-                                FilterChip(
-                                    selected = priority == p,
-                                    onClick = { priority = p },
-                                    label = { Text(p) },
-                                    modifier = Modifier.testTag("group_task_priority_chip_$p")
-                                )
-                            }
-                        }
-                        val highAlarmOn = remember { HighPriorityAlarm.isEnabled(context) }
-                        if (priority == "HIGH") {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (highAlarmOn) {
-                                    "High priority tasks ring like an alarm for everyone in the group."
-                                } else {
-                                    "Members who turn on \"Alarm for high priority tasks\" in Settings get an alarm for this."
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (highAlarmOn) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
-                        }
-                    }
-
                     // Reminders: every member of the group gets an alert at each time you pick
                     ReminderPickerRow(
                         selected = reminderOptions,
@@ -629,6 +589,15 @@ fun GroupTaskDialog(
                         clearTestTag = "group_clear_reminders_button",
                         doneTestTag = "group_reminder_done_button",
                         pickerNote = "Everyone tagged gets these alerts."
+                    )
+
+                    // Ring alarm: the reminders above ring like an alarm for the tagged members
+                    RingAlarmToggleRow(
+                        checked = ringAlarm,
+                        onCheckedChange = { ringAlarm = it },
+                        hasReminders = reminderOptions.isNotEmpty(),
+                        testTag = "group_ring_alarm_row",
+                        forGroup = true
                     )
 
                     // Tag members: one row that opens a checklist. Only tagged members see this

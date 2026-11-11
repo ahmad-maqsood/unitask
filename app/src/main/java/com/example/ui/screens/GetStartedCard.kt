@@ -40,9 +40,10 @@ fun GetStartedCard(
     done: Set<GetStartedStep>,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    steps: List<GetStartedStep> = GetStartedStep.entries,
     onStepClick: ((GetStartedStep) -> Unit)? = null
 ) {
-    val steps = GetStartedStep.entries
+    val doneCount = steps.count { it in done }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -61,7 +62,7 @@ fun GetStartedCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${done.size} of ${steps.size} done",
+                        text = "$doneCount of ${steps.size} done",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -79,7 +80,7 @@ fun GetStartedCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = { done.size / steps.size.toFloat() },
+                progress = { doneCount / steps.size.toFloat() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 12.dp)

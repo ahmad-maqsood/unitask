@@ -53,7 +53,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.util.BackgroundAccess
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -158,6 +165,18 @@ fun DeadlinesTab(
     var getStartedDone by remember { mutableStateOf(getStartedPrefs.doneSteps) }
     val activeSlots by remember(db) { db.lectureSlotDao().getAllSlotsWithCourse() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
+    // Phone settings are read again every time the person comes back from the system screens.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var settingsRefresh by remember { mutableIntStateOf(0) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) settingsRefresh++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val needsAutostart = remember { BackgroundAccess.needsAutostartStep() }
+    val getStartedSteps = remember(needsAutostart) { GetStartedLogic.requiredSteps(needsAutostart) }
     val getStartedDetected = GetStartedLogic.detect(
         hasCourse = activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() },
         hasDeadline = activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true },
@@ -165,14 +184,25 @@ fun DeadlinesTab(
             !it.task.isDeleted && it.course?.isMyTasksCourse() != true && it.task.reminderOptions.isNotEmpty()
         },
         hasClass = activeSlots.isNotEmpty(),
-        timerTried = !TimerLogic.isIdle(timerState)
+        timerTried = !TimerLogic.isIdle(timerState),
+        notificationsOn = remember(settingsRefresh) {
+            NotificationManagerCompat.from(context).areNotificationsEnabled()
+        },
+        batteryOptimizationOff = remember(settingsRefresh) {
+            BackgroundAccess.isIgnoringBatteryOptimizations(context)
+        },
+        autostartDone = remember(settingsRefresh) { BackgroundAccess.isAutostartStepDone(context) }
     )
-    LaunchedEffect(getStartedDetected) {
-        if (!getStartedDone.containsAll(getStartedDetected)) {
-            getStartedDone = getStartedPrefs.markDone(getStartedDetected)
+    // Only the app steps are saved as ticked. Phone-setting steps follow the phone's current state.
+    val getStartedSaveable = getStartedDetected.filterNot { it.isSystem }.toSet()
+    LaunchedEffect(getStartedSaveable) {
+        if (!getStartedDone.containsAll(getStartedSaveable)) {
+            getStartedDone = getStartedPrefs.markDone(getStartedSaveable)
         }
     }
-    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedDone)
+    val getStartedShown = getStartedDone.filterNot { it.isSystem }.toSet() +
+        getStartedDetected.filter { it.isSystem }
+    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown, getStartedSteps)
     val selectedTaskIds = rememberSaveable(
         saver = listSaver(
             save = { it.toList() },
@@ -255,7 +285,8 @@ fun DeadlinesTab(
         if (showGetStarted) {
             item(key = "get_started_card") {
                 GetStartedCard(
-                    done = getStartedDone,
+                    done = getStartedShown,
+                    steps = getStartedSteps,
                     onStepClick = onGetStartedStepClick,
                     onDismiss = {
                         getStartedDismissed = true

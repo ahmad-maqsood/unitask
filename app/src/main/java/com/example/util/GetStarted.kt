@@ -3,32 +3,51 @@ package com.example.util
 import android.content.Context
 
 /** The steps of the "Get started" checklist on the Deadlines screen, in the order they are shown. */
-enum class GetStartedStep(val title: String, val hint: String) {
+enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boolean = false) {
     COURSE("Add a course", "Courses tab, then tap +"),
     DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
     REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline"),
     CLASS("Add a class", "Timetable tab, then tap +"),
-    TIMER("Try the timer", "More menu, then Timer")
+    TIMER("Try the timer", "More menu, then Timer"),
+
+    // Phone settings. These are read live from the phone, never saved as ticked, so a step
+    // un-ticks again if the person turns the setting back off.
+    NOTIFICATIONS("Allow notifications", "So reminders and group alerts can reach you", isSystem = true),
+    BATTERY("Turn off battery optimization", "Lets reminders ring on time in the background", isSystem = true),
+    AUTOSTART("Enable auto-start", "Keeps reminders working after your phone restarts", isSystem = true)
 }
 
 object GetStartedLogic {
 
-    /** Which steps the person's data shows as done right now. */
+    /** Which steps the person's data and phone settings show as done right now. */
     fun detect(
         hasCourse: Boolean,
         hasDeadline: Boolean,
         hasReminder: Boolean,
         hasClass: Boolean,
-        timerTried: Boolean
+        timerTried: Boolean,
+        notificationsOn: Boolean = false,
+        batteryOptimizationOff: Boolean = false,
+        autostartDone: Boolean = false
     ): Set<GetStartedStep> = buildSet {
         if (hasCourse) add(GetStartedStep.COURSE)
         if (hasDeadline) add(GetStartedStep.DEADLINE)
         if (hasReminder) add(GetStartedStep.REMINDER)
         if (hasClass) add(GetStartedStep.CLASS)
         if (timerTried) add(GetStartedStep.TIMER)
+        if (notificationsOn) add(GetStartedStep.NOTIFICATIONS)
+        if (batteryOptimizationOff) add(GetStartedStep.BATTERY)
+        if (autostartDone) add(GetStartedStep.AUTOSTART)
     }
 
-    fun isFinished(done: Set<GetStartedStep>): Boolean = done.containsAll(GetStartedStep.entries)
+    /** The steps shown on this phone. Auto-start only exists on some brands, so it is left out elsewhere. */
+    fun requiredSteps(needsAutostart: Boolean): List<GetStartedStep> =
+        GetStartedStep.entries.filter { needsAutostart || it != GetStartedStep.AUTOSTART }
+
+    fun isFinished(
+        done: Set<GetStartedStep>,
+        required: Collection<GetStartedStep> = GetStartedStep.entries
+    ): Boolean = done.containsAll(required)
 }
 
 /**

@@ -473,7 +473,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 enableVibration(true)
                 try {
                     NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    android.util.Log.w("UniTask", "Could not set the reminder channel sound, using the default", e)
                 }
             }
             notificationManager.createNotificationChannel(channel)

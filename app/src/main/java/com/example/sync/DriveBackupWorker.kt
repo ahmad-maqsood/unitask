@@ -62,7 +62,8 @@ class DriveBackupWorker(
                     dir.listFiles { _, name -> name.endsWith(".part") }?.forEach { it.delete() }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not clean up leftover .part files", e)
         }
     }
 }

@@ -95,7 +95,8 @@ object ReminderHealth {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(intent)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not open the phone setting screen", e)
         }
     }
 

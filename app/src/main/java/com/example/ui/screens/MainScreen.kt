@@ -222,43 +222,49 @@ fun MainScreen(
         }
     }
 
+    // True once Android's notification dialog was answered in this session. The battery and
+    // auto-start dialog never follows it in the same session, so a new user sees one request at a time.
+    var askedNotificationThisSession by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         showNotificationBanner = !isGranted
-        checkAndShowBackgroundSetup()
+        askedNotificationThisSession = true
     }
 
-    // Request notification permission once on first launch.
-    // If permission is denied, keep the existing banner available for retry.
+    // No permission dialog at launch. A new person is first asked for notifications when they save
+    // their first task with a reminder (see onReminderSaved below), and the notification banner stays
+    // available as a gentle fallback. The battery and auto-start dialog comes on a later visit, once
+    // a reminder has been saved and notifications were already dealt with.
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permissionGranted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
+        val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
+        val notificationsHandled = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED ||
+            settings.getBoolean("notification_permission_prompted", false)
+        if (settings.getBoolean("first_reminder_saved", false) && notificationsHandled) {
+            checkAndShowBackgroundSetup()
+        }
+    }
 
-            val prefs = context.getSharedPreferences(
-                "unitask_settings",
-                android.content.Context.MODE_PRIVATE
-            )
-            val alreadyPrompted = prefs.getBoolean(
-                "notification_permission_prompted",
-                false
-            )
-
-            if (!permissionGranted && !alreadyPrompted) {
-                prefs.edit()
-                    .putBoolean("notification_permission_prompted", true)
-                    .apply()
-
-                permissionLauncher.launch(
-                    Manifest.permission.POST_NOTIFICATIONS
+    // Called after a task is saved with at least one reminder: the moment reminders matter to the person.
+    val onReminderSaved: () -> Unit = {
+        val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
+        settings.edit().putBoolean("first_reminder_saved", true).apply()
+        val needsNotificationAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED &&
+            !settings.getBoolean("notification_permission_prompted", false)
+        if (needsNotificationAsk) {
+            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "Reminder saved. Allow notifications so it can reach you.",
+                    duration = SnackbarDuration.Long
                 )
-            } else {
-                checkAndShowBackgroundSetup()
             }
-        } else {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else if (!askedNotificationThisSession) {
             checkAndShowBackgroundSetup()
         }
     }
@@ -920,6 +926,7 @@ fun MainScreen(
             onDeleteExistingAttachment = { viewModel.deleteTaskAttachment(it) },
             onSave = { title, desc, courseId, dueDate, hour, min, priority, status, reminder, newAtt ->
                 viewModel.saveTask(title, desc, courseId, dueDate, hour, min, priority, status, reminder, newAtt)
+                if (reminder.isNotEmpty()) onReminderSaved()
             },
             onNeedCreateCourse = {
                 viewModel.closeTaskDialog()
@@ -983,6 +990,7 @@ fun MainScreen(
             onDismiss = { viewModel.closeMyTaskDialog() },
             onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat, autoDelete ->
                 viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit, autoDelete)
+                if (reminders.isNotEmpty()) onReminderSaved()
             }
         )
     }

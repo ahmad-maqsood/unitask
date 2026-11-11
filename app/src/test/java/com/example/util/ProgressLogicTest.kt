@@ -39,8 +39,11 @@ class ProgressLogicTest {
         course = c
     )
 
-    private fun compute(tasks: List<TaskWithCourse>, weeks: Int = 8) =
-        ProgressLogic.compute(tasks, now, weeks, Calendar.MONDAY, utc)
+    private fun compute(
+        tasks: List<TaskWithCourse>,
+        weeks: Int = 8,
+        log: List<CompletionEntry> = emptyList()
+    ) = ProgressLogic.compute(tasks, now, weeks, Calendar.MONDAY, utc, log)
 
     @Test
     fun countsThisWeekAndLastWeek() {
@@ -136,5 +139,38 @@ class ProgressLogicTest {
         assertEquals(0, result.totalTasks)
         assertEquals(0, result.doneThisWeek)
         assertEquals(8, result.weeks.size)
+    }
+
+    private val myTasks = Course(id = 3, name = "My tasks", code = "MYTASKS")
+
+    @Test
+    fun myTasksIsNotShownAsACourseButStillCounts() {
+        val result = compute(listOf(done(at(2026, 11, 12), myTasks), done(at(2026, 11, 12), course)))
+        assertEquals(listOf("Maths"), result.courses.map { it.name })
+        assertEquals(2, result.doneThisWeek)
+        assertEquals(2, result.totalDone)
+    }
+
+    @Test
+    fun savedHistoryKeepsTicksOfResetRepeatingTasks() {
+        // The repeating task is Pending again today, but it was ticked on the 10th and the 11th.
+        val log = listOf(CompletionEntry(5L, at(2026, 11, 10)), CompletionEntry(5L, at(2026, 11, 11)))
+        val result = compute(listOf(pending()), log = log)
+        assertEquals(2, result.streakDays)
+        assertEquals(2, result.doneThisWeek)
+    }
+
+    @Test
+    fun theSameTickInTasksAndHistoryCountsOnce() {
+        val time = at(2026, 11, 12)
+        val task = TaskWithCourse(
+            task = TaskItem(
+                id = 7L, courseId = course.id, title = "t", dueDateEpochMillis = 0L,
+                status = TaskStatus.COMPLETED, completedAtMillis = time
+            ),
+            course = course
+        )
+        val result = compute(listOf(task), log = listOf(CompletionEntry(7L, time)))
+        assertEquals(1, result.doneThisWeek)
     }
 }

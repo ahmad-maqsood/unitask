@@ -10,6 +10,8 @@ import com.example.data.local.TaskStatus
 import com.example.data.local.deadlineMillis
 import com.example.data.local.startOfLocalDay
 import com.example.reminder.ReminderScheduler
+import com.example.util.CompletionEntry
+import com.example.util.CompletionLog
 import com.example.util.NotificationHistory
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -94,6 +96,35 @@ class RepeatRolloverTest {
         assertEquals(TaskStatus.PENDING, task!!.status)
         assertEquals(0L, task.completedAtMillis)
         assertTrue(task.deadlineMillis > now)
+    }
+
+    @Test
+    fun doneYesterday_isKeptInTheProgressHistory_afterTheReset() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        CompletionLog.clear(context)
+        val now = System.currentTimeMillis()
+        val startOfToday = startOfLocalDay(now)
+        val tickedAt = startOfToday - hour
+        val id = addTask("DAILY", startOfToday - 12 * hour, TaskStatus.COMPLETED, tickedAt)
+
+        repo.rolloverCompletedRepeatingTasks()
+
+        assertEquals(0L, db.taskDao().getTaskById(id)!!.completedAtMillis)
+        assertEquals(listOf(CompletionEntry(id, tickedAt)), CompletionLog.entries(context))
+    }
+
+    @Test
+    fun tickingAndUntickingUpdatesTheProgressHistory() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        CompletionLog.clear(context)
+        val now = System.currentTimeMillis()
+        val id = addTask("NONE", now, TaskStatus.PENDING, 0L)
+
+        repo.updateTaskStatus(id, TaskStatus.COMPLETED)
+        assertEquals(listOf(id), CompletionLog.entries(context).map { it.taskId })
+
+        repo.updateTaskStatus(id, TaskStatus.PENDING)
+        assertEquals(emptyList<CompletionEntry>(), CompletionLog.entries(context))
     }
 
     @Test

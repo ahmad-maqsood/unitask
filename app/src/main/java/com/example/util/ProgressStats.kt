@@ -2,6 +2,7 @@ package com.example.util
 
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
+import com.example.data.local.isMyTasksCourse
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -33,13 +34,16 @@ object ProgressLogic {
      *
      * Only tasks that were ticked Done with a known time count towards the weekly bars and the
      * streak. A task finished long ago whose time was never saved still counts in its course total.
+     * [loggedCompletions] is the saved tick history, so a repeating task that was reset after
+     * midnight still counts for the day it was ticked.
      */
     fun compute(
         tasks: List<TaskWithCourse>,
         now: Long,
         weekCount: Int = 8,
         firstDayOfWeek: Int = Calendar.getInstance().firstDayOfWeek,
-        zone: TimeZone = TimeZone.getDefault()
+        zone: TimeZone = TimeZone.getDefault(),
+        loggedCompletions: List<CompletionEntry> = emptyList()
     ): ProgressSummary {
         val weeksShown = weekCount.coerceAtLeast(1)
 
@@ -58,10 +62,15 @@ object ProgressLogic {
             return c.timeInMillis
         }
 
-        val doneTimes = tasks
+        val currentlyDone = tasks
             .map { it.task }
             .filter { it.status == TaskStatus.COMPLETED && it.completedAtMillis > 0L }
-            .map { it.completedAtMillis }
+            .map { CompletionEntry(it.id, it.completedAtMillis) }
+        // The saved history keeps ticks that a repeating task cleared at midnight. The same tick
+        // found in both places counts once.
+        val doneTimes = (currentlyDone + loggedCompletions.filter { it.completedAt > 0L })
+            .distinct()
+            .map { it.completedAt }
 
         val perWeek = doneTimes.groupingBy { weekStart(it) }.eachCount()
         val thisWeekStart = weekStart(now)
@@ -85,7 +94,8 @@ object ProgressLogic {
         }
 
         val courses = tasks
-            .mapNotNull { item -> item.course?.let { it to item.task } }
+            // "My tasks" is a hidden holder for personal to-dos, not a real course, so it gets no row.
+            .mapNotNull { item -> item.course?.takeIf { !it.isMyTasksCourse() }?.let { it to item.task } }
             .groupBy { it.first.id }
             .map { (_, pairs) ->
                 val course = pairs.first().first

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
+import com.example.util.CompletionLog
 import com.example.util.ProgressLogic
 import com.example.util.ProgressSummary
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +21,13 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     /** Null until the first numbers are ready. */
     val summary: StateFlow<ProgressSummary?> = taskDao.getAllTasksWithCourseIncludingArchived()
-        .map { tasks -> ProgressLogic.compute(tasks, System.currentTimeMillis()) }
+        .map { tasks ->
+            ProgressLogic.compute(
+                tasks,
+                System.currentTimeMillis(),
+                loggedCompletions = CompletionLog.entries(getApplication<Application>())
+            )
+        }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 }

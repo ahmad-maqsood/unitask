@@ -31,6 +31,7 @@ import com.example.reminder.SnoozeStore
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
 import com.example.util.AttachmentManager
+import com.example.util.CompletionLog
 import com.example.util.DateFormats
 import com.example.util.NotificationHistory
 import com.example.util.normalizeCourseCode
@@ -379,6 +380,13 @@ class AppRepository(
             completedAtMillis = completedAt,
             isSynced = false
         )
+        // Keep the Progress history in step (before the database write, see updateTaskStatus).
+        val before = taskDao.getTaskById(task.id)?.status
+        if (task.status == TaskStatus.COMPLETED && before != TaskStatus.COMPLETED) {
+            CompletionLog.record(context, task.id, completedAt)
+        } else if (task.status != TaskStatus.COMPLETED && before == TaskStatus.COMPLETED) {
+            CompletionLog.removeLatest(context, task.id)
+        }
         taskDao.updateTask(taskToUpdate)
 
         if (taskToUpdate.status == TaskStatus.COMPLETED) {
@@ -395,6 +403,14 @@ class AppRepository(
         // A repeating task is NOT moved to its next date here. It stays Done for the rest of the
         // day and rolloverCompletedRepeatingTasks() moves it after midnight.
         val completedAt = if (newStatus == TaskStatus.COMPLETED) System.currentTimeMillis() else 0L
+        // Keep the Progress history in step. This runs before the database write so the Progress
+        // screen never sees the new status together with an old history.
+        val before = taskDao.getTaskById(taskId)?.status
+        if (newStatus == TaskStatus.COMPLETED && before != TaskStatus.COMPLETED) {
+            CompletionLog.record(context, taskId, completedAt)
+        } else if (newStatus != TaskStatus.COMPLETED && before == TaskStatus.COMPLETED) {
+            CompletionLog.removeLatest(context, taskId)
+        }
         taskDao.updateStatusAndCompletedAt(taskId, newStatus, completedAt)
         if (newStatus == TaskStatus.COMPLETED) {
             reminderScheduler.cancelReminder(taskId)
@@ -438,6 +454,8 @@ class AppRepository(
                         // Ticked on another device, or before this update: count the day from now.
                         taskDao.updateTask(task.copy(completedAtMillis = now))
                     } else if (task.completedAtMillis < startOfToday) {
+                        // Keep it in the Progress history, because the task is about to go away.
+                        CompletionLog.record(context, task.id, task.completedAtMillis)
                         deleteTask(task)
                         changed = true
                     }
@@ -458,6 +476,9 @@ class AppRepository(
                 }
                 // Ticked today: leave it Done until the day is over.
                 if (task.completedAtMillis >= startOfToday) continue
+                // Ticked on an earlier day: save it in the Progress history before the reset
+                // below clears the time. Saving the same tick twice is harmless.
+                CompletionLog.record(context, task.id, task.completedAtMillis)
             } else {
                 // Not done. Daily and weekday tasks are replaced at midnight by today's copy, so
                 // today's reminder is armed and rings. Other repeats only move once the date AFTER

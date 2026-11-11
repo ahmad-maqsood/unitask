@@ -735,7 +735,7 @@ fun StatusToggleChip(
 
 private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
-private fun formatDueDate(epochMillis: Long, hour: Int, minute: Int): String {
+internal fun formatDueDate(epochMillis: Long, hour: Int, minute: Int): String {
     val calendarDue = Calendar.getInstance().apply {
         timeInMillis = epochMillis
         set(Calendar.HOUR_OF_DAY, hour)

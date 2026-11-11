@@ -40,6 +40,9 @@ import com.example.util.markdown.lineIndexAtOffset
 import com.example.util.markdown.offsetOfLine
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.runtime.CompositionLocalProvider
+import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.ArrowBack
@@ -153,11 +156,51 @@ fun NoteEditorScreen(
 
     // Keeps Edit and Preview at the same place in the note
     val previewListState = rememberLazyListState()
+
+    // Pinch with two fingers to change the text size. It is remembered between notes and launches.
+    var noteTextScale by remember { mutableStateOf(loadNoteTextScale(context)) }
+    LaunchedEffect(noteTextScale) {
+        kotlinx.coroutines.delay(400)
+        saveNoteTextScale(context, noteTextScale)
+    }
+    val onPinchZoom: (Float) -> Unit = { zoom ->
+        noteTextScale = (noteTextScale * zoom).coerceIn(NOTE_TEXT_SCALE_MIN, NOTE_TEXT_SCALE_MAX)
+    }
     val editScrollState = rememberScrollState()
     var previewStartLines by remember { mutableStateOf<List<Int>>(emptyList()) }
     var bodyLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var editViewportPx by remember { mutableStateOf(0f) }
     var previewTargetLine by remember { mutableStateOf<Int?>(null) }
     var editTargetOffset by remember { mutableStateOf<Int?>(null) }
+
+    // Find in note. The matches come from the note text; Edit and Preview both show them.
+    var showFind by rememberSaveable { mutableStateOf(false) }
+    var findQuery by rememberSaveable { mutableStateOf("") }
+    var findIndex by rememberSaveable { mutableStateOf(0) }
+    val findMatches = remember(viewModel.bodyValue.text, findQuery, showFind) {
+        if (showFind) NoteFind.matches(viewModel.bodyValue.text, findQuery) else emptyList()
+    }
+    val currentFindMatch = if (findMatches.isEmpty()) -1 else findIndex.coerceIn(0, findMatches.size - 1)
+    val density = LocalDensity.current
+    // Bring the current match into view: in Edit by scrolling to its text, in Preview to the block it is in.
+    LaunchedEffect(showFind, findQuery, findIndex, isPreviewMode) {
+        if (!showFind || currentFindMatch < 0) return@LaunchedEffect
+        val offset = findMatches[currentFindMatch]
+        val text = viewModel.bodyValue.text
+        if (isPreviewMode) {
+            val line = lineIndexAtOffset(text, offset)
+            if (previewStartLines.isNotEmpty()) {
+                previewListState.animateScrollToItem(
+                    com.example.util.markdown.blockIndexForLine(previewStartLines, line)
+                )
+            }
+        } else {
+            val layout = bodyLayout ?: return@LaunchedEffect
+            if (layout.layoutInput.text.text != text || offset >= text.length) return@LaunchedEffect
+            val top = layout.getBoundingBox(offset).top + with(density) { 12.dp.toPx() }
+            editScrollState.animateScrollTo((top - editViewportPx * 0.3f).toInt().coerceAtLeast(0))
+        }
+    }
 
     LaunchedEffect(noteId, viewModelSession) {
         previewTargetLine = null
@@ -202,7 +245,6 @@ fun NoteEditorScreen(
 
     // Keeps the line you are typing on in view. The editor is one tall text field inside a scrolling
     // column, so without this the cursor moves below the visible area when you press Enter.
-    var editViewportPx by remember { mutableStateOf(0f) }
     val cursorDensity = LocalDensity.current
     LaunchedEffect(bodyLayout, viewModel.bodyValue.selection, viewModel.bodyValue.text, editViewportPx, isPreviewMode) {
         val layout = bodyLayout ?: return@LaunchedEffect
@@ -357,6 +399,10 @@ fun NoteEditorScreen(
     BackHandler(enabled = true) {
         handleClose()
     }
+    // Registered after the one above, so Back closes the find bar first
+    BackHandler(enabled = showFind) {
+        showFind = false
+    }
 
     var showCoursePicker by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
@@ -462,6 +508,20 @@ fun NoteEditorScreen(
                         onDismissRequest = { showOverflowMenu = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text("Find in note") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.testTag("note_menu_find"),
+                            onClick = {
+                                showOverflowMenu = false
+                                showFind = true
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text(if (viewModel.isPinned) "Unpin" else "Pin") },
                             leadingIcon = {
                                 Icon(
@@ -548,6 +608,21 @@ fun NoteEditorScreen(
             }
         }
 
+        if (showFind) {
+            NoteFindBar(
+                query = findQuery,
+                onQueryChange = {
+                    findQuery = it
+                    findIndex = 0
+                },
+                currentMatch = currentFindMatch.coerceAtLeast(0),
+                totalMatches = findMatches.size,
+                onPrevious = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = false) },
+                onNext = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = true) },
+                onClose = { showFind = false }
+            )
+        }
+
         // Visible in every note, in both Edit and Preview mode
         Row(
             modifier = Modifier
@@ -580,6 +655,7 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .pinchToZoomText(onPinchZoom)
             ) {
                 Text(
                     text = viewModel.title.ifBlank { "Untitled Note" },
@@ -603,28 +679,32 @@ fun NoteEditorScreen(
                     )
                 }
 
-                MarkdownPreview(
-                    markdown = viewModel.bodyValue.text,
-                    onToggleChecklist = { lineIndex ->
-                        viewModel.checkpointBeforeToolbar()
-                        val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
-                        viewModel.updateBody(
-                            TextFieldValue(
-                                text = newText,
-                                selection = viewModel.bodyValue.selection
+                CompositionLocalProvider(LocalNoteFindQuery provides (if (showFind) findQuery else "")) {
+                WithNoteTextScale(noteTextScale) {
+                    MarkdownPreview(
+                        markdown = viewModel.bodyValue.text,
+                        onToggleChecklist = { lineIndex ->
+                            viewModel.checkpointBeforeToolbar()
+                            val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
+                            viewModel.updateBody(
+                                TextFieldValue(
+                                    text = newText,
+                                    selection = viewModel.bodyValue.selection
+                                )
                             )
-                        )
-                    },
-                    imageContent = { src, alt ->
-                        NoteImagePreview(src = src, alt = alt)
-                    },
-                    listState = previewListState,
-                    initialSourceLine = previewTargetLine,
-                    onBlockStartLines = { previewStartLines = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
+                        },
+                        imageContent = { src, alt ->
+                            NoteImagePreview(src = src, alt = alt)
+                        },
+                        listState = previewListState,
+                        initialSourceLine = previewTargetLine,
+                        onBlockStartLines = { previewStartLines = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                }
+                }
             }
         } else {
             // Edit mode: Title input field, Body input field, Character limit, Formatting toolbar
@@ -659,10 +739,15 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .pinchToZoomText(onPinchZoom)
             ) {
                 val viewportHeight = maxHeight
                 val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                val editorTransformation = remember(markerColor) { MarkdownEditorTransformation(markerColor) }
+                val darkCode = isDarkTheme()
+                val activeFindQuery = if (showFind) findQuery else ""
+                val editorTransformation = remember(markerColor, darkCode, activeFindQuery, currentFindMatch) {
+                    MarkdownEditorTransformation(markerColor, darkCode, activeFindQuery, currentFindMatch)
+                }
                 val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
                 Column(
                     modifier = Modifier
@@ -670,33 +755,35 @@ fun NoteEditorScreen(
                         .onSizeChanged { editViewportPx = it.height.toFloat() }
                         .verticalScroll(editScrollState)
                 ) {
-                    BasicTextField(
-                        value = viewModel.bodyValue,
-                        onValueChange = { viewModel.onBodyChange(it) },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        visualTransformation = editorTransformation,
-                        onTextLayout = { bodyLayout = it },
-                        decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                                if (viewModel.bodyValue.text.isEmpty()) {
-                                    Text(
-                                        text = "Start writing",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    )
+                    WithNoteTextScale(noteTextScale) {
+                        BasicTextField(
+                            value = viewModel.bodyValue,
+                            onValueChange = { viewModel.onBodyChange(it) },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            visualTransformation = editorTransformation,
+                            onTextLayout = { bodyLayout = it },
+                            decorationBox = { innerTextField ->
+                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                    if (viewModel.bodyValue.text.isEmpty()) {
+                                        Text(
+                                            text = "Start writing",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                    innerTextField()
                                 }
-                                innerTextField()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            // At least the visible height, so tapping the empty space still starts typing
-                            .heightIn(min = viewportHeight)
-                            .testTag("note_body_input")
-                    )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                // At least the visible height, so tapping the empty space still starts typing
+                                .heightIn(min = viewportHeight)
+                                .testTag("note_body_input")
+                        )
+                    }
                 }
                 ScrollStateScrollbar(editScrollState, viewportPx)
             }

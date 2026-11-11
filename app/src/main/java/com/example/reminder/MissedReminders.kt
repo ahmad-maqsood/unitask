@@ -87,7 +87,8 @@ object MissedReminders {
                 val kept = keys.filterNot { (parseKey(it)?.triggerAt ?: 0L) <= now - WINDOW_MILLIS }.toSet()
                 if (kept.size != keys.size) save(context, kept)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not prune expired missed-reminder keys", e)
         }
     }
 
@@ -109,7 +110,8 @@ object MissedReminders {
                 keys.add(keyFor(taskId, option.name, triggerAt))
                 save(context, keys)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not record an armed reminder", e)
         }
     }
 
@@ -121,7 +123,8 @@ object MissedReminders {
                 val keys = load(context)
                 if (keys.remove(keyFor(taskId, optionName, triggerAt))) save(context, keys)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not mark a reminder as handled", e)
         }
     }
 
@@ -132,7 +135,8 @@ object MissedReminders {
                 val keys = load(context)
                 if (keys.removeAll { it.startsWith("$taskId|") }) save(context, keys)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not forget the reminders of a task", e)
         }
     }
 

@@ -131,7 +131,8 @@ object DriveAutoBackup {
             val workManager = WorkManager.getInstance(context.applicationContext)
             workManager.cancelUniqueWork(WORK_NAME)
             workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not cancel the scheduled Drive backup work", e)
         }
     }
 

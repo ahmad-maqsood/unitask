@@ -764,6 +764,44 @@ fun MainScreen(
                                         }
                                     }
                                     GetStartedStep.TIMER -> showTimer = true
+                                    GetStartedStep.NOTIFICATIONS -> {
+                                        val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
+                                        val canAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                                            PackageManager.PERMISSION_GRANTED &&
+                                            (activity?.let {
+                                                androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                                                    it, Manifest.permission.POST_NOTIFICATIONS
+                                                )
+                                            } == true || !settings.getBoolean("notification_permission_prompted", false))
+                                        if (canAsk) {
+                                            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+                                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            // Android will not show its dialog again, or the permission is already
+                                            // granted but notifications are switched off: open the app's settings.
+                                            try {
+                                                context.startActivity(
+                                                    android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                )
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                    GetStartedStep.BATTERY -> BackgroundAccess.requestIgnoreBatteryOptimizations(context)
+                                    GetStartedStep.AUTOSTART -> {
+                                        val started = BackgroundAccess.openAutostartSettings(context)
+                                        // Android cannot tell us if auto-start is on, so the step is ticked once
+                                        // the settings screen was opened.
+                                        BackgroundAccess.setAutostartStepDone(context, true)
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            if (started) BackgroundAccess.brandHint()
+                                            else "Could not open that screen. Find UniTask in your phone's app settings.",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 }
                             }
                         )

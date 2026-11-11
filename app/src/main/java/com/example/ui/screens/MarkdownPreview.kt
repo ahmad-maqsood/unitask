@@ -301,10 +301,11 @@ private fun RenderMarkdownBlock(
                     modifier = Modifier.size(36.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                val annotated = remember(block.inlines, primaryColor, codeBgColor, context) {
+                val findQuery = LocalNoteFindQuery.current
+                val annotated = remember(block.inlines, primaryColor, codeBgColor, context, findQuery) {
                     buildAnnotatedInlines(block.inlines, primaryColor, codeBgColor) { url ->
                         openLinkSafely(context, url)
-                    }
+                    }.withFindHighlights(findQuery)
                 }
                 val checkStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = if (block.checked) {
@@ -368,8 +369,9 @@ private fun RenderMarkdownBlock(
                         .padding(12.dp)
                 ) {
                     val isDarkSurface = MaterialTheme.colorScheme.surfaceVariant.luminance() < 0.5f
-                    val highlighted = remember(block.text, block.language, isDarkSurface) {
-                        highlightCode(block.text, block.language, isDarkSurface)
+                    val findQuery = LocalNoteFindQuery.current
+                    val highlighted = remember(block.text, block.language, isDarkSurface, findQuery) {
+                        highlightCode(block.text, block.language, isDarkSurface).withFindHighlights(findQuery)
                     }
                     Text(
                         text = highlighted,
@@ -524,10 +526,11 @@ private fun RenderInlineText(
     context: Context,
     modifier: Modifier = Modifier
 ) {
-    val annotated = remember(inlines, primaryColor, codeBgColor, context) {
+    val findQuery = LocalNoteFindQuery.current
+    val annotated = remember(inlines, primaryColor, codeBgColor, context, findQuery) {
         buildAnnotatedInlines(inlines, primaryColor, codeBgColor) { url ->
             openLinkSafely(context, url)
-        }
+        }.withFindHighlights(findQuery)
     }
 
     Text(
@@ -681,7 +684,7 @@ fun MarkdownImageFallback(
 
 
 /** Colours for each kind of code piece. Two palettes so the code stays readable in light and dark themes. */
-private fun codeTokenColor(type: CodeTokenType, dark: Boolean): Color = if (dark) {
+internal fun codeTokenColor(type: CodeTokenType, dark: Boolean): Color = if (dark) {
     when (type) {
         CodeTokenType.KEYWORD -> Color(0xFFC678DD)
         CodeTokenType.STRING -> Color(0xFF98C379)

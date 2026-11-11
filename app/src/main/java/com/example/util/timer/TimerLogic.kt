@@ -11,7 +11,11 @@ data class TimerState(
     val mode: TimerMode = TimerMode.STOPWATCH,
     val countdownTotalMillis: Long = 25 * 60_000L,
     val accumulatedMillis: Long = 0L,
-    val runningSinceMillis: Long? = null
+    val runningSinceMillis: Long? = null,
+    /** Set while Pomodoro is on (the timer is then an ordinary countdown). Null otherwise. */
+    val pomodoroPhase: PomodoroPhase? = null,
+    /** Which focus round of the Pomodoro cycle this is, starting at 1. */
+    val pomodoroRound: Int = 1
 )
 
 /**

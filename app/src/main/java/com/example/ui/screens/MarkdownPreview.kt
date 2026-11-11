@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -61,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.widthIn
+import com.example.util.markdown.CodeHighlighter
+import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
 import com.example.util.markdown.MarkdownBlock
 import com.example.util.markdown.TableAlign
@@ -364,8 +367,12 @@ private fun RenderMarkdownBlock(
                         .horizontalScroll(rememberScrollState())
                         .padding(12.dp)
                 ) {
+                    val isDarkSurface = MaterialTheme.colorScheme.surfaceVariant.luminance() < 0.5f
+                    val highlighted = remember(block.text, block.language, isDarkSurface) {
+                        highlightCode(block.text, block.language, isDarkSurface)
+                    }
                     Text(
-                        text = block.text,
+                        text = highlighted,
                         fontFamily = FontFamily.Monospace,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -672,3 +679,37 @@ fun MarkdownImageFallback(
 }
 
 
+
+/** Colours for each kind of code piece. Two palettes so the code stays readable in light and dark themes. */
+private fun codeTokenColor(type: CodeTokenType, dark: Boolean): Color = if (dark) {
+    when (type) {
+        CodeTokenType.KEYWORD -> Color(0xFFC678DD)
+        CodeTokenType.STRING -> Color(0xFF98C379)
+        CodeTokenType.COMMENT -> Color(0xFF7F848E)
+        CodeTokenType.NUMBER -> Color(0xFFD19A66)
+        CodeTokenType.TYPE -> Color(0xFFE5C07B)
+        CodeTokenType.FUNCTION -> Color(0xFF61AFEF)
+    }
+} else {
+    when (type) {
+        CodeTokenType.KEYWORD -> Color(0xFF8E24AA)
+        CodeTokenType.STRING -> Color(0xFF2E7D32)
+        CodeTokenType.COMMENT -> Color(0xFF6B7280)
+        CodeTokenType.NUMBER -> Color(0xFFB45309)
+        CodeTokenType.TYPE -> Color(0xFF9A6700)
+        CodeTokenType.FUNCTION -> Color(0xFF1565C0)
+    }
+}
+
+/** Builds the coloured text for a fenced code block; no language (or an unknown one) stays plain. */
+private fun highlightCode(code: String, language: String, dark: Boolean): AnnotatedString =
+    buildAnnotatedString {
+        append(code)
+        CodeHighlighter.tokenize(code, language).forEach { token ->
+            val style = SpanStyle(
+                color = codeTokenColor(token.type, dark),
+                fontStyle = if (token.type == CodeTokenType.COMMENT) FontStyle.Italic else null
+            )
+            addStyle(style, token.start, token.end)
+        }
+    }

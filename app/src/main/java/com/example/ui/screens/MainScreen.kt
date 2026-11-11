@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
@@ -112,6 +113,8 @@ import com.example.ui.theme.StatusDoneFgDark
 import com.example.ui.theme.StatusDoneFgLight
 import com.example.ui.theme.isDarkTheme
 import com.example.util.BackgroundAccess
+import com.example.util.GetStartedPrefs
+import com.example.util.GetStartedStep
 import com.example.util.drive.DriveMigrationPrompt
 import com.example.util.drive.DrivePrefs
 import com.example.util.timer.TimerController
@@ -126,7 +129,8 @@ fun buildToolsList(
     onOpenTimer: () -> Unit,
     onOpenRecentlyDeleted: () -> Unit,
     onOpenSettings: () -> Unit,
-    updateAvailable: Boolean = false
+    updateAvailable: Boolean = false,
+    onOpenHelp: () -> Unit = {}
 ): List<ToolEntry> = listOf(
     ToolEntry(
         label = "Notes",
@@ -148,6 +152,13 @@ fun buildToolsList(
         icon = Icons.Default.DeleteSweep,
         testTag = "tools_tile_recently_deleted",
         onClick = onOpenRecentlyDeleted
+    ),
+    ToolEntry(
+        label = "Help",
+        description = "Learn how to use UniTask",
+        icon = Icons.AutoMirrored.Filled.HelpOutline,
+        testTag = "tools_tile_help",
+        onClick = onOpenHelp
     ),
     ToolEntry(
         label = "Settings",
@@ -211,43 +222,49 @@ fun MainScreen(
         }
     }
 
+    // True once Android's notification dialog was answered in this session. The battery and
+    // auto-start dialog never follows it in the same session, so a new user sees one request at a time.
+    var askedNotificationThisSession by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         showNotificationBanner = !isGranted
-        checkAndShowBackgroundSetup()
+        askedNotificationThisSession = true
     }
 
-    // Request notification permission once on first launch.
-    // If permission is denied, keep the existing banner available for retry.
+    // No permission dialog at launch. A new person is first asked for notifications when they save
+    // their first task with a reminder (see onReminderSaved below), and the notification banner stays
+    // available as a gentle fallback. The battery and auto-start dialog comes on a later visit, once
+    // a reminder has been saved and notifications were already dealt with.
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permissionGranted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
+        val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
+        val notificationsHandled = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED ||
+            settings.getBoolean("notification_permission_prompted", false)
+        if (settings.getBoolean("first_reminder_saved", false) && notificationsHandled) {
+            checkAndShowBackgroundSetup()
+        }
+    }
 
-            val prefs = context.getSharedPreferences(
-                "unitask_settings",
-                android.content.Context.MODE_PRIVATE
-            )
-            val alreadyPrompted = prefs.getBoolean(
-                "notification_permission_prompted",
-                false
-            )
-
-            if (!permissionGranted && !alreadyPrompted) {
-                prefs.edit()
-                    .putBoolean("notification_permission_prompted", true)
-                    .apply()
-
-                permissionLauncher.launch(
-                    Manifest.permission.POST_NOTIFICATIONS
+    // Called after a task is saved with at least one reminder: the moment reminders matter to the person.
+    val onReminderSaved: () -> Unit = {
+        val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
+        settings.edit().putBoolean("first_reminder_saved", true).apply()
+        val needsNotificationAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED &&
+            !settings.getBoolean("notification_permission_prompted", false)
+        if (needsNotificationAsk) {
+            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "Reminder saved. Allow notifications so it can reach you.",
+                    duration = SnackbarDuration.Long
                 )
-            } else {
-                checkAndShowBackgroundSetup()
             }
-        } else {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else if (!askedNotificationThisSession) {
             checkAndShowBackgroundSetup()
         }
     }
@@ -333,6 +350,7 @@ fun MainScreen(
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var showNotes by rememberSaveable { mutableStateOf(false) }
     var showTools by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
@@ -377,13 +395,19 @@ fun MainScreen(
     // so the top bar does NOT recompose every second. No ticking value is observed here.
     val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
     val timerActive = !TimerLogic.isIdle(timerState)
+    // The Get started "Try the timer" step is saved here, because Deadlines may not be on screen
+    // when the timer is started or when it finishes.
+    LaunchedEffect(timerActive) {
+        if (timerActive) GetStartedPrefs(context).markDone(setOf(GetStartedStep.TIMER))
+    }
 
     val tools = buildToolsList(
         onOpenNotes = { showNotes = true },
         onOpenTimer = { showTimer = true },
         onOpenRecentlyDeleted = { showRecentlyDeleted = true },
         onOpenSettings = { settingsOpenRequest = SettingsOpenRequest(null) },
-        updateAvailable = updateAvailable
+        updateAvailable = updateAvailable,
+        onOpenHelp = { showHelp = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -723,7 +747,25 @@ fun MainScreen(
                             groupEntries = groupEntryByItemId,
                             isLoading = !tasksLoaded,
                             snackbarHostState = snackbarHostState,
-                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) }
+                            onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) },
+                            onGetStartedStepClick = { step ->
+                                when (step) {
+                                    GetStartedStep.COURSE -> {
+                                        viewModel.setTab(MainTab.COURSES)
+                                        viewModel.openAddCourseDialog()
+                                    }
+                                    GetStartedStep.DEADLINE, GetStartedStep.REMINDER -> viewModel.openAddTaskDialog()
+                                    GetStartedStep.CLASS -> {
+                                        viewModel.setTab(MainTab.TIMETABLE)
+                                        if (allCourses.any { !it.isDeleted && !it.isMyTasksCourse() }) {
+                                            viewModel.openAddSlotDialog()
+                                        } else {
+                                            viewModel.openAddCourseDialog()
+                                        }
+                                    }
+                                    GetStartedStep.TIMER -> showTimer = true
+                                }
+                            }
                         )
                     }
 
@@ -884,6 +926,7 @@ fun MainScreen(
             onDeleteExistingAttachment = { viewModel.deleteTaskAttachment(it) },
             onSave = { title, desc, courseId, dueDate, hour, min, priority, status, reminder, newAtt ->
                 viewModel.saveTask(title, desc, courseId, dueDate, hour, min, priority, status, reminder, newAtt)
+                if (reminder.isNotEmpty()) onReminderSaved()
             },
             onNeedCreateCourse = {
                 viewModel.closeTaskDialog()
@@ -947,6 +990,7 @@ fun MainScreen(
             onDismiss = { viewModel.closeMyTaskDialog() },
             onSave = { title, desc, dueEpoch, hour, min, priority, reminders, repeat, autoDelete ->
                 viewModel.saveMyTask(title, desc, dueEpoch, hour, min, priority, reminders, repeat, myTaskToEdit, autoDelete)
+                if (reminders.isNotEmpty()) onReminderSaved()
             }
         )
     }
@@ -956,6 +1000,10 @@ fun MainScreen(
             tools = tools,
             onDismiss = { showTools = false }
         )
+    }
+
+    if (showHelp) {
+        FeatureGuideDialog(onDismiss = { showHelp = false })
     }
 
     if (showNotes) {

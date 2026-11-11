@@ -3,6 +3,7 @@ package com.example.reminder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.TimerController
 
 /**
@@ -20,7 +21,14 @@ class TimerActionReceiver : BroadcastReceiver() {
                 // The user may already have opened or dismissed it during the 60 s of ringing.
                 if (!CountdownNotifier.isFinishedNotificationShowing(context)) return
                 val totalMillis = intent.getLongExtra(CountdownNotifier.EXTRA_TOTAL_MILLIS, 0L)
-                CountdownNotifier.notifyFinished(context, totalMillis, ring = false)
+                val phase = intent.getStringExtra(CountdownNotifier.EXTRA_POMODORO_PHASE)?.let {
+                    try {
+                        PomodoroPhase.valueOf(it)
+                    } catch (_: IllegalArgumentException) {
+                        null
+                    }
+                }
+                CountdownNotifier.notifyFinished(context, totalMillis, ring = false, phase = phase)
             }
         }
     }

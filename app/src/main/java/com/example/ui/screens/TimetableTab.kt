@@ -395,8 +395,10 @@ fun TimetableTab(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second ?: "this day"
+                        // First time: nothing on any day yet. Otherwise this one day is just free.
+                        val noClassesAtAll = allSlots.isEmpty()
                         Text(
-                            text = "No classes scheduled for $dayLabel",
+                            text = if (noClassesAtAll) "Add your first class" else "No classes scheduled for $dayLabel",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -405,7 +407,11 @@ fun TimetableTab(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Enjoy your free time or add lectures to keep track of your weekly schedule.",
+                            text = if (noClassesAtAll) {
+                                "Add your lectures to keep track of your weekly schedule."
+                            } else {
+                                "Enjoy your free time or add lectures to keep track of your weekly schedule."
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -416,7 +422,7 @@ fun TimetableTab(
                             onClick = onAddSlotClick,
                             modifier = Modifier.testTag("timetable_empty_add_button")
                         ) {
-                            Text("+ Add Class for $dayLabel")
+                            Text(if (allSlots.isEmpty()) "+ Add Your First Class" else "+ Add Class for $dayLabel")
                         }
                     }
                 }

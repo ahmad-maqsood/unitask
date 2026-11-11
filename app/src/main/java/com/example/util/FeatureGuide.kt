@@ -13,12 +13,18 @@ data class AppFeature(
  * The feature list shown in Settings > Learn to use the app.
  * It lives in the code, so it always matches the version of the app the person has.
  * Entries are shown in order of sortOrder (the number before the steps).
+ * The first five (Courses, Deadlines, Reminders, Timetable, Notes) are the beginner topics, so they
+ * use sortOrder 1 to 5 and always stay at the top. Keep every other entry at 10 or higher.
  */
 object FeatureGuide {
 
     val all: List<AppFeature> = listOf(
         AppFeature(
-            "Deadlines & Urgency", "Track assignments and tasks grouped by urgency: Overdue, Today, Tomorrow, Upcoming, and Completed.", "assignment", 10,
+            "Reminders", "Get alerted before a deadline, and let important ones ring like an alarm.", "notifications", 3,
+            "1. Tap + Add Assignment on the Deadlines tab, or open an existing task to edit it.\n2. Tap the Remind me row.\n3. Tap one or more times (At deadline, 1 hour, 2 hours, 12 hours, 1 day, 2 days), then tap Done.\n4. Switch on Ring alarm if the reminder should ring like an alarm.\n5. Allow notifications when Android asks. If a reminder is late or missing, open Settings, then Notifications & reminders, then Check reminders."
+        ),
+        AppFeature(
+            "Deadlines & Urgency", "Track assignments and tasks grouped by urgency: Overdue, Today, Tomorrow, Upcoming, and Completed.", "assignment", 2,
             "1. Open the Deadlines tab.\n2. Tap + Add Assignment.\n3. Fill in the title, course, due date, time and reminders. Turn on Ring alarm if the reminders should ring like an alarm.\n4. Tasks group automatically by urgency when sorted by date."
         ),
         AppFeature(
@@ -42,7 +48,7 @@ object FeatureGuide {
             "1. On a reminder notification, tap 'Snooze 30m' to get it again in 30 minutes.\n2. Or open the three dot menu on a task card and tap 'Snooze reminder'.\n3. Pick 30 minutes, 1 hour, 3 hours or tomorrow 8:00 AM. The card shows 'Snoozed until ...'.\n4. Your other reminders still ring. To change or cancel it, tap the 'Snoozed until' line on the card."
         ),
         AppFeature(
-            "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 40,
+            "Timetable & Schedule", "Your weekly university lecture schedule organized by day.", "schedule", 4,
             "1. Open the Timetable tab.\n2. Select a day of the week.\n3. Tap the + button, then Add Class Slot, and enter course, time, classroom, and instructor.\n4. Tap Delete on a class card to remove it. It moves to Recently deleted, where you can restore it."
         ),
         AppFeature(
@@ -62,7 +68,7 @@ object FeatureGuide {
             "1. If an added or edited lecture overlaps an existing class on that day, UniTask warns you.\n2. Review the conflict warning dialog to avoid double booking."
         ),
         AppFeature(
-            "Courses", "Keep your subjects, instructors, and colors in one place.", "school", 70,
+            "Courses", "Keep your subjects, instructors, and colors in one place.", "school", 1,
             "1. Open the Courses tab.\n2. Tap the + button, then Add Course, and enter code, name, and instructor.\n3. All tasks and lecture slots inherit course color tags."
         ),
         AppFeature(
@@ -134,7 +140,7 @@ object FeatureGuide {
             "1. Open Settings, then General.\n2. Tap an Accent colour swatch."
         ),
         AppFeature(
-            "Notes", "Capture lecture notes, ideas, and revision summaries with course tags and search.", "edit_note", 135,
+            "Notes", "Capture lecture notes, ideas, and revision summaries with course tags and search.", "edit_note", 5,
             "1. Tap the More icon in the top bar, then tap Notes.\n2. Tap New note (or the + button) to create a note.\n3. Tap Course to pick a course for the note.\n4. Type in the search bar or tap a course chip to filter notes.\n5. Tap the sort icon to sort by Last edited, Date created, or Title A to Z.\n6. Tap the three dots menu on a note card to Pin, Save to device or Delete it.\n7. Tap More in the top bar, then Recently deleted to view or restore deleted notes.\n8. Use Save to device in the note menu to keep a note as a file in any folder you choose.\n9. Share or Save to device can also make a PDF that looks like the preview, with headings, lists, tables and images."
         ),
         AppFeature(
@@ -146,8 +152,8 @@ object FeatureGuide {
             "1. In the note editor, open the three dots menu, tap Share, and choose a file type.\n2. In the notes list, open the top-right menu and tap Import .md or .txt file.\n3. Open Markdown files from other apps via Open with and Share, and save the preview to Notes.\n4. Notes are included automatically in backups and in Export My Data under Settings.\n5. Notes are stored on this phone only and are not synced to an account. Make a backup before switching phones.\n6. Note images stay saved on your phone and are kept in your backups."
         ),
         AppFeature(
-            "Timer and Countdown", "Track study time with a stopwatch or a countdown, in full screen if you like.", "timer", 150,
-            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, or Countdown to count down.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted. The ring around the time shows how much of a countdown is left, and a running countdown also shows when it will end.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it.\n8. Every run of at least 10 seconds is saved as a study session when you tap Reset or a countdown finishes. Tap the history icon at the top, or the Studied today card, to see your totals, the last 7 days and each session. Delete one session with its bin icon, or clear everything with the sweep icon."
+            "Timer and Countdown", "Track study time with a stopwatch, a countdown or Pomodoro, in full screen if you like.", "timer", 150,
+            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, Countdown to count down, or Pomodoro for focus rounds with short and long breaks. In Pomodoro, tap the lengths chip or the big clock to change the lengths. When a phase ends, tap Start break or Start focus to move on, or tap Skip to jump ahead. Breaks are not saved as study time.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted. The ring around the time shows how much of a countdown is left, and a running countdown also shows when it will end.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it.\n8. Every run of at least 10 seconds is saved as a study session when you tap Reset or a countdown finishes. Tap the history icon at the top, or the Studied today card, to see your totals, the last 7 days and each session. Delete one session with its bin icon, or clear everything with the sweep icon."
         ),
         AppFeature(
             "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "restore_trash", 155,

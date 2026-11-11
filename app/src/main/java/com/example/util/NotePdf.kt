@@ -18,6 +18,8 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
+import com.example.util.markdown.CodeHighlighter
+import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
 import com.example.util.markdown.MarkdownBlock
 import com.example.util.markdown.TableAlign
@@ -145,6 +147,34 @@ object NotePdf {
             .setLineSpacing(0f, lineSpacingMultiplier)
             .setIncludePad(false)
             .build()
+    }
+
+    /** Colours for code on the PDF's light code background. */
+    private fun codeTokenColor(type: CodeTokenType): Int = when (type) {
+        CodeTokenType.KEYWORD -> 0xFF8E24AA.toInt()
+        CodeTokenType.STRING -> 0xFF2E7D32.toInt()
+        CodeTokenType.COMMENT -> 0xFF6B7280.toInt()
+        CodeTokenType.NUMBER -> 0xFFB45309.toInt()
+        CodeTokenType.TYPE -> 0xFF9A6700.toInt()
+        CodeTokenType.FUNCTION -> 0xFF1565C0.toInt()
+    }
+
+    /** The text of a fenced code block with syntax colours; no language (or an unknown one) stays plain. */
+    fun highlightedCode(code: String, language: String): SpannableStringBuilder {
+        val builder = SpannableStringBuilder(code)
+        for (token in CodeHighlighter.tokenize(code, language)) {
+            builder.setSpan(
+                ForegroundColorSpan(codeTokenColor(token.type)),
+                token.start, token.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            if (token.type == CodeTokenType.COMMENT) {
+                builder.setSpan(
+                    StyleSpan(Typeface.ITALIC),
+                    token.start, token.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+        return builder
     }
 
     /**
@@ -500,7 +530,12 @@ object NotePdf {
         private fun renderCodeBlock(block: MarkdownBlock.CodeBlock) {
             val textX = LEFT_MARGIN + 8f
             val textWidth = maxOf(1, (CONTENT_WIDTH - 16f).toInt())
-            val layout = createStaticLayout(block.text, codePaint, textWidth, lineSpacingMultiplier = 1.2f)
+            val layout = createStaticLayout(
+                highlightedCode(block.text, block.language),
+                codePaint,
+                textWidth,
+                lineSpacingMultiplier = 1.2f
+            )
 
             var startLine = 0
             val totalLines = layout.lineCount

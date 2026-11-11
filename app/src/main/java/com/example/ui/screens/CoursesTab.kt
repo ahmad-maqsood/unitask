@@ -162,7 +162,7 @@ fun CoursesTab(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = "No courses added yet",
+                            text = "Add your first course",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface

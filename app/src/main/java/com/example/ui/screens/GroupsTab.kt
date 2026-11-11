@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.groups.GroupChatInfo
+import com.example.util.AppTip
 import com.example.data.groups.GroupMembership
 import com.example.data.groups.GroupMessage
 import com.example.util.currentSupabaseUid
@@ -479,6 +480,12 @@ fun GroupsListScreen(
                 Text("Join a group", maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
+
+        // First visit hint with a link to the Groups guide
+        OneTimeTip(
+            tip = AppTip.GROUPS,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
 
         if (memberships.isEmpty()) {
             Box(

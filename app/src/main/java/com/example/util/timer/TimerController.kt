@@ -44,13 +44,21 @@ class TimerController(
     fun now(): Long = clock()
 
     fun start() {
+        // Pomodoro: make sure a phase that has just run out is closed (and saved) first.
+        if (_state.value.pomodoroPhase != null) markFinishedIfDue()
         val current = _state.value
         val currentTime = now()
-        val updated = TimerLogic.start(current, currentTime)
+        // Pomodoro: starting after a phase has finished begins the next phase (focus or break).
+        val base = if (current.pomodoroPhase != null && TimerLogic.isFinished(current, currentTime)) {
+            PomodoroLogic.advance(current, store.pomodoroSettings())
+        } else {
+            current
+        }
+        val updated = TimerLogic.start(base, currentTime)
         if (updated != current) {
             // Starting from a clean timer begins a new study session; resuming from a pause
             // continues the one already in progress.
-            if (TimerLogic.isIdle(current)) {
+            if (TimerLogic.isIdle(base)) {
                 store.setSessionStartMillis(currentTime)
             }
             store.save(updated)
@@ -91,14 +99,63 @@ class TimerController(
 
     fun setMode(mode: TimerMode) {
         val current = _state.value
-        val updated = TimerLogic.withMode(current, mode)
+        if (!TimerLogic.isIdle(current)) return
+        // Leaving Pomodoro puts the plain countdown back at the length the user last chose.
+        val base = if (current.pomodoroPhase != null) {
+            PomodoroLogic.disable(current, store.lastCountdownMinutes())
+        } else {
+            current
+        }
+        val updated = TimerLogic.withMode(base, mode)
         if (updated != current) {
             store.save(updated)
             _state.value = updated
         }
     }
 
+    /** Turns on Pomodoro mode, starting at focus round 1. Only works while the timer is idle. */
+    fun enablePomodoro() {
+        val current = _state.value
+        val updated = PomodoroLogic.enable(current, store.pomodoroSettings())
+        if (updated != current) {
+            store.save(updated)
+            _state.value = updated
+        }
+    }
+
+    fun pomodoroSettings(): PomodoroSettings = store.pomodoroSettings()
+
+    /** Saves new Pomodoro lengths. An idle timer picks up the new length of its current phase now. */
+    fun setPomodoroSettings(settings: PomodoroSettings) {
+        val clean = settings.sanitized()
+        store.setPomodoroSettings(clean)
+        val current = _state.value
+        val updated = PomodoroLogic.withSettings(current, clean)
+        if (updated != current) {
+            store.save(updated)
+            _state.value = updated
+        }
+    }
+
+    /**
+     * Jumps to the next Pomodoro phase without waiting for this one to end, for example to cut a
+     * break short. Study time already done in a focus phase is still saved.
+     */
+    fun skipPomodoroPhase() {
+        markFinishedIfDue()
+        val current = _state.value
+        if (current.pomodoroPhase == null) return
+        recordSession(current, completed = false)
+        val updated = PomodoroLogic.advance(current, store.pomodoroSettings())
+        store.save(updated)
+        _state.value = updated
+        alarm.cancel()
+        ongoing.cancel()
+    }
+
     fun setCountdownMinutes(minutes: Int) {
+        // In Pomodoro mode the lengths come from the Pomodoro settings instead.
+        if (_state.value.pomodoroPhase != null) return
         store.setLastCountdownMinutes(minutes)
         val current = _state.value
         val updated = TimerLogic.withCountdownMinutes(current, minutes)
@@ -132,6 +189,8 @@ class TimerController(
     private fun recordSession(state: TimerState, completed: Boolean) {
         val startedAt = store.sessionStartMillis() ?: return
         store.setSessionStartMillis(null)
+        // A Pomodoro break is rest, not study, so it is never saved to the study history.
+        if (state.pomodoroPhase?.isBreak == true) return
         val duration = if (completed) {
             state.countdownTotalMillis
         } else {

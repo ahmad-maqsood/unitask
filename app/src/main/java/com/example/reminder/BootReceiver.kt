@@ -78,7 +78,8 @@ class BootReceiver : BroadcastReceiver() {
                         CountdownNotifier.notifyFinished(
                             appContext,
                             controller.state.value.countdownTotalMillis,
-                            ring = ring
+                            ring = ring,
+                            phase = stateBefore.pomodoroPhase
                         )
                     }
                 }

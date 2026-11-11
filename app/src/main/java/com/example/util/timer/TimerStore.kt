@@ -32,11 +32,23 @@ class TimerStore(context: Context) {
                 null
             }
 
+            val phase = prefs.getString(KEY_POMODORO_PHASE, null)?.let {
+                try {
+                    PomodoroPhase.valueOf(it)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+            val round = prefs.getInt(KEY_POMODORO_ROUND, 1)
+
             TimerState(
-                mode = mode,
+                // Pomodoro is always a countdown.
+                mode = if (phase != null) TimerMode.COUNTDOWN else mode,
                 countdownTotalMillis = if (countdownTotal > 0L) countdownTotal else 25 * 60_000L,
                 accumulatedMillis = if (accumulated >= 0L) accumulated else 0L,
-                runningSinceMillis = runningSince
+                runningSinceMillis = runningSince,
+                pomodoroPhase = phase,
+                pomodoroRound = if (round >= 1) round else 1
             )
         } catch (_: Exception) {
             TimerState()
@@ -49,6 +61,13 @@ class TimerStore(context: Context) {
                 .putString(KEY_MODE, state.mode.name)
                 .putLong(KEY_COUNTDOWN_TOTAL_MILLIS, state.countdownTotalMillis)
                 .putLong(KEY_ACCUMULATED_MILLIS, state.accumulatedMillis)
+                .putInt(KEY_POMODORO_ROUND, state.pomodoroRound)
+
+            if (state.pomodoroPhase != null) {
+                editor.putString(KEY_POMODORO_PHASE, state.pomodoroPhase.name)
+            } else {
+                editor.remove(KEY_POMODORO_PHASE)
+            }
 
             if (state.runningSinceMillis != null) {
                 editor.putLong(KEY_RUNNING_SINCE_MILLIS, state.runningSinceMillis)
@@ -86,6 +105,34 @@ class TimerStore(context: Context) {
         }
     }
     
+    /** The Pomodoro lengths the user chose, or the usual 25 / 5 / 15 minutes and 4 rounds. */
+    fun pomodoroSettings(): PomodoroSettings {
+        return try {
+            PomodoroSettings(
+                focusMinutes = prefs.getInt(KEY_POMODORO_FOCUS, PomodoroSettings.DEFAULT_FOCUS_MINUTES),
+                shortBreakMinutes = prefs.getInt(KEY_POMODORO_SHORT, PomodoroSettings.DEFAULT_SHORT_BREAK_MINUTES),
+                longBreakMinutes = prefs.getInt(KEY_POMODORO_LONG, PomodoroSettings.DEFAULT_LONG_BREAK_MINUTES),
+                roundsBeforeLongBreak = prefs.getInt(KEY_POMODORO_ROUNDS, PomodoroSettings.DEFAULT_ROUNDS)
+            ).sanitized()
+        } catch (_: Exception) {
+            PomodoroSettings()
+        }
+    }
+
+    fun setPomodoroSettings(settings: PomodoroSettings) {
+        try {
+            val s = settings.sanitized()
+            prefs.edit()
+                .putInt(KEY_POMODORO_FOCUS, s.focusMinutes)
+                .putInt(KEY_POMODORO_SHORT, s.shortBreakMinutes)
+                .putInt(KEY_POMODORO_LONG, s.longBreakMinutes)
+                .putInt(KEY_POMODORO_ROUNDS, s.roundsBeforeLongBreak)
+                .apply()
+        } catch (_: Exception) {
+            // Never throw on preference save failures.
+        }
+    }
+
     /** When the current run was first started, or null when no run is in progress. */
     fun sessionStartMillis(): Long? {
         return try {
@@ -138,6 +185,12 @@ class TimerStore(context: Context) {
         private const val KEY_LAST_COUNTDOWN_MINUTES = "last_countdown_minutes"
         private const val KEY_KEEP_SCREEN_ON_FULLSCREEN = "keep_screen_on_fullscreen"
         private const val KEY_SESSION_START_MILLIS = "session_start_millis"
+        private const val KEY_POMODORO_PHASE = "pomodoro_phase"
+        private const val KEY_POMODORO_ROUND = "pomodoro_round"
+        private const val KEY_POMODORO_FOCUS = "pomodoro_focus_minutes"
+        private const val KEY_POMODORO_SHORT = "pomodoro_short_break_minutes"
+        private const val KEY_POMODORO_LONG = "pomodoro_long_break_minutes"
+        private const val KEY_POMODORO_ROUNDS = "pomodoro_rounds_before_long_break"
         private const val DEFAULT_COUNTDOWN_MINUTES = 25
     }
 }

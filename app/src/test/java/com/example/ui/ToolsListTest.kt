@@ -23,7 +23,7 @@ class ToolsListTest {
             onOpenSettings = { settingsClicked = true }
         )
 
-        assertEquals(4, tools.size)
+        assertEquals(5, tools.size)
 
         val recentlyDeleted = tools.find { it.label == "Recently deleted" }
         assertNotNull(recentlyDeleted)
@@ -43,6 +43,26 @@ class ToolsListTest {
 
         // Search has its own top bar icon, so it is no longer a tile.
         assertEquals(null, tools.find { it.label == "Search" })
+    }
+
+    @Test
+    fun testToolsListHasHelpTileThatOpensTheGuide() {
+        var helpClicked = false
+        val tools = buildToolsList({}, {}, {}, {}, onOpenHelp = { helpClicked = true })
+        val help = tools.find { it.label == "Help" }
+        assertNotNull(help)
+        assertEquals("tools_tile_help", help?.testTag)
+        help?.onClick?.invoke()
+        assertTrue(helpClicked)
+    }
+
+    @Test
+    fun testBeginnerTopicsComeFirstInTheGuide() {
+        val firstFive = FeatureGuide.all.take(5).map { it.title }
+        assertEquals(
+            listOf("Courses", "Deadlines & Urgency", "Reminders", "Timetable & Schedule", "Notes"),
+            firstFive
+        )
     }
 
     @Test

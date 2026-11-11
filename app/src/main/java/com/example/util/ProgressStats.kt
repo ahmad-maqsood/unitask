@@ -65,12 +65,12 @@ object ProgressLogic {
         val currentlyDone = tasks
             .map { it.task }
             .filter { it.status == TaskStatus.COMPLETED && it.completedAtMillis > 0L }
-            .map { CompletionEntry(it.id, it.completedAtMillis) }
+            .map { it.completedAtMillis }
         // The saved history keeps ticks that a repeating task cleared at midnight. The same tick
-        // found in both places counts once.
-        val doneTimes = (currentlyDone + loggedCompletions.filter { it.completedAt > 0L })
+        // found in both places counts once. Ticks are matched by their time, not by task number,
+        // because task numbers change when a backup is restored on another phone.
+        val doneTimes = (currentlyDone + loggedCompletions.map { it.completedAt }.filter { it > 0L })
             .distinct()
-            .map { it.completedAt }
 
         val perWeek = doneTimes.groupingBy { weekStart(it) }.eachCount()
         val thisWeekStart = weekStart(now)

@@ -381,11 +381,12 @@ class AppRepository(
             isSynced = false
         )
         // Keep the Progress history in step (before the database write, see updateTaskStatus).
-        val before = taskDao.getTaskById(task.id)?.status
+        val beforeTask = taskDao.getTaskById(task.id)
+        val before = beforeTask?.status
         if (task.status == TaskStatus.COMPLETED && before != TaskStatus.COMPLETED) {
             CompletionLog.record(context, task.id, completedAt)
         } else if (task.status != TaskStatus.COMPLETED && before == TaskStatus.COMPLETED) {
-            CompletionLog.removeLatest(context, task.id)
+            CompletionLog.forget(context, task.id, beforeTask?.completedAtMillis ?: 0L)
         }
         taskDao.updateTask(taskToUpdate)
 
@@ -405,11 +406,12 @@ class AppRepository(
         val completedAt = if (newStatus == TaskStatus.COMPLETED) System.currentTimeMillis() else 0L
         // Keep the Progress history in step. This runs before the database write so the Progress
         // screen never sees the new status together with an old history.
-        val before = taskDao.getTaskById(taskId)?.status
+        val beforeTask = taskDao.getTaskById(taskId)
+        val before = beforeTask?.status
         if (newStatus == TaskStatus.COMPLETED && before != TaskStatus.COMPLETED) {
             CompletionLog.record(context, taskId, completedAt)
         } else if (newStatus != TaskStatus.COMPLETED && before == TaskStatus.COMPLETED) {
-            CompletionLog.removeLatest(context, taskId)
+            CompletionLog.forget(context, taskId, beforeTask?.completedAtMillis ?: 0L)
         }
         taskDao.updateStatusAndCompletedAt(taskId, newStatus, completedAt)
         if (newStatus == TaskStatus.COMPLETED) {

@@ -60,6 +60,34 @@ class CompletionLogTest {
     }
 
     @Test
+    fun restoredTimesSkipKnownTimesWhateverTheTaskAndDropBadOnes() {
+        val now = System.currentTimeMillis()
+        val known = CompletionEntry(5L, now - day)
+        val list = CompletionLog.withRestoredTimes(
+            listOf(known),
+            times = listOf(now - day, now - 2 * day, now - 2 * day, 0L, -5L, now - 401 * day),
+            nowMillis = now
+        )
+        assertEquals(listOf(known, CompletionEntry(0L, now - 2 * day)), list)
+    }
+
+    @Test
+    fun forgetRemovesEveryEntryWithThatTimeAndFallsBackToTheTask() {
+        val now = System.currentTimeMillis()
+        CompletionLog.record(context, 1L, now)
+        CompletionLog.restoreTimes(context, listOf(now - day))
+        CompletionLog.record(context, 2L, now - 5_000L)
+
+        // Known time: the entry goes, other entries stay.
+        CompletionLog.forget(context, taskId = 1L, completedAt = now)
+        assertEquals(listOf(now - 5_000L, now - day), CompletionLog.entries(context).map { it.completedAt })
+
+        // Unknown time (0): the newest tick of the task goes.
+        CompletionLog.forget(context, taskId = 2L, completedAt = 0L)
+        assertEquals(listOf(now - day), CompletionLog.entries(context).map { it.completedAt })
+    }
+
+    @Test
     fun storeKeepsTicksNewestFirstAndForgetsAnUndoneOne() {
         val now = System.currentTimeMillis()
         CompletionLog.record(context, 1L, now - day)

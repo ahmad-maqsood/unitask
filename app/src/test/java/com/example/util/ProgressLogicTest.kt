@@ -173,4 +173,21 @@ class ProgressLogicTest {
         val result = compute(listOf(task), log = listOf(CompletionEntry(7L, time)))
         assertEquals(1, result.doneThisWeek)
     }
+
+    @Test
+    fun aRestoredTickWithNoKnownTaskIsNotCountedTwice() {
+        // After a restore on another phone the history has the tick as task 0 while the task itself
+        // has a new number. Same time, so it is one tick.
+        val time = at(2026, 11, 12)
+        val task = TaskWithCourse(
+            task = TaskItem(
+                id = 42L, courseId = course.id, title = "t", dueDateEpochMillis = 0L,
+                status = TaskStatus.COMPLETED, completedAtMillis = time
+            ),
+            course = course
+        )
+        val result = compute(listOf(task), log = listOf(CompletionEntry(0L, time)))
+        assertEquals(1, result.doneThisWeek)
+        assertEquals(1, result.streakDays)
+    }
 }

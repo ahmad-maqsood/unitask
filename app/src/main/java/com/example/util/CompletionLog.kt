@@ -17,7 +17,7 @@ data class CompletionEntry(val taskId: Long, val completedAt: Long)
 object CompletionLog {
     private const val PREFS = "completion_log"
     private const val KEY_ITEMS = "items_json"
-    private const val MAX_ITEMS = 5000
+    const val MAX_ITEMS = 5000
     private const val MAX_AGE_MILLIS = 400L * 24 * 60 * 60 * 1000
     private val LOCK = Any()
 
@@ -36,6 +36,26 @@ object CompletionLog {
     fun withoutLatest(list: List<CompletionEntry>, taskId: Long): List<CompletionEntry> {
         val latest = list.filter { it.taskId == taskId }.maxByOrNull { it.completedAt } ?: return list
         return list.filter { it != latest }
+    }
+
+    /** Removes every entry with this tick time, whatever task it came from. Pure. */
+    fun withoutTime(list: List<CompletionEntry>, completedAt: Long): List<CompletionEntry> =
+        list.filter { it.completedAt != completedAt }
+
+    /**
+     * Adds tick times that came from a backup. A time that is already in the history is skipped,
+     * whichever task it belonged to, because task numbers are different after a restore on another
+     * phone. Restored entries have no known task (taskId 0). Pure.
+     */
+    fun withRestoredTimes(
+        list: List<CompletionEntry>,
+        times: List<Long>,
+        nowMillis: Long
+    ): List<CompletionEntry> {
+        val pruned = prune(list, nowMillis)
+        val known = pruned.map { it.completedAt }.toHashSet()
+        val added = times.filter { it > 0L && known.add(it) }.map { CompletionEntry(0L, it) }
+        return prune(pruned + added, nowMillis).sortedByDescending { it.completedAt }.take(MAX_ITEMS)
     }
 
     private fun prune(list: List<CompletionEntry>, nowMillis: Long): List<CompletionEntry> =
@@ -63,6 +83,40 @@ object CompletionLog {
                 val current = load(context)
                 val updated = withoutLatest(current, taskId)
                 if (updated.size != current.size) save(context, updated)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    /**
+     * Forgets the tick of a task that was just marked not done. When the tick time is known, every
+     * entry with that time goes (so a restored entry with no task goes too); otherwise the newest
+     * tick of the task goes. Never throws.
+     */
+    fun forget(context: Context, taskId: Long, completedAt: Long) {
+        try {
+            synchronized(LOCK) {
+                val current = load(context)
+                val updated = if (completedAt > 0L) {
+                    withoutTime(current, completedAt)
+                } else {
+                    withoutLatest(current, taskId)
+                }
+                if (updated.size != current.size) save(context, updated)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Adds tick times from a backup in one go. Never throws. */
+    fun restoreTimes(
+        context: Context,
+        times: List<Long>,
+        nowMillis: Long = System.currentTimeMillis()
+    ) {
+        try {
+            synchronized(LOCK) {
+                save(context, withRestoredTimes(load(context), times, nowMillis))
             }
         } catch (_: Exception) {
         }

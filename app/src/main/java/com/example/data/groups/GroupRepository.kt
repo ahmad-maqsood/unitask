@@ -604,15 +604,30 @@ class GroupRepository(private val context: Context) {
             withPendingTasks(groupId, server, pending)
         }
 
+    private fun observeGroupTasksFromServer(groupId: String): Flow<List<GroupTask>> =
+        serverTaskFlow(groupId, "tasks", "observeGroupTasks") { effectiveUid() != null }
+
+    /**
+     * One shared reader for a group's tasks: reads once, retries a failed read after 2, 4 and 6 seconds,
+     * then re-reads on every realtime change, local change, poll tick and return to the app.
+     * [canStart] says whether a signed-in user is known; if not, an empty list is sent and the flow ends.
+     * [channelPrefix] and [label] only name the realtime channel and the log lines.
+     */
     @OptIn(FlowPreview::class)
-    private fun observeGroupTasksFromServer(groupId: String): Flow<List<GroupTask>> = callbackFlow {
-        if (groupId.isBlank() || effectiveUid() == null) {
+    private fun serverTaskFlow(
+        groupId: String,
+        channelPrefix: String,
+        label: String,
+        canStart: () -> Boolean
+    ): Flow<List<GroupTask>> = callbackFlow {
+        if (groupId.isBlank() || !canStart()) {
             trySend(emptyList())
             close()
             return@callbackFlow
         }
 
-        var failedReads = 0
+        // Read from the realtime event and from retries at the same time, so the counter must be thread safe.
+        val failedReads = java.util.concurrent.atomic.AtomicInteger(0)
         suspend fun queryAndEmit() {
             try {
                 val rows = SupabaseProvider.client.postgrest["group_tasks"]
@@ -622,13 +637,15 @@ class GroupRepository(private val context: Context) {
                         }
                     }.decodeList<GroupTaskRow>()
                 trySend(rows.map { it.toGroupTask() })
-                failedReads = 0
+                failedReads.set(0)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Log.w(TAG, "observeGroupTasks select failed for $groupId: ${e.message}")
+                Log.w(TAG, "$label select failed for $groupId: ${e.message}")
                 // A failed read used to wait for the next 15 to 30 second tick. Try again soon instead.
-                if (failedReads < 3) {
-                    failedReads++
-                    val waitMillis = 2_000L * failedReads
+                val failures = failedReads.incrementAndGet()
+                if (failures <= 3) {
+                    val waitMillis = 2_000L * failures
                     launch {
                         delay(waitMillis)
                         queryAndEmit()
@@ -639,7 +656,7 @@ class GroupRepository(private val context: Context) {
 
         launch { queryAndEmit() }
 
-        val channelName = "tasks-$groupId-${System.nanoTime()}"
+        val channelName = "$channelPrefix-$groupId-${System.nanoTime()}"
         val channel = SupabaseProvider.client.channel(channelName)
 
         val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
@@ -657,9 +674,10 @@ class GroupRepository(private val context: Context) {
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Log.w(TAG, "Realtime subscribe failed (attempt ${attempt + 1}): ${e.message}")
                         attempt++
-                        delay(2_000L * attempt)
+                        Log.w(TAG, "Realtime subscribe failed (attempt $attempt): ${e.message}")
+                        // No point waiting after the last attempt.
+                        if (attempt < 4) delay(2_000L * attempt)
                     }
                 }
                 // Anything that changed while connecting was missed: read once more.
@@ -1134,91 +1152,10 @@ class GroupRepository(private val context: Context) {
             withPendingTasks(groupId, server, pending)
         }
 
-    @OptIn(FlowPreview::class)
-    private fun observeGroupTasksForAppFromServer(uid: String, groupId: String): Flow<List<GroupTask>> = callbackFlow {
-        val myUid = currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)
-        if (groupId.isBlank() || myUid == null) {
-            trySend(emptyList())
-            close()
-            return@callbackFlow
+    private fun observeGroupTasksForAppFromServer(uid: String, groupId: String): Flow<List<GroupTask>> =
+        serverTaskFlow(groupId, "app-tasks", "observeGroupTasksForApp") {
+            (currentSupabaseUid() ?: uid.takeIf { it.isNotBlank() } ?: com.example.util.AuthStorage.getLastUid(context)) != null
         }
-
-        var failedReads = 0
-        suspend fun queryAndEmit() {
-            try {
-                val rows = SupabaseProvider.client.postgrest["group_tasks"]
-                    .select {
-                        filter {
-                            eq("group_id", groupId)
-                        }
-                    }.decodeList<GroupTaskRow>()
-                trySend(rows.map { it.toGroupTask() })
-                failedReads = 0
-            } catch (e: Exception) {
-                Log.w(TAG, "observeGroupTasksForApp select failed for $groupId: ${e.message}")
-                // A failed read used to wait for the next 15 to 30 second tick. Try again soon instead.
-                if (failedReads < 3) {
-                    failedReads++
-                    val waitMillis = 2_000L * failedReads
-                    launch {
-                        delay(waitMillis)
-                        queryAndEmit()
-                    }
-                }
-            }
-        }
-
-        launch { queryAndEmit() }
-
-        val channelName = "app-tasks-$groupId-${System.nanoTime()}"
-        val channel = SupabaseProvider.client.channel(channelName)
-
-        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
-            table = "group_tasks"
-        }
-
-        val job = launch {
-            launch {
-                // Try a few times: one failed attempt must not leave this screen on polling only.
-                var attempt = 0
-                while (attempt < 4) {
-                    try {
-                        channel.subscribe()
-                        break
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Realtime subscribe failed (attempt ${attempt + 1}): ${e.message}")
-                        attempt++
-                        delay(2_000L * attempt)
-                    }
-                }
-                // Anything that changed while connecting was missed: read once more.
-                queryAndEmit()
-            }
-            try {
-                merge(changeFlow.map { }, localChanges, pollTicker())
-                    .debounce(100L)
-                    .collect { queryAndEmit() }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "Refresh loop stopped: ${e.message}")
-            }
-        }
-
-        awaitClose {
-            job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    channel.unsubscribe()
-                    SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
-                }
-            }
-        }
-    }
 
     private fun observeGroupSnapshot(uid: String, m: GroupMembership): Flow<GroupSnapshot?> {
         val myUid = currentSupabaseUid() ?: uid

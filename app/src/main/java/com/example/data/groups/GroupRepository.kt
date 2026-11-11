@@ -1876,12 +1876,31 @@ class GroupRepository(private val context: Context) {
             onFailure(Exception("Not signed in"))
             return
         }
+        // A task that was just added still has a temporary "local-" id, which is not a valid uuid for
+        // the server. Take it off the screen, then delete the real row by matching its fields.
+        val localTask = if (taskId.startsWith("local-")) {
+            pendingTasks.value.firstOrNull { it.id == taskId }
+        } else null
+        if (taskId.startsWith("local-")) {
+            pendingTasks.update { list -> list.filter { it.id != taskId } }
+            if (localTask == null) {
+                localChanges.tryEmit(Unit)
+                return
+            }
+        }
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 SupabaseProvider.client.postgrest["group_tasks"].delete {
                     filter {
-                        eq("id", taskId)
-                        eq("group_id", groupId)
+                        if (localTask != null) {
+                            eq("group_id", groupId)
+                            eq("created_by", localTask.createdBy)
+                            eq("title", localTask.title)
+                            eq("due_date_epoch_millis", localTask.dueDateEpochMillis)
+                        } else {
+                            eq("id", taskId)
+                            eq("group_id", groupId)
+                        }
                     }
                 }
                 localChanges.tryEmit(Unit)

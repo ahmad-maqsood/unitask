@@ -434,7 +434,7 @@ fun NotesScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             Text(
-                                text = if (isFiltered) "No notes found" else "No notes yet",
+                                text = if (isFiltered) "No notes found" else "Add your first note",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -465,7 +465,7 @@ fun NotesScreen(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("New note")
+                                    Text("Add Your First Note")
                                 }
                             }
                         }

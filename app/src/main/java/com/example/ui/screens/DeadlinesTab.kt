@@ -707,7 +707,7 @@ fun DeadlinesTab(
                             text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null)
                                 "No assignments match your filters"
                             else
-                                "No assignments yet!",
+                                "Add your first assignment",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -730,7 +730,8 @@ fun DeadlinesTab(
                             onClick = onAddTaskClick,
                             modifier = Modifier.testTag("empty_state_add_task_button")
                         ) {
-                            Text("+ Add Assignment")
+                            val isFiltered = searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null
+                            Text(if (isFiltered) "+ Add Assignment" else "+ Add Your First Assignment")
                         }
                     }
                 }

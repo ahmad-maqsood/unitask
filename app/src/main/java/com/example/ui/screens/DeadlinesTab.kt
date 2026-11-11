@@ -53,6 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,7 +86,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
 import com.example.data.local.isMyTasksCourse
+import com.example.util.GetStartedLogic
+import com.example.util.GetStartedPrefs
 import com.example.util.drive.DrivePrefs
+import com.example.util.timer.TimerController
+import com.example.util.timer.TimerLogic
 import com.example.ui.theme.rememberCourseColor
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -144,6 +149,29 @@ fun DeadlinesTab(
     )
 
     val showRestoreOffer = computedAppEmpty && !restoreOfferDismissed
+
+    // "Get started" checklist. Steps tick from the person's own data and stay ticked once done.
+    val getStartedPrefs = remember { GetStartedPrefs(context) }
+    var getStartedDismissed by rememberSaveable { mutableStateOf(getStartedPrefs.dismissed) }
+    var getStartedDone by remember { mutableStateOf(getStartedPrefs.doneSteps) }
+    val activeSlots by remember(db) { db.lectureSlotDao().getAllSlotsWithCourse() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val timerState by TimerController.get(context).state.collectAsStateWithLifecycle()
+    val getStartedDetected = GetStartedLogic.detect(
+        hasCourse = activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() },
+        hasDeadline = activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true },
+        hasReminder = activeTasks.any {
+            !it.task.isDeleted && it.course?.isMyTasksCourse() != true && it.task.reminderOptions.isNotEmpty()
+        },
+        hasClass = activeSlots.isNotEmpty(),
+        timerTried = !TimerLogic.isIdle(timerState)
+    )
+    LaunchedEffect(getStartedDetected) {
+        if (!getStartedDone.containsAll(getStartedDetected)) {
+            getStartedDone = getStartedDone + getStartedDetected
+            getStartedPrefs.doneSteps = getStartedDone
+        }
+    }
+    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedDone)
     val selectedTaskIds = rememberSaveable(
         saver = listSaver(
             save = { it.toList() },
@@ -223,6 +251,18 @@ fun DeadlinesTab(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        if (showGetStarted) {
+            item(key = "get_started_card") {
+                GetStartedCard(
+                    done = getStartedDone,
+                    onDismiss = {
+                        getStartedDismissed = true
+                        getStartedPrefs.dismissed = true
+                    }
+                )
+            }
+        }
+
         // Highlighted classes for the active day. We intentionally show the full daily schedule
         // instead of a single next class and hide classes that started more than 20 minutes ago.
         if (highlightedClassInfo.isNotEmpty()) {

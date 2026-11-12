@@ -202,7 +202,10 @@ fun DeadlinesTab(
         batteryOptimizationOff = remember(settingsRefresh) {
             BackgroundAccess.isIgnoringBatteryOptimizations(context)
         },
-        autostartDone = remember(settingsRefresh) { BackgroundAccess.isAutostartStepDone(context) }
+        autostartDone = remember(settingsRefresh) { BackgroundAccess.isAutostartStepDone(context) },
+        driveConnected = remember(settingsRefresh) {
+            com.example.util.drive.DrivePrefs(context).isConnected
+        }
     )
     // Only the app steps are saved as ticked. Phone-setting steps follow the phone's current state.
     val getStartedSaveable = getStartedDetected.filterNot { it.isSystem }.toSet()

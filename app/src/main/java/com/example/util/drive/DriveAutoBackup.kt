@@ -303,7 +303,8 @@ object DriveAutoBackup {
                     context,
                     prefs,
                     now,
-                    needsReconnect = backupResult.kind == DriveException.Kind.AUTH
+                    needsReconnect = backupResult.kind == DriveException.Kind.AUTH,
+                    driveFull = backupResult.kind == DriveException.Kind.QUOTA
                 )
                 when (backupResult.kind) {
                     DriveException.Kind.NETWORK, DriveException.Kind.SERVER -> Outcome.Retry
@@ -321,6 +322,8 @@ object DriveAutoBackup {
      * Adds one bell entry per failure streak.
      *
      * A lost Google sign-in ([needsReconnect]) never fixes itself, so it is reported after one day.
+     * A full Google Drive ([driveFull]) stays full until the person frees space, so it is also
+     * reported after one day.
      * Other failures (no connection, Drive trouble) often clear on their own, so they are reported
      * only after 3 days and at least 3 failed runs.
      */
@@ -328,7 +331,8 @@ object DriveAutoBackup {
         context: Context,
         prefs: DrivePrefs,
         now: Long,
-        needsReconnect: Boolean = false
+        needsReconnect: Boolean = false,
+        driveFull: Boolean = false
     ) {
         // Start the failure clock on the first failure of a streak.
         if (prefs.firstFailureAt == 0L || prefs.firstFailureAt > now) {
@@ -343,6 +347,14 @@ object DriveAutoBackup {
                 kind = "Backup",
                 title = "Google Drive backup",
                 body = "Google Drive backup stopped because the sign-in expired. Open Settings, Backup & data and reconnect."
+            )
+            prefs.failureNotified = true
+        } else if (driveFull && failingForMs >= ONE_DAY_MS) {
+            NotificationHistory.add(
+                context = context,
+                kind = "Backup",
+                title = "Google Drive backup",
+                body = "Google Drive backup stopped because your Google Drive is full. Free up space in Google Drive, then open Settings, Backup & data and tap Back up now."
             )
             prefs.failureNotified = true
         } else if (prefs.consecutiveFailures >= 3 && failingForMs >= THREE_DAYS_MS) {

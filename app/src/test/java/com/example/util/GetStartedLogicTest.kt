@@ -21,6 +21,7 @@ class GetStartedLogicTest {
         assertEquals(setOf(GetStartedStep.REMINDER), GetStartedLogic.detect(false, false, true, false, false))
         assertEquals(setOf(GetStartedStep.CLASS), GetStartedLogic.detect(false, false, false, true, false))
         assertEquals(setOf(GetStartedStep.TIMER), GetStartedLogic.detect(false, false, false, false, true))
+        assertEquals(setOf(GetStartedStep.BACKUP), GetStartedLogic.detect(false, false, false, false, false, driveConnected = true))
     }
 
     @Test
@@ -31,9 +32,9 @@ class GetStartedLogicTest {
     }
 
     @Test
-    fun allEightStepsFinishTheChecklist() {
-        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, true)
-        assertEquals(8, done.size)
+    fun allNineStepsFinishTheChecklist() {
+        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, true, true)
+        assertEquals(9, done.size)
         assertTrue(GetStartedLogic.isFinished(done))
     }
 
@@ -43,10 +44,18 @@ class GetStartedLogicTest {
     }
 
     @Test
+    fun backupStepIsRequiredEvenWithoutAutostart() {
+        val required = GetStartedLogic.requiredSteps(needsAutostart = false)
+        assertTrue(GetStartedStep.BACKUP in required)
+        val withoutBackup = GetStartedLogic.detect(true, true, true, true, true, true, true, false)
+        assertFalse(GetStartedLogic.isFinished(withoutBackup, required))
+    }
+
+    @Test
     fun autostartIsNotRequiredOnPhonesWithoutIt() {
         val required = GetStartedLogic.requiredSteps(needsAutostart = false)
         assertFalse(GetStartedStep.AUTOSTART in required)
-        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, false)
+        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, false, true)
         assertTrue(GetStartedLogic.isFinished(done, required))
         assertFalse(GetStartedLogic.isFinished(done, GetStartedLogic.requiredSteps(needsAutostart = true)))
     }

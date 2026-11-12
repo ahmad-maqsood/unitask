@@ -779,6 +779,8 @@ fun MainScreen(
                                         }
                                     }
                                     GetStartedStep.TIMER -> showTimer = true
+                                    GetStartedStep.BACKUP ->
+                                        settingsOpenRequest = SettingsOpenRequest(SettingsPage.Backup)
                                     GetStartedStep.NOTIFICATIONS -> {
                                         val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
                                         val canAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

@@ -343,6 +343,28 @@ class DriveAutoBackupTest {
     }
 
     @Test
+    fun runOnce_driveFull_warnsAfterOneDay_withOwnMessage() = runBlocking {
+        db.courseDao().insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        prefs.lastHash = null
+        fakeStore.defaultException = DriveException(DriveException.Kind.QUOTA, "Storage quota exceeded")
+        fakeStore.failOnMethod = "create"
+
+        val now = 2_000_000_000_000L
+        val day = 24L * 60 * 60 * 1000L
+
+        assertEquals(DriveAutoBackup.Outcome.Failed, DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now))
+        assertEquals(0, NotificationHistory.items(context).size)
+
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + day)
+        val items = NotificationHistory.items(context)
+        assertEquals(1, items.size)
+        assertTrue(items[0].body.contains("Google Drive is full"))
+
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 2 * day)
+        assertEquals(1, NotificationHistory.items(context).size)
+    }
+
+    @Test
     fun constraints_andOnAppOpen() {
         val wifiConstraints = DriveAutoBackup.buildConstraints(wifiOnly = true)
         assertEquals(NetworkType.UNMETERED, wifiConstraints.requiredNetworkType)

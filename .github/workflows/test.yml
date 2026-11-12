@@ -45,12 +45,6 @@ jobs:
     name: Unit tests and Android lint
     runs-on: ubuntu-24.04
 
-    # Also write fatal JVM crash reports from Gradle and test-worker processes
-    # to the runner temp directory so they can be uploaded with the test logs.
-    env:
-      JAVA_TOOL_OPTIONS: >-
-        -XX:ErrorFile=${{ runner.temp }}/hs_err_pid%p.log
-
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -84,6 +78,10 @@ jobs:
 
       - name: Run unit tests with diagnostic logging
         shell: bash
+        env:
+          # runner.temp is available at step level and inherited by Gradle test workers.
+          JAVA_TOOL_OPTIONS: >-
+            -XX:ErrorFile=${{ runner.temp }}/hs_err_pid%p.log
         run: |
           set +e
           ./gradlew testDebugUnitTest --stacktrace --info 2>&1 | tee "${{ runner.temp }}/unit-tests.log"

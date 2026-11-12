@@ -33,7 +33,7 @@ class DrivePrefsTest {
     fun testDefaults() {
         assertNull(prefs.connectedEmail)
         assertFalse(prefs.isConnected)
-        assertFalse(prefs.autoEnabled)
+        assertTrue(prefs.autoEnabled)
         assertTrue(prefs.wifiOnly)
         assertTrue(prefs.includeAttachments)
         assertEquals(0L, prefs.lastSuccessAt)
@@ -75,7 +75,7 @@ class DrivePrefsTest {
         // Account-related and transient fields must be cleared
         assertNull(prefs.connectedEmail)
         assertFalse(prefs.isConnected)
-        assertFalse(prefs.autoEnabled)
+        assertTrue(prefs.autoEnabled)
         assertNull(prefs.lastHash)
         assertNull(prefs.lastError)
         assertEquals(0, prefs.consecutiveFailures)

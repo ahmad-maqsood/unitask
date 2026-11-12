@@ -256,15 +256,15 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
 
         // Defaults
-        composeRule.onNodeWithTag("drive_auto_switch").assertIsOff()
+        composeRule.onNodeWithTag("drive_auto_switch").assertIsOn()
         composeRule.onNodeWithTag("drive_wifi_switch").assertIsOn()
         composeRule.onNodeWithTag("drive_attachments_switch").assertIsOn()
 
-        // Toggle auto
+        // Toggle auto off
         composeRule.onNodeWithTag("drive_auto_switch").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithTag("drive_auto_switch").assertIsOn()
-        assertTrue(prefs.autoEnabled)
+        composeRule.onNodeWithTag("drive_auto_switch").assertIsOff()
+        assertFalse(prefs.autoEnabled)
 
         // Toggle wifi
         composeRule.onNodeWithTag("drive_wifi_switch").performClick()

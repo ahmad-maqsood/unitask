@@ -150,6 +150,8 @@ class DriveBackupViewModel(
                             isError = false
                         )
                     }
+                    // Automatic backup is on by default: start watching for changes now.
+                    DriveAutoBackup.onAppOpen(getApplication())
                     refreshInfoInternal()
                 }
                 is DriveAuthResult.NeedsConsent -> {
@@ -190,8 +192,10 @@ class DriveBackupViewModel(
                         checkLatestAndPromptRestore()
                     } else if (pendingBackupAfterConsent) {
                         pendingBackupAfterConsent = false
+                        DriveAutoBackup.onAppOpen(getApplication())
                         backUpNow(allowEmpty = false)
                     } else {
+                        DriveAutoBackup.onAppOpen(getApplication())
                         refreshInfoInternal()
                     }
                 }
@@ -412,6 +416,7 @@ class DriveBackupViewModel(
                         val email = res.accountEmail ?: "Connected"
                         prefs.connectedEmail = email
                         _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
+                        DriveAutoBackup.onAppOpen(getApplication())
                         backUpNow(allowEmpty = false)
                     }
                     is DriveAuthResult.NeedsConsent -> {

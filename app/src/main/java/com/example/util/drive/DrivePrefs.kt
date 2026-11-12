@@ -27,9 +27,12 @@ class DrivePrefs(context: Context) {
     val isConnected: Boolean
         get() = connectedEmail != null
 
-    /** Whether automatic backups (after each change, plus a daily check) are enabled by the user. */
+    /**
+     * Whether automatic backups (after each change, plus a daily check) are on. On by default, so
+     * connecting Google Drive is enough. It only does something while an account is connected.
+     */
     var autoEnabled: Boolean
-        get() = prefs.getBoolean(KEY_AUTO_ENABLED, false)
+        get() = prefs.getBoolean(KEY_AUTO_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_ENABLED, value).apply()
 
     /** Whether backups should only run over an unmetered Wi-Fi connection. */

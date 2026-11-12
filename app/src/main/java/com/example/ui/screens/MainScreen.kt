@@ -355,6 +355,7 @@ fun MainScreen(
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
+    val crashReport by viewModel.crashReport.collectAsStateWithLifecycle()
     var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
     // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
@@ -1207,6 +1208,16 @@ fun MainScreen(
                 viewModelSession = viewerEditorSession,
                 onClose = { openedNoteIdFromViewer = null },
                 onDeleted = { openedNoteIdFromViewer = null }
+            )
+        }
+    }
+
+    // Last, so it sits on top of everything else
+    crashReport?.let { report ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            CrashReportScreen(
+                report = report,
+                onDismiss = { viewModel.dismissCrashReport() }
             )
         }
     }

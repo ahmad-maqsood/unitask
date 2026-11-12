@@ -90,6 +90,8 @@ import android.net.Uri
 import com.example.data.repository.NoteRepository
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
+import com.example.util.crash.CrashReport
+import com.example.util.crash.CrashReporter
 import com.example.util.NoteShare
 import com.example.util.normalizeCourseCode
 import com.example.util.resetGroupStateOnAccountSwitch
@@ -589,6 +591,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeMarkdownViewer() {
         _markdownViewerState.value = null
+    }
+
+    // Set when the last run ended in an unexpected crash that the person has not seen yet.
+    private val _crashReport = MutableStateFlow<CrashReport?>(null)
+    val crashReport: StateFlow<CrashReport?> = _crashReport.asStateFlow()
+
+    init {
+        // Reads a small file, so it runs off the main thread.
+        viewModelScope.launch(Dispatchers.IO) {
+            _crashReport.value = CrashReporter.loadUnseen(getApplication())
+        }
+    }
+
+    fun dismissCrashReport() {
+        _crashReport.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            CrashReporter.markSeen(getApplication())
+        }
     }
 
     suspend fun saveMarkdownToNotes(displayName: String, text: String): Long = withContext(Dispatchers.IO) {

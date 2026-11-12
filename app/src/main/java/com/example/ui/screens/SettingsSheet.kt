@@ -105,7 +105,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
-private const val REPORT_FORM_URL =
+internal const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
 private const val FEATURE_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSc1G4_iMtG3hcoowIswyG9VNq21P11Gqy5MKMRaXI0OXn6RZA/viewform?usp=pp_url&entry.335656724="

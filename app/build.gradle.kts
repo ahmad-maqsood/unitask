@@ -177,7 +177,7 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.androidx.room.testing)
   testImplementation(libs.ktor.client.mock)
-  testImplementation("org.json:json:20260719")
+  testImplementation("org.json:json:20260814")
   androidTestImplementation(platform(libs.androidx.compose.bom))
   androidTestImplementation(libs.androidx.compose.foundation.layout)
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)

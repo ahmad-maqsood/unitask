@@ -2,6 +2,38 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.2.0] - 12-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.2.0)
+
+### Added
+- New Pomodoro timer mode with dedicated focus and break rounds.
+- Progress screen featuring completion history, daily summaries, and statistics.
+- 'Find in Note' search functionality.
+- Comprehensive onboarding experience with contextual tips and a 'Get Started' card.
+- Local backup and restore flows, including completion-log support and Google Drive integration.
+- Local crash-logging system and recovery screen for viewing and sharing error logs.
+
+### Improved
+- Redesigned study timer with a new dial component for full-screen usage.
+- Enhanced note-taking with syntax highlighting for code blocks, improved Markdown styling, and pinch-to-zoom support.
+- Refined Deadlines tab with real-time counts for Overdue, Today, and Tomorrow tasks.
+- Streamlined task and group-task management workflows, including improved repeat rollover and deadline processing.
+- Updated UI for course cards, detail views, lecture-slot dialogs, and reminder-chip selection.
+- Improved background-access guidance and ongoing timer notification behavior.
+
+### Fixed
+- Resolved issues with group task synchronization, pending-save tracking, and conflict resolution.
+- Fixed reliability issues with reminders, recurring tasks, and app visibility.
+- Improved PDF export functionality for notes.
+
+### Developer & project maintenance
+- Updated Compose BOM to 2026.09.00 and removed forced version pins.
+- Refactored large Kotlin files into smaller, focused modules for maintainability.
+- Added a release build step to CI to detect R8 shrinking issues.
+- Standardized date formatting across the app using a shared utility.
+- Moved sensitive Supabase configuration to a git-ignored .env file.
+- Updated backup rules to align with 'allowBackup=false'.
+
 ## [4.1.0] - 10-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.1.0)
 

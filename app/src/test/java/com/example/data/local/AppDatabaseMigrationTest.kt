@@ -270,4 +270,27 @@ class AppDatabaseMigrationTest {
             db.close()
         }
     }
+
+    @Test
+    fun everyReleasedVersionFrom9UpgradesToTheLatestVersion() {
+        // Opens an empty database at each old version with the real migrations. Room checks the
+        // result against the current code, so a broken or missing step fails here and names the
+        // version that cannot be upgraded.
+        val latest = AppDatabase.ALL_MIGRATIONS.maxOf { it.endVersion }
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        for (version in 9 until latest) {
+            val name = "migration-test-from-$version"
+            helper.createDatabase(name, version).close()
+            val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
+                .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+                .build()
+            try {
+                // Opening the database runs the migrations and Room's schema check.
+                db.openHelper.writableDatabase
+                assertEquals("version $version did not reach $latest", latest, db.openHelper.writableDatabase.version)
+            } finally {
+                db.close()
+            }
+        }
+    }
 }

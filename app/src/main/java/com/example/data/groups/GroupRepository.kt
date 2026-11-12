@@ -9,6 +9,7 @@ import com.example.data.local.computeDeadlineMillis
 import com.example.reminder.GroupTaskProcessor
 import com.example.util.SupabaseProvider
 import com.example.util.currentSupabaseUid
+import com.example.util.runLogged
 import com.example.util.AppVisibility
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -174,6 +175,8 @@ class GroupRepository(private val context: Context) {
                             }
                         }
                         localChanges.tryEmit(Unit)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w(TAG, "flushChatOutbox message retry failed: ${e.message}")
                         if (isPermanentSendError(e)) {
@@ -367,6 +370,8 @@ class GroupRepository(private val context: Context) {
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to cache memberships: ${e.message}")
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeMyGroupMemberships select failed: ${e.message}")
                 val fallback = cachedMemberships(myUid)
@@ -388,11 +393,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
-                }
+                runLogged("Realtime subscribe") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -410,11 +411,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -478,6 +477,8 @@ class GroupRepository(private val context: Context) {
                     )
                 }
                 trySend(group)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroup select failed for $groupId: ${e.message}")
             }
@@ -495,11 +496,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
-                }
+                runLogged("Realtime subscribe") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -517,11 +514,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -555,6 +550,8 @@ class GroupRepository(private val context: Context) {
                     )
                 }
                 trySend(members)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupMembers select failed for $groupId: ${e.message}")
             }
@@ -572,11 +569,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
-                }
+                runLogged("Realtime subscribe") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -594,11 +587,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -705,11 +696,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -736,6 +725,8 @@ class GroupRepository(private val context: Context) {
                     }.decodeList<GroupCourseRow>()
                 val sorted = rows.map { it.toGroupCourse() }.sortedBy { it.code.lowercase() }
                 trySend(sorted)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupCourses select failed for $groupId: ${e.message}")
             }
@@ -752,11 +743,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
-                }
+                runLogged("Realtime subscribe") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -774,11 +761,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -862,11 +847,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed for messages: ${e.message}")
-                }
+                runLogged("Realtime subscribe for messages") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -901,11 +882,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -931,6 +910,8 @@ class GroupRepository(private val context: Context) {
                         limit(50)
                     }.decodeList<GroupMessageRow>()
                 trySend(ChatTail(rows.map { it.toGroupMessage() }.reversed(), fromServer = true))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupChatTail failed for $groupId: ${e.message}")
             }
@@ -948,11 +929,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed for chat tail: ${e.message}")
-                }
+                runLogged("Realtime subscribe for chat tail") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -970,11 +947,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -1011,6 +986,10 @@ class GroupRepository(private val context: Context) {
             val ordered = if (newestOnly) messages.reversed() else messages
             ChatTail(ordered, fromServer = true)
         }
+    } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+        null
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
     } catch (_: Exception) {
         null
     }
@@ -1103,6 +1082,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (isPermanentSendError(e)) {
                     Log.w(TAG, "sendMessage rejected by server, dropping: ${e.message}")
@@ -1147,6 +1128,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "deleteMessage failed: ${e.message}", e)
                 onFailure(e)
@@ -1222,6 +1205,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }.decodeList<GroupTaskRow>()
             Result.success(rows.map { it.toGroupTask() })
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "getGroupTasksOnce failed for $groupId: ${e.message}")
             Result.failure(e)
@@ -1240,6 +1225,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }.decodeList<GroupDoneRow>()
             rows.map { it.taskId }.toSet()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "getDoneTaskIdsOnce failed for $groupId: ${e.message}")
             emptySet()
@@ -1253,10 +1240,7 @@ class GroupRepository(private val context: Context) {
      * [GroupsState.loaded], so its alarms are kept too.
      */
     suspend fun fetchGroupsStateOnce(uid: String): GroupsState? {
-        try {
-            SupabaseProvider.client.auth.awaitInitialization()
-        } catch (_: Exception) {
-        }
+        runLogged("Waiting for sign-in to initialize") { SupabaseProvider.client.auth.awaitInitialization() }
         val myUid = currentSupabaseUid() ?: return null
         return try {
             withTimeout(TIMEOUT_MILLIS * 2) {
@@ -1267,6 +1251,8 @@ class GroupRepository(private val context: Context) {
                                 eq("user_id", myUid)
                             }
                         }.decodeList<GroupMembershipRow>()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.w(TAG, "fetchGroupsStateOnce memberships select failed: ${e.message}")
                     return@withTimeout null
@@ -1295,6 +1281,11 @@ class GroupRepository(private val context: Context) {
                 }
                 GroupsState(ids, loaded)
             }
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Log.w(TAG, "fetchGroupsStateOnce timed out")
+            null
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "fetchGroupsStateOnce failed: ${e.message}")
             null
@@ -1339,6 +1330,8 @@ class GroupRepository(private val context: Context) {
                 trySend(serverSet)
                 val now = System.currentTimeMillis()
                 pendingDone.update { p -> p.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS } }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "observeGroupDoneTasks select failed for $groupId: ${e.message}")
                 if (!retried) {
@@ -1362,11 +1355,7 @@ class GroupRepository(private val context: Context) {
 
         val job = launch {
             launch {
-                try {
-                    channel.subscribe()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Realtime subscribe failed: ${e.message}")
-                }
+                runLogged("Realtime subscribe") { channel.subscribe() }
                 // Anything that changed while connecting was missed: read once more.
                 queryAndEmit()
             }
@@ -1384,11 +1373,9 @@ class GroupRepository(private val context: Context) {
         awaitClose {
             job.cancel()
             CoroutineScope(Dispatchers.IO).launch {
-                try {
+                runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error cleaning up channel $channelName: ${e.message}")
                 }
             }
         }
@@ -1415,6 +1402,8 @@ class GroupRepository(private val context: Context) {
                 }
             }
             true
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "pushDone failed (will retry when online): ${e.message}")
             false
@@ -1465,6 +1454,8 @@ class GroupRepository(private val context: Context) {
             // 1) Save on the phone first, so the tick shows and survives a restart, also offline.
             try {
                 GroupCacheRepository(context).updateDone(myUid, groupId, taskId, isDone)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to update done in local cache: ${e.message}")
             }
@@ -1521,6 +1512,8 @@ class GroupRepository(private val context: Context) {
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
             Result.failure(Exception("Could not reach the server. Check your connection and try again."))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
             val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("taken", ignoreCase = true)) {
@@ -1570,6 +1563,8 @@ class GroupRepository(private val context: Context) {
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
             Result.failure(Exception("Could not reach the server. Check your connection and try again."))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
             val friendly = if (msg.contains("invalid_group_or_code", ignoreCase = true) ||
@@ -1614,6 +1609,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1635,6 +1634,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1659,6 +1662,8 @@ class GroupRepository(private val context: Context) {
                         put("p_username", cleanUsername)
                     }
                     SupabaseProvider.client.postgrest.rpc("update_group_profile", params)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (rpcEx: Exception) {
                     val msg = rpcEx.message.orEmpty()
                     if (msg.contains("username_taken", ignoreCase = true) || msg.contains("duplicate key", ignoreCase = true)) {
@@ -1676,6 +1681,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(Exception(e.message ?: "Failed to update group"))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
             val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("23505")) {
@@ -1698,6 +1707,8 @@ class GroupRepository(private val context: Context) {
                     val params = buildJsonObject { put("p_group_id", groupId) }
                     val res = SupabaseProvider.client.postgrest.rpc("regenerate_group_code", params)
                     res.decodeAs<String>()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (rpcEx: Exception) {
                     val code = generateJoinCode()
                     SupabaseProvider.client.postgrest["groups"].update(
@@ -1713,6 +1724,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(newCode)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1793,6 +1808,8 @@ class GroupRepository(private val context: Context) {
             try {
                 SupabaseProvider.client.postgrest["group_tasks"].insert(payload)
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "createTask failed: ${e.message}", e)
                 pendingTasks.update { list -> list.filter { it.id != localTask.id } }
@@ -1864,6 +1881,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "updateTask failed: ${e.message}", e)
                 GroupTaskProcessor.forgetOwnTask(context, groupId, taskId)
@@ -1897,6 +1916,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "deleteTask failed: ${e.message}", e)
                 onFailure(e)
@@ -1927,6 +1948,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1951,6 +1976,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -1974,6 +2003,10 @@ class GroupRepository(private val context: Context) {
             }
             localChanges.tryEmit(Unit)
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Result.failure(e)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -2008,6 +2041,8 @@ class GroupRepository(private val context: Context) {
             try {
                 SupabaseProvider.client.postgrest["group_courses"].insert(payload)
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Create group course failed: ${e.message}", e)
                 val msg = e.message.orEmpty().lowercase()
@@ -2050,6 +2085,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Update group course failed: ${e.message}", e)
                 val msg = e.message.orEmpty().lowercase()
@@ -2082,6 +2119,8 @@ class GroupRepository(private val context: Context) {
                     }
                 }
                 localChanges.tryEmit(Unit)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Delete group course failed: ${e.message}", e)
                 onFailure(e)

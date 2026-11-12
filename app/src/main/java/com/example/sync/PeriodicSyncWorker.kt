@@ -15,6 +15,7 @@ import com.example.util.AuthStorage
 import com.example.util.SupabaseProvider
 import com.example.util.awaitAppUser
 import com.example.util.currentSupabaseUid
+import com.example.util.runLogged
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,7 +41,7 @@ class PeriodicSyncWorker(
 
             try {
                 val repo = GroupRepository(context)
-                try { SupabaseProvider.client.auth.awaitInitialization() } catch (_: Exception) { }
+                runLogged("waiting for the saved sign-in") { SupabaseProvider.client.auth.awaitInitialization() }
                 val sbUid = currentSupabaseUid() ?: AuthStorage.getLastUid(context) ?: user.uid
                 val state = repo.fetchGroupsStateOnce(sbUid)
                 if (state == null) {
@@ -80,7 +81,7 @@ class PeriodicSyncWorker(
         suspend fun syncAnnouncements(context: Context): Result = withContext(Dispatchers.IO) {
             try {
                 // Wait for the saved sign-in to load, so messages meant for one person are included.
-                try { SupabaseProvider.client.auth.awaitInitialization() } catch (_: Exception) { }
+                runLogged("waiting for the saved sign-in") { SupabaseProvider.client.auth.awaitInitialization() }
 
                 val reached = Announcements.refresh(context)
                 if (!reached) {

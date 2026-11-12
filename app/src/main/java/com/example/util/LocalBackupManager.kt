@@ -3,6 +3,7 @@ package com.example.util
 import android.content.Context
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -860,7 +861,7 @@ object LocalBackupManager {
                     if (!downloaded || !destFile.exists() || destFile.length() != fileSize || destFile.length() > MAX_ATTACHMENT_BYTES) {
                         try {
                             if (destFile.exists()) destFile.delete()
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) { Log.w("UniTask", "Could not delete the partly downloaded attachment ${destFile.name}", e) }
                         skippedAttachments++
                         continue
                     }

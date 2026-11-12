@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -214,7 +215,7 @@ fun BackgroundSetupDialog(
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         }
                                     )
-                                } catch (_: Exception) {}
+                                } catch (e: Exception) { Log.w("UniTask", "Could not open the background guide link", e) }
                             },
                             modifier = Modifier.testTag("background_setup_guide_button")
                         ) {

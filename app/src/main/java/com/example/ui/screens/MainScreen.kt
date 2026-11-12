@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableIntStateOf
@@ -798,7 +799,7 @@ fun MainScreen(
                                                         .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
                                                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                                                 )
-                                            } catch (_: Exception) {}
+                                            } catch (e: Exception) { Log.w("UniTask", "Could not open the notification settings", e) }
                                         }
                                     }
                                     GetStartedStep.BATTERY -> BackgroundAccess.requestIgnoreBatteryOptimizations(context)

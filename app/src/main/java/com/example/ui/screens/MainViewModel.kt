@@ -275,7 +275,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         networkCallback?.let { cb ->
             val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            try { cm?.unregisterNetworkCallback(cb) } catch (_: Exception) { }
+            try { cm?.unregisterNetworkCallback(cb) } catch (e: Exception) { Log.w("UniTask", "Could not unregister the network callback", e) }
         }
     }
 

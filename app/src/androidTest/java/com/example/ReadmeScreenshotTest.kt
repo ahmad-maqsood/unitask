@@ -24,6 +24,7 @@ import com.example.ui.theme.AccentTheme
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
 import com.example.util.Announcements
+import com.example.util.GetStartedPrefs
 import com.example.util.SupabaseProvider
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -71,7 +72,9 @@ class ReadmeScreenshotTest {
             .putBoolean("background_setup_prompted", true)
             .apply()
         com.example.util.drive.DrivePrefs(context).restoreOfferDismissed = true
-
+        // Hide the "Get started" checklist so it does not push the demo tasks down
+        // in the Deadlines screenshots.
+        GetStartedPrefs(context).dismissed = true
         // Mark current announcements as already seen so the "Messages from UniTask"
         // pop-up and the bell badge do not appear in the README screenshots.
         Announcements.refresh(context)

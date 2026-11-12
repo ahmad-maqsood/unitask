@@ -104,8 +104,9 @@ fun computeDeadlineMillis(dueDateEpochMillis: Long, hour: Int, minute: Int): Lon
         set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-fun startOfLocalDay(millis: Long): Long =
-    java.util.Calendar.getInstance().apply {
+/** The first moment (00:00:00.000) of the day that [millis] falls on, in [zone] (default: the phone's). */
+fun startOfLocalDay(millis: Long, zone: java.util.TimeZone = java.util.TimeZone.getDefault()): Long =
+    java.util.Calendar.getInstance(zone).apply {
         timeInMillis = millis
         set(java.util.Calendar.HOUR_OF_DAY, 0)
         set(java.util.Calendar.MINUTE, 0)

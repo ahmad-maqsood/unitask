@@ -153,16 +153,13 @@ internal fun DeadlinesCalendarView(
                             val cellIndex = row * 7 + col
                             val dayNumber = cellIndex - firstDayOffset + 1
                             if (dayNumber in 1..totalDays) {
-                                val cellCal = Calendar.getInstance().apply {
-                                    set(Calendar.YEAR, currentYear)
-                                    set(Calendar.MONTH, currentMonth)
-                                    set(Calendar.DAY_OF_MONTH, dayNumber)
-                                    set(Calendar.HOUR_OF_DAY, 0)
-                                    set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                val cellEpoch = cellCal.timeInMillis
+                                val cellEpoch = startOfLocalDay(
+                                    Calendar.getInstance().apply {
+                                        set(Calendar.YEAR, currentYear)
+                                        set(Calendar.MONTH, currentMonth)
+                                        set(Calendar.DAY_OF_MONTH, dayNumber)
+                                    }.timeInMillis
+                                )
                                 val isSelected = cellEpoch == selectedDayEpoch
                                 val tasksOnDay = tasksByDay[cellEpoch] ?: emptyList()
                                 val hasOverdue = tasksOnDay.any { it.task.deadlineMillis < System.currentTimeMillis() && it.task.status != com.example.data.local.TaskStatus.COMPLETED }

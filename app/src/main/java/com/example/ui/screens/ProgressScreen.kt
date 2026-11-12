@@ -43,9 +43,7 @@ import com.example.ui.theme.rememberCourseColor
 import com.example.util.CourseProgress
 import com.example.util.ProgressSummary
 import com.example.util.WeekBar
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.util.DateFormats
 
 /** Tasks done this week, your streak, the last weeks as bars, and how far each course is. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,7 +177,6 @@ private fun StatCard(value: String, label: String, note: String, modifier: Modif
 @Composable
 private fun WeeksCard(weeks: List<WeekBar>) {
     val most = (weeks.maxOfOrNull { it.done } ?: 0).coerceAtLeast(1)
-    val dateFormat = SimpleDateFormat("d MMM", Locale.getDefault())
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -232,7 +229,7 @@ private fun WeeksCard(weeks: List<WeekBar>) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 weeks.forEach { week ->
                     Text(
-                        text = dateFormat.format(Date(week.weekStartMillis)),
+                        text = DateFormats.dayMonth(week.weekStartMillis),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

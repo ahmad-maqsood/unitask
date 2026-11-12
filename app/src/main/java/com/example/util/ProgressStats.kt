@@ -3,6 +3,7 @@ package com.example.util
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
+import com.example.data.local.startOfLocalDay
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -48,11 +49,7 @@ object ProgressLogic {
         val weeksShown = weekCount.coerceAtLeast(1)
 
         fun dayStart(millis: Long): Calendar = Calendar.getInstance(zone).apply {
-            timeInMillis = millis
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+            timeInMillis = startOfLocalDay(millis, zone)
         }
 
         fun weekStart(millis: Long): Long {

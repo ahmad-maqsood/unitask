@@ -3,9 +3,6 @@ package com.example.util
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /** One daily summary kept for the bell. [id] is the time it was made, in milliseconds. */
 data class DailySummaryEntry(
@@ -62,8 +59,7 @@ object DailySummaryLog {
         synchronized(LOCK) { save(context, emptyList()) }
     }
 
-    private fun dayKey(millis: Long): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(millis))
+    private fun dayKey(millis: Long): String = DateFormats.dayKey(millis)
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

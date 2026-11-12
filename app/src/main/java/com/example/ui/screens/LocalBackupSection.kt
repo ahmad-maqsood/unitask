@@ -46,9 +46,7 @@ import com.example.util.BackupCounts
 import com.example.util.BackupResult
 import com.example.util.LocalBackupManager
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.util.DateFormats
 
 private const val MIN_PASSWORD_LENGTH = 6
 
@@ -248,7 +246,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                         exportPasswordForSave = exportPasswordInput
                         exportPasswordInput = ""
                         showExportDialog = false
-                        val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+                        val stamp = DateFormats.fileDateTime(System.currentTimeMillis())
                         exportLauncher.launch("unitask-backup-$stamp.json")
                     }
                 ) {

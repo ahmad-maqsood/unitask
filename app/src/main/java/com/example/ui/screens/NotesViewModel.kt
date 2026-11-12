@@ -77,10 +77,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setQuery(query: String) {
         _searchQuery.value = query
+        clearSelection()
     }
 
     fun setFilter(filter: NotesFilter) {
         _selectedFilter.value = filter
+        clearSelection()
     }
 
     fun setFolderFilter(filter: NotesFolderFilter) {
@@ -111,6 +113,18 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // ---- selection mode
+
+    fun setPinnedForNotes(ids: Collection<Long>, pinned: Boolean) {
+        viewModelScope.launch { repository.setPinnedForNotes(ids, pinned) }
+    }
+
+    fun moveNotesToTrash(ids: Collection<Long>) {
+        viewModelScope.launch { repository.moveNotesToTrash(ids) }
+    }
+
+    fun restoreNotesFromTrash(ids: Collection<Long>) {
+        viewModelScope.launch { repository.restoreNotesFromTrash(ids) }
+    }
 
     fun toggleSelected(id: Long) {
         _selectedIds.value = _selectedIds.value.let { if (id in it) it - id else it + id }

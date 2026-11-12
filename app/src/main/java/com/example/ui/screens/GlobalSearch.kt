@@ -34,7 +34,8 @@ data class SearchNoteResult(
     val noteItem: NoteListItem,
     val snippet: String,
     val matchRange: IntRange?,
-    val archivedSemester: String? = null
+    val archivedSemester: String? = null,
+    val folderName: String? = null
 ) {
     val highlightRange: IntRange? get() = matchRange
     val isArchived: Boolean get() = !archivedSemester.isNullOrBlank()
@@ -144,17 +145,18 @@ fun matchesTask(taskWithCourse: TaskWithCourse, words: List<String>): Boolean {
 }
 
 /**
- * Checks if a note matches all query words across title, body, and course code.
+ * Checks if a note matches all query words across title, body, course code and folder name.
  * Searches the body using indexOf(ignoreCase = true) without copying or lowercasing.
  */
-fun matchesNote(noteItem: NoteListItem, words: List<String>): Boolean {
+fun matchesNote(noteItem: NoteListItem, words: List<String>, folderName: String? = null): Boolean {
     val note = noteItem.note
     val courseCode = noteItem.courseCode.orEmpty()
 
     return words.all { word ->
         note.title.contains(word, ignoreCase = true) ||
         note.body.indexOf(word, ignoreCase = true) >= 0 ||
-        courseCode.contains(word, ignoreCase = true)
+        courseCode.contains(word, ignoreCase = true) ||
+        (folderName != null && folderName.contains(word, ignoreCase = true))
     }
 }
 
@@ -203,7 +205,8 @@ fun searchEverything(
     archivedNotes: List<ArchivedItem<NoteListItem>> = emptyList(),
     archivedCourses: List<ArchivedItem<Course>> = emptyList(),
     settingsEntries: List<SettingsSearchEntry> = emptyList(),
-    guideEntries: List<AppFeature> = emptyList()
+    guideEntries: List<AppFeature> = emptyList(),
+    noteFolderNames: Map<Long, String> = emptyMap()
 ): SearchResults {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) {
@@ -229,27 +232,31 @@ fun searchEverything(
 
     val noteResults = ArrayList<SearchNoteResult>()
     for (n in notes) {
-        if (matchesNote(n, words)) {
+        val folderName = n.note.folderId?.let { noteFolderNames[it] }
+        if (matchesNote(n, words, folderName)) {
             val (snippet, matchRange) = buildNoteSnippet(n.note.body, words)
             noteResults.add(
                 SearchNoteResult(
                     noteItem = n,
                     snippet = snippet,
                     matchRange = matchRange,
-                    archivedSemester = null
+                    archivedSemester = null,
+                    folderName = folderName
                 )
             )
         }
     }
     for (a in archivedNotes) {
-        if (matchesNote(a.item, words)) {
+        val folderName = a.item.note.folderId?.let { noteFolderNames[it] }
+        if (matchesNote(a.item, words, folderName)) {
             val (snippet, matchRange) = buildNoteSnippet(a.item.note.body, words)
             noteResults.add(
                 SearchNoteResult(
                     noteItem = a.item,
                     snippet = snippet,
                     matchRange = matchRange,
-                    archivedSemester = a.semesterName
+                    archivedSemester = a.semesterName,
+                    folderName = folderName
                 )
             )
         }

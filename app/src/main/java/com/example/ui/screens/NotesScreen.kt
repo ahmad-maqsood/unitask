@@ -144,6 +144,7 @@ fun NotesScreen(
     var deleteFolderTarget by remember { mutableStateOf<NoteFolder?>(null) }
     var folderDialogError by remember { mutableStateOf<String?>(null) }
     var showFolderMenu by remember { mutableStateOf(false) }
+    var showSelectionMenu by remember { mutableStateOf(false) }
 
     BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
 
@@ -244,6 +245,85 @@ fun NotesScreen(
                         modifier = Modifier.testTag("notes_move_selected_button")
                     ) {
                         Icon(Icons.Default.Folder, contentDescription = "Move to folder")
+                    }
+                    IconButton(
+                        onClick = {
+                            val ids = selectedIds.toList()
+                            viewModel.moveNotesToTrash(ids)
+                            viewModel.clearSelection()
+                            snackbarJob?.cancel()
+                            snackbarJob = coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = if (ids.size == 1) "Note moved to Recently deleted"
+                                    else "${ids.size} notes moved to Recently deleted",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreNotesFromTrash(ids)
+                                }
+                            }
+                        },
+                        modifier = Modifier.testTag("notes_delete_selected_button")
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete selected notes")
+                    }
+                    Box {
+                        IconButton(
+                            onClick = { showSelectionMenu = true },
+                            modifier = Modifier.testTag("notes_selection_overflow_button")
+                        ) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                        }
+                        DropdownMenu(
+                            expanded = showSelectionMenu,
+                            onDismissRequest = { showSelectionMenu = false }
+                        ) {
+                            val selectedNotes = notes.filter { it.note.id in selectedIds }
+                            val allPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.note.isPinned }
+                            DropdownMenuItem(
+                                text = { Text(if (allPinned) "Unpin" else "Pin") },
+                                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_selection_pin"),
+                                onClick = {
+                                    showSelectionMenu = false
+                                    viewModel.setPinnedForNotes(selectedIds.toList(), !allPinned)
+                                    viewModel.clearSelection()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share as one file") },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_selection_share"),
+                                onClick = {
+                                    showSelectionMenu = false
+                                    val chosen = notes.filter { it.note.id in selectedIds }
+                                    viewModel.clearSelection()
+                                    if (chosen.isNotEmpty()) {
+                                        // One note is shared as itself, several as one file with a section each
+                                        val text = if (chosen.size == 1) {
+                                            chosen[0].note.body
+                                        } else {
+                                            NoteShare.combinedMarkdown(
+                                                chosen.map { noteDisplayTitle(it.note) to it.note.body }
+                                            )
+                                        }
+                                        coroutineScope.launch {
+                                            try {
+                                                NoteShare.shareAsFileAsync(
+                                                    context = context,
+                                                    title = if (chosen.size == 1) noteDisplayTitle(chosen[0].note) else "UniTask notes",
+                                                    body = text,
+                                                    format = NoteExportFormat.MD
+                                                )
+                                            } catch (_: Exception) {
+                                                snackbarHostState.showSnackbar("Could not share the file", duration = SnackbarDuration.Short)
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
                     }
                   } else {
                     Box {

@@ -44,7 +44,8 @@ data class SearchActiveData(
     val tasks: List<TaskWithCourse>,
     val notes: List<NoteListItem>,
     val courses: List<Course>,
-    val archived: SearchArchivedData
+    val archived: SearchArchivedData,
+    val folderNames: Map<Long, String> = emptyMap()
 )
 
 /**
@@ -162,13 +163,15 @@ class SearchViewModel(
         activeTasksFlow,
         noteDao.observeNotes(),
         appRepository.allCourses,
-        archivedDataFlow
-    ) { tasks, notes, courses, archived ->
+        archivedDataFlow,
+        noteDao.observeFolders()
+    ) { tasks, notes, courses, archived, folders ->
         SearchActiveData(
             tasks = tasks,
             notes = notes,
             courses = courses,
-            archived = archived
+            archived = archived,
+            folderNames = folders.associate { it.id to it.name }
         )
     }
 
@@ -200,7 +203,8 @@ class SearchViewModel(
             archivedNotes = if (params.includeArchived) data.archived.notes else emptyList(),
             archivedCourses = if (params.includeArchived) data.archived.courses else emptyList(),
             settingsEntries = allSettingsSearchEntries,
-            guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList()
+            guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList(),
+            noteFolderNames = data.folderNames
         )
     }
         .flowOn(Dispatchers.Default)

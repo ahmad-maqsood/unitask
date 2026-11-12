@@ -257,4 +257,15 @@ class NoteShareTest {
         assertEquals("%PDF", String(bytes.take(4).toByteArray(), Charsets.US_ASCII))
         tempFile.delete()
     }
+
+    @Test
+    fun combinedMarkdownMakesOneSectionPerNote() {
+        val text = NoteShare.combinedMarkdown(
+            listOf("First" to "Body one", "  " to "Body two", "Empty" to "")
+        )
+        assertEquals(
+            "## First\n\nBody one\n\n---\n\n## Untitled note\n\nBody two\n\n---\n\n## Empty",
+            text
+        )
+    }
 }

@@ -388,4 +388,23 @@ class NoteRepositoryTest {
         val id = repo.saveNote(id = 0, title = "Orphan", body = "Body", courseId = null, folderId = 999L)
         assertNull(repo.getNote(id)!!.folderId)
     }
+
+    @Test
+    fun bulkPinTrashAndRestoreWorkOnEveryGivenNote() = runBlocking {
+        val ids = (1..3).map { repo.saveNote(id = 0, title = "Note $it", body = "Body $it", courseId = null) }
+
+        repo.setPinnedForNotes(ids.take(2), true)
+        assertTrue(repo.getNote(ids[0])!!.isPinned)
+        assertTrue(repo.getNote(ids[1])!!.isPinned)
+        assertFalse(repo.getNote(ids[2])!!.isPinned)
+
+        repo.setPinnedForNotes(ids.take(2), false)
+        assertFalse(repo.getNote(ids[0])!!.isPinned)
+
+        repo.moveNotesToTrash(ids)
+        ids.forEach { assertTrue(repo.getNote(it)!!.isDeleted) }
+
+        repo.restoreNotesFromTrash(ids)
+        ids.forEach { assertFalse(repo.getNote(it)!!.isDeleted) }
+    }
 }

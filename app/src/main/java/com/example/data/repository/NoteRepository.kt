@@ -161,6 +161,18 @@ class NoteRepository(private val noteDao: NoteDao) {
     private fun cleanFolderName(name: String): String =
         name.trim().replace(Regex("\\s+"), " ").take(MAX_FOLDER_NAME)
 
+    suspend fun setPinnedForNotes(ids: Collection<Long>, pinned: Boolean) = withContext(Dispatchers.IO) {
+        for (id in ids) setPinned(id, pinned)
+    }
+
+    suspend fun moveNotesToTrash(ids: Collection<Long>) = withContext(Dispatchers.IO) {
+        for (id in ids) moveToTrash(id)
+    }
+
+    suspend fun restoreNotesFromTrash(ids: Collection<Long>) = withContext(Dispatchers.IO) {
+        for (id in ids) restoreFromTrash(id)
+    }
+
     suspend fun setKeepScreenOn(id: Long, keepScreenOn: Boolean) = withContext(Dispatchers.IO) {
         noteDao.setKeepScreenOn(id, keepScreenOn)
     }

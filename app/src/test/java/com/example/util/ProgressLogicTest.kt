@@ -175,6 +175,26 @@ class ProgressLogicTest {
     }
 
     @Test
+    fun twoDifferentTasksDoneAtTheSameMomentBothCount() {
+        // Regression: ticks were matched by time only, so two tasks finished at the same
+        // moment (for example ticked together) were counted as one.
+        val time = at(2026, 11, 12)
+        val result = compute(listOf(done(time), done(time, other)))
+        assertEquals(2, result.doneThisWeek)
+        assertEquals(2, result.weeks.last().done)
+    }
+
+    @Test
+    fun historyTickMatchingOneOfTwoSimultaneousTasksIsNotCountedAgain() {
+        val time = at(2026, 11, 12)
+        val earlier = at(2026, 11, 10)
+        val log = listOf(CompletionEntry(1L, time), CompletionEntry(2L, earlier))
+        // Two tasks are Done at `time`. The history repeats that tick and adds one older tick.
+        val result = compute(listOf(done(time), done(time, other)), log = log)
+        assertEquals(3, result.doneThisWeek)
+    }
+
+    @Test
     fun aRestoredTickWithNoKnownTaskIsNotCountedTwice() {
         // After a restore on another phone the history has the tick as task 0 while the task itself
         // has a new number. Same time, so it is one tick.

@@ -102,12 +102,95 @@ class DriveBackupManagerTest {
         // Third backup: writes into older slot 1 with seq 3, slot 2 untouched
         val slot2BytesBefore = slot2!!.bytes.copyOf()
         taskDao.insertTask(TaskItem(courseId = cId, title = "HW 3", dueDateEpochMillis = 3000L))
-        val res3 = DriveBackupManager.backUp(context, fakeStore)
+        // rotateAfterMs = 0 means the history slot is always due to swap, as before the daily rule
+        val res3 = DriveBackupManager.backUp(context, fakeStore, rotateAfterMs = 0L)
         assertTrue(res3 is DriveBackupResult.Success)
         assertEquals(3L, (res3 as DriveBackupResult.Success).info.seq)
         assertEquals("3", slot1?.props?.get("seq"))
         assertEquals("2", slot2.props["seq"])
         assertTrue(slot2BytesBefore.contentEquals(slot2.bytes))
+    }
+
+    @Test
+    fun quickBackups_overwriteNewestSlot_andKeepOlderSlotAsHistory() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val fakeStore = FakeDriveStore()
+
+        val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+
+        DriveBackupManager.backUp(context, fakeStore) // slot 1, seq 1
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 2", dueDateEpochMillis = 2000L))
+        DriveBackupManager.backUp(context, fakeStore) // slot 2, seq 2 (history is slot 1)
+
+        val slot1 = fakeStore.files.values.first { it.name == "unitask-backup-1.json" }
+        val slot1Before = slot1.bytes.copyOf()
+
+        // Several quick backups: all go into slot 2, slot 1 stays as the history copy
+        for (i in 3..5) {
+            taskDao.insertTask(TaskItem(courseId = cId, title = "HW $i", dueDateEpochMillis = i * 1000L))
+            val res = DriveBackupManager.backUp(context, fakeStore)
+            assertTrue(res is DriveBackupResult.Success)
+            assertEquals(i.toLong(), (res as DriveBackupResult.Success).info.seq)
+        }
+        val slot2 = fakeStore.files.values.first { it.name == "unitask-backup-2.json" }
+        assertEquals("5", slot2.props["seq"])
+        assertEquals("1", slot1.props["seq"])
+        assertTrue("History slot must be untouched", slot1Before.contentEquals(slot1.bytes))
+
+        // The newest copy is still the one that restores
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        assertTrue(DriveBackupManager.restore(context, fakeStore) is BackupResult.Success)
+        assertEquals(5, taskDao.getAllActiveTasksSync().size)
+    }
+
+    @Test
+    fun afterADay_slotsSwapRoles_soHistoryMovesForward() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val fakeStore = FakeDriveStore()
+
+        val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+        DriveBackupManager.backUp(context, fakeStore) // slot 1, seq 1
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 2", dueDateEpochMillis = 2000L))
+        DriveBackupManager.backUp(context, fakeStore) // slot 2, seq 2
+
+        // Pretend slot 2 became the newest copy two days ago
+        val slot1 = fakeStore.files.values.first { it.name == "unitask-backup-1.json" }
+        val slot2 = fakeStore.files.values.first { it.name == "unitask-backup-2.json" }
+        val twoDaysAgo = System.currentTimeMillis() - 2L * 24 * 60 * 60 * 1000L
+        slot2.props["rotatedAt"] = twoDaysAgo.toString()
+
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 3", dueDateEpochMillis = 3000L))
+        val res = DriveBackupManager.backUp(context, fakeStore)
+        assertEquals(3L, (res as DriveBackupResult.Success).info.seq)
+        // The older slot (1) now holds the newest data and slot 2 becomes the history copy
+        assertEquals("3", slot1.props["seq"])
+        assertEquals("2", slot2.props["seq"])
+    }
+
+    @Test
+    fun slotWithoutRotatedAtMark_rotatesOnce() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val fakeStore = FakeDriveStore()
+
+        val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+        DriveBackupManager.backUp(context, fakeStore)
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 2", dueDateEpochMillis = 2000L))
+        DriveBackupManager.backUp(context, fakeStore)
+
+        // Backups made by an older app version have no rotatedAt mark
+        fakeStore.files.values.forEach { it.props.remove("rotatedAt") }
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 3", dueDateEpochMillis = 3000L))
+        DriveBackupManager.backUp(context, fakeStore)
+
+        val slot1 = fakeStore.files.values.first { it.name == "unitask-backup-1.json" }
+        assertEquals("3", slot1.props["seq"])
+        assertNotNull(slot1.props["rotatedAt"])
     }
 
     @Test
@@ -175,7 +258,7 @@ class DriveBackupManagerTest {
         }
 
         taskDao.insertTask(TaskItem(courseId = cId, title = "Quiz 3", dueDateEpochMillis = 3000L))
-        val failedRes = DriveBackupManager.backUp(context, fakeStore)
+        val failedRes = DriveBackupManager.backUp(context, fakeStore, rotateAfterMs = 0L)
         assertTrue(failedRes is DriveBackupResult.Failure)
 
         // Latest slot is still slot 2 with seq 2

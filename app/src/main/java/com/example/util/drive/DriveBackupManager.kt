@@ -70,6 +70,9 @@ object DriveBackupManager {
     private const val ATTACHMENT_PREFIX = "att-"
     private const val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000L
 
+    /** The two slots swap roles at most once per this long, so one of them is always older history. */
+    const val HISTORY_ROTATE_MS = 24L * 60 * 60 * 1000L
+
     private val mutex = Mutex()
 
     /**
@@ -140,6 +143,7 @@ object DriveBackupManager {
         store: DriveStore,
         allowEmpty: Boolean = false,
         force: Boolean = false,
+        rotateAfterMs: Long = HISTORY_ROTATE_MS,
         onProgress: ((done: Int, total: Int) -> Unit)? = null
     ): DriveBackupResult = mutex.withLock {
         try {
@@ -250,7 +254,8 @@ object DriveBackupManager {
             }
 
             // (f) Pick older slot (or create slot 1, then slot 2) and upload envelope bytes
-            val targetSlot = pickTargetSlot(store, slot1, slot2)
+            val slotChoice = pickTargetSlot(store, slot1, slot2, System.currentTimeMillis(), rotateAfterMs)
+            val targetSlot = slotChoice.file
             val uploadedFile = store.upload(targetSlot.id, envelopeBytes)
             if (uploadedFile.size != envelopeBytes.size.toLong()) {
                 throw DriveException(DriveException.Kind.SERVER, "Uploaded backup size mismatch")
@@ -276,7 +281,8 @@ object DriveBackupManager {
                 "attachments" to built.counts.attachments.toString(),
                 "appVersion" to BuildConfig.VERSION_NAME,
                 "formatVersion" to "1",
-                "dataHash" to dataHash
+                "dataHash" to dataHash,
+                "rotatedAt" to slotChoice.rotatedAt.toString()
             )
             val finalizedSlot = store.setProps(targetSlot.id, props)
 
@@ -459,20 +465,42 @@ object DriveBackupManager {
         true
     }
 
+    /** The slot a backup is written into, and when that slot last became the newest copy. */
+    private data class SlotChoice(val file: DriveFile, val rotatedAt: Long)
+
+    /**
+     * Chooses where the next backup goes.
+     *
+     * Backups can now happen minutes apart. If every one rotated to the other slot, both slots
+     * would soon hold the same recent state and an older good copy would be gone. So the newest
+     * slot is overwritten in place, and the other slot is kept as history. The slots swap roles
+     * only when the newest slot became the newest at least [rotateAfterMs] ago (a day by default),
+     * which leaves the history copy one to two days old. A slot without a "rotatedAt" mark, made
+     * by an older app version, counts as due and rotates once.
+     */
     private suspend fun pickTargetSlot(
         store: DriveStore,
         slot1: DriveFile?,
-        slot2: DriveFile?
-    ): DriveFile {
+        slot2: DriveFile?,
+        now: Long,
+        rotateAfterMs: Long
+    ): SlotChoice {
         if (slot1 == null) {
-            return store.create(SLOT_1_NAME)
+            return SlotChoice(store.create(SLOT_1_NAME), now)
         }
         if (slot2 == null) {
-            return store.create(SLOT_2_NAME)
+            return SlotChoice(store.create(SLOT_2_NAME), now)
         }
         val seq1 = slot1.props["seq"]?.toLongOrNull() ?: 0L
         val seq2 = slot2.props["seq"]?.toLongOrNull() ?: 0L
-        return if (seq1 <= seq2) slot1 else slot2
+        val older = if (seq1 <= seq2) slot1 else slot2
+        val latest = if (seq1 <= seq2) slot2 else slot1
+
+        val latestRotatedAt = latest.props["rotatedAt"]?.toLongOrNull() ?: 0L
+        val sinceRotation = now - latestRotatedAt
+        // A clock set back (negative) counts as due, so history is never stuck.
+        val keepHistory = latestRotatedAt > 0L && sinceRotation in 0 until rotateAfterMs
+        return if (keepHistory) SlotChoice(latest, latestRotatedAt) else SlotChoice(older, now)
     }
 
     private fun pickLatestSlot(slot1: DriveFile?, slot2: DriveFile?): DriveFile? {

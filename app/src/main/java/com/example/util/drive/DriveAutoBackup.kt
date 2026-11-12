@@ -35,6 +35,7 @@ object DriveAutoBackup {
 
     private const val ONE_HOUR_MS = 60 * 60 * 1000L
     private const val ONE_MINUTE_MS = 60 * 1000L
+    private const val ONE_DAY_MS = 24L * 60 * 60 * 1000L
     private const val THREE_DAYS_MS = 3L * 24 * 60 * 60 * 1000L
     
     enum class Outcome {
@@ -251,7 +252,7 @@ object DriveAutoBackup {
             is DriveAuthResult.NeedsConsent -> {
                 prefs.lastError = "Google Drive access was lost. Reconnect in Settings."
                 prefs.consecutiveFailures += 1
-                checkNotification(context, prefs, now)
+                checkNotification(context, prefs, now, needsReconnect = true)
                 return Outcome.NeedsReconnect
             }
             is DriveAuthResult.Failed -> {
@@ -298,7 +299,12 @@ object DriveAutoBackup {
                 Outcome.Unchanged
             }
             is DriveBackupResult.Failure -> {
-                checkNotification(context, prefs, now)
+                checkNotification(
+                    context,
+                    prefs,
+                    now,
+                    needsReconnect = backupResult.kind == DriveException.Kind.AUTH
+                )
                 when (backupResult.kind) {
                     DriveException.Kind.NETWORK, DriveException.Kind.SERVER -> Outcome.Retry
                     DriveException.Kind.AUTH -> {
@@ -311,13 +317,35 @@ object DriveAutoBackup {
         }
     }
 
-    private fun checkNotification(context: Context, prefs: DrivePrefs, now: Long) {
+    /**
+     * Adds one bell entry per failure streak.
+     *
+     * A lost Google sign-in ([needsReconnect]) never fixes itself, so it is reported after one day.
+     * Other failures (no connection, Drive trouble) often clear on their own, so they are reported
+     * only after 3 days and at least 3 failed runs.
+     */
+    private fun checkNotification(
+        context: Context,
+        prefs: DrivePrefs,
+        now: Long,
+        needsReconnect: Boolean = false
+    ) {
         // Start the failure clock on the first failure of a streak.
         if (prefs.firstFailureAt == 0L || prefs.firstFailureAt > now) {
             prefs.firstFailureAt = now
         }
+        if (prefs.failureNotified) return
         val failingForMs = now - prefs.firstFailureAt
-        if (prefs.consecutiveFailures >= 3 && failingForMs >= THREE_DAYS_MS && !prefs.failureNotified) {
+
+        if (needsReconnect && failingForMs >= ONE_DAY_MS) {
+            NotificationHistory.add(
+                context = context,
+                kind = "Backup",
+                title = "Google Drive backup",
+                body = "Google Drive backup stopped because the sign-in expired. Open Settings, Backup & data and reconnect."
+            )
+            prefs.failureNotified = true
+        } else if (prefs.consecutiveFailures >= 3 && failingForMs >= THREE_DAYS_MS) {
             NotificationHistory.add(
                 context = context,
                 kind = "Backup",

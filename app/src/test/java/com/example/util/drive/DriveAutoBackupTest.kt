@@ -317,6 +317,32 @@ class DriveAutoBackupTest {
     }
 
     @Test
+    fun runOnce_lostSignIn_warnsAfterOneDay_networkFailuresStillWaitThreeDays() = runBlocking {
+        db.courseDao().insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        prefs.lastHash = null
+
+        val now = 2_000_000_000_000L
+        val day = 24L * 60 * 60 * 1000L
+
+        // Sign-in lost: nothing yet on day 0, one bell entry once a day has passed
+        val pending = PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        fakeAuth.result = DriveAuthResult.NeedsConsent(pending)
+        assertEquals(DriveAutoBackup.Outcome.NeedsReconnect, DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now))
+        assertFalse(prefs.failureNotified)
+        assertEquals(0, NotificationHistory.items(context).size)
+
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + day)
+        assertTrue(prefs.failureNotified)
+        val items = NotificationHistory.items(context)
+        assertEquals(1, items.size)
+        assertTrue(items[0].body.contains("sign-in expired"))
+
+        // Only one entry per streak
+        DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 2 * day)
+        assertEquals(1, NotificationHistory.items(context).size)
+    }
+
+    @Test
     fun constraints_andOnAppOpen() {
         val wifiConstraints = DriveAutoBackup.buildConstraints(wifiOnly = true)
         assertEquals(NetworkType.UNMETERED, wifiConstraints.requiredNetworkType)

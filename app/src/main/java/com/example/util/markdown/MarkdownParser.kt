@@ -425,6 +425,29 @@ fun parseInlines(text: String, depth: Int = 0): List<Inline> {
             }
         }
 
+        // 3b. Note link: [[Note title]]
+        if (c == '[' && i + 1 < len && text[i + 1] == '[') {
+            val close = text.indexOf("]]", i + 2)
+            if (close != -1) {
+                val inner = text.substring(i + 2, close)
+                val title = sanitizeNoteLinkTitle(inner)
+                val isPlainTitle = !inner.contains('[') && !inner.contains('\n')
+                // "[[a]](url)" is an ordinary link whose text is "[a]", so it is left to the link rule
+                val isFollowedByUrl = close + 2 < len && text[close + 2] == '('
+                if (isPlainTitle && title.isNotEmpty() && !isFollowedByUrl) {
+                    flushPlain()
+                    inlines.add(
+                        Inline.Link(
+                            children = listOf(Inline.Text(title)),
+                            url = NOTE_LINK_URL_PREFIX + title
+                        )
+                    )
+                    i = close + 2
+                    continue
+                }
+            }
+        }
+
         // 4. Link: [text](url)
         if (c == '[') {
             if ((cannotCloseFrom["link"] ?: Int.MAX_VALUE) <= i) {

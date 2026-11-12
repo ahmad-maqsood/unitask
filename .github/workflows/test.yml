@@ -13,6 +13,8 @@ on:
       - 'supabase/**'
       - '.github/workflows/**'
       - '.github/scripts/**'
+      - '.github/actions/**'
+      - '.env.example'
 
   pull_request:
     branches:
@@ -26,6 +28,8 @@ on:
       - 'supabase/**'
       - '.github/workflows/**'
       - '.github/scripts/**'
+      - '.github/actions/**'
+      - '.env.example'
 
   workflow_dispatch:
 
@@ -65,6 +69,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
+
+      - name: Write Supabase settings (.env) from secrets
+        uses: ./.github/actions/write-env
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest

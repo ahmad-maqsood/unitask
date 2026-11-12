@@ -1,0 +1,36 @@
+name: Write .env for the build
+description: >
+  Creates the git-ignored .env file with the Supabase settings from the repository secrets, so
+  the real values are never stored in the code. Without them the build uses the placeholders
+  in .env.example.
+inputs:
+  supabase-url:
+    description: Value of the SUPABASE_URL secret
+    required: false
+    default: ''
+  supabase-anon-key:
+    description: Value of the SUPABASE_ANON_KEY secret
+    required: false
+    default: ''
+  required:
+    description: Set to "true" to fail when a value is missing (use this for release builds)
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SUPABASE_URL: ${{ inputs.supabase-url }}
+        SUPABASE_ANON_KEY: ${{ inputs.supabase-anon-key }}
+        REQUIRED: ${{ inputs.required }}
+      run: |
+        if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+          if [ "$REQUIRED" = "true" ]; then
+            echo "::error::Secrets SUPABASE_URL and SUPABASE_ANON_KEY must both be set for this build"
+            exit 1
+          fi
+          echo "::warning::SUPABASE_URL / SUPABASE_ANON_KEY are not available here, so the build uses the placeholders in .env.example (fine for tests, lint and CodeQL)."
+          exit 0
+        fi
+        printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > .env

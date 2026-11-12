@@ -147,6 +147,14 @@ jobs:
         with:
           cache-provider: basic
 
+      - name: Write Supabase settings (.env) from secrets
+        if: ${{ !inputs.test_release_notes }}
+        uses: ./.github/actions/write-env
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
+          required: 'true'
+
       - name: Run unit tests
         if: ${{ !inputs.test_release_notes }}
         run: ./gradlew testDebugUnitTest

@@ -19,8 +19,6 @@ android {
     versionCode = 21
     versionName = "4.1.0"
     buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"532041682564-hm7328k6empdkip9ldoml916klqrdcjb.apps.googleusercontent.com\"")
-    buildConfigField("String", "SUPABASE_URL", "\"https://hnkvduyzgueykvhlkzys.supabase.co\"")
-    buildConfigField("String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhua3ZkdXl6Z3VleWt2aGxrenlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMTY4NTgsImV4cCI6MjEwODY5Mjg1OH0.Ue1xtCji8yKx8MmQVrB7OLxYOyqSLKzKAozgrNglM6o\"")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -123,6 +121,9 @@ ksp {
   arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// SUPABASE_URL and SUPABASE_ANON_KEY come from this plugin: it reads the git-ignored .env file
+// (or the placeholders in .env.example when there is no .env) and turns each line into a
+// BuildConfig field. See the README for how to create .env.
 secrets {
   propertiesFileName = ".env"
   defaultPropertiesFileName = ".env.example"

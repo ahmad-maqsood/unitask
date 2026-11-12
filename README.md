@@ -128,6 +128,15 @@ cd unitask
 
 You can also open the cloned folder in Android Studio and let Gradle sync before running the app. Cloud features that use Supabase or Google Sign-In require your own service configuration and credentials. Never commit secrets to the repository.
 
+**Supabase settings.** The Supabase URL and anon key are not stored in the code. The build reads them from a `.env` file in the project root, which Git ignores. To connect the groups feature to your own Supabase project, copy `.env.example` to `.env` and replace the two placeholder lines:
+
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+Without a `.env` file the app still builds, using the placeholders, but groups will not connect. In GitHub Actions the `.env` file is created from the repository secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`, and the release build stops if either is missing.
+
 ## Features
 
 ### Coursework

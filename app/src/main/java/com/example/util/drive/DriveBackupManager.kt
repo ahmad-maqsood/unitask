@@ -136,6 +136,17 @@ object DriveBackupManager {
     }
 
     /**
+     * Both backups on Drive that have readable details, newest first (zero, one or two entries).
+     * The second entry is the older copy offered by "Use the older backup".
+     */
+    suspend fun listBackups(store: DriveStore): List<DriveBackupInfo> {
+        val files = store.list()
+        return listOf(SLOT_1_NAME, SLOT_2_NAME)
+            .mapNotNull { name -> files.firstOrNull { it.name == name }?.let { infoFromSlot(it) } }
+            .sortedByDescending { it.seq }
+    }
+
+    /**
      * Backs up database data and note images to Google Drive.
      */
     suspend fun backUp(
@@ -347,11 +358,16 @@ object DriveBackupManager {
 
     /**
      * Restores backup from Google Drive by downloading the latest valid slot and streaming note images.
+     *
+     * With [slotFileId] only that one backup is read, and there is no fallback to the other one:
+     * a person who chose the older backup must not silently get the newer one. If it is damaged,
+     * the restore fails with a message.
      */
     suspend fun restore(
         context: Context,
         store: DriveStore,
-        onProgress: ((Int, Int) -> Unit)? = null
+        onProgress: ((Int, Int) -> Unit)? = null,
+        slotFileId: String? = null
     ): BackupResult = mutex.withLock {
         try {
             val files = store.list()
@@ -365,6 +381,13 @@ object DriveBackupManager {
             val seq1 = slot1?.props?.get("seq")?.toLongOrNull() ?: -1L
             val seq2 = slot2?.props?.get("seq")?.toLongOrNull() ?: -1L
             val candidates = when {
+                slotFileId != null -> {
+                    val chosen = listOfNotNull(slot1, slot2).firstOrNull { it.id == slotFileId }
+                        ?: return BackupResult.Failure(
+                            "That backup is no longer on Google Drive. Close this and try again."
+                        )
+                    listOf(chosen)
+                }
                 seq1 >= seq2 -> listOfNotNull(slot1, slot2)
                 else -> listOfNotNull(slot2, slot1)
             }

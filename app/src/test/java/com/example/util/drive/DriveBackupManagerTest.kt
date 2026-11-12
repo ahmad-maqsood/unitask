@@ -146,6 +146,51 @@ class DriveBackupManagerTest {
     }
 
     @Test
+    fun restoreOlderBackup_restoresOnlyThatSlot_noFallbackToNewer() = runBlocking {
+        val courseDao = db.courseDao()
+        val taskDao = db.taskDao()
+        val fakeStore = FakeDriveStore()
+
+        val cId = courseDao.insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+        DriveBackupManager.backUp(context, fakeStore) // slot 1, seq 1, one task
+        taskDao.insertTask(TaskItem(courseId = cId, title = "HW 2", dueDateEpochMillis = 2000L))
+        DriveBackupManager.backUp(context, fakeStore) // slot 2, seq 2, two tasks
+
+        val backups = DriveBackupManager.listBackups(fakeStore)
+        assertEquals(listOf(2L, 1L), backups.map { it.seq })
+        assertEquals(listOf(2, 1), backups.map { it.tasks })
+        val older = backups[1]
+
+        // Restoring the older backup brings back one task, not two
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        val res = DriveBackupManager.restore(context, fakeStore, slotFileId = older.slotFileId)
+        assertTrue(res is BackupResult.Success)
+        assertEquals(1, taskDao.getAllActiveTasksSync().size)
+
+        // A damaged older backup fails and does not fall back to the newer one
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        fakeStore.files[older.slotFileId]!!.bytes = "corrupted".toByteArray()
+        val damaged = DriveBackupManager.restore(context, fakeStore, slotFileId = older.slotFileId)
+        assertTrue(damaged is BackupResult.Failure)
+        assertEquals(0, taskDao.getAllActiveTasksSync().size)
+
+        // An id that is not on Drive fails with a message
+        val missing = DriveBackupManager.restore(context, fakeStore, slotFileId = "does-not-exist")
+        assertTrue(missing is BackupResult.Failure)
+    }
+
+    @Test
+    fun listBackups_withOneSlot_returnsOneEntry() = runBlocking {
+        val fakeStore = FakeDriveStore()
+        val cId = db.courseDao().insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        db.taskDao().insertTask(TaskItem(courseId = cId, title = "HW 1", dueDateEpochMillis = 1000L))
+        assertEquals(0, DriveBackupManager.listBackups(fakeStore).size)
+        DriveBackupManager.backUp(context, fakeStore)
+        assertEquals(1, DriveBackupManager.listBackups(fakeStore).size)
+    }
+
+    @Test
     fun afterADay_slotsSwapRoles_soHistoryMovesForward() = runBlocking {
         val courseDao = db.courseDao()
         val taskDao = db.taskDao()

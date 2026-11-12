@@ -208,6 +208,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Includes courses, timetable, assignments with attachments, My tasks, notes with pictures and app settings.
   - Back up on a tap or daily after the app opens (runs at most once a day and only when something has changed).
   - Restore on a new phone with settings applied at once.
+  - Google Drive keeps a latest and an older backup (about a day behind), and the restore window lets you pick the older one.
   - Two rotating copies ensure a failed upload cannot destroy the last good one.
   - Wi-Fi only and attachments switches to control mobile data and storage.
 

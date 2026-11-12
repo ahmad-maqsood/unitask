@@ -229,8 +229,8 @@ fun DriveBackupSection(
 
                 // Switches
                 SettingsSwitchRow(
-                    title = "Back up every day",
-                    subtitle = "Runs when you open the app, at most once a day, and only when something changed.",
+                    title = "Back up automatically",
+                    subtitle = "Backs up shortly after you change something. Also checks once a day in the background.",
                     checked = state.autoEnabled,
                     enabled = isNotBusy,
                     onCheckedChange = { viewModel.setAuto(it) },

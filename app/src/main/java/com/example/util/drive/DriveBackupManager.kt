@@ -185,7 +185,10 @@ object DriveBackupManager {
                 if (latestHash != null && latestHash == dataHash && hasMyTasks) {
                     val info = infoFromSlot(latestSlot)
                     if (info != null) {
-                        prefs.lastAttemptAt = System.currentTimeMillis()
+                        val checkedAt = System.currentTimeMillis()
+                        prefs.lastAttemptAt = checkedAt
+                        // Nothing new to upload means the Drive copy is current.
+                        prefs.lastSafeAt = checkedAt
                         return DriveBackupResult.Unchanged(info)
                     }
                 }
@@ -311,6 +314,7 @@ object DriveBackupManager {
 
             // (i) Update DrivePrefs
             prefs.lastSuccessAt = now
+            prefs.lastSafeAt = now
             prefs.lastAttemptAt = now
             prefs.lastHash = dataHash
             prefs.lastCounts = buildCountsText(info)

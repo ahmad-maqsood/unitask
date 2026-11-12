@@ -762,6 +762,7 @@ fun MainScreen(
                             isLoading = !tasksLoaded,
                             snackbarHostState = snackbarHostState,
                             onChecklistToggle = { t, i -> viewModel.toggleChecklistItem(t, i) },
+                            onOpenBackupSettings = { settingsOpenRequest = SettingsOpenRequest(SettingsPage.Backup) },
                             onGetStartedStepClick = { step ->
                                 when (step) {
                                     GetStartedStep.COURSE -> {

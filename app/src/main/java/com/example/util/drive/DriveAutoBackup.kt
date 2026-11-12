@@ -13,7 +13,11 @@ import com.example.util.NotificationHistory
 import java.util.concurrent.TimeUnit
 
 /**
- * Coordinates automatic daily backups of user data to Google Drive.
+ * Coordinates automatic backups of user data to Google Drive.
+ *
+ * A backup is started shortly after something changes (see [DriveChangeWatcher] and
+ * [onDataChanged]). The daily background job and the check when the app opens stay as a safety
+ * net, for example for a change made while the phone had no connection.
  * Runs in the background via WorkManager when network conditions are met.
  */
 object DriveAutoBackup {
@@ -22,6 +26,12 @@ object DriveAutoBackup {
     const val PERIODIC_WORK_NAME = "unitask_drive_backup_periodic"
     const val INTERVAL_HOURS = 24L
     const val RETRY_INTERVAL_HOURS = 6L
+
+    /**
+     * How long to wait after a change before backing up. Every new change restarts the wait, so a
+     * burst of edits (typing a note, ticking several tasks) is uploaded once, after it settles.
+     */
+    const val CHANGE_DEBOUNCE_SECONDS = 30L
 
     private const val ONE_HOUR_MS = 60 * 60 * 1000L
     private const val ONE_MINUTE_MS = 60 * 1000L
@@ -38,6 +48,10 @@ object DriveAutoBackup {
     /**
      * Determines whether an automatic backup should be scheduled.
      * Pure function for simple and reliable testing.
+     *
+     * [dirty] means something changed since the last run. A backup is then due right away, unless
+     * the last runs failed: after a failure it waits for the retry window, so a broken connection
+     * is not hit again on every edit.
      */
     fun shouldRun(
         connected: Boolean,
@@ -45,9 +59,11 @@ object DriveAutoBackup {
         lastAttemptAt: Long,
         lastSuccessAt: Long,
         consecutiveFailures: Int,
-        now: Long
+        now: Long,
+        dirty: Boolean = false
     ): Boolean {
         if (!connected || !autoEnabled) return false
+        if (dirty && consecutiveFailures == 0) return true
         val effectiveAttemptAt = if (lastAttemptAt - now > ONE_MINUTE_MS) now else lastAttemptAt
         val thresholdHours = if (consecutiveFailures > 0) RETRY_INTERVAL_HOURS else INTERVAL_HOURS
         val thresholdMs = thresholdHours * ONE_HOUR_MS
@@ -73,6 +89,7 @@ object DriveAutoBackup {
             val prefs = DrivePrefs(context)
             if (!prefs.isConnected || !prefs.autoEnabled) return
 
+            DriveChangeWatcher.start(context)
             schedulePeriodic(context, prefs.wifiOnly)
 
             val now = System.currentTimeMillis()
@@ -82,27 +99,71 @@ object DriveAutoBackup {
                     lastAttemptAt = prefs.lastAttemptAt,
                     lastSuccessAt = prefs.lastSuccessAt,
                     consecutiveFailures = prefs.consecutiveFailures,
-                    now = now
+                    now = now,
+                    dirty = prefs.dirty
                 )
             ) {
                 return
             }
 
-            val request = OneTimeWorkRequestBuilder<DriveBackupWorker>()
-                .setConstraints(buildConstraints(prefs.wifiOnly))
-                .setInitialDelay(10, TimeUnit.SECONDS)
-                .build()
-
-            WorkManager.getInstance(context.applicationContext)
-                .enqueueUniqueWork(
-                    WORK_NAME,
-                    ExistingWorkPolicy.KEEP,
-                    request
-                )
+            enqueueBackup(context, prefs, delaySeconds = 10L, policy = ExistingWorkPolicy.KEEP)
         } catch (e: Exception) {
             // Never throws, but leave a trace for debugging.
             android.util.Log.w("UniTask", "Could not schedule the Drive backup", e)
         }
+    }
+
+    /**
+     * Called by [DriveChangeWatcher] when courses, tasks, notes, timetable or other backed up data
+     * changed. Marks the data as changed and plans a backup after a short quiet period. Each new
+     * change replaces the planned run, so the wait restarts and a burst of edits is uploaded once.
+     */
+    fun onDataChanged(context: Context) {
+        try {
+            val prefs = DrivePrefs(context)
+            if (!prefs.isConnected || !prefs.autoEnabled) return
+
+            prefs.dirty = true
+
+            // After a failed run the retry window decides, so a change does not hit a broken
+            // connection again right away. The data stays marked as changed for that later run.
+            if (!shouldRun(
+                    connected = prefs.isConnected,
+                    autoEnabled = prefs.autoEnabled,
+                    lastAttemptAt = prefs.lastAttemptAt,
+                    lastSuccessAt = prefs.lastSuccessAt,
+                    consecutiveFailures = prefs.consecutiveFailures,
+                    now = System.currentTimeMillis(),
+                    dirty = true
+                )
+            ) {
+                return
+            }
+
+            enqueueBackup(
+                context,
+                prefs,
+                delaySeconds = CHANGE_DEBOUNCE_SECONDS,
+                policy = ExistingWorkPolicy.REPLACE
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not schedule the Drive backup after a change", e)
+        }
+    }
+
+    private fun enqueueBackup(
+        context: Context,
+        prefs: DrivePrefs,
+        delaySeconds: Long,
+        policy: ExistingWorkPolicy
+    ) {
+        val request = OneTimeWorkRequestBuilder<DriveBackupWorker>()
+            .setConstraints(buildConstraints(prefs.wifiOnly))
+            .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(context.applicationContext)
+            .enqueueUniqueWork(WORK_NAME, policy, request)
     }
 
     /**
@@ -138,6 +199,10 @@ object DriveAutoBackup {
 
     /**
      * Executes a single backup pass silently.
+     *
+     * The "changed" mark is cleared before the data is read, so a change made while this run is
+     * uploading marks it again and gets its own run. If this run does not finish (failure or
+     * cancel), the mark is put back.
      */
     suspend fun runOnce(
         context: Context,
@@ -146,10 +211,32 @@ object DriveAutoBackup {
         now: Long
     ): Outcome {
         val prefs = DrivePrefs(context)
+        prefs.dirty = false
+        val outcome = try {
+            runBackupPass(context, prefs, auth, storeFactory, now)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            prefs.dirty = true
+            throw e
+        }
+        if (outcome == Outcome.Retry || outcome == Outcome.NeedsReconnect || outcome == Outcome.Failed) {
+            prefs.dirty = true
+        }
+        return outcome
+    }
+
+    private suspend fun runBackupPass(
+        context: Context,
+        prefs: DrivePrefs,
+        auth: DriveAuthApi,
+        storeFactory: ((suspend (Boolean) -> String) -> DriveStore),
+        now: Long
+    ): Outcome {
         prefs.lastAttemptAt = now
 
         val localHash = DriveBackupManager.computeLocalDataHash(context)
         if (localHash == prefs.lastHash) {
+            // The phone matches the last upload, so the Drive copy is current.
+            prefs.lastSafeAt = now
             return Outcome.Unchanged
         }
 

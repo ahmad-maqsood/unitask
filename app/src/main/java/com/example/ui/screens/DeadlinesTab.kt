@@ -133,6 +133,7 @@ fun DeadlinesTab(
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null,
     onGetStartedStepClick: ((GetStartedStep) -> Unit)? = null,
+    onOpenBackupSettings: (() -> Unit)? = null,
     isAppEmpty: Boolean? = null,
     driveBackupViewModel: DriveBackupViewModel = viewModel()
 ) {
@@ -213,6 +214,22 @@ fun DeadlinesTab(
     val getStartedShown = getStartedDone.filterNot { it.isSystem }.toSet() +
         getStartedDetected.filter { it.isSystem }
     val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown, getStartedSteps)
+
+    // Reminder that the backup is old. Needs somewhere to send the person, so it is off when
+    // the screen has no way to open the backup settings.
+    var backupReminder by remember { mutableStateOf<com.example.util.BackupReminder.Reminder?>(null) }
+    LaunchedEffect(onOpenBackupSettings != null) {
+        if (onOpenBackupSettings != null) {
+            backupReminder = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    com.example.util.BackupReminder.check(context)
+                } catch (e: Exception) {
+                    android.util.Log.w("UniTask", "Could not check the backup reminder", e)
+                    null
+                }
+            }
+        }
+    }
     val selectedTaskIds = rememberSaveable(
         saver = listSaver(
             save = { it.toList() },
@@ -294,6 +311,25 @@ fun DeadlinesTab(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        val reminderToShow = backupReminder
+        if (reminderToShow != null && onOpenBackupSettings != null) {
+            item(key = "backup_reminder_card") {
+                BackupReminderCard(
+                    reminder = reminderToShow,
+                    onBackUp = {
+                        // The card goes away for now and comes back on the next app start if
+                        // the backup is still old.
+                        backupReminder = null
+                        onOpenBackupSettings()
+                    },
+                    onLater = {
+                        com.example.util.BackupReminder.snooze(context)
+                        backupReminder = null
+                    }
+                )
+            }
+        }
+
         if (showGetStarted) {
             item(key = "get_started_card") {
                 GetStartedCard(

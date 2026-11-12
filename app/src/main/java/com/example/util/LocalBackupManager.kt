@@ -415,6 +415,7 @@ object LocalBackupManager {
                     ?: return@withContext BackupResult.Failure("Could not write to the chosen location.")
                 stream.use { it.write(envelope.toString(2).toByteArray(Charsets.UTF_8)) }
 
+                BackupReminder.recordLocalExport(context)
                 BackupResult.Success(built.counts)
             } catch (e: Exception) {
                 BackupResult.Failure(e.message ?: "The backup could not be saved.")

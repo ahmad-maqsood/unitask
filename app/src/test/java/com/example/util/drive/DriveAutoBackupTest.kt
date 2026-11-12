@@ -340,4 +340,106 @@ class DriveAutoBackupTest {
         prefs.autoEnabled = false
         DriveAutoBackup.onAppOpen(context)
     }
+
+    @Test
+    fun shouldRun_dirtyData_isDueRightAway_unlessRecentFailures() {
+        val now = 1_000_000_000_000L
+        val h1 = 1L * 3600 * 1000L
+        val h5 = 5L * 3600 * 1000L
+        val h7 = 7L * 3600 * 1000L
+
+        // Changed data 1 hour after the last attempt: due, the 24 hour wait does not apply
+        assertTrue(
+            DriveAutoBackup.shouldRun(
+                connected = true, autoEnabled = true,
+                lastAttemptAt = now - h1, lastSuccessAt = now - h1,
+                consecutiveFailures = 0, now = now, dirty = true
+            )
+        )
+        // Same data, not changed: not due
+        assertFalse(
+            DriveAutoBackup.shouldRun(
+                connected = true, autoEnabled = true,
+                lastAttemptAt = now - h1, lastSuccessAt = now - h1,
+                consecutiveFailures = 0, now = now, dirty = false
+            )
+        )
+        // Changed data but the last run failed 5 hours ago: waits for the 6 hour retry window
+        assertFalse(
+            DriveAutoBackup.shouldRun(
+                connected = true, autoEnabled = true,
+                lastAttemptAt = now - h5, lastSuccessAt = 0L,
+                consecutiveFailures = 1, now = now, dirty = true
+            )
+        )
+        assertTrue(
+            DriveAutoBackup.shouldRun(
+                connected = true, autoEnabled = true,
+                lastAttemptAt = now - h7, lastSuccessAt = 0L,
+                consecutiveFailures = 1, now = now, dirty = true
+            )
+        )
+        // Dirty never overrides "not connected" or "auto off"
+        assertFalse(
+            DriveAutoBackup.shouldRun(
+                connected = false, autoEnabled = true,
+                lastAttemptAt = 0L, lastSuccessAt = 0L,
+                consecutiveFailures = 0, now = now, dirty = true
+            )
+        )
+        assertFalse(
+            DriveAutoBackup.shouldRun(
+                connected = true, autoEnabled = false,
+                lastAttemptAt = 0L, lastSuccessAt = 0L,
+                consecutiveFailures = 0, now = now, dirty = true
+            )
+        )
+    }
+
+    @Test
+    fun onDataChanged_marksDirty_onlyWhenAutoBackupIsOn() {
+        prefs.connectedEmail = "student@example.com"
+        prefs.autoEnabled = false
+        DriveAutoBackup.onDataChanged(context)
+        assertFalse(prefs.dirty)
+
+        prefs.autoEnabled = true
+        DriveAutoBackup.onDataChanged(context)
+        assertTrue(prefs.dirty)
+    }
+
+    @Test
+    fun runOnce_clearsDirty_onSuccess_andKeepsItOnFailure() = runBlocking {
+        db.courseDao().insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        prefs.lastHash = null
+        prefs.dirty = true
+
+        fakeAuth.result = DriveAuthResult.Granted("token_123", "student@example.com")
+        val now = 2_000_000_000_000L
+        assertEquals(DriveAutoBackup.Outcome.Done, DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now))
+        assertFalse(prefs.dirty)
+        assertTrue(prefs.lastSafeAt > 0L)
+
+        // A later change whose upload fails stays marked as changed for the retry
+        db.courseDao().insertCourse(Course(name = "Physics", code = "PHY 101", colorHex = "#654321"))
+        prefs.dirty = true
+        fakeStore.defaultException = DriveException(DriveException.Kind.NETWORK, "Network down")
+        fakeStore.failOnMethod = "upload"
+        val outcome = DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now + 1000L)
+        assertEquals(DriveAutoBackup.Outcome.Retry, outcome)
+        assertTrue(prefs.dirty)
+    }
+
+    @Test
+    fun runOnce_unchanged_refreshesLastSafeAt() = runBlocking {
+        db.courseDao().insertCourse(Course(name = "Math", code = "MATH 101", colorHex = "#123456"))
+        prefs.lastHash = DriveBackupManager.computeLocalDataHash(context)
+        prefs.lastSafeAt = 0L
+
+        val before = System.currentTimeMillis()
+        val now = 2_000_000_000_000L
+        assertEquals(DriveAutoBackup.Outcome.Unchanged, DriveAutoBackup.runOnce(context, fakeAuth, { fakeStore }, now))
+        assertEquals(now, prefs.lastSafeAt)
+        assertTrue(prefs.lastSafeAt > before)
+    }
 }

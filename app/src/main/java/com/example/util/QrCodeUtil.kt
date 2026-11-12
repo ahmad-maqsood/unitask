@@ -56,8 +56,9 @@ object QrCodeUtil {
         } catch (e: Exception) { Log.d("UniTask", "QR text is not a UniTask link, trying plain text", e) }
 
         // Fallback: search regex for username and code in arbitrary text
-        val uRegex = Regex("""(?:username|user|u)[=:\s]+([a-zA-Z0-9_]{3,30})""", RegexOption.IGNORE_CASE)
-        val cRegex = Regex("""(?:code|join_code|c)[=:\s]+([a-zA-Z0-9]{4,12})""", RegexOption.IGNORE_CASE)
+        // \b makes the key start a word, so "you there" or "music class" is not read as "u" / "c".
+        val uRegex = Regex("""\b(?:username|user|u)[=:\s]+([a-zA-Z0-9_]{3,30})""", RegexOption.IGNORE_CASE)
+        val cRegex = Regex("""\b(?:code|join_code|c)[=:\s]+([a-zA-Z0-9]{4,12})""", RegexOption.IGNORE_CASE)
         val uMatch = uRegex.find(trimmed)?.groupValues?.getOrNull(1)
         val cMatch = cRegex.find(trimmed)?.groupValues?.getOrNull(1)
         if (!uMatch.isNullOrBlank() && !cMatch.isNullOrBlank()) {

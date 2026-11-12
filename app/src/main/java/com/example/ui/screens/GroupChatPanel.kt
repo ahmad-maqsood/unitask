@@ -396,8 +396,8 @@ fun GroupChatPanel(
 
         Surface(tonalElevation = 3.dp) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                if (replyingTo != null) {
-                    val target = replyingTo!!
+                val target = replyingTo
+                if (target != null) {
                     val replyName = if (target.senderId == currentUid) "You" else target.senderName
                     Row(
                         modifier = Modifier

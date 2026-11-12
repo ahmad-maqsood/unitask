@@ -24,12 +24,11 @@ fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
     }
 
     if (state.showRestoreConfirm) {
+        val info = state.latestBackupInfo
+        val offlineText = state.offlineBackupText
         val details = when {
-            state.latestBackupInfo != null -> {
-                val info = state.latestBackupInfo!!
-                "${DriveBackupViewModel.formatBackupTime(info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(info)}"
-            }
-            !state.offlineBackupText.isNullOrBlank() -> state.offlineBackupText!!
+            info != null -> "${DriveBackupViewModel.formatBackupTime(info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(info)}"
+            !offlineText.isNullOrBlank() -> offlineText
             else -> ""
         }
         DriveRestoreConfirmDialog(

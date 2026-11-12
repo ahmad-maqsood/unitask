@@ -303,14 +303,15 @@ object NotePdf {
         }
 
         private fun ensurePage(): Canvas {
-            if (currentPage == null) {
-                val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
-                val page = pdfDocument.startPage(pageInfo)
-                currentPage = page
-                canvas = page.canvas
-                y = TOP_MARGIN
-            }
-            return canvas!!
+            val existing = canvas
+            if (currentPage != null && existing != null) return existing
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
+            val page = pdfDocument.startPage(pageInfo)
+            currentPage = page
+            val pageCanvas = page.canvas
+            canvas = pageCanvas
+            y = TOP_MARGIN
+            return pageCanvas
         }
 
         private fun finishCurrentPage() {

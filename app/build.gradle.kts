@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.unitask.zrvqk"
     minSdk = 24
     targetSdk = 36
-    versionCode = 21
-    versionName = "4.1.0"
+    versionCode = 22
+    versionName = "4.2.0"
     buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"532041682564-hm7328k6empdkip9ldoml916klqrdcjb.apps.googleusercontent.com\"")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

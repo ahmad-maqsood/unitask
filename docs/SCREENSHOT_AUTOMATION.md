@@ -42,4 +42,17 @@ The workflow reserves the group username `unitask-screenshot-demo`. Before creat
 
 If the workflow fails during setup, check that both demo users exist, their email addresses are confirmed, and the four GitHub secrets are spelled exactly as shown above.
 
+## If the emulator fails
+
+The capture runs on a GitHub-hosted Android emulator, which can run out of memory or fail to start. The workflow already protects against this:
+
+- Before the emulator starts, it stops the Gradle and Kotlin build daemons and frees memory, because they keep gigabytes of RAM after the build and can make the emulator die mid-run.
+- The emulator runs with 3072 MB of RAM and a 5-minute boot timeout, so a dead emulator fails quickly instead of looping.
+- Each screenshot is copied out with a timeout and up to 3 retries.
+- If the capture fails, the log ends with a **diagnostics** block showing memory use, whether the emulator process is still running and any out-of-memory kills. Check it first to tell a dead emulator from a real test failure.
+
+Do not pin `emulator-build` in `.github/workflows/readme-screenshots.yml`. Old builds (for example 33.1.24) never connect to adb on the runner, so the boot check loops with "device not found" until the timeout. Leave the setting out so the workflow uses the current emulator.
+
+If the capture still fails, download the **emulator-crash-data** artifact from the failed run and check the diagnostics block in the step log.
+
 If the workflow captures the images but cannot open the generated pull request, check **GitHub → Settings → Actions → General → Workflow permissions** and enable **Allow GitHub Actions to create and approve pull requests**. The workflow needs this permission only to open the screenshot PR.

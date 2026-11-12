@@ -20,7 +20,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
-import com.example.data.groups.GroupRepository
+import com.example.Repositories
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.ui.screens.groupTaskItemId
@@ -132,7 +132,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                     try {
                         val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(context).orEmpty()
                         if (uid.isNotBlank()) {
-                            val repo = GroupRepository(context)
+                            val repo = Repositories.group(context)
                             repo.setTaskDone(uid, groupId, taskId, isDone = true)
                             // setTaskDone sends in the background. Wait here, or the phone may stop
                             // the app before the tick reaches the server.

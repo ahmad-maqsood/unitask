@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.groups.ChatTail
 import com.example.data.groups.GroupChatInfo
 import com.example.data.groups.GroupChatTracker
+import com.example.Repositories
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.groups.GroupsState
@@ -132,17 +133,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         val database = AppDatabase.getDatabase(application)
-        val scheduler = ReminderScheduler(application)
-        repository = AppRepository(
-            context = application,
-            courseDao = database.courseDao(),
-            taskDao = database.taskDao(),
-            taskAttachmentDao = database.taskAttachmentDao(),
-            lectureSlotDao = database.lectureSlotDao(),
-            reminderScheduler = scheduler,
-            noteDao = database.noteDao(),
-            database = database
-        )
+        repository = Repositories.app(application)
 
         val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         if (cm != null) {
@@ -158,7 +149,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         if (uid != null) {
                             Log.d("MainViewModel", "Network available: sending offline ticks, refreshing groups")
                             // Done ticks made offline go out first, then everything is read again.
-                            runLogged("Send offline done ticks") { GroupRepository(application).flushPendingDone() }
+                            runLogged("Send offline done ticks") { Repositories.group(application).flushPendingDone() }
                             GroupRepository.localChanges.tryEmit(Unit)
                         }
                     }
@@ -433,7 +424,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allLectureSlots: StateFlow<List<LectureSlotWithCourse>> = repository.allLectureSlots
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val groupRepository = GroupRepository(application)
+    private val groupRepository = Repositories.group(application)
     private val groupTaskProcessor = GroupTaskProcessor(application)
     private val groupCacheRepository = GroupCacheRepository(application)
 

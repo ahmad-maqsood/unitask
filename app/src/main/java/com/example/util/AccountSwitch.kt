@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.example.data.groups.GroupCacheRepository
 import com.example.data.groups.GroupChatTracker
+import com.example.Repositories
 import com.example.data.groups.GroupRepository
 import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupReminderScheduler
@@ -29,7 +30,7 @@ suspend fun resetGroupStateOnAccountSwitch(context: Context) {
     runCatching { GroupRepository.clearCache(context) }
     runCatching { GroupCacheRepository(context).clearCache() }
     runCatching { GroupTaskProcessor(context).clearAll() }
-    runCatching { GroupRepository(context).clearPendingDone() }
+    runCatching { Repositories.group(context).clearPendingDone() }
     runCatching { GroupChatTracker(context).clearAll() }
     runCatching { GroupChatNotifier(context).clearAll() }
 }
@@ -43,7 +44,7 @@ suspend fun clearGroupDataForDeletedAccount(context: Context) {
     runCatching { GroupTaskProcessor(context).clearAll() }
     runCatching { GroupRepository.clearCache(context) }
     runCatching { GroupCacheRepository(context).clearCache() }
-    runCatching { GroupRepository(context).clearPendingDone() }
+    runCatching { Repositories.group(context).clearPendingDone() }
     runCatching { GroupChatTracker(context).clearAll() }
     runCatching { GroupChatNotifier(context).clearAll() }
     runCatching { AuthStorage.clear(context) }

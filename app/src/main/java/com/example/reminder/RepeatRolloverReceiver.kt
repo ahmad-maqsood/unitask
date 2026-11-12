@@ -9,7 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.example.data.local.AppDatabase
-import com.example.data.repository.AppRepository
+import com.example.Repositories
 import com.example.data.repository.NoteRepository
 import com.example.util.NoteImages
 import kotlinx.coroutines.CancellationException
@@ -80,16 +80,7 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
 
             val db = AppDatabase.getDatabase(appContext)
             val scheduler = ReminderScheduler(appContext)
-            val repository = AppRepository(
-                context = appContext,
-                courseDao = db.courseDao(),
-                taskDao = db.taskDao(),
-                taskAttachmentDao = db.taskAttachmentDao(),
-                lectureSlotDao = db.lectureSlotDao(),
-                reminderScheduler = scheduler,
-                noteDao = db.noteDao(),
-                database = db
-            )
+            val repository = Repositories.app(appContext)
             if (repository.rolloverCompletedRepeatingTasks()) {
                 // Leaves every reminder in a consistent state after the tasks moved.
                 scheduler.rescheduleAll(db)

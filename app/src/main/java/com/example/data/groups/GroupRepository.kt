@@ -67,6 +67,14 @@ class GroupRepository(private val context: Context) {
 
     private val chatPageLimits = java.util.concurrent.ConcurrentHashMap<String, Int>()
 
+    /**
+     * Puts every chat back to the newest 50 messages. The repository is now shared for the whole
+     * app, so the screen calls this when it starts, to keep "Load earlier messages" per visit.
+     */
+    fun resetChatPageLimits() {
+        chatPageLimits.clear()
+    }
+
     fun loadEarlierMessages(groupId: String) {
         val current = chatPageLimits[groupId] ?: 50
         chatPageLimits[groupId] = current + 50

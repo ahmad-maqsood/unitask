@@ -7,7 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import com.example.MainActivity
-import com.example.data.groups.GroupRepository
+import com.example.Repositories
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.util.AuthStorage
@@ -111,7 +111,7 @@ suspend fun isStillNeeded(context: Context, taskId: Long, groupId: String?, grou
                     if (!groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()) {
                         val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(context).orEmpty()
                         if (uid.isBlank()) true
-                        else groupTaskId !in GroupRepository(context).getDoneTaskIdsOnce(uid, groupId)
+                        else groupTaskId !in Repositories.group(context).getDoneTaskIdsOnce(uid, groupId)
                     } else if (taskId > 0L) {
                         val task = AppDatabase.getDatabase(context).taskDao().getTaskById(taskId)
                         task != null && task.status != TaskStatus.COMPLETED

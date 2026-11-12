@@ -10,7 +10,7 @@ import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.repository.NoteRepository
-import com.example.reminder.ReminderScheduler
+import com.example.Repositories
 import com.example.util.FeatureGuide
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -62,16 +62,7 @@ class SearchViewModel(
 
     constructor(application: Application) : this(
         application = application,
-        appRepository = AppRepository(
-            context = application,
-            courseDao = AppDatabase.getDatabase(application).courseDao(),
-            taskDao = AppDatabase.getDatabase(application).taskDao(),
-            taskAttachmentDao = AppDatabase.getDatabase(application).taskAttachmentDao(),
-            lectureSlotDao = AppDatabase.getDatabase(application).lectureSlotDao(),
-            reminderScheduler = ReminderScheduler(application),
-            noteDao = AppDatabase.getDatabase(application).noteDao(),
-            database = AppDatabase.getDatabase(application)
-        ),
+        appRepository = Repositories.app(application),
         noteRepository = NoteRepository(AppDatabase.getDatabase(application).noteDao())
     )
 

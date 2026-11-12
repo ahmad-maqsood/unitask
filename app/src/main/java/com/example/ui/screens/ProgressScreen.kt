@@ -128,7 +128,7 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            items(data.courses) { CourseRow(it) }
+            items(data.courses, key = { it.id }) { CourseRow(it) }
         }
         item {
             Text(

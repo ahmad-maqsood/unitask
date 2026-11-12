@@ -134,6 +134,13 @@ class ProgressLogicTest {
     }
 
     @Test
+    fun eachCourseRowCarriesItsOwnUniqueId() {
+        val result = compute(listOf(done(at(2026, 11, 12), course), done(at(2026, 11, 12), other), pending(course)))
+        assertEquals(setOf(course.id, other.id), result.courses.map { it.id }.toSet())
+        assertEquals(result.courses.size, result.courses.map { it.id }.distinct().size)
+    }
+
+    @Test
     fun noTasksGivesAllZeros() {
         val result = compute(emptyList())
         assertEquals(0, result.totalTasks)

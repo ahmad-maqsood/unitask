@@ -11,7 +11,14 @@ import java.util.TimeZone
 data class WeekBar(val weekStartMillis: Long, val done: Int)
 
 /** How many of a course's tasks are done. */
-data class CourseProgress(val name: String, val colorHex: String, val done: Int, val total: Int) {
+data class CourseProgress(
+    /** The course id. The Progress list uses it as the row key, so rows keep their place when numbers change. */
+    val id: Long,
+    val name: String,
+    val colorHex: String,
+    val done: Int,
+    val total: Int
+) {
     val fraction: Float get() = if (total > 0) done.toFloat() / total else 0f
 }
 
@@ -102,6 +109,7 @@ object ProgressLogic {
             .map { (_, pairs) ->
                 val course = pairs.first().first
                 CourseProgress(
+                    id = course.id,
                     name = course.name,
                     colorHex = course.colorHex,
                     done = pairs.count { it.second.status == TaskStatus.COMPLETED },

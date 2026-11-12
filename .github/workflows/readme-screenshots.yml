@@ -47,6 +47,8 @@ jobs:
           SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
           SCREENSHOT_DEMO_MEMBER_EMAIL: ${{ secrets.SCREENSHOT_DEMO_MEMBER_EMAIL }}
           SCREENSHOT_DEMO_MEMBER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_MEMBER_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: python3 .github/scripts/seed_screenshot_demo.py
 
       - name: Prepare Android debug signing key

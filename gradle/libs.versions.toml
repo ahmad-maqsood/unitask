@@ -24,6 +24,7 @@ cameraLifecycle = "1.5.0"
 cameraView = "1.5.0"
 cameraCore = "1.5.0"
 robolectric = "4.17"
+orgJson = "20260814"
 
 secretsGradlePlugin = "2.0.1"
 
@@ -72,6 +73,7 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
 androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }

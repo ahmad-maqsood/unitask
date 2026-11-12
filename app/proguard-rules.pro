@@ -33,15 +33,11 @@
 # -----------------------------------------------------------------------------
 # 2. Supabase row DTOs & Payloads
 # -----------------------------------------------------------------------------
-# Keep all @Serializable classes used with Postgrest, Realtime, and Auth
+# Keep all @Serializable classes used with Postgrest, Realtime, and Auth.
+# This covers the row classes in data/groups (GroupRows.kt, GroupModels.kt,
+# GroupCacheRepository.kt) and Announcement. The rest of data/groups, such as
+# GroupRepository, is ordinary code that nothing looks up by name, so R8 can shrink it.
 -keep @kotlinx.serialization.Serializable class com.example.** { *; }
--keep class com.example.sync.CourseRow { *; }
--keep class com.example.sync.TaskRow { *; }
--keep class com.example.sync.SlotRow { *; }
--keep class com.example.sync.NoteRow { *; }
--keep class com.example.data.groups.** { *; }
--keep class com.example.util.Announcement { *; }
--keep class com.example.util.AppFeature { *; }
 
 # Supabase & Ktor optional runtime warnings
 -dontwarn io.ktor.**

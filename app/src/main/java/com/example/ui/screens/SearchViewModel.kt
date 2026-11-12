@@ -10,7 +10,7 @@ import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.repository.NoteRepository
-import com.example.reminder.ReminderScheduler
+import com.example.Repositories
 import com.example.util.FeatureGuide
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -44,7 +44,9 @@ data class SearchActiveData(
     val tasks: List<TaskWithCourse>,
     val notes: List<NoteListItem>,
     val courses: List<Course>,
-    val archived: SearchArchivedData
+    val archived: SearchArchivedData,
+    val folderNames: Map<Long, String> = emptyMap(),
+    val folderColors: Map<Long, String> = emptyMap()
 )
 
 /**
@@ -60,16 +62,7 @@ class SearchViewModel(
 
     constructor(application: Application) : this(
         application = application,
-        appRepository = AppRepository(
-            context = application,
-            courseDao = AppDatabase.getDatabase(application).courseDao(),
-            taskDao = AppDatabase.getDatabase(application).taskDao(),
-            taskAttachmentDao = AppDatabase.getDatabase(application).taskAttachmentDao(),
-            lectureSlotDao = AppDatabase.getDatabase(application).lectureSlotDao(),
-            reminderScheduler = ReminderScheduler(application),
-            noteDao = AppDatabase.getDatabase(application).noteDao(),
-            database = AppDatabase.getDatabase(application)
-        ),
+        appRepository = Repositories.app(application),
         noteRepository = NoteRepository(AppDatabase.getDatabase(application).noteDao())
     )
 
@@ -162,13 +155,16 @@ class SearchViewModel(
         activeTasksFlow,
         noteDao.observeNotes(),
         appRepository.allCourses,
-        archivedDataFlow
-    ) { tasks, notes, courses, archived ->
+        archivedDataFlow,
+        noteDao.observeFolders()
+    ) { tasks, notes, courses, archived, folders ->
         SearchActiveData(
             tasks = tasks,
             notes = notes,
             courses = courses,
-            archived = archived
+            archived = archived,
+            folderNames = folders.associate { it.id to it.name },
+            folderColors = folders.associate { it.id to it.colorHex }
         )
     }
 
@@ -200,7 +196,9 @@ class SearchViewModel(
             archivedNotes = if (params.includeArchived) data.archived.notes else emptyList(),
             archivedCourses = if (params.includeArchived) data.archived.courses else emptyList(),
             settingsEntries = allSettingsSearchEntries,
-            guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList()
+            guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList(),
+            noteFolderNames = data.folderNames,
+            noteFolderColors = data.folderColors
         )
     }
         .flowOn(Dispatchers.Default)

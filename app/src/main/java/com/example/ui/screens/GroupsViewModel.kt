@@ -8,7 +8,7 @@ import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupMembership
-import com.example.data.groups.GroupRepository
+import com.example.Repositories
 import com.example.data.groups.GroupTask
 import com.example.reminder.GroupReminderScheduler
 import com.example.util.AppUser
@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = GroupRepository(application)
+    private val repository = Repositories.group(application).also { it.resetChatPageLimits() }
     private val _currentUser = MutableStateFlow<AppUser?>(
         currentAppUser() ?: AuthStorage.getLastUid(application)?.let { AppUser(uid = it, email = null, displayName = null) }
     )

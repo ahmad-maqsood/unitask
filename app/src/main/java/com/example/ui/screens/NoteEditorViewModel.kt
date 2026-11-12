@@ -11,6 +11,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
+import com.example.data.local.NoteListItem
 import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.NoteRepository
 import com.example.util.markdown.EditHistory
@@ -81,6 +82,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     private var autosaveJob: Job? = null
     private var loadJob: Job? = null
     private var currentSession: Int = -1
+    // Folder a brand new note is filed into when it is first saved (an existing note keeps its own)
+    private var newNoteFolderId: Long? = null
     private var discarded = false
     @Volatile
     private var trashed = false
@@ -93,12 +96,16 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
     }
     private val saveMutex = Mutex()
 
+    // Every live note, so the editor can offer "[[" suggestions, open linked notes and list backlinks
+    val allNotes: Flow<List<NoteListItem>> = repository.observeNotes()
+
     val activeCourses: Flow<List<Course>> = database.courseDao().getAllCourses()
         .map { list -> list.filter { !it.isDeleted && !it.isMyTasksCourse() } }
 
-    fun loadNote(noteId: Long?, session: Int) {
+    fun loadNote(noteId: Long?, session: Int, folderIdForNewNote: Long? = null) {
         if (isLoaded && session == currentSession) return
         currentSession = session
+        newNoteFolderId = folderIdForNewNote
         loadJob?.cancel()
         loadJob = null
         autosaveJob?.cancel()
@@ -323,7 +330,8 @@ class NoteEditorViewModel(application: Application) : AndroidViewModel(applicati
             title = t,
             body = b,
             courseId = cId,
-            keepScreenOn = keepScreenOn
+            keepScreenOn = keepScreenOn,
+            folderId = newNoteFolderId
         )
         if (saveSession != currentSession) return@withLock savedId
         if (savedId > 0L && currentId == 0L) {

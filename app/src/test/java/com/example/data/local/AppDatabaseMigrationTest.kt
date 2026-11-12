@@ -272,6 +272,66 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun migrating15To16AddsNoteFoldersAndKeepsExistingNotesUnfiled() {
+        val old = helper.createDatabase("migration-test-15-16", 15)
+        old.execSQL(
+            "INSERT INTO notes (id, title, body, courseId, isPinned, createdAt, updatedAt, isDeleted, deletedAt, isSynced, cloudId, cloudUpdatedAt, keepScreenOn) " +
+                "VALUES (1, 'Lecture 1', 'Intro to graphs', NULL, 0, 1700000000000, 1700000000000, 0, 0, 0, '', 0, 0)"
+        )
+        old.close()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-15-16")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            db.openHelper.writableDatabase
+                .query("SELECT title, body, folderId FROM notes WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old note is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Lecture 1", cursor.getString(0))
+                    assertEquals("Intro to graphs", cursor.getString(1))
+                    assertTrue("an old note should not be in a folder", cursor.isNull(2))
+                }
+
+            db.openHelper.writableDatabase.execSQL(
+                "INSERT INTO note_folders (name, createdAt) VALUES ('Exams', 1700000000000)"
+            )
+            db.openHelper.writableDatabase
+                .query("SELECT name FROM note_folders")
+                .use { cursor ->
+                    assertTrue(cursor.moveToFirst())
+                    assertEquals("Exams", cursor.getString(0))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrating16To17AddsFolderColourAndKeepsExistingFolders() {
+        val old = helper.createDatabase("migration-test-16-17", 16)
+        old.execSQL("INSERT INTO note_folders (id, name, createdAt) VALUES (1, 'Exams', 1700000000000)")
+        old.close()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-16-17")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            db.openHelper.writableDatabase
+                .query("SELECT name, colorHex FROM note_folders WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old folder is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Exams", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun everyReleasedVersionFrom9UpgradesToTheLatestVersion() {
         // Opens an empty database at each old version with the real migrations. Room checks the
         // result against the current code, so a broken or missing step fails here and names the

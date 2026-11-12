@@ -1,7 +1,8 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.activity.compose.BackHandler
+import com.example.data.local.NoteFolder
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -49,8 +57,10 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -59,6 +69,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -70,6 +81,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -109,6 +121,15 @@ fun NotesScreen(
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
     val currentSort by viewModel.sort.collectAsStateWithLifecycle()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle()
+    val folders by viewModel.folders.collectAsStateWithLifecycle()
+    val folderFilter by viewModel.folderFilter.collectAsStateWithLifecycle()
+    val folderCounts by viewModel.folderCounts.collectAsStateWithLifecycle()
+    val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
+    val selectionMode = selectedIds.isNotEmpty()
+    val folderNamesById = remember(folders) { folders.associate { it.id to it.name } }
+    val folderColorsById = remember(folders) { folders.associate { it.id to it.colorHex } }
+    val activeFolder = (folderFilter as? NotesFolderFilter.Folder)
+        ?.let { filter -> folders.firstOrNull { it.id == filter.folderId } }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -116,6 +137,49 @@ fun NotesScreen(
     var showListOverflowMenu by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var isWorking by remember { mutableStateOf(false) }
+    // Notes waiting to be moved; the "Move to" dialog shows while this is not null
+    var moveRequestIds by remember { mutableStateOf<List<Long>?>(null) }
+    // The "New folder" dialog shows while this is true. Notes in newFolderMoveIds go into the new folder.
+    var showNewFolderDialog by remember { mutableStateOf(false) }
+    var newFolderMoveIds by remember { mutableStateOf<List<Long>?>(null) }
+    var renameFolderTarget by remember { mutableStateOf<NoteFolder?>(null) }
+    var deleteFolderTarget by remember { mutableStateOf<NoteFolder?>(null) }
+    var folderDialogError by remember { mutableStateOf<String?>(null) }
+    var showFolderMenu by remember { mutableStateOf(false) }
+    var showSelectionMenu by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
+
+    // Every live note in a folder as export entries (not just the ones the search or filters show)
+    suspend fun folderExportNotes(folderId: Long): List<NoteShare.FolderExportNote> =
+        viewModel.repository.getNotesInFolder(folderId).map {
+            NoteShare.FolderExportNote(fileTitle = noteDisplayTitle(it), title = it.title, body = it.body)
+        }
+
+    var saveFolderZipId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val saveFolderZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri: Uri? ->
+        val folderId = saveFolderZipId
+        saveFolderZipId = null
+        if (uri != null && folderId != null) {
+            coroutineScope.launch {
+                val items = folderExportNotes(folderId)
+                val ok = items.isNotEmpty() && NoteShare.saveFolderZipToUri(context, uri, items)
+                snackbarHostState.showSnackbar(
+                    if (ok) "Saved to your device" else "Could not save the file",
+                    duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
+
+    fun showMessage(message: String) {
+        snackbarJob?.cancel()
+        snackbarJob = coroutineScope.launch {
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+        }
+    }
     var saveRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var saveRequestFormat by rememberSaveable { mutableStateOf<String?>(null) }
     var shareRequestNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -178,23 +242,116 @@ fun NotesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Notes",
+                        text = if (selectionMode) "${selectedIds.size} selected" else "Notes",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = onClose,
+                        onClick = { if (selectionMode) viewModel.clearSelection() else onClose() },
                         modifier = Modifier.testTag("notes_back_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
+                            imageVector = if (selectionMode) Icons.Default.Close else Icons.Default.ArrowBack,
+                            contentDescription = if (selectionMode) "Cancel selection" else "Back"
                         )
                     }
                 },
                 actions = {
+                  if (selectionMode) {
+                    IconButton(
+                        onClick = { viewModel.selectAllShown() },
+                        modifier = Modifier.testTag("notes_select_all_button")
+                    ) {
+                        Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                    }
+                    IconButton(
+                        onClick = { moveRequestIds = selectedIds.toList() },
+                        modifier = Modifier.testTag("notes_move_selected_button")
+                    ) {
+                        Icon(Icons.Default.Folder, contentDescription = "Move to folder")
+                    }
+                    IconButton(
+                        onClick = {
+                            val ids = selectedIds.toList()
+                            viewModel.moveNotesToTrash(ids)
+                            viewModel.clearSelection()
+                            snackbarJob?.cancel()
+                            snackbarJob = coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = if (ids.size == 1) "Note moved to Recently deleted"
+                                    else "${ids.size} notes moved to Recently deleted",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreNotesFromTrash(ids)
+                                }
+                            }
+                        },
+                        modifier = Modifier.testTag("notes_delete_selected_button")
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete selected notes")
+                    }
+                    Box {
+                        IconButton(
+                            onClick = { showSelectionMenu = true },
+                            modifier = Modifier.testTag("notes_selection_overflow_button")
+                        ) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                        }
+                        DropdownMenu(
+                            expanded = showSelectionMenu,
+                            onDismissRequest = { showSelectionMenu = false }
+                        ) {
+                            val selectedNotes = notes.filter { it.note.id in selectedIds }
+                            val allPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.note.isPinned }
+                            DropdownMenuItem(
+                                text = { Text(if (allPinned) "Unpin" else "Pin") },
+                                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_selection_pin"),
+                                onClick = {
+                                    showSelectionMenu = false
+                                    viewModel.setPinnedForNotes(selectedIds.toList(), !allPinned)
+                                    viewModel.clearSelection()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share as one file") },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_selection_share"),
+                                onClick = {
+                                    showSelectionMenu = false
+                                    val chosen = notes.filter { it.note.id in selectedIds }
+                                    viewModel.clearSelection()
+                                    if (chosen.isNotEmpty()) {
+                                        // One note is shared as itself, several as one file with a section each
+                                        val text = if (chosen.size == 1) {
+                                            chosen[0].note.body
+                                        } else {
+                                            NoteShare.combinedMarkdown(
+                                                chosen.map { noteDisplayTitle(it.note) to it.note.body }
+                                            )
+                                        }
+                                        coroutineScope.launch {
+                                            try {
+                                                NoteShare.shareAsFileAsync(
+                                                    context = context,
+                                                    title = if (chosen.size == 1) noteDisplayTitle(chosen[0].note) else "UniTask notes",
+                                                    body = text,
+                                                    format = NoteExportFormat.MD
+                                                )
+                                            } catch (_: Exception) {
+                                                snackbarHostState.showSnackbar("Could not share the file", duration = SnackbarDuration.Short)
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                  } else {
                     Box {
                         IconButton(
                             onClick = { showSortMenu = true },
@@ -268,6 +425,21 @@ fun NotesScreen(
                             onDismissRequest = { showListOverflowMenu = false }
                         ) {
                             DropdownMenuItem(
+                                text = { Text("New folder") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.CreateNewFolder,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showListOverflowMenu = false
+                                    folderDialogError = null
+                                    newFolderMoveIds = null
+                                    showNewFolderDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Import .md or .txt file") },
                                 leadingIcon = {
                                     Icon(
@@ -289,6 +461,7 @@ fun NotesScreen(
                             )
                         }
                     }
+                  }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -297,14 +470,16 @@ fun NotesScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onNewNote,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("New note") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.testTag("notes_fab_new_note")
-            )
+            if (!selectionMode) {
+                ExtendedFloatingActionButton(
+                    onClick = onNewNote,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("New note") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.testTag("notes_fab_new_note")
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -347,6 +522,162 @@ fun NotesScreen(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
+
+            // Folder chips: pick a folder to look inside it, or start a new one
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                item {
+                    FilterChip(
+                        selected = folderFilter is NotesFolderFilter.AllFolders,
+                        onClick = { viewModel.setFolderFilter(NotesFolderFilter.AllFolders) },
+                        label = { Text("All notes") },
+                        modifier = Modifier.testTag("notes_folder_all")
+                    )
+                }
+                if (folders.isNotEmpty()) {
+                    item {
+                        FilterChip(
+                            selected = folderFilter is NotesFolderFilter.Unfiled,
+                            onClick = { viewModel.setFolderFilter(NotesFolderFilter.Unfiled) },
+                            label = { Text("Unfiled (${folderCounts[null] ?: 0})") },
+                            modifier = Modifier.testTag("notes_folder_unfiled")
+                        )
+                    }
+                    items(folders, key = { it.id }) { folder ->
+                        FilterChip(
+                            selected = (folderFilter as? NotesFolderFilter.Folder)?.folderId == folder.id,
+                            onClick = { viewModel.setFolderFilter(NotesFolderFilter.Folder(folder.id)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Folder,
+                                    contentDescription = null,
+                                    tint = folderColorOrNull(folder.colorHex) ?: LocalContentColor.current,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = "${folder.name} (${folderCounts[folder.id] ?: 0})",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            modifier = Modifier.testTag("notes_folder_${folder.id}")
+                        )
+                    }
+                }
+                item {
+                    AssistChip(
+                        onClick = {
+                            folderDialogError = null
+                            newFolderMoveIds = null
+                            showNewFolderDialog = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CreateNewFolder,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        label = { Text("New folder") },
+                        modifier = Modifier.testTag("notes_folder_new")
+                    )
+                }
+            }
+
+            // Name of the open folder, with rename and delete
+            if (activeFolder != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = folderColorOrNull(activeFolder.colorHex) ?: MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = activeFolder.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp)
+                            .testTag("notes_open_folder_name")
+                    )
+                    Box {
+                        IconButton(
+                            onClick = { showFolderMenu = true },
+                            modifier = Modifier.testTag("notes_folder_menu_button")
+                        ) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Folder options")
+                        }
+                        DropdownMenu(
+                            expanded = showFolderMenu,
+                            onDismissRequest = { showFolderMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit folder") },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                onClick = {
+                                    showFolderMenu = false
+                                    folderDialogError = null
+                                    renameFolderTarget = activeFolder
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share folder as zip") },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_folder_share_zip"),
+                                onClick = {
+                                    showFolderMenu = false
+                                    coroutineScope.launch {
+                                        val items = folderExportNotes(activeFolder.id)
+                                        if (items.isEmpty()) {
+                                            snackbarHostState.showSnackbar("This folder has no notes to export", duration = SnackbarDuration.Short)
+                                        } else if (!NoteShare.shareFolderZip(context, activeFolder.name, items)) {
+                                            snackbarHostState.showSnackbar("Could not share the folder", duration = SnackbarDuration.Short)
+                                        }
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Save folder as zip") },
+                                leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_folder_save_zip"),
+                                onClick = {
+                                    showFolderMenu = false
+                                    if ((folderCounts[activeFolder.id] ?: 0) == 0) {
+                                        showMessage("This folder has no notes to export")
+                                    } else {
+                                        saveFolderZipId = activeFolder.id
+                                        saveFolderZipLauncher.launch(NoteShare.folderZipFileName(activeFolder.name))
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete folder") },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                                onClick = {
+                                    showFolderMenu = false
+                                    deleteFolderTarget = activeFolder
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             // Horizontally scrolling filter chips row (shown only when at least one course exists)
             if (courses.isNotEmpty()) {
@@ -402,7 +733,10 @@ fun NotesScreen(
 
             // Notes list or empty state
             if (notes.isEmpty()) {
-                val isFiltered = searchQuery.isNotEmpty() || selectedFilter !is NotesFilter.All
+                val isFiltered = searchQuery.isNotEmpty() || selectedFilter !is NotesFilter.All ||
+                    folderFilter !is NotesFolderFilter.AllFolders
+                val isEmptyFolder = activeFolder != null && searchQuery.isEmpty() &&
+                    selectedFilter is NotesFilter.All
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -441,7 +775,7 @@ fun NotesScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             Text(
-                                text = if (isFiltered) "No notes found" else "Add your first note",
+                                text = if (isEmptyFolder) "Folder is empty" else if (isFiltered) "No notes found" else "Add your first note",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -450,7 +784,9 @@ fun NotesScreen(
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
-                                text = if (isFiltered) {
+                                text = if (isEmptyFolder) {
+                                    "This folder is empty. Use a note's menu to move notes here, or tap and hold a note to pick several."
+                                } else if (isFiltered) {
                                     "No notes match your search or filter."
                                 } else {
                                     "Capture your thoughts, lecture notes, or ideas."
@@ -489,7 +825,20 @@ fun NotesScreen(
                     items(notes, key = { it.note.id }) { item ->
                         NoteCard(
                             item = item,
-                            onClick = { onOpenNote(item.note.id) },
+                            folderName = if (folderFilter is NotesFolderFilter.AllFolders) {
+                                item.note.folderId?.let { folderNamesById[it] }
+                            } else {
+                                null
+                            },
+                            folderColorHex = item.note.folderId?.let { folderColorsById[it] }.orEmpty(),
+                            selectionMode = selectionMode,
+                            selected = item.note.id in selectedIds,
+                            onClick = {
+                                if (selectionMode) viewModel.toggleSelected(item.note.id)
+                                else onOpenNote(item.note.id)
+                            },
+                            onLongClick = { viewModel.toggleSelected(item.note.id) },
+                            onMoveToFolder = { moveRequestIds = listOf(item.note.id) },
                             onTogglePin = { viewModel.setPinned(item.note.id, !item.note.isPinned) },
                             onShare = { shareRequestNoteId = item.note.id },
                             onSave = { saveRequestNoteId = item.note.id },
@@ -513,6 +862,95 @@ fun NotesScreen(
                 }
             }
         }
+    }
+
+    moveRequestIds?.let { ids ->
+        MoveToFolderDialog(
+            noteCount = ids.size,
+            folders = folders,
+            folderCounts = folderCounts,
+            onPickFolder = { folderId ->
+                moveRequestIds = null
+                viewModel.moveNotesToFolder(ids, folderId)
+                viewModel.clearSelection()
+                val where = if (folderId == null) "out of its folder" else "to \"${folderNamesById[folderId].orEmpty()}\""
+                showMessage(if (ids.size == 1) "Note moved $where" else "${ids.size} notes moved $where")
+            },
+            onNewFolder = {
+                newFolderMoveIds = ids
+                moveRequestIds = null
+                folderDialogError = null
+                showNewFolderDialog = true
+            },
+            onDismiss = { moveRequestIds = null }
+        )
+    }
+
+    if (showNewFolderDialog) {
+        val pendingMoveIds = newFolderMoveIds
+        FolderNameDialog(
+            title = "New folder",
+            confirmLabel = "Create",
+            onConfirm = { name, colorHex ->
+                showNewFolderDialog = false
+                newFolderMoveIds = null
+                viewModel.createFolder(name, colorHex) { newId ->
+                    if (newId > 0L) {
+                        if (pendingMoveIds != null) {
+                            viewModel.moveNotesToFolder(pendingMoveIds, newId)
+                            viewModel.clearSelection()
+                            showMessage(
+                                if (pendingMoveIds.size == 1) "Note moved to the new folder"
+                                else "${pendingMoveIds.size} notes moved to the new folder"
+                            )
+                        } else {
+                            viewModel.setFolderFilter(NotesFolderFilter.Folder(newId))
+                        }
+                    }
+                }
+            },
+            onDismiss = {
+                showNewFolderDialog = false
+                newFolderMoveIds = null
+            }
+        )
+    }
+
+    renameFolderTarget?.let { folder ->
+        FolderNameDialog(
+            title = "Edit folder",
+            confirmLabel = "Save",
+            initialName = folder.name,
+            initialColorHex = folder.colorHex,
+            error = folderDialogError,
+            onConfirm = { name, colorHex ->
+                viewModel.editFolder(folder.id, name, colorHex) { ok ->
+                    if (ok) {
+                        renameFolderTarget = null
+                        folderDialogError = null
+                    } else {
+                        folderDialogError = "A folder with that name already exists"
+                    }
+                }
+            },
+            onDismiss = {
+                renameFolderTarget = null
+                folderDialogError = null
+            }
+        )
+    }
+
+    deleteFolderTarget?.let { folder ->
+        DeleteFolderDialog(
+            folder = folder,
+            noteCount = folderCounts[folder.id] ?: 0,
+            onConfirm = {
+                deleteFolderTarget = null
+                viewModel.deleteFolder(folder.id)
+                showMessage("Folder deleted")
+            },
+            onDismiss = { deleteFolderTarget = null }
+        )
     }
 
     if (shareRequestNoteId != null) {
@@ -584,10 +1022,17 @@ fun NotesScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NoteCard(
     item: NoteListItem,
+    folderName: String?,
+    folderColorHex: String,
+    selectionMode: Boolean,
+    selected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onMoveToFolder: () -> Unit,
     onTogglePin: () -> Unit,
     onShare: () -> Unit,
     onSave: () -> Unit,
@@ -604,13 +1049,17 @@ private fun NoteCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .testTag("note_card_${item.note.id}")
     ) {
         Column(
@@ -627,6 +1076,15 @@ private fun NoteCard(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (selectionMode) {
+                        Checkbox(
+                            checked = selected,
+                            onCheckedChange = null,
+                            modifier = Modifier
+                                .padding(end = 10.dp)
+                                .testTag("note_select_checkbox_${item.note.id}")
+                        )
+                    }
                     if (item.note.isPinned) {
                         Icon(
                             imageVector = Icons.Default.PushPin,
@@ -648,7 +1106,7 @@ private fun NoteCard(
                     )
                 }
 
-                Box {
+                if (!selectionMode) Box {
                     IconButton(
                         onClick = { showMenu = true },
                         modifier = Modifier.size(48.dp)
@@ -675,6 +1133,20 @@ private fun NoteCard(
                             onClick = {
                                 showMenu = false
                                 onTogglePin()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Move to folder") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Folder,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.testTag("note_card_menu_move"),
+                            onClick = {
+                                showMenu = false
+                                onMoveToFolder()
                             }
                         )
                         DropdownMenuItem(
@@ -740,21 +1212,43 @@ private fun NoteCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (!item.courseCode.isNullOrBlank()) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = courseColor.copy(alpha = 0.12f)
-                    ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!item.courseCode.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = courseColor.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = item.courseCode,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = courseColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    if (folderName != null) {
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = folderColorOrNull(folderColorHex) ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
                         Text(
-                            text = item.courseCode,
+                            text = folderName,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = courseColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .testTag("note_folder_label_${item.note.id}")
                         )
                     }
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
                 }
 
                 Text(

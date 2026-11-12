@@ -63,6 +63,9 @@ object NoteFind {
 /** The search text the preview should highlight. Empty when Find is closed. */
 val LocalNoteFindQuery = compositionLocalOf { "" }
 
+/** Called with the title when a [[note link]] is tapped in a preview. Null where notes cannot be opened. */
+val LocalNoteLinkHandler = compositionLocalOf<((String) -> Unit)?> { null }
+
 val FindMatchColor = Color(0x66FFD54F)
 val FindCurrentMatchColor = Color(0xCCFF9800)
 

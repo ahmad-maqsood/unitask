@@ -70,6 +70,9 @@ object DriveBackupManager {
     private const val ATTACHMENT_PREFIX = "att-"
     private const val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000L
 
+    /** The two slots swap roles at most once per this long, so one of them is always older history. */
+    const val HISTORY_ROTATE_MS = 24L * 60 * 60 * 1000L
+
     private val mutex = Mutex()
 
     /**
@@ -133,6 +136,17 @@ object DriveBackupManager {
     }
 
     /**
+     * Both backups on Drive that have readable details, newest first (zero, one or two entries).
+     * The second entry is the older copy offered by "Use the older backup".
+     */
+    suspend fun listBackups(store: DriveStore): List<DriveBackupInfo> {
+        val files = store.list()
+        return listOf(SLOT_1_NAME, SLOT_2_NAME)
+            .mapNotNull { name -> files.firstOrNull { it.name == name }?.let { infoFromSlot(it) } }
+            .sortedByDescending { it.seq }
+    }
+
+    /**
      * Backs up database data and note images to Google Drive.
      */
     suspend fun backUp(
@@ -140,6 +154,7 @@ object DriveBackupManager {
         store: DriveStore,
         allowEmpty: Boolean = false,
         force: Boolean = false,
+        rotateAfterMs: Long = HISTORY_ROTATE_MS,
         onProgress: ((done: Int, total: Int) -> Unit)? = null
     ): DriveBackupResult = mutex.withLock {
         try {
@@ -185,7 +200,10 @@ object DriveBackupManager {
                 if (latestHash != null && latestHash == dataHash && hasMyTasks) {
                     val info = infoFromSlot(latestSlot)
                     if (info != null) {
-                        prefs.lastAttemptAt = System.currentTimeMillis()
+                        val checkedAt = System.currentTimeMillis()
+                        prefs.lastAttemptAt = checkedAt
+                        // Nothing new to upload means the Drive copy is current.
+                        prefs.lastSafeAt = checkedAt
                         return DriveBackupResult.Unchanged(info)
                     }
                 }
@@ -247,7 +265,8 @@ object DriveBackupManager {
             }
 
             // (f) Pick older slot (or create slot 1, then slot 2) and upload envelope bytes
-            val targetSlot = pickTargetSlot(store, slot1, slot2)
+            val slotChoice = pickTargetSlot(store, slot1, slot2, System.currentTimeMillis(), rotateAfterMs)
+            val targetSlot = slotChoice.file
             val uploadedFile = store.upload(targetSlot.id, envelopeBytes)
             if (uploadedFile.size != envelopeBytes.size.toLong()) {
                 throw DriveException(DriveException.Kind.SERVER, "Uploaded backup size mismatch")
@@ -273,7 +292,8 @@ object DriveBackupManager {
                 "attachments" to built.counts.attachments.toString(),
                 "appVersion" to BuildConfig.VERSION_NAME,
                 "formatVersion" to "1",
-                "dataHash" to dataHash
+                "dataHash" to dataHash,
+                "rotatedAt" to slotChoice.rotatedAt.toString()
             )
             val finalizedSlot = store.setProps(targetSlot.id, props)
 
@@ -311,6 +331,7 @@ object DriveBackupManager {
 
             // (i) Update DrivePrefs
             prefs.lastSuccessAt = now
+            prefs.lastSafeAt = now
             prefs.lastAttemptAt = now
             prefs.lastHash = dataHash
             prefs.lastCounts = buildCountsText(info)
@@ -337,11 +358,16 @@ object DriveBackupManager {
 
     /**
      * Restores backup from Google Drive by downloading the latest valid slot and streaming note images.
+     *
+     * With [slotFileId] only that one backup is read, and there is no fallback to the other one:
+     * a person who chose the older backup must not silently get the newer one. If it is damaged,
+     * the restore fails with a message.
      */
     suspend fun restore(
         context: Context,
         store: DriveStore,
-        onProgress: ((Int, Int) -> Unit)? = null
+        onProgress: ((Int, Int) -> Unit)? = null,
+        slotFileId: String? = null
     ): BackupResult = mutex.withLock {
         try {
             val files = store.list()
@@ -355,6 +381,13 @@ object DriveBackupManager {
             val seq1 = slot1?.props?.get("seq")?.toLongOrNull() ?: -1L
             val seq2 = slot2?.props?.get("seq")?.toLongOrNull() ?: -1L
             val candidates = when {
+                slotFileId != null -> {
+                    val chosen = listOfNotNull(slot1, slot2).firstOrNull { it.id == slotFileId }
+                        ?: return BackupResult.Failure(
+                            "That backup is no longer on Google Drive. Close this and try again."
+                        )
+                    listOf(chosen)
+                }
                 seq1 >= seq2 -> listOfNotNull(slot1, slot2)
                 else -> listOfNotNull(slot2, slot1)
             }
@@ -455,20 +488,42 @@ object DriveBackupManager {
         true
     }
 
+    /** The slot a backup is written into, and when that slot last became the newest copy. */
+    private data class SlotChoice(val file: DriveFile, val rotatedAt: Long)
+
+    /**
+     * Chooses where the next backup goes.
+     *
+     * Backups can now happen minutes apart. If every one rotated to the other slot, both slots
+     * would soon hold the same recent state and an older good copy would be gone. So the newest
+     * slot is overwritten in place, and the other slot is kept as history. The slots swap roles
+     * only when the newest slot became the newest at least [rotateAfterMs] ago (a day by default),
+     * which leaves the history copy one to two days old. A slot without a "rotatedAt" mark, made
+     * by an older app version, counts as due and rotates once.
+     */
     private suspend fun pickTargetSlot(
         store: DriveStore,
         slot1: DriveFile?,
-        slot2: DriveFile?
-    ): DriveFile {
+        slot2: DriveFile?,
+        now: Long,
+        rotateAfterMs: Long
+    ): SlotChoice {
         if (slot1 == null) {
-            return store.create(SLOT_1_NAME)
+            return SlotChoice(store.create(SLOT_1_NAME), now)
         }
         if (slot2 == null) {
-            return store.create(SLOT_2_NAME)
+            return SlotChoice(store.create(SLOT_2_NAME), now)
         }
         val seq1 = slot1.props["seq"]?.toLongOrNull() ?: 0L
         val seq2 = slot2.props["seq"]?.toLongOrNull() ?: 0L
-        return if (seq1 <= seq2) slot1 else slot2
+        val older = if (seq1 <= seq2) slot1 else slot2
+        val latest = if (seq1 <= seq2) slot2 else slot1
+
+        val latestRotatedAt = latest.props["rotatedAt"]?.toLongOrNull() ?: 0L
+        val sinceRotation = now - latestRotatedAt
+        // A clock set back (negative) counts as due, so history is never stuck.
+        val keepHistory = latestRotatedAt > 0L && sinceRotation in 0 until rotateAfterMs
+        return if (keepHistory) SlotChoice(latest, latestRotatedAt) else SlotChoice(older, now)
     }
 
     private fun pickLatestSlot(slot1: DriveFile?, slot2: DriveFile?): DriveFile? {

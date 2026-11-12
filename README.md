@@ -208,6 +208,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Includes courses, timetable, assignments with attachments, My tasks, notes with pictures and app settings.
   - Back up on a tap or daily after the app opens (runs at most once a day and only when something has changed).
   - Restore on a new phone with settings applied at once.
+  - Google Drive keeps a latest and an older backup (about a day behind), and the restore window lets you pick the older one.
   - Two rotating copies ensure a failed upload cannot destroy the last good one.
   - Wi-Fi only and attachments switches to control mobile data and storage.
 
@@ -319,7 +320,8 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - A phone ringtone chosen as notification sound is restored as the system sound.
 - The backup file made in Settings (Backup file) does not include attachments or settings.
 - The Drive backup is not encrypted by UniTask and is stored in the user's own Google Drive.
-- The daily backup needs the app to be opened.
+- Automatic backup runs about 30 seconds after a change, once Google Drive is connected and the network rule (Wi-Fi only by default) is met. A change made while the phone is offline is uploaded when the connection returns.
+- If the newest backup is 7 days old (or there never was one), a reminder card appears on the Deadlines tab.
 - Chat notifications come from a background check, so Android battery limits can delay them. No external push service is used.
 - Group chat supports text only. Messages cannot be edited after sending, and to keep the database small, each group keeps only its 500 newest messages (older ones are removed automatically as new ones arrive), and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).

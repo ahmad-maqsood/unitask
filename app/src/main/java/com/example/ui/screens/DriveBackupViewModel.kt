@@ -54,7 +54,11 @@ data class DriveUiState(
     val includeAttachments: Boolean = true,
     val consentRequest: PendingIntent? = null,
     val showRestoreConfirm: Boolean = false,
-    val showNoBackupDialog: Boolean = false
+    val showNoBackupDialog: Boolean = false,
+    /** The second, older backup on Drive, shown as a choice in the restore dialog. Null if none. */
+    val olderBackupInfo: DriveBackupInfo? = null,
+    /** True when the person picked the older backup in the restore dialog. */
+    val useOlderBackup: Boolean = false
 )
 
 class DriveBackupViewModel(
@@ -150,6 +154,8 @@ class DriveBackupViewModel(
                             isError = false
                         )
                     }
+                    // Automatic backup is on by default: start watching for changes now.
+                    DriveAutoBackup.onAppOpen(getApplication())
                     refreshInfoInternal()
                 }
                 is DriveAuthResult.NeedsConsent -> {
@@ -190,8 +196,10 @@ class DriveBackupViewModel(
                         checkLatestAndPromptRestore()
                     } else if (pendingBackupAfterConsent) {
                         pendingBackupAfterConsent = false
+                        DriveAutoBackup.onAppOpen(getApplication())
                         backUpNow(allowEmpty = false)
                     } else {
+                        DriveAutoBackup.onAppOpen(getApplication())
                         refreshInfoInternal()
                     }
                 }
@@ -307,14 +315,16 @@ class DriveBackupViewModel(
         }
     }
 
-    fun restoreFromDrive() {
+    /** @param slotFileId restores this one backup only (the older one); null restores the newest. */
+    fun restoreFromDrive(slotFileId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(busy = DriveBusyState("Restoring"), lastResultMessage = null, isError = false) }
             try {
                 val store = storeFactory(tokenProvider)
                 val result = DriveBackupManager.restore(
                     context = getApplication(),
-                    store = store
+                    store = store,
+                    slotFileId = slotFileId
                 )
                 when (result) {
                     is BackupResult.Success -> {
@@ -412,6 +422,7 @@ class DriveBackupViewModel(
                         val email = res.accountEmail ?: "Connected"
                         prefs.connectedEmail = email
                         _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
+                        DriveAutoBackup.onAppOpen(getApplication())
                         backUpNow(allowEmpty = false)
                     }
                     is DriveAuthResult.NeedsConsent -> {
@@ -440,13 +451,16 @@ class DriveBackupViewModel(
         _uiState.update { it.copy(busy = DriveBusyState("Checking for backup")) }
         try {
             val store = storeFactory(tokenProvider)
-            val info = DriveBackupManager.latestInfo(store)
+            val backups = DriveBackupManager.listBackups(store)
+            val info = backups.firstOrNull()
             if (info != null) {
                 val countsText = buildCountsText(info)
                 val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
                         latestBackupInfo = info,
+                        olderBackupInfo = backups.getOrNull(1),
+                        useOlderBackup = false,
                         offlineBackupText = offlineText,
                         busy = null,
                         showRestoreConfirm = true,
@@ -493,7 +507,12 @@ class DriveBackupViewModel(
     }
 
     fun dismissRestoreConfirm() {
-        _uiState.update { it.copy(showRestoreConfirm = false) }
+        _uiState.update { it.copy(showRestoreConfirm = false, useOlderBackup = false) }
+    }
+
+    /** Switches the restore dialog between the newest and the older backup. */
+    fun setUseOlderBackup(use: Boolean) {
+        _uiState.update { it.copy(useOlderBackup = use && it.olderBackupInfo != null) }
     }
 
     fun dismissNoBackupDialog() {
@@ -501,8 +520,10 @@ class DriveBackupViewModel(
     }
 
     fun confirmRestore() {
+        val older = _uiState.value.olderBackupInfo
+        val slotFileId = if (_uiState.value.useOlderBackup) older?.slotFileId else null
         dismissRestoreConfirm()
-        restoreFromDrive()
+        restoreFromDrive(slotFileId)
     }
 
     fun setAuto(enabled: Boolean) {
@@ -551,7 +572,10 @@ class DriveBackupViewModel(
                     offlineBackupText = null,
                     lastResultMessage = null,
                     isError = false,
-                    autoEnabled = false,
+                    // Disconnecting resets the saved choice, which is on by default.
+                    autoEnabled = true,
+                    olderBackupInfo = null,
+                    useOlderBackup = false,
                     showRestoreConfirm = false,
                     showNoBackupDialog = false
                 )

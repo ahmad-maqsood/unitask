@@ -27,9 +27,12 @@ class DrivePrefs(context: Context) {
     val isConnected: Boolean
         get() = connectedEmail != null
 
-    /** Whether automatic daily backups are enabled by the user. */
+    /**
+     * Whether automatic backups (after each change, plus a daily check) are on. On by default, so
+     * connecting Google Drive is enough. It only does something while an account is connected.
+     */
     var autoEnabled: Boolean
-        get() = prefs.getBoolean(KEY_AUTO_ENABLED, false)
+        get() = prefs.getBoolean(KEY_AUTO_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_ENABLED, value).apply()
 
     /** Whether backups should only run over an unmetered Wi-Fi connection. */
@@ -51,6 +54,23 @@ class DrivePrefs(context: Context) {
     var lastAttemptAt: Long
         get() = prefs.getLong(KEY_LAST_ATTEMPT_AT, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_ATTEMPT_AT, value).apply()
+
+    /**
+     * Epoch millis of the last time the Drive copy was known to match the phone: set after a
+     * successful upload and also when a check found nothing new to upload. The old-backup reminder
+     * reads this, so a person who has not changed anything is not told their backup is old.
+     */
+    var lastSafeAt: Long
+        get() = maxOf(prefs.getLong(KEY_LAST_SAFE_AT, 0L), lastSuccessAt)
+        set(value) = prefs.edit().putLong(KEY_LAST_SAFE_AT, value).apply()
+
+    /**
+     * True when something changed on the phone since the last backup run started. Set by the change
+     * watcher, cleared when a backup run starts (so a change made during the run sets it again).
+     */
+    var dirty: Boolean
+        get() = prefs.getBoolean(KEY_DIRTY, false)
+        set(value) = prefs.edit().putBoolean(KEY_DIRTY, value).apply()
 
     /** Plain English description of the last error encountered, if any. */
     var lastError: String?
@@ -130,6 +150,8 @@ class DrivePrefs(context: Context) {
             .remove(KEY_CONNECTED_EMAIL)
             .remove(KEY_AUTO_ENABLED)
             .remove(KEY_LAST_HASH)
+            .remove(KEY_LAST_SAFE_AT)
+            .remove(KEY_DIRTY)
             .remove(KEY_LAST_ERROR)
             .remove(KEY_CONSECUTIVE_FAILURES)
             .remove(KEY_FIRST_FAILURE_AT)
@@ -145,6 +167,8 @@ class DrivePrefs(context: Context) {
         private const val KEY_INCLUDE_ATTACHMENTS = "include_attachments"
         private const val KEY_LAST_SUCCESS_AT = "last_success_at"
         private const val KEY_LAST_ATTEMPT_AT = "last_attempt_at"
+        private const val KEY_LAST_SAFE_AT = "last_safe_at"
+        private const val KEY_DIRTY = "dirty"
         private const val KEY_LAST_ERROR = "last_error"
         private const val KEY_LAST_HASH = "last_hash"
         private const val KEY_CONSECUTIVE_FAILURES = "consecutive_failures"

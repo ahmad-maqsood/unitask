@@ -55,8 +55,8 @@ class GroupDetailTabStateTest {
         composeRule.onNodeWithTag("group_tab_chat").performClick()
         composeRule.waitForIdle()
 
-        // Chat tab is selected, group_chat_list is mounted
-        composeRule.onNodeWithTag("group_chat_list").assertIsDisplayed()
+        // The chat panel is displayed even when there are no messages yet.
+        composeRule.onNodeWithTag("group_chat_panel").assertIsDisplayed()
 
         // Asynchronously simulate group details finishing loading from server
         groupDetail = GroupDetail(
@@ -68,7 +68,7 @@ class GroupDetailTabStateTest {
         )
         composeRule.waitForIdle()
 
-        // Verify that chat panel remains displayed and has NOT reset back to tasks (tab 0)
-        composeRule.onNodeWithTag("group_chat_list").assertIsDisplayed()
+        // Verify that the chat panel remains displayed and has NOT reset back to tasks (tab 0).
+        composeRule.onNodeWithTag("group_chat_panel").assertIsDisplayed()
     }
 }

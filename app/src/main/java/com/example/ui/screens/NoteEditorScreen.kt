@@ -42,6 +42,14 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.clickable
+import com.example.data.local.Note
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.util.markdown.activeNoteLinkQuery
+import com.example.util.markdown.applyNoteLinkChoice
 import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -134,10 +142,11 @@ fun NoteEditorScreen(
     onClose: () -> Unit,
     onDeleted: (Long) -> Unit,
     viewModelSession: Int = 0,
+    newNoteFolderId: Long? = null,
     viewModel: NoteEditorViewModel = viewModel(key = "note_editor")
 ) {
     LaunchedEffect(noteId, viewModelSession) {
-        viewModel.loadNote(noteId, viewModelSession)
+        viewModel.loadNote(noteId, viewModelSession, newNoteFolderId)
     }
 
     // Watch the open note only while the editor is on screen
@@ -399,7 +408,46 @@ fun NoteEditorScreen(
     BackHandler(enabled = true) {
         handleClose()
     }
-    // Registered after the one above, so Back closes the find bar first
+
+    // ---- links between notes ([[Note title]])
+    val allNotes by viewModel.allNotes.collectAsStateWithLifecycle(emptyList())
+    // Notes we came from by tapping links, so Back returns to them instead of closing the editor
+    val linkBackStack = remember { mutableStateListOf<Long>() }
+
+    // Saves this note, then shows another one in the same editor
+    val showNote: (Long) -> Unit = { targetId ->
+        coroutineScope.launch {
+            viewModel.saveAndFlush()
+            showFind = false
+            viewModel.loadNote(targetId, NoteEditorSessions.next())
+            snapshotFlow { viewModel.isLoaded }.first { it }
+            previewListState.scrollToItem(0)
+        }
+    }
+    val openLinkedNote: (Long) -> Unit = { targetId ->
+        val fromId = viewModel.currentId
+        if (targetId != fromId) {
+            if (fromId > 0L) linkBackStack.add(fromId)
+            showNote(targetId)
+        }
+    }
+    val openLinkByTitle: (String) -> Unit = { title ->
+        val target = findNoteForLink(allNotes, title)
+        if (target == null) {
+            Toast.makeText(context, "No note called \"$title\"", Toast.LENGTH_SHORT).show()
+        } else {
+            openLinkedNote(target.id)
+        }
+    }
+    val openLinkByTitleState = rememberUpdatedState(openLinkByTitle)
+    val noteLinkHandler = remember { { title: String -> openLinkByTitleState.value(title) } }
+
+    // Registered after the close handler above, so Back goes to the previous note first
+    BackHandler(enabled = linkBackStack.isNotEmpty()) {
+        val previousId = linkBackStack.removeAt(linkBackStack.lastIndex)
+        showNote(previousId)
+    }
+    // Registered last, so Back closes the find bar before anything else
     BackHandler(enabled = showFind) {
         showFind = false
     }
@@ -679,7 +727,10 @@ fun NoteEditorScreen(
                     )
                 }
 
-                CompositionLocalProvider(LocalNoteFindQuery provides (if (showFind) findQuery else "")) {
+                CompositionLocalProvider(
+                    LocalNoteFindQuery provides (if (showFind) findQuery else ""),
+                    LocalNoteLinkHandler provides noteLinkHandler
+                ) {
                 WithNoteTextScale(noteTextScale) {
                     MarkdownPreview(
                         markdown = viewModel.bodyValue.text,
@@ -704,6 +755,45 @@ fun NoteEditorScreen(
                             .weight(1f)
                     )
                 }
+                }
+
+                // Notes that have a [[link]] to this one
+                val bodyForLinks = viewModel.bodyValue.text
+                val backlinks = remember(allNotes, viewModel.title, bodyForLinks, viewModel.currentId) {
+                    findBacklinks(
+                        notes = allNotes,
+                        currentId = viewModel.currentId,
+                        currentTitle = noteDisplayTitle(Note(title = viewModel.title, body = bodyForLinks))
+                    )
+                }
+                if (backlinks.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                        Text(
+                            text = "Linked from",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .testTag("note_backlinks"),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            backlinks.forEach { source ->
+                                AssistChip(
+                                    onClick = { openLinkedNote(source.id) },
+                                    label = {
+                                        Text(
+                                            text = noteDisplayTitle(source),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         } else {
@@ -786,6 +876,45 @@ fun NoteEditorScreen(
                     }
                 }
                 ScrollStateScrollbar(editScrollState, viewportPx)
+            }
+
+            // Suggestions while a note link is being typed: "[[" followed by part of a title
+            val typedSelection = viewModel.bodyValue.selection
+            val linkQuery = if (typedSelection.collapsed) {
+                activeNoteLinkQuery(viewModel.bodyValue.text, typedSelection.end)
+            } else {
+                null
+            }
+            val linkSuggestions = remember(allNotes, viewModel.currentId, linkQuery?.query) {
+                if (linkQuery == null) emptyList()
+                else noteLinkSuggestions(allNotes, viewModel.currentId, linkQuery.query)
+            }
+            if (linkQuery != null && linkSuggestions.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("note_link_suggestions")
+                ) {
+                    Column {
+                        linkSuggestions.forEach { suggestion ->
+                            val suggestionTitle = noteDisplayTitle(suggestion)
+                            Text(
+                                text = suggestionTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        applyEditing { applyNoteLinkChoice(it, linkQuery, suggestionTitle) }
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // Word and character count line

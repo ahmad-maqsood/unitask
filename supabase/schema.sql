@@ -605,3 +605,30 @@ using (
   from public.group_messages
 ) r
 where m.id = r.id and r.rn > 500;
+
+-- =====================================================================
+-- PART C: function permissions (2026-11-13)
+-- Only signed-in users ("authenticated") may run the database functions. Anyone with the public anon
+-- key used to be able to call them; each already refused a caller who is not signed in, so this adds a
+-- second lock. Full steps, a check query and a rollback are in supabase/function_privileges.sql.
+-- Trigger functions are left as they are (they cannot be called over the API).
+-- =====================================================================
+revoke all on function public.create_group(text, text, text)              from public, anon;
+revoke all on function public.join_group(text, text, text)                from public, anon;
+revoke all on function public.update_group_profile(uuid, text, text)      from public, anon;
+revoke all on function public.regenerate_group_code(uuid)                 from public, anon;
+revoke all on function public.transfer_group_ownership(uuid, uuid)        from public, anon;
+revoke all on function public.is_member(uuid)                             from public, anon;
+revoke all on function public.is_group_admin(uuid)                        from public, anon;
+revoke all on function public.is_group_owner(uuid)                        from public, anon;
+revoke all on function public.delete_my_account()                         from public, anon;
+
+grant execute on function public.create_group(text, text, text)           to authenticated;
+grant execute on function public.join_group(text, text, text)             to authenticated;
+grant execute on function public.update_group_profile(uuid, text, text)   to authenticated;
+grant execute on function public.regenerate_group_code(uuid)              to authenticated;
+grant execute on function public.transfer_group_ownership(uuid, uuid)     to authenticated;
+grant execute on function public.is_member(uuid)                          to authenticated;
+grant execute on function public.is_group_admin(uuid)                     to authenticated;
+grant execute on function public.is_group_owner(uuid)                     to authenticated;
+grant execute on function public.delete_my_account()                      to authenticated;

@@ -158,7 +158,7 @@ fun DriveMigrationDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Also back up every day",
+                            text = "Also back up automatically",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )

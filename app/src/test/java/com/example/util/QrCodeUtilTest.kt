@@ -54,6 +54,21 @@ class QrCodeUtilTest {
     }
 
     @Test
+    fun testParseGroupInvite_ordinaryTextIsNotAnInvite() {
+        // "you there" ends in "u" and "music class" ends in "c": neither is a key.
+        assertNull(QrCodeUtil.parseGroupInvite("thank you there, see you in music class tomorrow"))
+        assertNull(QrCodeUtil.parseGroupInvite("https://example.com/menu"))
+    }
+
+    @Test
+    fun testParseGroupInvite_shortKeysStillWork() {
+        val parsed = QrCodeUtil.parseGroupInvite("u: bob c: XYZ9876")
+        assertNotNull(parsed)
+        assertEquals("bob", parsed?.first)
+        assertEquals("XYZ9876", parsed?.second)
+    }
+
+    @Test
     fun testGenerateQrBitmap_emptyContentReturnsNull() {
         val bitmap = QrCodeUtil.generateQrBitmap("", sizePx = 200)
         assertNull(bitmap)

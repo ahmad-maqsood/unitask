@@ -323,4 +323,61 @@ class GlobalSearchTest {
         assertTrue(withArchivedResults.courses[1].isArchived)
         assertEquals("Fall 2026", withArchivedResults.courses[1].archivedSemester)
     }
+
+    @Test
+    fun searchMatchesNotesByFolderNameAndReportsTheFolder() {
+        val inFolder = NoteListItem(
+            note = Note(id = 1, title = "Limits", body = "Epsilon delta", folderId = 5L),
+            courseCode = null, courseName = null, courseColorHex = null
+        )
+        val loose = NoteListItem(
+            note = Note(id = 2, title = "Shopping", body = "Milk", folderId = null),
+            courseCode = null, courseName = null, courseColorHex = null
+        )
+
+        val results = searchEverything(
+            query = "exams",
+            tasks = emptyList(),
+            notes = listOf(inFolder, loose),
+            courses = emptyList(),
+            noteFolderNames = mapOf(5L to "Exams 2026")
+        )
+
+        assertEquals(1, results.notes.size)
+        assertEquals(1L, results.notes[0].noteItem.note.id)
+        assertEquals("Exams 2026", results.notes[0].folderName)
+    }
+
+    @Test
+    fun searchStillMatchesNoteTextAndShowsFolderNameWhenQueryHitsTheBody() {
+        val note = NoteListItem(
+            note = Note(id = 1, title = "Limits", body = "Epsilon delta", folderId = 5L),
+            courseCode = null, courseName = null, courseColorHex = null
+        )
+        val results = searchEverything(
+            query = "epsilon",
+            tasks = emptyList(),
+            notes = listOf(note),
+            courses = emptyList(),
+            noteFolderNames = mapOf(5L to "Maths")
+        )
+        assertEquals("Maths", results.notes.single().folderName)
+    }
+
+    @Test
+    fun searchResultCarriesTheFolderColour() {
+        val note = NoteListItem(
+            note = Note(id = 1, title = "Limits", body = "Epsilon", folderId = 5L),
+            courseCode = null, courseName = null, courseColorHex = null
+        )
+        val results = searchEverything(
+            query = "limits",
+            tasks = emptyList(),
+            notes = listOf(note),
+            courses = emptyList(),
+            noteFolderNames = mapOf(5L to "Maths"),
+            noteFolderColors = mapOf(5L to "#DC2626")
+        )
+        assertEquals("#DC2626", results.notes.single().folderColorHex)
+    }
 }

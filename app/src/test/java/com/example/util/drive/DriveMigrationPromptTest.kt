@@ -313,7 +313,7 @@ class DriveMigrationPromptTest {
             composeRule.onAllNodesWithTag("drive_migration_done_button").fetchSemanticsNodes().isNotEmpty()
         }
 
-        composeRule.onNodeWithText("Also back up every day").assertIsDisplayed()
+        composeRule.onNodeWithText("Also back up automatically").assertIsDisplayed()
         composeRule.onNodeWithTag("drive_migration_auto_checkbox").assertIsDisplayed()
 
         composeRule.onNodeWithTag("drive_migration_done_button").performClick()

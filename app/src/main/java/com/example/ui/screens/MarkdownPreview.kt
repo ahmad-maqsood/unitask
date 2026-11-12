@@ -67,6 +67,7 @@ import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
 import com.example.util.markdown.MarkdownBlock
 import com.example.util.markdown.TableAlign
+import com.example.util.markdown.NOTE_LINK_URL_PREFIX
 import com.example.util.markdown.isSafeLinkUrl
 import com.example.util.markdown.ParsedMarkdown
 import com.example.util.markdown.blockIndexForLine
@@ -302,9 +303,10 @@ private fun RenderMarkdownBlock(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 val findQuery = LocalNoteFindQuery.current
-                val annotated = remember(block.inlines, primaryColor, codeBgColor, context, findQuery) {
+                val noteLinkHandler = LocalNoteLinkHandler.current
+                val annotated = remember(block.inlines, primaryColor, codeBgColor, context, findQuery, noteLinkHandler) {
                     buildAnnotatedInlines(block.inlines, primaryColor, codeBgColor) { url ->
-                        openLinkSafely(context, url)
+                        openLink(context, url, noteLinkHandler)
                     }.withFindHighlights(findQuery)
                 }
                 val checkStyle = MaterialTheme.typography.bodyLarge.copy(
@@ -527,9 +529,10 @@ private fun RenderInlineText(
     modifier: Modifier = Modifier
 ) {
     val findQuery = LocalNoteFindQuery.current
-    val annotated = remember(inlines, primaryColor, codeBgColor, context, findQuery) {
+    val noteLinkHandler = LocalNoteLinkHandler.current
+    val annotated = remember(inlines, primaryColor, codeBgColor, context, findQuery, noteLinkHandler) {
         buildAnnotatedInlines(inlines, primaryColor, codeBgColor) { url ->
-            openLinkSafely(context, url)
+            openLink(context, url, noteLinkHandler)
         }.withFindHighlights(findQuery)
     }
 
@@ -619,6 +622,15 @@ private fun inlinesPlainLength(inlines: List<Inline>): Int {
         }
     }
     return len
+}
+
+/** A [[note link]] goes to the note handler (when there is one); every other link opens safely outside the app. */
+private fun openLink(context: Context, url: String, noteLinkHandler: ((String) -> Unit)?) {
+    if (url.startsWith(NOTE_LINK_URL_PREFIX)) {
+        noteLinkHandler?.invoke(url.removePrefix(NOTE_LINK_URL_PREFIX))
+    } else {
+        openLinkSafely(context, url)
+    }
 }
 
 /**

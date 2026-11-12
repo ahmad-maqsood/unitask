@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.data.groups.GroupCacheRepository
-import com.example.data.groups.GroupRepository
+import com.example.Repositories
 import com.example.reminder.AnnouncementNotifier
 import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupTaskProcessor
@@ -40,7 +40,7 @@ class PeriodicSyncWorker(
             val user = awaitAppUser() ?: return@withContext Result.success()
 
             try {
-                val repo = GroupRepository(context)
+                val repo = Repositories.group(context)
                 runLogged("waiting for the saved sign-in") { SupabaseProvider.client.auth.awaitInitialization() }
                 val sbUid = currentSupabaseUid() ?: AuthStorage.getLastUid(context) ?: user.uid
                 val state = repo.fetchGroupsStateOnce(sbUid)

@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,10 +33,17 @@ fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
             !offlineText.isNullOrBlank() -> offlineText
             else -> ""
         }
+        val older = state.olderBackupInfo
+        val olderDetails = older?.let {
+            "${DriveBackupViewModel.formatBackupTime(it.exportedAt)}, ${DriveBackupViewModel.buildCountsText(it)}"
+        }
         DriveRestoreConfirmDialog(
-            details = details,
+            details = if (state.useOlderBackup && olderDetails != null) olderDetails else details,
             onConfirm = { viewModel.confirmRestore() },
-            onDismiss = { viewModel.dismissRestoreConfirm() }
+            onDismiss = { viewModel.dismissRestoreConfirm() },
+            olderDetails = olderDetails,
+            useOlder = state.useOlderBackup,
+            onUseOlderChange = { viewModel.setUseOlderBackup(it) }
         )
     }
 }
@@ -57,7 +66,11 @@ fun DriveNoBackupFoundDialog(onDismiss: () -> Unit) {
 fun DriveRestoreConfirmDialog(
     details: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Details of the older backup, or null when Drive holds only one. */
+    olderDetails: String? = null,
+    useOlder: Boolean = false,
+    onUseOlderChange: (Boolean) -> Unit = {}
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -65,11 +78,33 @@ fun DriveRestoreConfirmDialog(
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    (if (details.isNotBlank()) "$details\n\n" else "") +
+                    (if (details.isNotBlank()) {
+                        (if (olderDetails != null) {
+                            if (useOlder) "Older backup: " else "Latest backup: "
+                        } else "") + "$details\n\n"
+                    } else "") +
                         "Items already on this phone are kept. Missing items are added. " +
                         "Items you deleted after this backup was made will come back. " +
                         "App settings from the backup replace the settings on this phone."
                 )
+                if (olderDetails != null) {
+                    TextButton(
+                        onClick = { onUseOlderChange(!useOlder) },
+                        modifier = Modifier.testTag("drive_restore_older_toggle")
+                    ) {
+                        Text(
+                            if (useOlder) "Use the latest backup instead"
+                            else "Use the older backup instead"
+                        )
+                    }
+                    if (!useOlder) {
+                        Text(
+                            "Older backup: $olderDetails",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         },
         confirmButton = {

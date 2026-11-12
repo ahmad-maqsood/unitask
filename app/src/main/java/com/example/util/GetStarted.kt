@@ -14,7 +14,8 @@ enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boo
     DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
     REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline"),
     CLASS("Add a class", "Timetable tab, then tap +"),
-    TIMER("Try the timer", "More menu, then Timer")
+    TIMER("Try the timer", "More menu, then Timer"),
+    BACKUP("Back up your data", "Settings, then Backup & data, then Connect Google Drive")
 }
 
 object GetStartedLogic {
@@ -28,13 +29,15 @@ object GetStartedLogic {
         timerTried: Boolean,
         notificationsOn: Boolean = false,
         batteryOptimizationOff: Boolean = false,
-        autostartDone: Boolean = false
+        autostartDone: Boolean = false,
+        driveConnected: Boolean = false
     ): Set<GetStartedStep> = buildSet {
         if (hasCourse) add(GetStartedStep.COURSE)
         if (hasDeadline) add(GetStartedStep.DEADLINE)
         if (hasReminder) add(GetStartedStep.REMINDER)
         if (hasClass) add(GetStartedStep.CLASS)
         if (timerTried) add(GetStartedStep.TIMER)
+        if (driveConnected) add(GetStartedStep.BACKUP)
         if (notificationsOn) add(GetStartedStep.NOTIFICATIONS)
         if (batteryOptimizationOff) add(GetStartedStep.BATTERY)
         if (autostartDone) add(GetStartedStep.AUTOSTART)

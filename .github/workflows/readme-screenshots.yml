@@ -84,6 +84,7 @@ jobs:
           api-level: 30
           target: google_apis
           arch: x86_64
+          emulator-build: 11237101
           profile: pixel_2
           disable-animations: false
           disable-spellchecker: true
@@ -92,7 +93,16 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
-
+          
+      - name: Upload emulator crash data
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: emulator-crash-data
+          path: /tmp/android-runner/
+          if-no-files-found: warn
+          retention-days: 7
+          
       - name: Upload Android instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7

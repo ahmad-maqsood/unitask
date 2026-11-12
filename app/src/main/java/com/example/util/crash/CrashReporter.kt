@@ -5,13 +5,11 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Process
 import androidx.core.content.FileProvider
 import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.system.exitProcess
 
 /** The newest crash that the person has not seen yet. */
 data class CrashReport(val entry: String, val summary: String)
@@ -38,8 +36,11 @@ object CrashReporter {
             if (previous != null) {
                 previous.uncaughtException(thread, error)
             } else {
-                Process.killProcess(Process.myPid())
-                exitProcess(10)
+                // No earlier handler exists (plain JVM such as unit tests). Do what the JVM
+                // would have done without us: print the error and let the process live.
+                // Killing the process here took down the whole Gradle test worker (exit 10).
+                System.err.print("Exception in thread \"${thread.name}\" ")
+                error.printStackTrace()
             }
         }
     }

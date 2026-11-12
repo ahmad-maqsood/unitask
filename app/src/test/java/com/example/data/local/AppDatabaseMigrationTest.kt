@@ -309,6 +309,29 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun migrating16To17AddsFolderColourAndKeepsExistingFolders() {
+        val old = helper.createDatabase("migration-test-16-17", 16)
+        old.execSQL("INSERT INTO note_folders (id, name, createdAt) VALUES (1, 'Exams', 1700000000000)")
+        old.close()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test-16-17")
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
+        try {
+            db.openHelper.writableDatabase
+                .query("SELECT name, colorHex FROM note_folders WHERE id = 1")
+                .use { cursor ->
+                    assertTrue("the old folder is missing after the upgrade", cursor.moveToFirst())
+                    assertEquals("Exams", cursor.getString(0))
+                    assertEquals("", cursor.getString(1))
+                }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun everyReleasedVersionFrom9UpgradesToTheLatestVersion() {
         // Opens an empty database at each old version with the real migrations. Room checks the
         // result against the current code, so a broken or missing step fails here and names the

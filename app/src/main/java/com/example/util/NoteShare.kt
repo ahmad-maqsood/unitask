@@ -55,6 +55,91 @@ object NoteShare {
         }
     }
 
+    /** One note going into a folder export. fileTitle names the file; title and body are the content. */
+    data class FolderExportNote(val fileTitle: String, val title: String, val body: String)
+
+    /**
+     * Picks a file name for every note: the safe title plus ".md", with " (2)", " (3)" and so on
+     * added when two notes would share a name (ignoring capitals, as some phones do).
+     */
+    fun uniqueMarkdownNames(fileTitles: List<String>): List<String> {
+        val used = HashSet<String>()
+        return fileTitles.map { fileTitle ->
+            val base = safeFileName(fileTitle)
+            var candidate = "$base.md"
+            var counter = 2
+            while (!used.add(candidate.lowercase())) {
+                candidate = "$base ($counter).md"
+                counter++
+            }
+            candidate
+        }
+    }
+
+    /** Writes every note as its own Markdown file inside one zip. Does not close the stream. */
+    fun writeFolderZip(notes: List<FolderExportNote>, out: java.io.OutputStream) {
+        val names = uniqueMarkdownNames(notes.map { it.fileTitle })
+        val zip = java.util.zip.ZipOutputStream(out)
+        notes.forEachIndexed { index, note ->
+            zip.putNextEntry(java.util.zip.ZipEntry(names[index]))
+            zip.write(exportText(note.title, note.body, NoteExportFormat.MD).toByteArray(Charsets.UTF_8))
+            zip.closeEntry()
+        }
+        zip.finish()
+        zip.flush()
+    }
+
+    /** Builds a zip of the folder's notes in the cache and opens the share sheet. Returns false when it could not. */
+    suspend fun shareFolderZip(
+        context: Context,
+        folderName: String,
+        notes: List<FolderExportNote>
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val exportsDir = File(context.cacheDir, "exports")
+            if (!exportsDir.exists()) exportsDir.mkdirs() else exportsDir.listFiles()?.forEach { it.delete() }
+            val file = File(exportsDir, folderZipFileName(folderName))
+            file.outputStream().use { writeFolderZip(notes, it) }
+
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/zip"
+                clipData = ClipData.newRawUri("", uri)
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, folderName)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = Intent.createChooser(sendIntent, "Share folder")
+            if (context !is Activity) chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            withContext(Dispatchers.Main) {
+                try {
+                    context.startActivity(chooser)
+                } catch (_: Exception) {
+                }
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Writes the folder's zip to a file the person chose (Save to device). */
+    suspend fun saveFolderZipToUri(
+        context: Context,
+        uri: Uri,
+        notes: List<FolderExportNote>
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val stream = context.contentResolver.openOutputStream(uri, "wt") ?: return@withContext false
+            stream.use { writeFolderZip(notes, it) }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun folderZipFileName(folderName: String): String = "${safeFileName(folderName)}.zip"
+
     fun fileNameFor(title: String, format: NoteExportFormat): String =
         "${safeFileName(title)}.${format.extension}"
 

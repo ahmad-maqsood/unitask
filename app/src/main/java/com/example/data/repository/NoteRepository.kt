@@ -17,6 +17,10 @@ class NoteRepository(private val noteDao: NoteDao) {
         const val MAX_BODY = 300_000
         const val TRASH_DAYS = 30
         const val MAX_FOLDER_NAME = 60
+        // Same palette as courses (CourseColors), kept here so the data layer does not depend on the UI
+        val FOLDER_COLORS = listOf(
+            "#4F46E5", "#059669", "#D97706", "#DC2626", "#9333EA", "#0891B2", "#2563EB", "#DB2777"
+        )
     }
 
     fun observeNotes(): Flow<List<NoteListItem>> {
@@ -126,12 +130,12 @@ class NoteRepository(private val noteDao: NoteDao) {
      * Creates a folder and returns its id. Returns the id of the existing folder when one with the
      * same name (ignoring case) is already there, and 0 when the name is blank.
      */
-    suspend fun createFolder(name: String): Long = withContext(Dispatchers.IO) {
+    suspend fun createFolder(name: String, colorHex: String = ""): Long = withContext(Dispatchers.IO) {
         val clean = cleanFolderName(name)
         if (clean.isEmpty()) return@withContext 0L
         val existing = noteDao.getAllFoldersSync().firstOrNull { it.name.equals(clean, ignoreCase = true) }
         if (existing != null) return@withContext existing.id
-        noteDao.insertFolder(NoteFolder(name = clean))
+        noteDao.insertFolder(NoteFolder(name = clean, colorHex = cleanFolderColor(colorHex)))
     }
 
     /** Returns false when the name is blank or another folder already uses it. */
@@ -142,6 +146,15 @@ class NoteRepository(private val noteDao: NoteDao) {
         if (clash) return@withContext false
         noteDao.renameFolder(id, clean)
         true
+    }
+
+    suspend fun setFolderColor(id: Long, colorHex: String) = withContext(Dispatchers.IO) {
+        noteDao.setFolderColor(id, cleanFolderColor(colorHex))
+    }
+
+    /** Every live note in a folder, newest first with pinned notes on top. Used for exporting. */
+    suspend fun getNotesInFolder(folderId: Long): List<Note> = withContext(Dispatchers.IO) {
+        noteDao.getActiveNotesInFolder(folderId)
     }
 
     /** Deletes the folder only. Its notes are kept and become unfiled. */
@@ -157,6 +170,10 @@ class NoteRepository(private val noteDao: NoteDao) {
         // Chunked to stay under SQLite's limit on bound variables
         noteIds.toList().chunked(500).forEach { noteDao.moveNotesToFolder(it, folderId) }
     }
+
+    // Only colours from the course palette are kept; anything else means "no colour"
+    private fun cleanFolderColor(hex: String): String =
+        FOLDER_COLORS.firstOrNull { it.equals(hex.trim(), ignoreCase = true) } ?: ""
 
     private fun cleanFolderName(name: String): String =
         name.trim().replace(Regex("\\s+"), " ").take(MAX_FOLDER_NAME)

@@ -69,6 +69,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -126,6 +127,7 @@ fun NotesScreen(
     val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
     val folderNamesById = remember(folders) { folders.associate { it.id to it.name } }
+    val folderColorsById = remember(folders) { folders.associate { it.id to it.colorHex } }
     val activeFolder = (folderFilter as? NotesFolderFilter.Folder)
         ?.let { filter -> folders.firstOrNull { it.id == filter.folderId } }
 
@@ -147,6 +149,30 @@ fun NotesScreen(
     var showSelectionMenu by remember { mutableStateOf(false) }
 
     BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
+
+    // Every live note in a folder as export entries (not just the ones the search or filters show)
+    suspend fun folderExportNotes(folderId: Long): List<NoteShare.FolderExportNote> =
+        viewModel.repository.getNotesInFolder(folderId).map {
+            NoteShare.FolderExportNote(fileTitle = noteDisplayTitle(it), title = it.title, body = it.body)
+        }
+
+    var saveFolderZipId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val saveFolderZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri: Uri? ->
+        val folderId = saveFolderZipId
+        saveFolderZipId = null
+        if (uri != null && folderId != null) {
+            coroutineScope.launch {
+                val items = folderExportNotes(folderId)
+                val ok = items.isNotEmpty() && NoteShare.saveFolderZipToUri(context, uri, items)
+                snackbarHostState.showSnackbar(
+                    if (ok) "Saved to your device" else "Could not save the file",
+                    duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
 
     fun showMessage(message: String) {
         snackbarJob?.cancel()
@@ -530,6 +556,7 @@ fun NotesScreen(
                                 Icon(
                                     imageVector = Icons.Default.Folder,
                                     contentDescription = null,
+                                    tint = folderColorOrNull(folder.colorHex) ?: LocalContentColor.current,
                                     modifier = Modifier.size(16.dp)
                                 )
                             },
@@ -575,7 +602,7 @@ fun NotesScreen(
                     Icon(
                         imageVector = Icons.Default.Folder,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = folderColorOrNull(activeFolder.colorHex) ?: MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
@@ -601,12 +628,42 @@ fun NotesScreen(
                             onDismissRequest = { showFolderMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Rename folder") },
+                                text = { Text("Edit folder") },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                                 onClick = {
                                     showFolderMenu = false
                                     folderDialogError = null
                                     renameFolderTarget = activeFolder
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share folder as zip") },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_folder_share_zip"),
+                                onClick = {
+                                    showFolderMenu = false
+                                    coroutineScope.launch {
+                                        val items = folderExportNotes(activeFolder.id)
+                                        if (items.isEmpty()) {
+                                            snackbarHostState.showSnackbar("This folder has no notes to export", duration = SnackbarDuration.Short)
+                                        } else if (!NoteShare.shareFolderZip(context, activeFolder.name, items)) {
+                                            snackbarHostState.showSnackbar("Could not share the folder", duration = SnackbarDuration.Short)
+                                        }
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Save folder as zip") },
+                                leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                modifier = Modifier.testTag("notes_folder_save_zip"),
+                                onClick = {
+                                    showFolderMenu = false
+                                    if ((folderCounts[activeFolder.id] ?: 0) == 0) {
+                                        showMessage("This folder has no notes to export")
+                                    } else {
+                                        saveFolderZipId = activeFolder.id
+                                        saveFolderZipLauncher.launch(NoteShare.folderZipFileName(activeFolder.name))
+                                    }
                                 }
                             )
                             DropdownMenuItem(
@@ -773,6 +830,7 @@ fun NotesScreen(
                             } else {
                                 null
                             },
+                            folderColorHex = item.note.folderId?.let { folderColorsById[it] }.orEmpty(),
                             selectionMode = selectionMode,
                             selected = item.note.id in selectedIds,
                             onClick = {
@@ -833,10 +891,10 @@ fun NotesScreen(
         FolderNameDialog(
             title = "New folder",
             confirmLabel = "Create",
-            onConfirm = { name ->
+            onConfirm = { name, colorHex ->
                 showNewFolderDialog = false
                 newFolderMoveIds = null
-                viewModel.createFolder(name) { newId ->
+                viewModel.createFolder(name, colorHex) { newId ->
                     if (newId > 0L) {
                         if (pendingMoveIds != null) {
                             viewModel.moveNotesToFolder(pendingMoveIds, newId)
@@ -860,12 +918,13 @@ fun NotesScreen(
 
     renameFolderTarget?.let { folder ->
         FolderNameDialog(
-            title = "Rename folder",
-            confirmLabel = "Rename",
+            title = "Edit folder",
+            confirmLabel = "Save",
             initialName = folder.name,
+            initialColorHex = folder.colorHex,
             error = folderDialogError,
-            onConfirm = { name ->
-                viewModel.renameFolder(folder.id, name) { ok ->
+            onConfirm = { name, colorHex ->
+                viewModel.editFolder(folder.id, name, colorHex) { ok ->
                     if (ok) {
                         renameFolderTarget = null
                         folderDialogError = null
@@ -968,6 +1027,7 @@ fun NotesScreen(
 private fun NoteCard(
     item: NoteListItem,
     folderName: String?,
+    folderColorHex: String,
     selectionMode: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
@@ -1175,7 +1235,7 @@ private fun NoteCard(
                         Icon(
                             imageVector = Icons.Default.Folder,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = folderColorOrNull(folderColorHex) ?: MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(

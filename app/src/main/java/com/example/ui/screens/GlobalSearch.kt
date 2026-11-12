@@ -35,7 +35,8 @@ data class SearchNoteResult(
     val snippet: String,
     val matchRange: IntRange?,
     val archivedSemester: String? = null,
-    val folderName: String? = null
+    val folderName: String? = null,
+    val folderColorHex: String = ""
 ) {
     val highlightRange: IntRange? get() = matchRange
     val isArchived: Boolean get() = !archivedSemester.isNullOrBlank()
@@ -206,7 +207,8 @@ fun searchEverything(
     archivedCourses: List<ArchivedItem<Course>> = emptyList(),
     settingsEntries: List<SettingsSearchEntry> = emptyList(),
     guideEntries: List<AppFeature> = emptyList(),
-    noteFolderNames: Map<Long, String> = emptyMap()
+    noteFolderNames: Map<Long, String> = emptyMap(),
+    noteFolderColors: Map<Long, String> = emptyMap()
 ): SearchResults {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) {
@@ -241,7 +243,8 @@ fun searchEverything(
                     snippet = snippet,
                     matchRange = matchRange,
                     archivedSemester = null,
-                    folderName = folderName
+                    folderName = folderName,
+                    folderColorHex = n.note.folderId?.let { noteFolderColors[it] }.orEmpty()
                 )
             )
         }
@@ -256,7 +259,8 @@ fun searchEverything(
                     snippet = snippet,
                     matchRange = matchRange,
                     archivedSemester = a.semesterName,
-                    folderName = folderName
+                    folderName = folderName,
+                    folderColorHex = a.item.note.folderId?.let { noteFolderColors[it] }.orEmpty()
                 )
             )
         }

@@ -91,12 +91,17 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Creates a folder. Calls onDone with its id (0 when the name was blank). */
-    fun createFolder(name: String, onDone: (Long) -> Unit = {}) {
-        viewModelScope.launch { onDone(repository.createFolder(name)) }
+    fun createFolder(name: String, colorHex: String = "", onDone: (Long) -> Unit = {}) {
+        viewModelScope.launch { onDone(repository.createFolder(name, colorHex)) }
     }
 
-    fun renameFolder(id: Long, name: String, onDone: (Boolean) -> Unit = {}) {
-        viewModelScope.launch { onDone(repository.renameFolder(id, name)) }
+    /** Changes a folder's name and colour. Calls onDone(false) and changes nothing when the name is not allowed. */
+    fun editFolder(id: Long, name: String, colorHex: String, onDone: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val ok = repository.renameFolder(id, name)
+            if (ok) repository.setFolderColor(id, colorHex)
+            onDone(ok)
+        }
     }
 
     fun deleteFolder(id: Long) {

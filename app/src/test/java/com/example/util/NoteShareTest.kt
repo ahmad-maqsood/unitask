@@ -268,4 +268,42 @@ class NoteShareTest {
             text
         )
     }
+
+    @Test
+    fun uniqueMarkdownNamesAddsNumbersForRepeatedNames() {
+        val names = NoteShare.uniqueMarkdownNames(listOf("Lecture", "lecture", "Lecture", "Other"))
+        assertEquals(listOf("Lecture.md", "lecture (2).md", "Lecture (3).md", "Other.md"), names)
+    }
+
+    @Test
+    fun writeFolderZipPutsEachNoteInItsOwnMarkdownFile() {
+        val out = java.io.ByteArrayOutputStream()
+        NoteShare.writeFolderZip(
+            listOf(
+                NoteShare.FolderExportNote("Limits", "Limits", "Epsilon delta"),
+                NoteShare.FolderExportNote("Untitled note", "", "Just a body"),
+                NoteShare.FolderExportNote("Limits", "Limits", "Second note, same title")
+            ),
+            out
+        )
+
+        val files = LinkedHashMap<String, String>()
+        java.util.zip.ZipInputStream(java.io.ByteArrayInputStream(out.toByteArray())).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                files[entry.name] = String(zip.readBytes(), Charsets.UTF_8)
+                entry = zip.nextEntry
+            }
+        }
+
+        assertEquals(listOf("Limits.md", "Untitled note.md", "Limits (2).md"), files.keys.toList())
+        assertEquals("# Limits\n\nEpsilon delta", files["Limits.md"])
+        assertEquals("Just a body", files["Untitled note.md"])
+        assertEquals("# Limits\n\nSecond note, same title", files["Limits (2).md"])
+    }
+
+    @Test
+    fun folderZipFileNameIsSafe() {
+        assertEquals("Year 1_ Maths.zip", NoteShare.folderZipFileName("Year 1: Maths"))
+    }
 }

@@ -407,4 +407,37 @@ class NoteRepositoryTest {
         repo.restoreNotesFromTrash(ids)
         ids.forEach { assertFalse(repo.getNote(it)!!.isDeleted) }
     }
+
+    @Test
+    fun folderColourIsKeptOnlyWhenItIsFromThePalette() = runBlocking {
+        val withColour = repo.createFolder("Maths", "#dc2626")
+        assertEquals("#DC2626", db.noteDao().getFolderById(withColour)!!.colorHex)
+
+        val invalid = repo.createFolder("Physics", "red")
+        assertEquals("", db.noteDao().getFolderById(invalid)!!.colorHex)
+
+        repo.setFolderColor(invalid, "#059669")
+        assertEquals("#059669", db.noteDao().getFolderById(invalid)!!.colorHex)
+
+        repo.setFolderColor(invalid, "")
+        assertEquals("", db.noteDao().getFolderById(invalid)!!.colorHex)
+    }
+
+    @Test
+    fun getNotesInFolderReturnsOnlyLiveNotesOfThatFolder() = runBlocking {
+        val folder = repo.createFolder("Exams")
+        val other = repo.createFolder("Other")
+        val a = repo.saveNote(id = 0, title = "A", body = "a", courseId = null)
+        val b = repo.saveNote(id = 0, title = "B", body = "b", courseId = null)
+        val c = repo.saveNote(id = 0, title = "C", body = "c", courseId = null)
+        val d = repo.saveNote(id = 0, title = "D", body = "d", courseId = null)
+        repo.moveNotesToFolder(listOf(a, b, c), folder)
+        repo.moveNotesToFolder(listOf(d), other)
+        repo.moveToTrash(c)
+        repo.setPinned(b, true)
+
+        val inFolder = repo.getNotesInFolder(folder)
+
+        assertEquals(listOf(b, a), inFolder.map { it.id })
+    }
 }

@@ -105,6 +105,18 @@ interface NoteDao {
     @Query("UPDATE note_folders SET name = :name WHERE id = :id")
     suspend fun renameFolder(id: Long, name: String)
 
+    @Query("UPDATE note_folders SET colorHex = :colorHex WHERE id = :id")
+    suspend fun setFolderColor(id: Long, colorHex: String)
+
+    // Every live note in a folder, except notes of archived semesters (those are hidden from the list too)
+    @Query(
+        "SELECT * FROM notes " +
+        "WHERE isDeleted = 0 AND folderId = :folderId " +
+        "AND (courseId IS NULL OR courseId NOT IN (SELECT id FROM courses WHERE archivedSemester != '')) " +
+        "ORDER BY isPinned DESC, updatedAt DESC"
+    )
+    suspend fun getActiveNotesInFolder(folderId: Long): List<Note>
+
     @Query("DELETE FROM note_folders WHERE id = :id")
     suspend fun deleteFolder(id: Long)
 }

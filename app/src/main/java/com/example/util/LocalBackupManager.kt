@@ -243,8 +243,14 @@ object LocalBackupManager {
             // Saved so folders that are still empty survive a restore too
             if (noteFolders.isNotEmpty()) {
                 val folderArray = JSONArray()
-                for (f in noteFolders) folderArray.put(f.name)
+                val folderColors = JSONObject()
+                for (f in noteFolders) {
+                    folderArray.put(f.name)
+                    if (f.colorHex.isNotEmpty()) folderColors.put(f.name, f.colorHex)
+                }
                 data.put("noteFolders", folderArray)
+                // Left out when no folder has a colour. Older backups simply have no colours.
+                if (folderColors.length() > 0) data.put("noteFolderColors", folderColors)
             }
 
             // Study history. The key is left out when there is none, so a backup of someone who
@@ -682,13 +688,19 @@ object LocalBackupManager {
             }
 
             // ---- note folders (matched by name, ignoring case, so a restore never doubles them up)
+            val folderColorsJson = data.optJSONObject("noteFolderColors")
             val folderIdByName = HashMap<String, Long>()
             for (f in noteDao.getAllFoldersSync()) folderIdByName.putIfAbsent(f.name.lowercase(), f.id)
             suspend fun folderIdFor(rawName: String): Long? {
                 val name = rawName.trim().replace(Regex("\\s+"), " ").take(NoteRepository.MAX_FOLDER_NAME)
                 if (name.isEmpty()) return null
                 folderIdByName[name.lowercase()]?.let { return it }
-                val newId = noteDao.insertFolder(NoteFolder(name = name))
+                // A colour from the backup is only used for a folder this restore creates; an existing
+                // folder keeps the colour it already has
+                val color = NoteRepository.FOLDER_COLORS.firstOrNull {
+                    it.equals(folderColorsJson?.optString(name).orEmpty(), ignoreCase = true)
+                } ?: ""
+                val newId = noteDao.insertFolder(NoteFolder(name = name, colorHex = color))
                 folderIdByName[name.lowercase()] = newId
                 return newId
             }

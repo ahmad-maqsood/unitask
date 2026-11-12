@@ -363,4 +363,21 @@ class GlobalSearchTest {
         )
         assertEquals("Maths", results.notes.single().folderName)
     }
+
+    @Test
+    fun searchResultCarriesTheFolderColour() {
+        val note = NoteListItem(
+            note = Note(id = 1, title = "Limits", body = "Epsilon", folderId = 5L),
+            courseCode = null, courseName = null, courseColorHex = null
+        )
+        val results = searchEverything(
+            query = "limits",
+            tasks = emptyList(),
+            notes = listOf(note),
+            courses = emptyList(),
+            noteFolderNames = mapOf(5L to "Maths"),
+            noteFolderColors = mapOf(5L to "#DC2626")
+        )
+        assertEquals("#DC2626", results.notes.single().folderColorHex)
+    }
 }

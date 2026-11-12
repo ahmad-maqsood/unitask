@@ -1,8 +1,24 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.example.ui.theme.CourseColors
+import com.example.ui.theme.courseColorName
+import com.example.ui.theme.parseCourseColorOrNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -33,38 +49,54 @@ import androidx.compose.ui.unit.dp
 import com.example.data.local.NoteFolder
 import com.example.data.repository.NoteRepository
 
-/** Asks for a folder name. Used both to create a folder and to rename one. */
+/** The colour to draw for a folder, or null when it has none (callers pick a neutral fallback). */
+fun folderColorOrNull(colorHex: String?): Color? = parseCourseColorOrNull(colorHex)
+
+/** Asks for a folder name and colour. Used both to create a folder and to edit one. */
 @Composable
 fun FolderNameDialog(
     title: String,
     confirmLabel: String,
     initialName: String = "",
+    initialColorHex: String = "",
     error: String? = null,
-    onConfirm: (String) -> Unit,
+    onConfirm: (name: String, colorHex: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initialName) }
+    var colorHex by remember { mutableStateOf(initialColorHex) }
     val canSubmit = name.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.take(NoteRepository.MAX_FOLDER_NAME) },
-                label = { Text("Folder name") },
-                singleLine = true,
-                isError = error != null,
-                supportingText = { if (error != null) Text(error) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("folder_name_input")
-            )
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(NoteRepository.MAX_FOLDER_NAME) },
+                    label = { Text("Folder name") },
+                    singleLine = true,
+                    isError = error != null,
+                    supportingText = { if (error != null) Text(error) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("folder_name_input")
+                )
+                Text(
+                    text = "Colour",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                FolderColorPicker(
+                    selectedHex = colorHex,
+                    onSelect = { colorHex = it }
+                )
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name) },
+                onClick = { onConfirm(name, colorHex) },
                 enabled = canSubmit,
                 modifier = Modifier.testTag("folder_name_confirm")
             ) {
@@ -75,6 +107,62 @@ fun FolderNameDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+/** A row of colour dots. The first option means "no colour"; tapping the chosen colour again clears it. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun FolderColorPicker(
+    selectedHex: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        val options = listOf("") + CourseColors
+        options.forEach { hex ->
+            val isSelected = if (hex.isEmpty()) selectedHex.isBlank() else selectedHex.equals(hex, ignoreCase = true)
+            val swatch = folderColorOrNull(hex)
+            // Outer box: 48dp touch target with a spoken name. Inner box: the 32dp visible circle.
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(hex) }
+                    )
+                    .semantics { contentDescription = if (hex.isEmpty()) "No colour" else courseColorName(hex) }
+                    .testTag("folder_color_${hex.ifEmpty { "none" }}"),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(swatch ?: MaterialTheme.colorScheme.surfaceVariant)
+                        .then(
+                            if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                            else if (swatch == null) Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            else Modifier
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = if (swatch == null) MaterialTheme.colorScheme.onSurface else Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -103,6 +191,7 @@ fun MoveToFolderDialog(
             ) {
                 FolderPickRow(
                     label = "No folder",
+                    colorHex = "",
                     count = folderCounts[null] ?: 0,
                     modifier = Modifier.testTag("move_to_no_folder"),
                     onClick = { onPickFolder(null) }
@@ -110,6 +199,7 @@ fun MoveToFolderDialog(
                 for (folder in folders) {
                     FolderPickRow(
                         label = folder.name,
+                        colorHex = folder.colorHex,
                         count = folderCounts[folder.id] ?: 0,
                         modifier = Modifier.testTag("move_to_folder_${folder.id}"),
                         onClick = { onPickFolder(folder.id) }
@@ -149,6 +239,7 @@ fun MoveToFolderDialog(
 @Composable
 private fun FolderPickRow(
     label: String,
+    colorHex: String,
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -164,7 +255,7 @@ private fun FolderPickRow(
         Icon(
             imageVector = Icons.Default.Folder,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = folderColorOrNull(colorHex) ?: MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(22.dp)
         )
         Text(

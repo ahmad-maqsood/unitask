@@ -45,7 +45,8 @@ data class SearchActiveData(
     val notes: List<NoteListItem>,
     val courses: List<Course>,
     val archived: SearchArchivedData,
-    val folderNames: Map<Long, String> = emptyMap()
+    val folderNames: Map<Long, String> = emptyMap(),
+    val folderColors: Map<Long, String> = emptyMap()
 )
 
 /**
@@ -171,7 +172,8 @@ class SearchViewModel(
             notes = notes,
             courses = courses,
             archived = archived,
-            folderNames = folders.associate { it.id to it.name }
+            folderNames = folders.associate { it.id to it.name },
+            folderColors = folders.associate { it.id to it.colorHex }
         )
     }
 
@@ -204,7 +206,8 @@ class SearchViewModel(
             archivedCourses = if (params.includeArchived) data.archived.courses else emptyList(),
             settingsEntries = allSettingsSearchEntries,
             guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList(),
-            noteFolderNames = data.folderNames
+            noteFolderNames = data.folderNames,
+            noteFolderColors = data.folderColors
         )
     }
         .flowOn(Dispatchers.Default)

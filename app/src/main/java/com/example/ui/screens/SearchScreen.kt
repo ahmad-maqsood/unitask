@@ -679,7 +679,7 @@ private fun SearchNoteRow(
                         Icon(
                             imageVector = Icons.Default.Folder,
                             contentDescription = "Folder",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = folderColorOrNull(result.folderColorHex) ?: MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(

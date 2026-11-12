@@ -27,6 +27,7 @@ import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.groups.GroupCacheRepository
 import com.example.util.AuthStorage
+import com.example.util.minuteClock
 import com.example.util.runLogged
 import android.content.Context
 import android.net.ConnectivityManager
@@ -759,18 +760,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tasks.count { it.task.status == TaskStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     // Pending tasks due later today (same rule as the "Due Today" section of the Deadlines list).
-    val dueTodayCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
-        groupDeadlines(tasks).today.size
+    // The clock makes the counts follow the time too, not only changes to the tasks.
+    val dueTodayCount: StateFlow<Int> = combine(allDeadlineTasks, minuteClock()) { tasks, now ->
+        groupDeadlines(tasks, now).today.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // Pending tasks whose deadline has already passed. This is what the Deadlines tab badge shows.
-    val overdueCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
-        groupDeadlines(tasks).overdue.size
+    val overdueCount: StateFlow<Int> = combine(allDeadlineTasks, minuteClock()) { tasks, now ->
+        groupDeadlines(tasks, now).overdue.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // The same for personal tasks, for the My tasks tab badge.
-    val myTasksOverdueCount: StateFlow<Int> = myTasks.map { list ->
-        groupDeadlines(list).overdue.size
+    val myTasksOverdueCount: StateFlow<Int> = combine(myTasks, minuteClock()) { list, now ->
+        groupDeadlines(list, now).overdue.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // Actions

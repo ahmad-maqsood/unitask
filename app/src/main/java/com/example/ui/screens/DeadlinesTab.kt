@@ -232,7 +232,9 @@ fun DeadlinesTab(
     val allTasksLabel by remember(pendingCount, completedCount) { derivedStateOf { "All (${pendingCount + completedCount})" } }
     val pendingChipLabel by remember(pendingCount) { derivedStateOf { "Pending ($pendingCount)" } }
     val doneChipLabel by remember(completedCount) { derivedStateOf { "Done ($completedCount)" } }
-    val sections = remember(tasks) { groupDeadlines(tasks) }
+    // Re-sorted when the minute changes, so a task moves to Overdue (or Today) on its own.
+    val now by rememberMinuteClock()
+    val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
     // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
     val coroutineScope = rememberCoroutineScope()
     var swipeSnackbarJob by remember { mutableStateOf<Job?>(null) }

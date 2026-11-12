@@ -79,4 +79,32 @@ interface NoteDao {
 
     @Query("UPDATE notes SET courseId = :newCourseId, isSynced = 0 WHERE courseId = :oldCourseId")
     suspend fun reassignCourse(oldCourseId: Long, newCourseId: Long)
+
+    // Moving a note between folders is organising, not editing, so updatedAt is left alone
+    // and the note keeps its place when sorted by "Last edited".
+    @Query("UPDATE notes SET folderId = :folderId, isSynced = 0 WHERE id IN (:noteIds)")
+    suspend fun moveNotesToFolder(noteIds: List<Long>, folderId: Long?)
+
+    @Query("UPDATE notes SET folderId = NULL, isSynced = 0 WHERE folderId = :folderId")
+    suspend fun detachFolder(folderId: Long)
+
+    // ---- folders
+
+    @Query("SELECT * FROM note_folders ORDER BY name COLLATE NOCASE ASC, id ASC")
+    fun observeFolders(): Flow<List<NoteFolder>>
+
+    @Query("SELECT * FROM note_folders ORDER BY name COLLATE NOCASE ASC, id ASC")
+    suspend fun getAllFoldersSync(): List<NoteFolder>
+
+    @Query("SELECT * FROM note_folders WHERE id = :id")
+    suspend fun getFolderById(id: Long): NoteFolder?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFolder(folder: NoteFolder): Long
+
+    @Query("UPDATE note_folders SET name = :name WHERE id = :id")
+    suspend fun renameFolder(id: Long, name: String)
+
+    @Query("DELETE FROM note_folders WHERE id = :id")
+    suspend fun deleteFolder(id: Long)
 }

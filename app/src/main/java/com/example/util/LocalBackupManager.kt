@@ -11,6 +11,7 @@ import com.example.data.local.isArchived
 import com.example.data.local.LectureSlot
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.data.local.Note
+import com.example.data.local.NoteFolder
 import com.example.data.local.Priority
 import com.example.data.local.TaskAttachment
 import com.example.data.local.TaskItem
@@ -152,6 +153,8 @@ object LocalBackupManager {
             val tasks = db.taskDao().getAllActiveTasksSyncIncludingArchived()
                 .filter { !it.isDeleted && it.courseId in codeById }
             val notes = db.noteDao().getActiveNotesSyncIncludingArchived()
+            val noteFolders = db.noteDao().getAllFoldersSync()
+            val folderNameById = noteFolders.associate { it.id to it.name }
 
             val courseArray = JSONArray()
             for (c in courses) {
@@ -202,16 +205,19 @@ object LocalBackupManager {
             }
             val noteArray = JSONArray()
             for (n in notes) {
-                noteArray.put(
-                    JSONObject()
-                        .put("title", n.title)
-                        .put("body", n.body)
-                        .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
-                        .put("isPinned", n.isPinned)
-                        .put("keepScreenOn", n.keepScreenOn)
-                        .put("createdAt", n.createdAt)
-                        .put("updatedAt", n.updatedAt)
-                )
+                val noteObj = JSONObject()
+                    .put("title", n.title)
+                    .put("body", n.body)
+                    .put("courseCode", n.courseId?.let { codeById[it] } ?: "")
+                    .put("isPinned", n.isPinned)
+                    .put("keepScreenOn", n.keepScreenOn)
+                    .put("createdAt", n.createdAt)
+                    .put("updatedAt", n.updatedAt)
+                // Folders are saved by name, because ids differ from phone to phone.
+                // The key is left out for unfiled notes, so a backup of someone who never
+                // used folders is what it was before they existed.
+                n.folderId?.let { folderNameById[it] }?.let { noteObj.put("folderName", it) }
+                noteArray.put(noteObj)
             }
 
             val referencedNames = LinkedHashSet<String>()
@@ -233,6 +239,13 @@ object LocalBackupManager {
                 .put("slots", slotArray)
                 .put("tasks", taskArray)
                 .put("notes", noteArray)
+
+            // Saved so folders that are still empty survive a restore too
+            if (noteFolders.isNotEmpty()) {
+                val folderArray = JSONArray()
+                for (f in noteFolders) folderArray.put(f.name)
+                data.put("noteFolders", folderArray)
+            }
 
             // Study history. The key is left out when there is none, so a backup of someone who
             // never used the timer is byte-for-byte what it was before this existed.
@@ -668,6 +681,24 @@ object LocalBackupManager {
                 }
             }
 
+            // ---- note folders (matched by name, ignoring case, so a restore never doubles them up)
+            val folderIdByName = HashMap<String, Long>()
+            for (f in noteDao.getAllFoldersSync()) folderIdByName.putIfAbsent(f.name.lowercase(), f.id)
+            suspend fun folderIdFor(rawName: String): Long? {
+                val name = rawName.trim().replace(Regex("\\s+"), " ").take(NoteRepository.MAX_FOLDER_NAME)
+                if (name.isEmpty()) return null
+                folderIdByName[name.lowercase()]?.let { return it }
+                val newId = noteDao.insertFolder(NoteFolder(name = name))
+                folderIdByName[name.lowercase()] = newId
+                return newId
+            }
+            val folderNameArray = data.optJSONArray("noteFolders")
+            if (folderNameArray != null) {
+                for (i in 0 until folderNameArray.length()) {
+                    folderIdFor(folderNameArray.optString(i))
+                }
+            }
+
             // ---- notes
             val existingNotes = noteDao.getActiveNotesSyncIncludingArchived().toMutableList()
             val noteArray = data.optJSONArray("notes") ?: JSONArray()
@@ -688,6 +719,7 @@ object LocalBackupManager {
                 val keepScreenOn = o.optBoolean("keepScreenOn", false)
                 val createdAt = o.optLong("createdAt", System.currentTimeMillis())
                 val updatedAt = o.optLong("updatedAt", createdAt)
+                val folderId = folderIdFor(o.optString("folderName"))
 
                 val duplicate = existingNotes.firstOrNull {
                     it.title == title && it.body == body && it.createdAt == createdAt
@@ -700,6 +732,7 @@ object LocalBackupManager {
                     title = title,
                     body = body,
                     courseId = courseId,
+                    folderId = folderId,
                     isPinned = isPinned,
                     keepScreenOn = keepScreenOn,
                     createdAt = createdAt,

@@ -134,10 +134,11 @@ fun NoteEditorScreen(
     onClose: () -> Unit,
     onDeleted: (Long) -> Unit,
     viewModelSession: Int = 0,
+    newNoteFolderId: Long? = null,
     viewModel: NoteEditorViewModel = viewModel(key = "note_editor")
 ) {
     LaunchedEffect(noteId, viewModelSession) {
-        viewModel.loadNote(noteId, viewModelSession)
+        viewModel.loadNote(noteId, viewModelSession, newNoteFolderId)
     }
 
     // Watch the open note only while the editor is on screen

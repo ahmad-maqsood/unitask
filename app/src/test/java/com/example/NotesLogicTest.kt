@@ -3,6 +3,7 @@ package com.example
 import com.example.data.local.Note
 import com.example.data.local.NoteListItem
 import com.example.ui.screens.NotesFilter
+import com.example.ui.screens.NotesFolderFilter
 import com.example.ui.screens.NotesSort
 import com.example.ui.screens.characterCount
 import com.example.ui.screens.daysLeftInTrash
@@ -23,6 +24,7 @@ class NotesLogicTest {
         body: String = "",
         courseId: Long? = null,
         courseCode: String? = null,
+        folderId: Long? = null,
         isPinned: Boolean = false,
         createdAt: Long = 0L,
         updatedAt: Long = 0L
@@ -33,6 +35,7 @@ class NotesLogicTest {
                 title = title,
                 body = body,
                 courseId = courseId,
+                folderId = folderId,
                 isPinned = isPinned,
                 createdAt = createdAt,
                 updatedAt = updatedAt
@@ -101,6 +104,34 @@ class NotesLogicTest {
         val course102Filtered = filterNotes(items, "", NotesFilter.Course(102L))
         assertEquals(1, course102Filtered.size)
         assertEquals(3L, course102Filtered[0].note.id)
+    }
+
+    @Test
+    fun filterNotesAppliesFolderFilterAndCombinesWithCourseAndSearch() {
+        val items = listOf(
+            makeItem(1, title = "Loose note", folderId = null),
+            makeItem(2, title = "Algebra", courseId = 101L, folderId = 7L),
+            makeItem(3, title = "Geometry", courseId = 102L, folderId = 7L),
+            makeItem(4, title = "Chemistry", folderId = 8L)
+        )
+
+        assertEquals(4, filterNotes(items, "", NotesFilter.All).size)
+        assertEquals(4, filterNotes(items, "", NotesFilter.All, NotesFolderFilter.AllFolders).size)
+
+        val unfiled = filterNotes(items, "", NotesFilter.All, NotesFolderFilter.Unfiled)
+        assertEquals(listOf(1L), unfiled.map { it.note.id })
+
+        val folder7 = filterNotes(items, "", NotesFilter.All, NotesFolderFilter.Folder(7L))
+        assertEquals(listOf(2L, 3L), folder7.map { it.note.id })
+
+        val folder7Course101 = filterNotes(items, "", NotesFilter.Course(101L), NotesFolderFilter.Folder(7L))
+        assertEquals(listOf(2L), folder7Course101.map { it.note.id })
+
+        val folder7Search = filterNotes(items, "geo", NotesFilter.All, NotesFolderFilter.Folder(7L))
+        assertEquals(listOf(3L), folder7Search.map { it.note.id })
+
+        val emptyFolder = filterNotes(items, "", NotesFilter.All, NotesFolderFilter.Folder(99L))
+        assertTrue(emptyFolder.isEmpty())
     }
 
     @Test

@@ -30,6 +30,8 @@ fun NotesHost(
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     // A new number every time the editor opens, so each open gets a fresh editor state
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
+    // When a new note is started inside a folder, it is filed into that folder
+    var newNoteFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -49,6 +51,7 @@ fun NotesHost(
         NoteEditorScreen(
             noteId = targetId,
             viewModelSession = editorSession,
+            newNoteFolderId = newNoteFolderId,
             onClose = { editorTarget = null },
             onDeleted = { deletedId ->
                 editorTarget = null
@@ -68,10 +71,12 @@ fun NotesHost(
         NotesScreen(
             onOpenNote = { id ->
                 editorSession = NoteEditorSessions.next()
+                newNoteFolderId = null
                 editorTarget = id.toString()
             },
             onNewNote = {
                 editorSession = NoteEditorSessions.next()
+                newNoteFolderId = (viewModel.folderFilter.value as? NotesFolderFilter.Folder)?.folderId
                 editorTarget = "new"
             },
             onClose = onClose,

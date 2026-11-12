@@ -10,6 +10,13 @@ sealed interface NotesFilter {
     data class Course(val courseId: Long) : NotesFilter
 }
 
+// Which folder the list is showing. Works alongside the course filter.
+sealed interface NotesFolderFilter {
+    object AllFolders : NotesFolderFilter       // every note, whatever its folder
+    object Unfiled : NotesFolderFilter      // notes that are not in a folder
+    data class Folder(val folderId: Long) : NotesFolderFilter
+}
+
 enum class NotesSort {
     UPDATED,
     CREATED,
@@ -19,7 +26,8 @@ enum class NotesSort {
 fun filterNotes(
     items: List<NoteListItem>,
     query: String,
-    filter: NotesFilter
+    filter: NotesFilter,
+    folderFilter: NotesFolderFilter = NotesFolderFilter.AllFolders
 ): List<NoteListItem> {
     val trimmed = query.trim()
     return items.filter { item ->
@@ -28,13 +36,18 @@ fun filterNotes(
             is NotesFilter.NoCourse -> item.note.courseId == null
             is NotesFilter.Course -> item.note.courseId == filter.courseId
         }
+        val matchesFolder = when (folderFilter) {
+            is NotesFolderFilter.AllFolders -> true
+            is NotesFolderFilter.Unfiled -> item.note.folderId == null
+            is NotesFolderFilter.Folder -> item.note.folderId == folderFilter.folderId
+        }
         val matchesQuery = if (trimmed.isEmpty()) {
             true
         } else {
             item.note.title.contains(trimmed, ignoreCase = true) ||
                 item.note.body.contains(trimmed, ignoreCase = true)
         }
-        matchesCourse && matchesQuery
+        matchesCourse && matchesFolder && matchesQuery
     }
 }
 

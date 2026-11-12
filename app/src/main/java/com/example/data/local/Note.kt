@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 // A note written by the user.
 // There is deliberately no foreign key to courses because deleting a course
 // must never delete the user's writing.
-@Entity(tableName = "notes", indices = [Index("courseId"), Index("updatedAt")])
+@Entity(tableName = "notes", indices = [Index("courseId"), Index("updatedAt"), Index("folderId")])
 data class Note(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String = "",
@@ -22,7 +22,8 @@ data class Note(
     val isSynced: Boolean = false,     // reserved for cloud sync
     val cloudId: String = "",          // reserved for cloud sync
     val cloudUpdatedAt: Long = 0L,     // reserved: the cloud's updatedAt when we last synced
-    val keepScreenOn: Boolean = false  // keep the screen awake while this note is open, off by default
+    val keepScreenOn: Boolean = false, // keep the screen awake while this note is open, off by default
+    val folderId: Long? = null         // optional note folder, deliberately NO foreign key
 )
 
 data class NoteListItem(

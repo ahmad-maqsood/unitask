@@ -302,4 +302,90 @@ class NoteRepositoryTest {
         val id = repo.saveNote(id = 0, title = "Exam", body = "Formulas", courseId = null, keepScreenOn = true)
         assertTrue(repo.getNote(id)!!.keepScreenOn)
     }
+
+    // ---- folders
+
+    @Test
+    fun createFolderTrimsNamesAndReusesExistingOnesIgnoringCase() = runBlocking {
+        assertEquals(0L, repo.createFolder("   "))
+
+        val id = repo.createFolder("  Lecture   notes ")
+        assertTrue(id > 0L)
+        assertEquals("Lecture notes", db.noteDao().getFolderById(id)!!.name)
+
+        assertEquals(id, repo.createFolder("lecture NOTES"))
+        assertEquals(1, db.noteDao().getAllFoldersSync().size)
+    }
+
+    @Test
+    fun renameFolderRejectsBlankAndDuplicateNames() = runBlocking {
+        val a = repo.createFolder("Maths")
+        val b = repo.createFolder("Physics")
+
+        assertFalse(repo.renameFolder(b, "  "))
+        assertFalse(repo.renameFolder(b, "maths"))
+        assertTrue(repo.renameFolder(b, "Chemistry"))
+        assertEquals("Chemistry", db.noteDao().getFolderById(b)!!.name)
+        // Keeping its own name (even with different capitals) is fine
+        assertTrue(repo.renameFolder(a, "MATHS"))
+    }
+
+    @Test
+    fun moveNotesToFolderMovesSeveralNotesAtOnceWithoutChangingTheirEditTime() = runBlocking {
+        val folder = repo.createFolder("Exams")
+        val ids = (1..3).map { repo.saveNote(id = 0, title = "Note $it", body = "Body $it", courseId = null) }
+        val before = ids.associateWith { repo.getNote(it)!!.updatedAt }
+
+        repo.moveNotesToFolder(ids.take(2), folder)
+
+        assertEquals(folder, repo.getNote(ids[0])!!.folderId)
+        assertEquals(folder, repo.getNote(ids[1])!!.folderId)
+        assertNull(repo.getNote(ids[2])!!.folderId)
+        ids.forEach { assertEquals(before[it], repo.getNote(it)!!.updatedAt) }
+
+        repo.moveNotesToFolder(ids, null)
+        ids.forEach { assertNull(repo.getNote(it)!!.folderId) }
+    }
+
+    @Test
+    fun moveNotesToAFolderThatDoesNotExistDoesNothing() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Note", body = "Body", courseId = null)
+        repo.moveNotesToFolder(listOf(id), 12345L)
+        assertNull(repo.getNote(id)!!.folderId)
+    }
+
+    @Test
+    fun deletingAFolderKeepsItsNotes() = runBlocking {
+        val folder = repo.createFolder("Temp")
+        val id = repo.saveNote(id = 0, title = "Keep me", body = "Body", courseId = null)
+        repo.moveNotesToFolder(listOf(id), folder)
+
+        repo.deleteFolder(folder)
+
+        assertNull(db.noteDao().getFolderById(folder))
+        val note = repo.getNote(id)
+        assertNotNull(note)
+        assertFalse(note!!.isDeleted)
+        assertNull(note.folderId)
+    }
+
+    @Test
+    fun newNoteIsFiledIntoTheGivenFolderButEditsDoNotMoveIt() = runBlocking {
+        val first = repo.createFolder("First")
+        val second = repo.createFolder("Second")
+
+        val id = repo.saveNote(id = 0, title = "Filed", body = "Body", courseId = null, folderId = first)
+        assertEquals(first, repo.getNote(id)!!.folderId)
+
+        // The note was moved from the list while an editor still remembers the old folder
+        repo.moveNotesToFolder(listOf(id), second)
+        repo.saveNote(id = id, title = "Filed", body = "Edited body", courseId = null, folderId = first)
+        assertEquals(second, repo.getNote(id)!!.folderId)
+    }
+
+    @Test
+    fun newNoteIgnoresAFolderThatWasDeleted() = runBlocking {
+        val id = repo.saveNote(id = 0, title = "Orphan", body = "Body", courseId = null, folderId = 999L)
+        assertNull(repo.getNote(id)!!.folderId)
+    }
 }

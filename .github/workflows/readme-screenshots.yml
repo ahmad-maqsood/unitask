@@ -67,6 +67,19 @@ jobs:
       - name: Build debug app and screenshot tests before emulator startup
         run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
 
+      - name: Free memory before starting the emulator
+        run: |
+          # Gradle and Kotlin compile daemons stay alive after the build and keep
+          # gigabytes of RAM, which starves the emulator and can kill it mid-run.
+          ./gradlew --stop || true
+          pkill -f KotlinCompileDaemon || true
+          pkill -f GradleDaemon || true
+          sleep 3
+          sync
+          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+          free -m
+          nproc
+
       - name: Enable KVM for hardware-accelerated Android emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -84,16 +97,15 @@ jobs:
           api-level: 30
           target: google_apis
           arch: x86_64
-          emulator-build: 11237101
           profile: pixel_2
           disable-animations: false
           disable-spellchecker: true
           disable-linux-hw-accel: false
           pre-emulator-launch-script: adb start-server
-          emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 4096 -cores 2
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 3072 -cores 2
           script: bash .github/scripts/capture_readme_screenshots.sh
-          
+
       - name: Upload emulator crash data
         if: failure()
         uses: actions/upload-artifact@v7
@@ -102,7 +114,7 @@ jobs:
           path: /tmp/android-runner/
           if-no-files-found: warn
           retention-days: 7
-          
+
       - name: Upload Android instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v7

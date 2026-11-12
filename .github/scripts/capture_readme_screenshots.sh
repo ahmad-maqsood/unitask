@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# If anything fails, print what the runner and emulator looked like so a dead
+# emulator (out of memory, crash) can be told apart from a real test failure.
+report_state() {
+  echo "---- diagnostics ----" >&2
+  free -m >&2 || true
+  adb devices >&2 || true
+  pgrep -af "qemu|emulator" >&2 || echo "No emulator process is running." >&2
+  sudo dmesg 2>/dev/null | grep -i -E "out of memory|oom-kill|killed process" | tail -5 >&2 || true
+}
+trap 'report_state' ERR
+
 # android-emulator-runner splits its script input on newlines and executes
 # each line separately. Keep shell control-flow in this standalone script.
 adb wait-for-device
@@ -90,13 +101,23 @@ mkdir -p docs/screenshots
 find docs/screenshots -maxdepth 1 -type f -delete
 
 echo "Files the test left in the app:"
-adb shell run-as "$APP_ID" ls -la "$SCREENSHOT_DIR" || true
+timeout 60 adb shell run-as "$APP_ID" ls -la "$SCREENSHOT_DIR" || true
 
 echo "Exporting ${#expected[@]} screenshots."
 for name in "${expected[@]}"; do
   destination="docs/screenshots/$name.png"
 
-  if ! adb exec-out run-as "$APP_ID" cat "$SCREENSHOT_DIR/$name.png" > "$destination"; then
+  ok=0
+  for try in 1 2 3; do
+    if timeout 60 adb exec-out run-as "$APP_ID" cat "$SCREENSHOT_DIR/$name.png" > "$destination"; then
+      ok=1
+      break
+    fi
+    echo "Reading $name.png failed (try $try of 3); retrying." >&2
+    adb wait-for-device || true
+    sleep 3
+  done
+  if [[ "$ok" != "1" ]]; then
     echo "Could not read $SCREENSHOT_DIR/$name.png from the app." >&2
     exit 1
   fi

@@ -553,27 +553,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun openMarkdownFile(uri: Uri, requireTextFileName: Boolean = false) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
-            val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
-            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
-                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
-                return@launch
-            }
-            when (result) {
-                is MarkdownReadResult.Success -> {
-                    _markdownViewerState.value = MarkdownViewerState.Content(
-                        displayName = name,
-                        text = result.text
-                    )
+            // The file comes from another app. Any unexpected failure shows an error instead of
+            // crashing the app or leaving the viewer on the loading spinner.
+            try {
+                val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
+                if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
+                    _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
+                    return@launch
                 }
-                is MarkdownReadResult.TooLarge -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                when (result) {
+                    is MarkdownReadResult.Success -> {
+                        _markdownViewerState.value = MarkdownViewerState.Content(
+                            displayName = name,
+                            text = result.text
+                        )
+                    }
+                    is MarkdownReadResult.TooLarge -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                    }
+                    is MarkdownReadResult.Binary -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
+                    }
+                    is MarkdownReadResult.Unreadable -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
+                    }
                 }
-                is MarkdownReadResult.Binary -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
-                }
-                is MarkdownReadResult.Unreadable -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
-                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("UniTask", "Opening a Markdown file failed", e)
+                _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
             }
         }
     }

@@ -57,6 +57,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNotificationIntent(intent: Intent?) {
+        // Another app controls this intent. A malformed extras bundle can throw while it is read,
+        // so a bad intent is logged and ignored instead of crashing the app.
+        com.example.util.runLogged("Handle incoming intent") { processIntent(intent) }
+    }
+
+    private fun processIntent(intent: Intent?) {
         if (intent == null) return
         if ((intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return
 

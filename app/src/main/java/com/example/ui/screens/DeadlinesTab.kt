@@ -151,11 +151,14 @@ fun DeadlinesTab(
         mutableStateOf(DrivePrefs(context).restoreOfferDismissed)
     }
 
-    val computedAppEmpty = isAppEmpty ?: (
+    // These scans walk every task, so they only run again when the lists change, not on every
+    // redraw (selecting a task, switching to the calendar and so on).
+    val derivedAppEmpty = remember(activeCourses, activeTasks, activeNotes) {
         activeCourses.none { !it.isDeleted && !it.isMyTasksCourse() } &&
-        activeTasks.none { !it.task.isDeleted } &&
-        activeNotes.none { !it.note.isDeleted }
-    )
+            activeTasks.none { !it.task.isDeleted } &&
+            activeNotes.none { !it.note.isDeleted }
+    }
+    val computedAppEmpty = isAppEmpty ?: derivedAppEmpty
 
     val showRestoreOffer = computedAppEmpty && !restoreOfferDismissed
 
@@ -177,12 +180,19 @@ fun DeadlinesTab(
     }
     val needsAutostart = remember { BackgroundAccess.needsAutostartStep() }
     val getStartedSteps = remember(needsAutostart) { GetStartedLogic.requiredSteps(needsAutostart) }
-    val getStartedDetected = GetStartedLogic.detect(
-        hasCourse = activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() },
-        hasDeadline = activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true },
-        hasReminder = activeTasks.any {
+    val hasCourse = remember(activeCourses) { activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() } }
+    val hasDeadline = remember(activeTasks) {
+        activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true }
+    }
+    val hasReminder = remember(activeTasks) {
+        activeTasks.any {
             !it.task.isDeleted && it.course?.isMyTasksCourse() != true && it.task.reminderOptions.isNotEmpty()
-        },
+        }
+    }
+    val getStartedDetected = GetStartedLogic.detect(
+        hasCourse = hasCourse,
+        hasDeadline = hasDeadline,
+        hasReminder = hasReminder,
         hasClass = activeSlots.isNotEmpty(),
         timerTried = !TimerLogic.isIdle(timerState),
         notificationsOn = remember(settingsRefresh) {
@@ -222,7 +232,9 @@ fun DeadlinesTab(
     val allTasksLabel by remember(pendingCount, completedCount) { derivedStateOf { "All (${pendingCount + completedCount})" } }
     val pendingChipLabel by remember(pendingCount) { derivedStateOf { "Pending ($pendingCount)" } }
     val doneChipLabel by remember(completedCount) { derivedStateOf { "Done ($completedCount)" } }
-    val sections = remember(tasks) { groupDeadlines(tasks) }
+    // Re-sorted when the minute changes, so a task moves to Overdue (or Today) on its own.
+    val now by rememberMinuteClock()
+    val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
     // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
     val coroutineScope = rememberCoroutineScope()
     var swipeSnackbarJob by remember { mutableStateOf<Job?>(null) }

@@ -327,6 +327,7 @@ fun TimerScreen(
                         selected = state.mode == TimerMode.STOPWATCH,
                         onClick = { controller.setMode(TimerMode.STOPWATCH) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                        icon = {}, // no tick: it took room from the title and cut it off
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_stopwatch")
                     ) {
@@ -336,6 +337,7 @@ fun TimerScreen(
                         selected = state.mode == TimerMode.COUNTDOWN && state.pomodoroPhase == null,
                         onClick = { controller.setMode(TimerMode.COUNTDOWN) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                        icon = {},
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_countdown")
                     ) {
@@ -345,6 +347,7 @@ fun TimerScreen(
                         selected = state.pomodoroPhase != null,
                         onClick = { controller.enablePomodoro() },
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                        icon = {},
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_pomodoro")
                     ) {

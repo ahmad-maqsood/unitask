@@ -23,7 +23,7 @@ class ToolsListTest {
             onOpenSettings = { settingsClicked = true }
         )
 
-        assertEquals(5, tools.size)
+        assertEquals(6, tools.size)
 
         val recentlyDeleted = tools.find { it.label == "Recently deleted" }
         assertNotNull(recentlyDeleted)

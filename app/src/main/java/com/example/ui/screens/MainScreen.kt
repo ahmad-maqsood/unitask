@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.Close
@@ -130,7 +132,8 @@ fun buildToolsList(
     onOpenRecentlyDeleted: () -> Unit,
     onOpenSettings: () -> Unit,
     updateAvailable: Boolean = false,
-    onOpenHelp: () -> Unit = {}
+    onOpenHelp: () -> Unit = {},
+    onOpenProgress: () -> Unit = {}
 ): List<ToolEntry> = listOf(
     ToolEntry(
         label = "Notes",
@@ -145,6 +148,13 @@ fun buildToolsList(
         icon = Icons.Default.Timer,
         testTag = "tools_tile_timer",
         onClick = onOpenTimer
+    ),
+    ToolEntry(
+        label = "Progress",
+        description = "Tasks done and your streak",
+        icon = Icons.Default.BarChart,
+        testTag = "tools_tile_progress",
+        onClick = onOpenProgress
     ),
     ToolEntry(
         label = "Recently deleted",
@@ -345,6 +355,7 @@ fun MainScreen(
     val pullRefreshState = rememberPullToRefreshState()
     val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val markdownViewerState by viewModel.markdownViewerState.collectAsStateWithLifecycle()
+    val crashReport by viewModel.crashReport.collectAsStateWithLifecycle()
     var openedNoteIdFromViewer by rememberSaveable { mutableStateOf<Long?>(null) }
     // A new number every time the editor opens from the viewer, so each open gets a fresh editor ViewModel
     var viewerEditorSession by rememberSaveable { mutableIntStateOf(0) }
@@ -353,6 +364,7 @@ fun MainScreen(
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showRecentlyDeleted by rememberSaveable { mutableStateOf(false) }
+    var showProgress by rememberSaveable { mutableStateOf(false) }
     var showArchiveCoursesSheet by rememberSaveable { mutableStateOf(false) }
     var showArchivedSemesters by rememberSaveable { mutableStateOf(false) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
@@ -363,6 +375,7 @@ fun MainScreen(
             showTools = false
             showNotes = false
             showRecentlyDeleted = false
+            showProgress = false
             showArchivedSemesters = false
             showArchiveCoursesSheet = false
             showSearch = false
@@ -407,7 +420,8 @@ fun MainScreen(
         onOpenRecentlyDeleted = { showRecentlyDeleted = true },
         onOpenSettings = { settingsOpenRequest = SettingsOpenRequest(null) },
         updateAvailable = updateAvailable,
-        onOpenHelp = { showHelp = true }
+        onOpenHelp = { showHelp = true },
+        onOpenProgress = { showProgress = true }
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -786,7 +800,7 @@ fun MainScreen(
                                                         .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
                                                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                                                 )
-                                            } catch (_: Exception) {}
+                                            } catch (e: Exception) { Log.w("UniTask", "Could not open the notification settings", e) }
                                         }
                                     }
                                     GetStartedStep.BATTERY -> BackgroundAccess.requestIgnoreBatteryOptimizations(context)
@@ -946,6 +960,7 @@ fun MainScreen(
         !showTools &&
         !showTimer &&
         !showRecentlyDeleted &&
+        !showProgress &&
         !showArchivedSemesters &&
         !showSearch
     ) {
@@ -1053,6 +1068,12 @@ fun MainScreen(
     if (showTimer) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             TimerScreen(onClose = { showTimer = false })
+        }
+    }
+
+    if (showProgress) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            ProgressScreen(onClose = { showProgress = false })
         }
     }
 
@@ -1187,6 +1208,16 @@ fun MainScreen(
                 viewModelSession = viewerEditorSession,
                 onClose = { openedNoteIdFromViewer = null },
                 onDeleted = { openedNoteIdFromViewer = null }
+            )
+        }
+    }
+
+    // Last, so it sits on top of everything else
+    crashReport?.let { report ->
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            CrashReportScreen(
+                report = report,
+                onDismiss = { viewModel.dismissCrashReport() }
             )
         }
     }

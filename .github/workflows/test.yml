@@ -13,6 +13,8 @@ on:
       - 'supabase/**'
       - '.github/workflows/**'
       - '.github/scripts/**'
+      - '.github/actions/**'
+      - '.env.example'
 
   pull_request:
     branches:
@@ -26,6 +28,8 @@ on:
       - 'supabase/**'
       - '.github/workflows/**'
       - '.github/scripts/**'
+      - '.github/actions/**'
+      - '.env.example'
 
   workflow_dispatch:
 
@@ -54,7 +58,7 @@ jobs:
         run: |
           python3 -m py_compile .github/scripts/lint_report.py
           python3 .github/scripts/lint_report.py self-test
-          
+
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:
@@ -66,11 +70,30 @@ jobs:
         with:
           cache-provider: basic
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+      - name: Write Supabase settings (.env) from secrets
+        uses: ./.github/actions/write-env
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Run unit tests with diagnostic logging
+        shell: bash
+        env:
+          # runner.temp is available at step level and inherited by Gradle test workers.
+          JAVA_TOOL_OPTIONS: >-
+            -XX:ErrorFile=${{ runner.temp }}/hs_err_pid%p.log
+        run: |
+          set +e
+          ./gradlew testDebugUnitTest --stacktrace --info 2>&1 | tee "${{ runner.temp }}/unit-tests.log"
+          test_exit_code=${PIPESTATUS[0]}
+          echo "Unit test Gradle exit code: ${test_exit_code}" | tee -a "${{ runner.temp }}/unit-tests.log"
+          exit "${test_exit_code}"
+
+      # Run lint even if the unit-test process crashes. The test step's failure
+      # still keeps the overall job red, but this gives us both results at once.
       - name: Run Android lint
-        run: ./gradlew lintDebug
+        if: always()
+        run: ./gradlew lintDebug --stacktrace
 
       # Reads the lint XML report and prints every problem with its file, line, column,
       # rule and explanation. Also adds annotations on the exact lines and a summary page.
@@ -99,7 +122,7 @@ jobs:
           ./gradlew kspDebugKotlin --rerun
           echo "Schema files found:"
           ls -R app/schemas || echo "no app/schemas folder was created"
-          
+
       # Room writes its database schema files into app/schemas every time the app is built.
       # They must be committed, because the migration test reads them. If this build made new or
       # changed schema files, this step fails and the next step attaches them so you can commit them.
@@ -121,15 +144,20 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload reports
-        if: failure()
+      # Keep diagnostic output even when tests or lint fail, so a worker crash
+      # does not leave us with only an incomplete HTML report.
+      - name: Upload test and lint diagnostics
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-and-lint-reports
+          name: test-and-lint-diagnostics
           path: |
+            ${{ runner.temp }}/unit-tests.log
+            ${{ runner.temp }}/hs_err_pid*.log
+            app/build/test-results/testDebugUnitTest/
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
             app/build/reports/lint-results-debug.xml
             app/build/reports/lint-results-debug.sarif
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 7

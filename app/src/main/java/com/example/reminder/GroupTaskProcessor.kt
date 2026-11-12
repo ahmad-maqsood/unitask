@@ -121,8 +121,8 @@ class GroupTaskProcessor(context: Context) {
             }
         }
         for (raw in state.loaded) {
-            // Tasks still being saved have a temporary id starting with "local-". Never set alarms
-            // or send notices for them: the real row arrives a moment later under a new id.
+            // New tasks now get their real id on the phone, so "local-" ids no longer occur for tasks.
+            // This stays as a safety net for any leftover temporary id: never set alarms for those.
             val snapshot = raw.copy(
                 tasks = raw.tasks.filterNot { it.id.startsWith("local-") },
                 allTasks = raw.allTasks.filterNot { it.id.startsWith("local-") }

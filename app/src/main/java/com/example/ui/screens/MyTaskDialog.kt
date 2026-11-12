@@ -211,15 +211,18 @@ fun MyTaskDialog(
                     )
                     Button(
                         onClick = {
+                            val dueMillis = selectedDueDateMillis
+                            val hour = dueHour
+                            val minute = dueMinute
                             if (title.isBlank()) {
                                 titleError = true
-                            } else if (selectedDueDateMillis != null && dueHour != null && dueMinute != null) {
+                            } else if (dueMillis != null && hour != null && minute != null) {
                                 onSave(
                                     title.trim(),
                                     buildDescriptionWithChecklist(description, checklist).trim(),
-                                    selectedDueDateMillis!!,
-                                    dueHour!!,
-                                    dueMinute!!,
+                                    dueMillis,
+                                    hour,
+                                    minute,
                                     priorityForRingAlarm(ringAlarm, taskToEdit?.priority),
                                     reminderOptions,
                                     repeatRule,
@@ -438,9 +441,10 @@ fun MyTaskDialog(
                                         tint = if (isDateMissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                     )
                                     Column {
-                                        if (selectedDueDateMillis != null) {
+                                        val shownDueMillis = selectedDueDateMillis
+                                        if (shownDueMillis != null) {
                                             ShrinkToFitText(
-                                                text = DateFormats.fullDate(selectedDueDateMillis!!),
+                                                text = DateFormats.fullDate(shownDueMillis),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.Medium,
                                                 minFontSize = 9.sp
@@ -479,8 +483,10 @@ fun MyTaskDialog(
 
                         // Time selector
                         val isTimeMissing = dueHour == null || dueMinute == null
-                        val timeStr = if (!isTimeMissing) {
-                            TimeFormatter.format12Hour(dueHour!!, dueMinute!!)
+                        val shownHour = dueHour
+                        val shownMinute = dueMinute
+                        val timeStr = if (shownHour != null && shownMinute != null) {
+                            TimeFormatter.format12Hour(shownHour, shownMinute)
                         } else null
 
                         OutlinedCard(

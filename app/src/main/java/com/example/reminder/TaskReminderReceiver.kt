@@ -25,6 +25,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.ui.screens.groupTaskItemId
 import com.example.util.AuthStorage
+import com.example.util.CompletionLog
 import com.example.util.HighPriorityAlarm
 import com.example.util.NotificationSound
 import com.example.util.currentSupabaseUid
@@ -94,7 +95,12 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = AppDatabase.getDatabase(context)
-                        db.taskDao().updateStatusAndCompletedAt(taskId, TaskStatus.COMPLETED, System.currentTimeMillis())
+                        val doneAt = System.currentTimeMillis()
+                        // Progress history: log the tick once, before the database write.
+                        if (db.taskDao().getTaskById(taskId)?.status != TaskStatus.COMPLETED) {
+                            CompletionLog.record(context, taskId, doneAt)
+                        }
+                        db.taskDao().updateStatusAndCompletedAt(taskId, TaskStatus.COMPLETED, doneAt)
                         com.example.widget.UniTaskWidget.refresh(context)
                         ReminderScheduler(context).cancelReminder(taskId)
                         SnoozeStore.clear(context, taskId, cancelAlarm = true)

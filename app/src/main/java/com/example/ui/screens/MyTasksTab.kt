@@ -47,6 +47,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -134,7 +135,9 @@ fun MyTasksTab(
         }
     }
 
-    val sections = remember(tasks) { groupTasks(tasks) }
+    // Re-sorted when the minute changes, so a task moves to Overdue (or Today) on its own.
+    val now by rememberMinuteClock()
+    val sections by remember(tasks) { derivedStateOf { groupTasks(tasks, now) } }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),

@@ -76,8 +76,9 @@ class DriveBackupViewModel(
     private var pendingBackupAfterConsent: Boolean = false
 
     private val tokenProvider: suspend (forceRefresh: Boolean) -> String = { forceRefresh ->
-        if (forceRefresh && lastToken != null) {
-            auth.clearToken(lastToken!!)
+        val staleToken = lastToken
+        if (forceRefresh && staleToken != null) {
+            auth.clearToken(staleToken)
             lastToken = null
         }
         when (val res = auth.authorize()) {

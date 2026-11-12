@@ -6,6 +6,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import java.io.File
 /**
  * Which sound UniTask alerts use.
@@ -95,7 +96,7 @@ object NotificationSound {
                 uri,
                 android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("UniTask", "Could not keep access to the chosen sound file", e) }
         prefs(context).edit()
             .putString(KEY_PHONE_URI, uri.toString())
             .putString(KEY_CHOICE, CHOICE_PHONE)
@@ -146,7 +147,7 @@ object NotificationSound {
                 .map { it.id }
                 .filter { (it == baseId || it.startsWith(baseId + "_")) && it != keep }
                 .forEach { manager.deleteNotificationChannel(it) }
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("UniTask", "Could not remove old notification channels", e) }
     }
 
     fun audioAttributes(): AudioAttributes =

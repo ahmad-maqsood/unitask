@@ -13,6 +13,10 @@ object DateFormats {
     private fun format(pattern: String, millis: Long): String =
         SimpleDateFormat(pattern, Locale.getDefault()).format(Date(millis))
 
+    /** Same as [format] but always with English digits and names, for keys and file names. */
+    private fun formatUs(pattern: String, millis: Long): String =
+        SimpleDateFormat(pattern, Locale.US).format(Date(millis))
+
     /** Mon, Nov 4, 2026 */
     fun fullDate(millis: Long) = format("EEE, MMM d, yyyy", millis)
 
@@ -48,6 +52,18 @@ object DateFormats {
 
     /** Mon, 4 Nov (day first) */
     fun dayFirstDate(millis: Long) = format("EEE, d MMM", millis)
+
+    /** 4 Nov (day first, no weekday) */
+    fun dayMonth(millis: Long) = format("d MMM", millis)
+
+    /** 2026-11-04. Always digits and the same in every language, so it is safe as a lookup key. */
+    fun dayKey(millis: Long) = formatUs("yyyy-MM-dd", millis)
+
+    /** 20261104. For file names. */
+    fun fileDate(millis: Long) = formatUs("yyyyMMdd", millis)
+
+    /** 20261104-2130. For file names. */
+    fun fileDateTime(millis: Long) = formatUs("yyyyMMdd-HHmm", millis)
 
     /** Mon, 4 Nov 9:30 AM (day first) */
     fun dayFirstDateClock(millis: Long) = format("EEE, d MMM h:mm a", millis)

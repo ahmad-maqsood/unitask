@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import java.util.Locale
 
 enum class PhoneBrand {
@@ -138,7 +139,7 @@ object BackgroundAccess {
                 }
                 context.startActivity(intent)
                 return true
-            } catch (_: Exception) {}
+            } catch (e: Exception) { Log.d("UniTask", "Vendor settings screen not available: $pkg/$cls", e) }
         }
 
         // Fallback to app info page
@@ -148,7 +149,7 @@ object BackgroundAccess {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(fallbackIntent)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("UniTask", "Could not open the app info page", e) }
         return false
     }
 

@@ -2,6 +2,7 @@ package com.example.util
 
 import android.content.Context
 import com.example.data.local.LectureSlot
+import com.example.data.local.startOfLocalDay
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -66,11 +67,7 @@ object WeekParity {
         
     fun getMondayStartMillis(timeMillis: Long, timeZone: TimeZone = TimeZone.getDefault()): Long {
         val cal = Calendar.getInstance(timeZone).apply {
-            this.timeInMillis = timeMillis
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+            this.timeInMillis = startOfLocalDay(timeMillis, timeZone)
         }
         val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
         val daysSinceMonday = if (dayOfWeek == Calendar.SUNDAY) 6 else dayOfWeek - Calendar.MONDAY

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>UniTask - deadlines, timetable and notes for students</title>
 <meta name="description" content="UniTask is a free Android app that helps students keep track of courses, assignments, deadlines, class timetable and notes.">
 <style>
@@ -13,7 +14,8 @@
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .wrap { max-width:720px; margin:0 auto; padding:48px 16px 32px; }
-  h1 { font-size:2.2rem; margin:0 0 8px; }
+  h1 { font-size:2.2rem; margin:0 0 8px; display:flex; align-items:center; gap:14px; }
+  .logo { width:56px; height:56px; flex:none; }
   h2 { font-size:1.25rem; margin:32px 0 8px; }
   p { margin:0 0 12px; }
   .lead { font-size:1.15rem; color:var(--muted); }
@@ -29,7 +31,7 @@
 </head>
 <body>
 <main class="wrap">
-  <h1>UniTask</h1>
+  <h1><img class="logo" src="/favicon.svg" alt="" width="56" height="56">UniTask</h1>
   <p class="lead">A free Android app that helps students keep track of courses, assignments, deadlines, their class timetable and notes, all in one place.</p>
 
   <p style="margin-top:20px"><a class="btn" href="https://github.com/ahmad-maqsood/unitask/releases">Download for Android</a></p>

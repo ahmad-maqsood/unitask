@@ -17,6 +17,7 @@
         tools:ignore="BatteryLife" />
 
     <application
+        android:name=".UniTaskApp"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

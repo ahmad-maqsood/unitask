@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
+import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,7 +53,7 @@ object QrCodeUtil {
                     return username.trim() to code.trim()
                 }
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.d("UniTask", "QR text is not a UniTask link, trying plain text", e) }
 
         // Fallback: search regex for username and code in arbitrary text
         val uRegex = Regex("""(?:username|user|u)[=:\s]+([a-zA-Z0-9_]{3,30})""", RegexOption.IGNORE_CASE)

@@ -24,6 +24,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
 
     companion object {
+        /** Versions that were never released to users. Their data may be reset on upgrade. */
+        val PRE_RELEASE_VERSIONS = intArrayOf(1, 2)
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -146,8 +149,9 @@ abstract class AppDatabase : RoomDatabase() {
                     "unitask_database"
                 )
                     .addMigrations(*ALL_MIGRATIONS)
-                    // Only applies to pre-release versions (v1 and v2)
-                    .fallbackToDestructiveMigrationFrom(1, 2)
+                    // Only the pre-release versions may ever be wiped. AppDatabaseSafetyTest fails if a
+                    // released version is added here or if a migration is missing.
+                    .fallbackToDestructiveMigrationFrom(*PRE_RELEASE_VERSIONS)
                     .build()
                 INSTANCE = instance
                 instance

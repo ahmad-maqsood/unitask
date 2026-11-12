@@ -97,7 +97,7 @@ object AttachmentManager {
                 mimeType = mimeType
             )
         } catch (e: Exception) {
-            try { createdFile?.delete() } catch (_: Exception) {}
+            try { createdFile?.delete() } catch (e: Exception) { Log.w("UniTask", "Could not delete the partly copied attachment", e) }
             Log.e(TAG, "Failed to copy attachment: ${e.message}", e)
             null
         }

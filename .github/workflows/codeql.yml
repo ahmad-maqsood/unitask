@@ -59,6 +59,13 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
+      - name: Write Supabase settings (.env) from secrets
+        if: matrix.language == 'java-kotlin'
+        uses: ./.github/actions/write-env
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
+
       - name: Build the app so CodeQL can read it
         if: matrix.language == 'java-kotlin'
         run: ./gradlew compileDebugKotlin --no-daemon --no-build-cache

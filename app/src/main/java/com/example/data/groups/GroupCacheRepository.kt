@@ -173,7 +173,7 @@ class GroupCacheRepository(context: Context) {
             val existing = dao.getForUser(userId).associateBy { it.groupId }
             val changed = ArrayList<GroupCacheEntity>()
             for (snapshot in state.loaded) {
-                // "local-" tasks are still being saved on this phone and have no real id yet.
+                // Safety net: tasks now have real ids from the start, so "local-" ids should not occur.
                 val tasksJson = cacheJson.encodeToString(
                     snapshot.allTasks
                         .filterNot { it.id.startsWith("local-") }

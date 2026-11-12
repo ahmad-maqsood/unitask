@@ -138,8 +138,9 @@ class SearchViewModel(
                 val archivedCourseItems = archivedCourses.map { ArchivedItem(it, it.archivedSemester) }
                 val archivedTaskItems = tasks.filter {
                     !it.task.isDeleted && it.course != null && !it.course.isDeleted && it.course.archivedSemester.isNotBlank()
-                }.map {
-                    ArchivedItem(it, it.course!!.archivedSemester)
+                }.mapNotNull { item ->
+                    val course = item.course ?: return@mapNotNull null
+                    ArchivedItem(item, course.archivedSemester)
                 }
                 val archivedNoteItems = notes.filter {
                     !it.note.isDeleted && it.note.courseId in courseSemesterMap.keys

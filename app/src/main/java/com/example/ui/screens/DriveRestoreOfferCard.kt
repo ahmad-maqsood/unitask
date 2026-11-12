@@ -122,9 +122,10 @@ fun DriveRestoreOfferCard(
                 }
             }
 
-            if (!state.lastResultMessage.isNullOrBlank()) {
+            val resultMessage = state.lastResultMessage
+            if (!resultMessage.isNullOrBlank()) {
                 Text(
-                    text = state.lastResultMessage!!,
+                    text = resultMessage,
                     style = MaterialTheme.typography.bodySmall,
                     color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.testTag("drive_result_text")

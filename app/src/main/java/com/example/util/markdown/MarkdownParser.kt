@@ -379,7 +379,7 @@ fun parseInlines(text: String, depth: Int = 0): List<Inline> {
 
         // 2. Code span: `code`
         if (c == '`') {
-            if (cannotCloseFrom["`"] != null && cannotCloseFrom["`"]!! <= i) {
+            if ((cannotCloseFrom["`"] ?: Int.MAX_VALUE) <= i) {
                 plainBuffer.append(c)
                 i++
                 continue
@@ -401,7 +401,7 @@ fun parseInlines(text: String, depth: Int = 0): List<Inline> {
 
         // 3. Inline Image: ![alt](url) -> turned into Link
         if (c == '!' && i + 1 < len && text[i + 1] == '[') {
-            if (cannotCloseFrom["link"] != null && cannotCloseFrom["link"]!! <= i) {
+            if ((cannotCloseFrom["link"] ?: Int.MAX_VALUE) <= i) {
                 plainBuffer.append(c)
                 i++
                 continue
@@ -427,7 +427,7 @@ fun parseInlines(text: String, depth: Int = 0): List<Inline> {
 
         // 4. Link: [text](url)
         if (c == '[') {
-            if (cannotCloseFrom["link"] != null && cannotCloseFrom["link"]!! <= i) {
+            if ((cannotCloseFrom["link"] ?: Int.MAX_VALUE) <= i) {
                 plainBuffer.append(c)
                 i++
                 continue
@@ -529,7 +529,7 @@ private fun findClosingDelimiter(
     marker: String,
     cannotCloseFrom: MutableMap<String, Int>
 ): Int {
-    if (cannotCloseFrom[marker] != null && cannotCloseFrom[marker]!! <= openPos) {
+    if ((cannotCloseFrom[marker] ?: Int.MAX_VALUE) <= openPos) {
         return -1
     }
     val mLen = marker.length
@@ -573,7 +573,7 @@ private fun findClosingItalic(
     cannotCloseFrom: MutableMap<String, Int>
 ): Int {
     val key = markerChar.toString()
-    if (cannotCloseFrom[key] != null && cannotCloseFrom[key]!! <= openPos) {
+    if ((cannotCloseFrom[key] ?: Int.MAX_VALUE) <= openPos) {
         return -1
     }
     if (openPos + 1 >= text.length || text[openPos + 1].isWhitespace() || text[openPos + 1] == markerChar) {

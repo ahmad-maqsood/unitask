@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import com.example.util.runLogged
 import android.app.Activity
@@ -104,7 +105,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
-private const val REPORT_FORM_URL =
+internal const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
 private const val FEATURE_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSc1G4_iMtG3hcoowIswyG9VNq21P11Gqy5MKMRaXI0OXn6RZA/viewform?usp=pp_url&entry.335656724="
@@ -750,14 +751,14 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var selected by remember { mutableStateOf(NotificationSound.choice(context)) }
     val player = remember { arrayOfNulls<Ringtone>(1) }
-    DisposableEffect(Unit) { onDispose { try { player[0]?.stop() } catch (_: Exception) {} } }
+    DisposableEffect(Unit) { onDispose { try { player[0]?.stop() } catch (e: Exception) { Log.w("UniTask", "Could not stop the sound preview", e) } } }
 
     fun preview(uri: Uri?) {
         try {
             player[0]?.stop()
             val target = uri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             player[0] = RingtoneManager.getRingtone(context, target)?.also { it.play() }
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("UniTask", "Could not play the sound preview", e) }
     }
 
     val pickLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -822,7 +823,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, it)
                             }
                         }
-                        try { pickLauncher.launch(intent) } catch (_: Exception) {}
+                        try { pickLauncher.launch(intent) } catch (e: Exception) { Log.w("UniTask", "Could not open the sound picker", e) }
                     },
                     onPlay = if (selected == NotificationSound.CHOICE_PHONE) {
                         { preview(NotificationSound.phoneUri(context)) }

@@ -112,6 +112,28 @@ class GroupDeadlinesTest {
     }
 
     @Test
+    fun aTaskMovesFromTodayToOverdueWhenTheTimePasses() {
+        val task = createTask(1L, "Lab report", 2026, Calendar.OCTOBER, 28, 15, 0)
+        val before = createCalendar(2026, Calendar.OCTOBER, 28, 14, 59).timeInMillis
+        val after = createCalendar(2026, Calendar.OCTOBER, 28, 15, 1).timeInMillis
+
+        assertEquals(1, groupDeadlines(listOf(task), before).today.size)
+        assertEquals(0, groupDeadlines(listOf(task), before).overdue.size)
+        assertEquals(0, groupDeadlines(listOf(task), after).today.size)
+        assertEquals(1, groupDeadlines(listOf(task), after).overdue.size)
+    }
+
+    @Test
+    fun aTaskMovesFromTomorrowToTodayAtMidnight() {
+        val task = createTask(1L, "Essay", 2026, Calendar.OCTOBER, 29, 12, 0)
+        val lateTonight = createCalendar(2026, Calendar.OCTOBER, 28, 23, 59).timeInMillis
+        val afterMidnight = createCalendar(2026, Calendar.OCTOBER, 29, 0, 1).timeInMillis
+
+        assertEquals(1, groupDeadlines(listOf(task), lateTonight).tomorrow.size)
+        assertEquals(1, groupDeadlines(listOf(task), afterMidnight).today.size)
+    }
+
+    @Test
     fun testEmptyTaskListReturnsEmptySections() {
         val nowMillis = createCalendar(2026, Calendar.OCTOBER, 28, 12, 0).timeInMillis
         val sections = groupDeadlines(emptyList(), nowMillis)

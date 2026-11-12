@@ -3,6 +3,7 @@ package com.example.util
 import android.content.Context
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
@@ -240,6 +241,16 @@ object LocalBackupManager {
                 val sessionArray = JSONArray()
                 studySessions.forEach { sessionArray.put(TimerHistoryStore.sessionToJson(it)) }
                 data.put("timerSessions", sessionArray)
+            }
+
+            // Progress history: when tasks were ticked, so the streak and weekly bars survive a
+            // restore. Only the times are saved (task numbers change on another phone). The key is
+            // left out when there is none.
+            val completionTimes = CompletionLog.entries(context).map { it.completedAt }.distinct()
+            if (completionTimes.isNotEmpty()) {
+                val completionArray = JSONArray()
+                completionTimes.forEach { completionArray.put(it) }
+                data.put("completionLog", completionArray)
             }
 
             var exportedImagesCount = 0
@@ -850,7 +861,7 @@ object LocalBackupManager {
                     if (!downloaded || !destFile.exists() || destFile.length() != fileSize || destFile.length() > MAX_ATTACHMENT_BYTES) {
                         try {
                             if (destFile.exists()) destFile.delete()
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) { Log.w("UniTask", "Could not delete the partly downloaded attachment ${destFile.name}", e) }
                         skippedAttachments++
                         continue
                     }
@@ -894,6 +905,17 @@ object LocalBackupManager {
             TimerHistoryStore.get(context).addAll(parsed)
         } else {
             0
+        }
+
+        // ---- progress history (merged: ticks already on this phone are kept)
+        val completionArray = data.optJSONArray("completionLog")
+        if (completionArray != null) {
+            val times = ArrayList<Long>()
+            for (i in 0 until minOf(completionArray.length(), CompletionLog.MAX_ITEMS)) {
+                val time = completionArray.optLong(i, 0L)
+                if (time > 0L) times.add(time)
+            }
+            CompletionLog.restoreTimes(context, times)
         }
 
         // Data is safe in Room now: put alarms back.

@@ -27,6 +27,7 @@ import com.example.data.local.isMyTasksCourse
 import com.example.data.repository.AppRepository
 import com.example.data.groups.GroupCacheRepository
 import com.example.util.AuthStorage
+import com.example.util.minuteClock
 import com.example.util.runLogged
 import android.content.Context
 import android.net.ConnectivityManager
@@ -89,6 +90,8 @@ import android.net.Uri
 import com.example.data.repository.NoteRepository
 import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
+import com.example.util.crash.CrashReport
+import com.example.util.crash.CrashReporter
 import com.example.util.NoteShare
 import com.example.util.normalizeCourseCode
 import com.example.util.resetGroupStateOnAccountSwitch
@@ -275,7 +278,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         networkCallback?.let { cb ->
             val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            try { cm?.unregisterNetworkCallback(cb) } catch (_: Exception) { }
+            try { cm?.unregisterNetworkCallback(cb) } catch (e: Exception) { Log.w("UniTask", "Could not unregister the network callback", e) }
         }
     }
 
@@ -552,33 +555,60 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun openMarkdownFile(uri: Uri, requireTextFileName: Boolean = false) {
         _markdownViewerState.value = MarkdownViewerState.Loading
         viewModelScope.launch {
-            val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
-            if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
-                _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
-                return@launch
-            }
-            when (result) {
-                is MarkdownReadResult.Success -> {
-                    _markdownViewerState.value = MarkdownViewerState.Content(
-                        displayName = name,
-                        text = result.text
-                    )
+            // The file comes from another app. Any unexpected failure shows an error instead of
+            // crashing the app or leaving the viewer on the loading spinner.
+            try {
+                val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
+                if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
+                    _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
+                    return@launch
                 }
-                is MarkdownReadResult.TooLarge -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                when (result) {
+                    is MarkdownReadResult.Success -> {
+                        _markdownViewerState.value = MarkdownViewerState.Content(
+                            displayName = name,
+                            text = result.text
+                        )
+                    }
+                    is MarkdownReadResult.TooLarge -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                    }
+                    is MarkdownReadResult.Binary -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
+                    }
+                    is MarkdownReadResult.Unreadable -> {
+                        _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
+                    }
                 }
-                is MarkdownReadResult.Binary -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
-                }
-                is MarkdownReadResult.Unreadable -> {
-                    _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
-                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("UniTask", "Opening a Markdown file failed", e)
+                _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
             }
         }
     }
 
     fun closeMarkdownViewer() {
         _markdownViewerState.value = null
+    }
+
+    // Set when the last run ended in an unexpected crash that the person has not seen yet.
+    private val _crashReport = MutableStateFlow<CrashReport?>(null)
+    val crashReport: StateFlow<CrashReport?> = _crashReport.asStateFlow()
+
+    init {
+        // Reads a small file, so it runs off the main thread.
+        viewModelScope.launch(Dispatchers.IO) {
+            _crashReport.value = CrashReporter.loadUnseen(getApplication())
+        }
+    }
+
+    fun dismissCrashReport() {
+        _crashReport.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            CrashReporter.markSeen(getApplication())
+        }
     }
 
     suspend fun saveMarkdownToNotes(displayName: String, text: String): Long = withContext(Dispatchers.IO) {
@@ -759,18 +789,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tasks.count { it.task.status == TaskStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     // Pending tasks due later today (same rule as the "Due Today" section of the Deadlines list).
-    val dueTodayCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
-        groupDeadlines(tasks).today.size
+    // The clock makes the counts follow the time too, not only changes to the tasks.
+    val dueTodayCount: StateFlow<Int> = combine(allDeadlineTasks, minuteClock()) { tasks, now ->
+        groupDeadlines(tasks, now).today.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // Pending tasks whose deadline has already passed. This is what the Deadlines tab badge shows.
-    val overdueCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
-        groupDeadlines(tasks).overdue.size
+    val overdueCount: StateFlow<Int> = combine(allDeadlineTasks, minuteClock()) { tasks, now ->
+        groupDeadlines(tasks, now).overdue.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // The same for personal tasks, for the My tasks tab badge.
-    val myTasksOverdueCount: StateFlow<Int> = myTasks.map { list ->
-        groupDeadlines(list).overdue.size
+    val myTasksOverdueCount: StateFlow<Int> = combine(myTasks, minuteClock()) { list, now ->
+        groupDeadlines(list, now).overdue.size
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // Actions

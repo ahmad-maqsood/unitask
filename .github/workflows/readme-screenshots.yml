@@ -56,6 +56,12 @@ jobs:
           keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
           fi
 
+      - name: Write Supabase settings (.env) from secrets
+        uses: ./.github/actions/write-env
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
+
       - name: Build debug app and screenshot tests before emulator startup
         run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
 

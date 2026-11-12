@@ -6,8 +6,56 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 8
+    # Libraries that must move together are grouped, so you get one pull request per family
+    # instead of many small ones, and one test run covers the whole family. Dependabot uses the
+    # FIRST group that matches, so the specific groups come before the catch-all at the end.
+    # Major (big) updates are never grouped: each arrives alone so it can be tested on its own.
     groups:
+      kotlin-and-ksp:
+        # The KSP version has to match the Kotlin version, so they are updated together.
+        patterns:
+          # "kotlin.*" and "kotlin:*" on purpose: they do not match the separate kotlinx libraries.
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlin.*"
+          - "com.google.devtools.ksp*"
+        update-types:
+          - "minor"
+          - "patch"
+      compose:
+        patterns:
+          - "androidx.compose*"
+        update-types:
+          - "minor"
+          - "patch"
+      room:
+        patterns:
+          - "androidx.room*"
+        update-types:
+          - "minor"
+          - "patch"
+      supabase-and-ktor:
+        patterns:
+          - "io.github.jan-tennert.supabase*"
+          - "io.ktor*"
+        update-types:
+          - "minor"
+          - "patch"
+      camerax:
+        patterns:
+          - "androidx.camera*"
+        update-types:
+          - "minor"
+          - "patch"
+      testing:
+        patterns:
+          - "junit*"
+          - "org.robolectric*"
+          - "androidx.test*"
+          - "org.jetbrains.kotlinx:kotlinx-coroutines-test"
+        update-types:
+          - "minor"
+          - "patch"
       gradle-minor-and-patch:
         patterns:
           - "*"

@@ -217,6 +217,7 @@ fun GroupChatPanel(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .testTag("group_chat_panel")
             .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
     ) {
         if (messages.size >= 5 || isSearchActive) {

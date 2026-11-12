@@ -159,6 +159,9 @@ abstract class AppDatabase : RoomDatabase() {
         
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                // Look again inside the lock: another thread may have built the database while this
+                // one was waiting. Two copies of the same database do not notify each other of changes.
+                INSTANCE?.let { return@synchronized it }
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,

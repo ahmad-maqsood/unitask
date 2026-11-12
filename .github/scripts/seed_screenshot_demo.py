@@ -23,16 +23,23 @@ MEMBER_DISPLAY_NAME = "Zainab Fatima"
 
 
 def project_config():
-    source = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+    """Read Supabase settings from env vars, falling back to the git-ignored .env file."""
     values = {}
+    env_file = ROOT / ".env"
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, _, value = line.partition("=")
+            values[name.strip()] = value.strip().strip('"').strip("'")
     for key in ("SUPABASE_URL", "SUPABASE_ANON_KEY"):
-        match = re.search(
-            r'buildConfigField\("String",\s*"' + key + r'",\s*"\\"([^"]+)\\""',
-            source,
-        )
-        if not match:
-            raise RuntimeError(f"Could not read {key} from app/build.gradle.kts")
-        values[key] = match.group(1)
+        value = os.environ.get(key) or values.get(key)
+        if not value:
+            raise RuntimeError(
+                f"Could not read {key}: set it as an env var or in {env_file}"
+            )
+        values[key] = value
     return values["SUPABASE_URL"].rstrip("/"), values["SUPABASE_ANON_KEY"]
 
 

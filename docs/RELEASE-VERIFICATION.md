@@ -6,12 +6,12 @@ These records help verify that an APK's SHA-256 digest is linked to a build perf
 
 ## Verify an APK online
 
-1. Download the APK from the official [UniTask GitHub Releases](https://github.com/ahmad-maqsood/unitask/releases) page.
+1. Download the APK from the official [UniTask GitHub Releases](https://github.com/CondaLabs/unitask/releases) page.
 2. Install the [GitHub CLI](https://cli.github.com/).
 3. Run the following command, replacing the path with the downloaded APK:
 
 ```bash
-gh attestation verify UniTask-VERSION.apk --repo ahmad-maqsood/unitask --signer-workflow ahmad-maqsood/unitask/.github/workflows/release-apk.yml
+gh attestation verify UniTask-VERSION.apk --repo CondaLabs/unitask --signer-workflow CondaLabs/unitask/.github/workflows/release-apk.yml
 ```
 
 A successful verification means the attestation's signature, artifact digest, repository identity, and workflow identity passed GitHub CLI verification. A failed verification means you should not treat that APK as verified.
@@ -22,9 +22,9 @@ Each supported release also includes a file ending in `.intoto.jsonl`. To verify
 
 ```bash
 gh attestation verify UniTask-VERSION.apk \
-  --repo ahmad-maqsood/unitask \
+  --repo CondaLabs/unitask \
   --bundle UniTask-VERSION.apk.intoto.jsonl \
-  --signer-workflow ahmad-maqsood/unitask/.github/workflows/release-apk.yml
+  --signer-workflow CondaLabs/unitask/.github/workflows/release-apk.yml
 ```
 
 ## Important notes

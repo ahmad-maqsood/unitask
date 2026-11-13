@@ -77,7 +77,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Search", "Find tasks, notes, courses and settings with multi-word search. Archived items and these help guides can be included too.", "search", 76,
-            "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Turn on Include archived to find items from past semesters.\n5. Turn on Include app guides to search these help guides too. Tap a guide to open it."
+            "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Tap the settings icon in the search box to open Search options.\n5. Turn on Include archived to find items from past semesters.\n6. Turn on Include app guides to search these help guides too. Tap a guide to open it."
         ),
         AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "qr_code", 80,

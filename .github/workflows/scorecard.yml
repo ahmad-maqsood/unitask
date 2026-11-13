@@ -41,10 +41,90 @@ jobs:
           sarif_file: scorecard-results.sarif
           category: openssf-scorecard
 
-      - name: Upload Scorecard results artifact
+      - name: Upload Scorecard SARIF artifact
         if: always() && hashFiles('scorecard-results.sarif') != ''
         uses: actions/upload-artifact@v7
         with:
-          name: openssf-scorecard-results
+          name: openssf-scorecard-sarif
           path: scorecard-results.sarif
+          retention-days: 30
+
+  reports:
+    name: Generate downloadable Scorecard reports
+    needs: analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download SARIF report
+        uses: actions/download-artifact@v4
+        with:
+          name: openssf-scorecard-sarif
+          path: reports
+
+      # Generate native Scorecard JSON using the same action version as the
+      # publishing scan. Publishing is disabled here to avoid a second publish.
+      - name: Generate Scorecard JSON report
+        uses: ossf/scorecard-action@v2.5.0
+        with:
+          results_file: reports/scorecard-results.json
+          results_format: json
+          publish_results: false
+
+      - name: Generate readable HTML report
+        run: |
+          python3 - <<'PY'
+          import html
+          import json
+          from pathlib import Path
+
+          json_path = Path("reports/scorecard-results.json")
+          data = json.loads(json_path.read_text(encoding="utf-8"))
+          formatted = json.dumps(data, indent=2, ensure_ascii=False)
+          safe_json = html.escape(formatted)
+
+          page = f"""<!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>OpenSSF Scorecard Report - UniTask</title>
+            <style>
+              :root {{ color-scheme: light dark; }}
+              body {{ max-width: 1100px; margin: 40px auto; padding: 0 20px;
+                     font: 16px/1.6 system-ui, sans-serif; }}
+              h1 {{ line-height: 1.2; }}
+              p {{ opacity: .8; }}
+              pre {{ overflow: auto; padding: 20px; border-radius: 10px;
+                     background: #8882; font: 13px/1.55 ui-monospace, monospace;
+                     white-space: pre-wrap; overflow-wrap: anywhere; }}
+              a {{ color: inherit; }}
+            </style>
+          </head>
+          <body>
+            <h1>OpenSSF Scorecard Report</h1>
+            <p>Repository: <a href="https://github.com/ahmad-maqsood/unitask">ahmad-maqsood/unitask</a></p>
+            <p>This report contains the complete Scorecard JSON results in a readable,
+            formatted view. Use the JSON file for automated analysis and the SARIF file
+            for GitHub Code Scanning.</p>
+            <pre>{safe_json}</pre>
+          </body>
+          </html>
+          """
+          Path("reports/scorecard-results.html").write_text(page, encoding="utf-8")
+          PY
+
+      - name: Upload all Scorecard reports
+        if: always() && hashFiles('reports/*') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: openssf-scorecard-reports
+          path: reports/
+          if-no-files-found: warn
           retention-days: 30

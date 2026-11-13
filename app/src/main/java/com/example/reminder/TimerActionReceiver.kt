@@ -16,7 +16,13 @@ class TimerActionReceiver : BroadcastReceiver() {
             ACTION_PAUSE -> TimerController.get(context).pause()
             ACTION_RESUME -> TimerController.get(context).start()
             ACTION_STOP -> TimerController.get(context).reset()
-            ACTION_STOP_COUNTDOWN -> CountdownNotifier.cancelFinished(context)
+            ACTION_STOP_COUNTDOWN -> {
+                CountdownNotifier.cancelFinished(context)
+                // Stop also means "do not start the next Pomodoro round for me".
+                TimerController.get(context).cancelAutoStart()
+            }
+            // Alarms can arrive a moment early; tolerance lets the round start cleanly.
+            ACTION_AUTO_START_NEXT -> TimerController.get(context).autoStartIfDue(toleranceMillis = 2000L)
             ACTION_SILENCE_COUNTDOWN -> {
                 // The user may already have opened or dismissed it during the 60 s of ringing.
                 if (!CountdownNotifier.isFinishedNotificationShowing(context)) return
@@ -39,5 +45,6 @@ class TimerActionReceiver : BroadcastReceiver() {
         const val ACTION_STOP = "com.example.timer.action.STOP"
         const val ACTION_STOP_COUNTDOWN = "com.example.timer.action.STOP_COUNTDOWN"
         const val ACTION_SILENCE_COUNTDOWN = "com.example.timer.action.SILENCE_COUNTDOWN"
+        const val ACTION_AUTO_START_NEXT = "com.example.timer.action.AUTO_START_NEXT"
     }
 }

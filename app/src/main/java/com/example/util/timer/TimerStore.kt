@@ -133,6 +133,58 @@ class TimerStore(context: Context) {
         }
     }
 
+    /** How a Pomodoro round ends: ring or vibrate only, and whether the next round starts by itself. */
+    fun pomodoroAlertSettings(): PomodoroAlertSettings {
+        return try {
+            PomodoroAlertSettings(
+                ringLikeAlarm = prefs.getBoolean(KEY_POMODORO_RING_ALARM, true),
+                autoStartNext = prefs.getBoolean(KEY_POMODORO_AUTO_START, false),
+                stopAfterLongBreak = prefs.getBoolean(KEY_POMODORO_STOP_AFTER_LONG, false)
+            )
+        } catch (_: Exception) {
+            PomodoroAlertSettings()
+        }
+    }
+
+    fun setPomodoroAlertSettings(settings: PomodoroAlertSettings) {
+        try {
+            prefs.edit()
+                .putBoolean(KEY_POMODORO_RING_ALARM, settings.ringLikeAlarm)
+                .putBoolean(KEY_POMODORO_AUTO_START, settings.autoStartNext)
+                .putBoolean(KEY_POMODORO_STOP_AFTER_LONG, settings.stopAfterLongBreak)
+                .apply()
+        } catch (_: Exception) {
+            // Never throw on preference save failures.
+        }
+    }
+
+    /** When the next Pomodoro round is due to start by itself, or null when none is waiting. */
+    fun autoStartAtMillis(): Long? {
+        return try {
+            if (prefs.contains(KEY_AUTO_START_AT_MILLIS)) {
+                prefs.getLong(KEY_AUTO_START_AT_MILLIS, 0L)
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun setAutoStartAtMillis(value: Long?) {
+        try {
+            val editor = prefs.edit()
+            if (value != null) {
+                editor.putLong(KEY_AUTO_START_AT_MILLIS, value)
+            } else {
+                editor.remove(KEY_AUTO_START_AT_MILLIS)
+            }
+            editor.apply()
+        } catch (_: Exception) {
+            // Never throw on preference save failures.
+        }
+    }
+
     /** When the current run was first started, or null when no run is in progress. */
     fun sessionStartMillis(): Long? {
         return try {
@@ -191,6 +243,10 @@ class TimerStore(context: Context) {
         private const val KEY_POMODORO_SHORT = "pomodoro_short_break_minutes"
         private const val KEY_POMODORO_LONG = "pomodoro_long_break_minutes"
         private const val KEY_POMODORO_ROUNDS = "pomodoro_rounds_before_long_break"
+        private const val KEY_POMODORO_RING_ALARM = "pomodoro_ring_like_alarm"
+        private const val KEY_POMODORO_AUTO_START = "pomodoro_auto_start_next"
+        private const val KEY_POMODORO_STOP_AFTER_LONG = "pomodoro_stop_after_long_break"
+        private const val KEY_AUTO_START_AT_MILLIS = "pomodoro_auto_start_at_millis"
         private const val DEFAULT_COUNTDOWN_MINUTES = 25
     }
 }

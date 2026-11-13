@@ -134,4 +134,54 @@ class PomodoroLogicTest {
         assertEquals(PomodoroSettings.MIN_MINUTES, s.longBreakMinutes)
         assertEquals(PomodoroSettings.MAX_ROUNDS, s.roundsBeforeLongBreak)
     }
+
+    @Test
+    fun alertSettingsDefaultToRingingWithNoAutoStart() {
+        val a = PomodoroAlertSettings()
+        assertTrue(a.ringLikeAlarm)
+        assertFalse(a.autoStartNext)
+        assertFalse(a.stopAfterLongBreak)
+    }
+
+    @Test
+    fun autoStartFollowsEveryRoundOnlyWhenTurnedOn() {
+        val off = PomodoroAlertSettings(autoStartNext = false)
+        val on = PomodoroAlertSettings(autoStartNext = true)
+        PomodoroPhase.values().forEach { phase ->
+            assertFalse(PomodoroLogic.shouldAutoStart(phase, off))
+            assertTrue(PomodoroLogic.shouldAutoStart(phase, on))
+        }
+    }
+
+    @Test
+    fun stopAfterLongBreakOnlyHoldsBackTheCycleRestart() {
+        val a = PomodoroAlertSettings(autoStartNext = true, stopAfterLongBreak = true)
+        assertTrue(PomodoroLogic.shouldAutoStart(PomodoroPhase.FOCUS, a))
+        assertTrue(PomodoroLogic.shouldAutoStart(PomodoroPhase.SHORT_BREAK, a))
+        assertFalse(PomodoroLogic.shouldAutoStart(PomodoroPhase.LONG_BREAK, a))
+        // Without auto-start the extra option changes nothing.
+        val offToo = PomodoroAlertSettings(autoStartNext = false, stopAfterLongBreak = true)
+        assertFalse(PomodoroLogic.shouldAutoStart(PomodoroPhase.FOCUS, offToo))
+    }
+
+    @Test
+    fun autoStartLabelNamesTheNextRound() {
+        val focus = PomodoroLogic.enable(TimerState(), settings)
+        assertEquals("Short break starts in 7s", PomodoroLogic.autoStartLabel(focus, settings, 7))
+
+        val lastFocus = focus.copy(pomodoroRound = settings.roundsBeforeLongBreak)
+        assertEquals("Long break starts in 10s", PomodoroLogic.autoStartLabel(lastFocus, settings, 10))
+
+        val shortBreak = focus.copy(pomodoroPhase = PomodoroPhase.SHORT_BREAK)
+        assertEquals("Focus starts in 1s", PomodoroLogic.autoStartLabel(shortBreak, settings, 1))
+        // Never shows a negative number.
+        assertEquals("Focus starts in 0s", PomodoroLogic.autoStartLabel(shortBreak, settings, -3))
+        // Not a Pomodoro timer: nothing to say.
+        assertNull(PomodoroLogic.autoStartLabel(TimerState(), settings, 5))
+    }
+
+    @Test
+    fun autoStartWaitsTenSeconds() {
+        assertEquals(10_000L, PomodoroLogic.AUTO_START_DELAY_MILLIS)
+    }
 }

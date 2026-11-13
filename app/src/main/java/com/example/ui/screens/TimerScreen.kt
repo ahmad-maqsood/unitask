@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +60,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,6 +91,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.AppTip
+import com.example.util.timer.PomodoroAlertSettings
 import com.example.util.timer.PomodoroLogic
 import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.PomodoroSettings
@@ -118,6 +121,9 @@ fun TimerScreen(
     var showHistory by rememberSaveable { mutableStateOf(false) }
     var showPomodoroDialog by rememberSaveable { mutableStateOf(false) }
     var pomodoroSettings by remember { mutableStateOf(controller.pomodoroSettings()) }
+    var showAlertsDialog by rememberSaveable { mutableStateOf(false) }
+    var alertSettings by remember { mutableStateOf(controller.pomodoroAlertSettings()) }
+    val autoStartAt by controller.autoStartAtMillis.collectAsStateWithLifecycle()
     val sessions by controller.sessions.collectAsStateWithLifecycle()
 
     // When fullscreen, Back exits full screen; when not fullscreen, Back closes the screen.
@@ -182,6 +188,17 @@ fun TimerScreen(
     val isPaused = TimerLogic.isPaused(state)
     val isFinished = TimerLogic.isFinished(state, now)
 
+    // Pomodoro auto-start: seconds until the next round starts by itself (null when none is waiting).
+    val autoStartSecondsLeft by rememberAutoStartSecondsLeft(autoStartAt, controller)
+    val autoStartText = autoStartSecondsLeft?.let {
+        PomodoroLogic.autoStartLabel(state, pomodoroSettings, it)
+    }
+    val cancelAutoStart = {
+        // Silence the "round done" alert too, then leave the next round for the user to start.
+        CountdownNotifier.cancelFinished(context)
+        controller.cancelAutoStart()
+    }
+
     val timeText = remember(state, now) {
         if (state.mode == TimerMode.COUNTDOWN) {
             TimerLogic.formatClock(TimerLogic.remainingMillis(state, now), roundUp = true)
@@ -242,7 +259,9 @@ fun TimerScreen(
                 isRunning = isRunning,
                 isPaused = isPaused,
                 isFinished = isFinished,
-                controller = controller
+                controller = controller,
+                autoStartText = autoStartText,
+                onCancelAutoStart = cancelAutoStart
             )
         }
     } else if (showHistory) {
@@ -277,6 +296,17 @@ fun TimerScreen(
                         }
                     },
                     actions = {
+                        if (state.pomodoroPhase != null) {
+                            IconButton(
+                                onClick = { showAlertsDialog = true },
+                                modifier = Modifier.testTag("timer_pomodoro_options_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "Pomodoro options"
+                                )
+                            }
+                        }
                         IconButton(
                             onClick = { showHistory = true },
                             modifier = Modifier.testTag("timer_history_button")
@@ -446,6 +476,15 @@ fun TimerScreen(
                     }
                 }
 
+                // Pomodoro: the next round is about to start by itself; Cancel keeps it for the user.
+                if (autoStartText != null) {
+                    AutoStartBanner(
+                        text = autoStartText,
+                        onCancel = cancelAutoStart,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
+
                 // Pomodoro: which round we are in, the lengths (tap to change) and a Skip button.
                 if (state.pomodoroPhase != null) {
                     Column(
@@ -597,6 +636,17 @@ fun TimerScreen(
         }
     }
 
+    if (showAlertsDialog) {
+        PomodoroOptionsDialog(
+            settings = alertSettings,
+            onChange = { updated ->
+                controller.setPomodoroAlertSettings(updated)
+                alertSettings = controller.pomodoroAlertSettings()
+            },
+            onDismiss = { showAlertsDialog = false }
+        )
+    }
+
     if (showPomodoroDialog) {
         PomodoroSettingsDialog(
             initial = pomodoroSettings,
@@ -746,6 +796,170 @@ fun TimerScreen(
             }
         )
     }
+}
+
+/**
+ * Options for how a Pomodoro round ends. Each switch applies at once, so they can be changed
+ * while a round is running. Kept here on the timer page, not in the main settings.
+ */
+@Composable
+private fun PomodoroOptionsDialog(
+    settings: PomodoroAlertSettings,
+    onChange: (PomodoroAlertSettings) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val seconds = PomodoroLogic.AUTO_START_DELAY_MILLIS / 1000L
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pomodoro options") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                PomodoroSwitchRow(
+                    title = "Ring like an alarm",
+                    description = if (settings.ringLikeAlarm) {
+                        "Rings and vibrates when a round ends. Turn off to vibrate only."
+                    } else {
+                        "Vibrates only, with no sound, when a round ends."
+                    },
+                    checked = settings.ringLikeAlarm,
+                    tag = "timer_option_ring",
+                    onCheckedChange = { onChange(settings.copy(ringLikeAlarm = it)) }
+                )
+                PomodoroSwitchRow(
+                    title = "Auto-start next round",
+                    description = "Starts the next break or focus round $seconds seconds after one ends.",
+                    checked = settings.autoStartNext,
+                    tag = "timer_option_auto_start",
+                    onCheckedChange = { onChange(settings.copy(autoStartNext = it)) }
+                )
+                PomodoroSwitchRow(
+                    title = "Stop after the long break",
+                    description = "Wait for you to start the next cycle instead of starting it automatically.",
+                    checked = settings.stopAfterLongBreak,
+                    enabled = settings.autoStartNext,
+                    tag = "timer_option_stop_after_long",
+                    onCheckedChange = { onChange(settings.copy(stopAfterLongBreak = it)) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("timer_options_done_button")
+            ) {
+                Text("Done")
+            }
+        }
+    )
+}
+
+/** One line of the options dialog: a title with a short explanation, and a switch. */
+@Composable
+private fun PomodoroSwitchRow(
+    title: String,
+    description: String,
+    checked: Boolean,
+    tag: String,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                }
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.6f)
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+            modifier = Modifier.testTag(tag)
+        )
+    }
+}
+
+/** "Short break starts in 7s" with a Cancel button, shown while the next round is about to start. */
+@Composable
+internal fun AutoStartBanner(
+    text: String,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = modifier
+            .widthIn(max = 420.dp)
+            .testTag("timer_auto_start_banner")
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.testTag("timer_auto_start_text")
+            )
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.testTag("timer_auto_start_cancel")
+            ) {
+                Text("Cancel")
+            }
+        }
+    }
+}
+
+/**
+ * Whole seconds until a waiting auto-start fires, or null when none is waiting. When the wait runs
+ * out while the screen is open it starts the round itself; the system alarm does the same when
+ * the app is closed, and whichever comes first wins.
+ */
+@Composable
+private fun rememberAutoStartSecondsLeft(
+    autoStartAt: Long?,
+    controller: TimerController
+): State<Int?> {
+    val secondsLeft = remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(autoStartAt) {
+        if (autoStartAt == null) {
+            secondsLeft.value = null
+            return@LaunchedEffect
+        }
+        while (true) {
+            val left = autoStartAt - controller.now()
+            if (left <= 0L) {
+                secondsLeft.value = null
+                controller.autoStartIfDue()
+                break
+            }
+            secondsLeft.value = ((left + 999L) / 1000L).toInt()
+            delay(250L)
+        }
+    }
+    return secondsLeft
 }
 
 /** Lets the user change the Pomodoro lengths and how many focus rounds come before the long break. */

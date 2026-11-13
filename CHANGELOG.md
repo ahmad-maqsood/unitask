@@ -2,6 +2,14 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Pomodoro options on the timer page (gear icon, Pomodoro mode only):
+  - Choose whether a finished round rings like an alarm or only vibrates.
+  - Start the next break or focus round automatically 10 seconds after one ends, even when the app is closed. A "starts in Ns" line with a Cancel button shows while it waits, in normal and full-screen view.
+  - Optionally wait for you after the long break instead of starting the next cycle.
+
 ## [4.2.0] - 12-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.2.0)
 

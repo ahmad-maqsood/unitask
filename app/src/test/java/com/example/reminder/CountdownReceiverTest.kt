@@ -7,6 +7,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import com.example.util.timer.PomodoroAlertSettings
+import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
 import com.example.util.timer.TimerMode
@@ -15,6 +17,7 @@ import com.example.util.timer.TimerStore
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -208,6 +211,143 @@ class CountdownReceiverTest {
         }
         TimerActionReceiver().onReceive(context, silence)
 
+        assertEquals(0, shadowNotificationManager.allNotifications.size)
+    }
+
+    // ---- Pomodoro: ring or vibrate only, and the auto-start note ----
+
+    /** Starts a Pomodoro focus round and lets it run out through the alarm receiver. */
+    private fun finishPomodoroFocusRound(controller: TimerController) {
+        controller.enablePomodoro() // 25 minute focus round
+        controller.start()
+        currentTime += 25 * 60_000L
+        CountdownReceiver().onReceive(context, Intent())
+    }
+
+    @Test
+    fun pomodoroRoundEndRingsLikeAnAlarmByDefault() {
+        val controller = TimerController.get(context)
+        finishPomodoroFocusRound(controller)
+
+        val notif = shadowNotificationManager.allNotifications.single()
+        assertEquals(CountdownNotifier.CHANNEL_ID, notif.channelId)
+        assertTrue(notif.flags and Notification.FLAG_INSISTENT != 0)
+        assertEquals("Focus session done", notif.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(
+            "You focused for 25 minutes. Time for a break.",
+            notif.extras.getString(Notification.EXTRA_TEXT)
+        )
+    }
+
+    @Test
+    fun pomodoroRoundEndOnlyVibratesWhenRingingIsTurnedOff() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(ringLikeAlarm = false))
+        finishPomodoroFocusRound(controller)
+
+        val notif = shadowNotificationManager.allNotifications.single()
+        assertEquals(CountdownNotifier.CHANNEL_ID_VIBRATE, notif.channelId)
+        assertNull(notif.sound)
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = nm.getNotificationChannel(CountdownNotifier.CHANNEL_ID_VIBRATE)
+        assertTrue(channel.shouldVibrate())
+        assertNull(channel.sound)
+        // One burst of vibration, not an alarm that repeats until it is silenced.
+        assertEquals(0, notif.flags and Notification.FLAG_INSISTENT)
+        assertEquals(1, notif.actions.size)
+    }
+
+    @Test
+    fun aPlainCountdownStillRingsWhateverThePomodoroOptionSays() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(ringLikeAlarm = false))
+        controller.setMode(TimerMode.COUNTDOWN)
+        controller.setCountdownMinutes(1)
+        controller.start()
+        currentTime = 61_000L
+
+        CountdownReceiver().onReceive(context, Intent())
+
+        val notif = shadowNotificationManager.allNotifications.single()
+        assertEquals(CountdownNotifier.CHANNEL_ID, notif.channelId)
+    }
+
+    @Test
+    fun aLateAlertStaysSilentEvenInVibrateOnlyMode() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(ringLikeAlarm = false))
+        controller.enablePomodoro()
+        controller.start()
+        currentTime += 25 * 60_000L + 180_000L // 3 minutes late
+
+        CountdownReceiver().onReceive(context, Intent())
+
+        val notif = shadowNotificationManager.allNotifications.single()
+        assertEquals(CountdownNotifier.CHANNEL_ID_SILENT, notif.channelId)
+    }
+
+    @Test
+    fun theAlertSaysTheNextRoundStartsByItselfWhenAutoStartIsOn() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(autoStartNext = true))
+        finishPomodoroFocusRound(controller)
+
+        val notif = shadowNotificationManager.allNotifications.single()
+        assertEquals(
+            "You focused for 25 minutes. Your break starts in 10 seconds.",
+            notif.extras.getString(Notification.EXTRA_TEXT)
+        )
+    }
+
+    @Test
+    fun autoStartAlarmStartsTheNextPomodoroRound() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(autoStartNext = true))
+        finishPomodoroFocusRound(controller)
+        assertTrue(controller.autoStartAtMillis.value != null)
+
+        currentTime += 10_000L
+        val autoStart = Intent(context, TimerActionReceiver::class.java).apply {
+            action = TimerActionReceiver.ACTION_AUTO_START_NEXT
+        }
+        TimerActionReceiver().onReceive(context, autoStart)
+
+        val s = controller.state.value
+        assertEquals(PomodoroPhase.SHORT_BREAK, s.pomodoroPhase)
+        assertTrue(TimerLogic.isRunning(s))
+        assertNull(controller.autoStartAtMillis.value)
+    }
+
+    @Test
+    fun autoStartAlarmDoesNothingAfterTheUserCancelledIt() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(autoStartNext = true))
+        finishPomodoroFocusRound(controller)
+
+        controller.cancelAutoStart()
+        currentTime += 10_000L
+        val autoStart = Intent(context, TimerActionReceiver::class.java).apply {
+            action = TimerActionReceiver.ACTION_AUTO_START_NEXT
+        }
+        TimerActionReceiver().onReceive(context, autoStart)
+
+        assertFalse(TimerLogic.isRunning(controller.state.value))
+        assertEquals(PomodoroPhase.FOCUS, controller.state.value.pomodoroPhase)
+    }
+
+    @Test
+    fun stopOnTheAlertAlsoCancelsAWaitingAutoStart() {
+        val controller = TimerController.get(context)
+        controller.setPomodoroAlertSettings(PomodoroAlertSettings(autoStartNext = true))
+        finishPomodoroFocusRound(controller)
+        assertTrue(controller.autoStartAtMillis.value != null)
+
+        val stop = Intent(context, TimerActionReceiver::class.java).apply {
+            action = TimerActionReceiver.ACTION_STOP_COUNTDOWN
+        }
+        TimerActionReceiver().onReceive(context, stop)
+
+        assertNull(controller.autoStartAtMillis.value)
         assertEquals(0, shadowNotificationManager.allNotifications.size)
     }
 }

@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
 import com.example.util.HighPriorityAlarm
+import com.example.util.timer.PomodoroLogic
 import com.example.util.timer.PomodoroPhase
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
@@ -34,6 +35,25 @@ object CountdownNotifier {
     const val EXTRA_TOTAL_MILLIS = "extra_countdown_total_millis"
     const val EXTRA_POMODORO_PHASE = "extra_countdown_pomodoro_phase"
     const val CHANNEL_ID_SILENT = "unitask_countdown_finished_silent_v1"
+    /** Pomodoro rounds when the user chose "vibrate only": no sound, one short burst of vibration. */
+    const val CHANNEL_ID_VIBRATE = "unitask_countdown_finished_vibrate_v1"
+
+    private fun ensureVibrateChannel(nm: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID_VIBRATE) == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID_VIBRATE,
+                "Pomodoro round ended (vibrate only)",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Vibrates, without sound, when a Pomodoro focus or break round ends."
+                enableVibration(true)
+                vibrationPattern = HighPriorityAlarm.VIBRATION_PATTERN
+                setSound(null, null)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
+            nm.createNotificationChannel(channel)
+        }
+    }
 
     private fun ensureChannel(nm: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
@@ -137,13 +157,27 @@ object CountdownNotifier {
 
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        val channelId = if (ring) {
-            ensureChannel(nm)
-            CHANNEL_ID
-        } else {
-            cancelSilenceAlarm(context)
-            ensureSilentChannel(nm)
-            CHANNEL_ID_SILENT
+        // Pomodoro only: the user can choose to vibrate instead of ringing when a round ends.
+        // The "ring" flag is false for a late alert, which is always silent whatever the choice.
+        val pomodoroAlerts = if (phase != null) TimerController.get(context).pomodoroAlertSettings() else null
+        val vibrateOnly = ring && pomodoroAlerts != null && !pomodoroAlerts.ringLikeAlarm
+        val autoStarting = phase != null && TimerController.get(context).autoStartAtMillis.value != null
+
+        val channelId = when {
+            !ring -> {
+                cancelSilenceAlarm(context)
+                ensureSilentChannel(nm)
+                CHANNEL_ID_SILENT
+            }
+            vibrateOnly -> {
+                cancelSilenceAlarm(context)
+                ensureVibrateChannel(nm)
+                CHANNEL_ID_VIBRATE
+            }
+            else -> {
+                ensureChannel(nm)
+                CHANNEL_ID
+            }
         }
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
@@ -173,9 +207,12 @@ object CountdownNotifier {
             phase.isBreak -> "Break over"
             else -> "Focus session done"
         }
+        val seconds = PomodoroLogic.AUTO_START_DELAY_MILLIS / 1000L
         val text = when {
             phase == null -> "Your $n minute countdown is done."
+            phase.isBreak && autoStarting -> "Your $n minute break is over. Focus starts in $seconds seconds."
             phase.isBreak -> "Your $n minute break is over. Ready to focus?"
+            autoStarting -> "You focused for $n minutes. Your break starts in $seconds seconds."
             else -> "You focused for $n minutes. Time for a break."
         }
 
@@ -190,7 +227,11 @@ object CountdownNotifier {
             .setDeleteIntent(stopPending)
             .addAction(R.drawable.ic_timer_stop, "Stop", stopPending)
 
-        if (ring) {
+        if (vibrateOnly) {
+            builder.setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setSound(null)
+                .setVibrate(HighPriorityAlarm.VIBRATION_PATTERN)
+        } else if (ring) {
             builder.setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)
                 .setVibrate(HighPriorityAlarm.VIBRATION_PATTERN)
@@ -202,7 +243,8 @@ object CountdownNotifier {
         }
 
         val notification = builder.build()
-        if (ring) {
+        // Vibrate only buzzes once; only the ringing alarm repeats until it is silenced.
+        if (ring && !vibrateOnly) {
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
             scheduleSilenceAlarm(context, totalMillis, phase)
         }

@@ -1,6 +1,7 @@
 package com.example.util.timer
 
 import android.content.Context
+import com.example.reminder.AutoStartAlarm
 import com.example.reminder.CountdownAlarm
 import com.example.reminder.TimerOngoingNotifier
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,17 @@ object NoCountdownAlarm : CountdownAlarmHook {
     override fun cancel() {}
 }
 
+/** The system alarm that starts the next Pomodoro round, so it also works with the app closed. */
+interface AutoStartAlarmHook {
+    fun schedule(triggerAtMillis: Long)
+    fun cancel()
+}
+
+object NoAutoStartAlarm : AutoStartAlarmHook {
+    override fun schedule(triggerAtMillis: Long) {}
+    override fun cancel() {}
+}
+
 /**
  * Manages timer state, persistence and system alarm hooks.
  *
@@ -28,11 +40,17 @@ class TimerController(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val alarm: CountdownAlarmHook = NoCountdownAlarm,
     private val ongoing: TimerOngoingHook = NoTimerOngoing,
-    private val history: TimerHistoryHook = NoTimerHistory
+    private val history: TimerHistoryHook = NoTimerHistory,
+    private val autoStartAlarm: AutoStartAlarmHook = NoAutoStartAlarm
 ) {
 
     private val _state = MutableStateFlow(store.load())
     val state: StateFlow<TimerState> = _state.asStateFlow()
+
+    private val _autoStartAt = MutableStateFlow(store.autoStartAtMillis())
+
+    /** When the next Pomodoro round will start by itself, or null when none is waiting. */
+    val autoStartAtMillis: StateFlow<Long?> = _autoStartAt.asStateFlow()
 
     /** Finished study sessions, newest first. */
     val sessions: StateFlow<List<TimerSession>> get() = history.sessions
@@ -46,6 +64,8 @@ class TimerController(
     fun start() {
         // Pomodoro: make sure a phase that has just run out is closed (and saved) first.
         if (_state.value.pomodoroPhase != null) markFinishedIfDue()
+        // Starting by hand takes over from a waiting auto-start.
+        cancelAutoStart()
         val current = _state.value
         val currentTime = now()
         // Pomodoro: starting after a phase has finished begins the next phase (focus or break).
@@ -94,6 +114,7 @@ class TimerController(
             _state.value = updated
             alarm.cancel()
             ongoing.cancel()
+            cancelAutoStart()
         }
     }
 
@@ -143,6 +164,7 @@ class TimerController(
      */
     fun skipPomodoroPhase() {
         markFinishedIfDue()
+        cancelAutoStart()
         val current = _state.value
         if (current.pomodoroPhase == null) return
         recordSession(current, completed = false)
@@ -170,16 +192,60 @@ class TimerController(
         if (current.mode == TimerMode.COUNTDOWN && TimerLogic.isRunning(current)) {
             val remaining = TimerLogic.remainingMillis(current, now())
             if (remaining <= toleranceMillis) {
+                // A round that ended long ago (phone was off) is not followed by an auto-start.
+                val endedLongAgo = TimerLogic.isAlarmLate(current, now())
                 recordSession(current, completed = true)
                 val updated = TimerLogic.finish(current)
                 store.save(updated)
                 _state.value = updated
                 alarm.cancel()
                 ongoing.cancel()
+                if (!endedLongAgo) scheduleAutoStart(updated)
                 return true
             }
         }
         return false
+    }
+
+    fun pomodoroAlertSettings(): PomodoroAlertSettings = store.pomodoroAlertSettings()
+
+    /** Saves how a Pomodoro round ends. Turning auto-start off also drops a start that is waiting. */
+    fun setPomodoroAlertSettings(settings: PomodoroAlertSettings) {
+        store.setPomodoroAlertSettings(settings)
+        if (!settings.autoStartNext) cancelAutoStart()
+    }
+
+    /** Stops a waiting auto-start. The finished round stays as it is until the user starts it. */
+    fun cancelAutoStart() {
+        if (_autoStartAt.value == null) return
+        _autoStartAt.value = null
+        store.setAutoStartAtMillis(null)
+        autoStartAlarm.cancel()
+    }
+
+    private fun scheduleAutoStart(finished: TimerState) {
+        val phase = finished.pomodoroPhase ?: return
+        if (!PomodoroLogic.shouldAutoStart(phase, store.pomodoroAlertSettings())) return
+        val at = now() + PomodoroLogic.AUTO_START_DELAY_MILLIS
+        store.setAutoStartAtMillis(at)
+        _autoStartAt.value = at
+        autoStartAlarm.schedule(at)
+    }
+
+    /**
+     * Starts the next Pomodoro round if its wait is over. Safe to call from the alarm and from the
+     * screen: whichever comes first starts it, the other finds nothing waiting.
+     */
+    fun autoStartIfDue(toleranceMillis: Long = 0L): Boolean {
+        val at = _autoStartAt.value ?: return false
+        val currentTime = now()
+        if (currentTime < at - toleranceMillis) return false
+        cancelAutoStart()
+        if (currentTime - at > PomodoroLogic.AUTO_START_MAX_LATE_MILLIS) return false
+        val current = _state.value
+        if (current.pomodoroPhase == null || !TimerLogic.isFinished(current, currentTime)) return false
+        start()
+        return true
     }
 
     /**
@@ -216,6 +282,10 @@ class TimerController(
         val current = _state.value
         // A reboot clears notifications, so show the running or paused timer again.
         ongoing.update(current, now())
+        // A reboot also clears alarms: bring back a waiting auto-start, or drop it if it is past.
+        _autoStartAt.value?.let { at ->
+            if (now() < at) autoStartAlarm.schedule(at) else cancelAutoStart()
+        }
         if (current.mode == TimerMode.COUNTDOWN && TimerLogic.isRunning(current)) {
             val currentTime = now()
             val remaining = TimerLogic.remainingMillis(current, currentTime)
@@ -243,7 +313,8 @@ class TimerController(
                     store = TimerStore(appContext),
                     alarm = CountdownAlarm(appContext),
                     ongoing = TimerOngoingNotifier(appContext),
-                    history = TimerHistoryStore.get(appContext)
+                    history = TimerHistoryStore.get(appContext),
+                    autoStartAlarm = AutoStartAlarm(appContext)
                 ).also { INSTANCE = it }
             }
         }

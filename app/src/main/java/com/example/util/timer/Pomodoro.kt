@@ -38,6 +38,19 @@ data class PomodoroSettings(
 }
 
 /**
+ * What happens when a Pomodoro round ends. Kept apart from [PomodoroSettings] (the lengths) so a
+ * change here never touches the running timer.
+ */
+data class PomodoroAlertSettings(
+    /** True: ring like an alarm (and vibrate). False: vibrate only. */
+    val ringLikeAlarm: Boolean = true,
+    /** Start the next break or focus round by itself a few seconds after one ends. */
+    val autoStartNext: Boolean = false,
+    /** With auto-start on, wait for the user after the long break instead of starting round 1 again. */
+    val stopAfterLongBreak: Boolean = false
+)
+
+/**
  * Pure Pomodoro rules. A Pomodoro timer is an ordinary countdown whose length and label come from
  * the current phase, so the alarm, the notifications and the restart recovery all work unchanged.
  *
@@ -46,7 +59,24 @@ data class PomodoroSettings(
  */
 object PomodoroLogic {
 
+    /** How long the finished screen waits before the next round starts by itself. */
+    const val AUTO_START_DELAY_MILLIS = 10_000L
+
+    /** An auto-start that is this much later than planned (phone off, app killed) is skipped. */
+    const val AUTO_START_MAX_LATE_MILLIS = 60_000L
+
     fun isActive(s: TimerState): Boolean = s.pomodoroPhase != null
+
+    /** Whether the round that just ended should be followed by an automatic start. */
+    fun shouldAutoStart(finished: PomodoroPhase, alerts: PomodoroAlertSettings): Boolean =
+        alerts.autoStartNext && !(alerts.stopAfterLongBreak && finished == PomodoroPhase.LONG_BREAK)
+
+    /** The line shown while the next round is about to start, such as "Short break starts in 7s". */
+    fun autoStartLabel(s: TimerState, settings: PomodoroSettings, secondsLeft: Int): String? {
+        val phase = s.pomodoroPhase ?: return null
+        val (next, _) = nextPhase(phase, s.pomodoroRound, settings)
+        return "${next.label} starts in ${secondsLeft.coerceAtLeast(0)}s"
+    }
 
     fun phaseMillis(phase: PomodoroPhase, settings: PomodoroSettings): Long {
         val minutes = when (phase) {

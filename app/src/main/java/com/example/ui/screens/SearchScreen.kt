@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -112,6 +113,7 @@ fun SearchScreen(
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     var archivedDialogSemester by remember { mutableStateOf<String?>(null) }
     var guideDialogTitle by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSearchOptions by rememberSaveable { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -145,6 +147,16 @@ fun SearchScreen(
         FeatureGuideDialog(
             onDismiss = { guideDialogTitle = null },
             initialFeatureTitle = title
+        )
+    }
+
+    if (showSearchOptions) {
+        SearchOptionsDialog(
+            includeArchived = includeArchived,
+            includeGuides = includeGuides,
+            onIncludeArchivedChange = { viewModel.setIncludeArchived(it) },
+            onIncludeGuidesChange = { viewModel.setIncludeGuides(it) },
+            onDismiss = { showSearchOptions = false }
         )
     }
 
@@ -207,11 +219,29 @@ fun SearchScreen(
                         }
                     },
                     trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear search"
+                                    )
+                                }
+                            }
+                            // The search options live behind this icon. It is tinted while any
+                            // option is on, so it is clear that the search is widened.
+                            IconButton(
+                                onClick = { showSearchOptions = true },
+                                modifier = Modifier.testTag("search_options_button")
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear search"
+                                    imageVector = Icons.Default.Tune,
+                                    contentDescription = "Search options",
+                                    tint = if (includeArchived || includeGuides) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
                                 )
                             }
                         }
@@ -219,42 +249,6 @@ fun SearchScreen(
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Include archived",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Switch(
-                        checked = includeArchived,
-                        onCheckedChange = { viewModel.setIncludeArchived(it) },
-                        modifier = Modifier.testTag("search_archived_switch")
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Include app guides",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Switch(
-                        checked = includeGuides,
-                        onCheckedChange = { viewModel.setIncludeGuides(it) },
-                        modifier = Modifier.testTag("search_guides_switch")
-                    )
-                }
             }
         }
     ) { innerPadding ->
@@ -508,6 +502,65 @@ fun SearchScreen(
             }
         }
     }
+}
+
+/** The search options: what else to include in the results. Each switch applies at once. */
+@Composable
+private fun SearchOptionsDialog(
+    includeArchived: Boolean,
+    includeGuides: Boolean,
+    onIncludeArchivedChange: (Boolean) -> Unit,
+    onIncludeGuidesChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Search options") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Include archived",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = includeArchived,
+                        onCheckedChange = onIncludeArchivedChange,
+                        modifier = Modifier.testTag("search_archived_switch")
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Include app guides",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = includeGuides,
+                        onCheckedChange = onIncludeGuidesChange,
+                        modifier = Modifier.testTag("search_guides_switch")
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("search_options_done_button")
+            ) {
+                Text("Done")
+            }
+        }
+    )
 }
 
 @Composable

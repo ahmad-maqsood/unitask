@@ -90,7 +90,10 @@ fun MarkdownPreview(
     // When set, the preview opens at the block that holds this source line (0 based), once
     initialSourceLine: Int? = null,
     // Reports the source line each block starts on, so the caller can map scroll positions back
-    onBlockStartLines: ((List<Int>) -> Unit)? = null
+    onBlockStartLines: ((List<Int>) -> Unit)? = null,
+    // Shown above the first block and scrolls away with it. It is list item 0, so block n is
+    // list item n + 1 while a header is set (see previewItemIndexForBlock).
+    header: (@Composable () -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -126,7 +129,9 @@ fun MarkdownPreview(
         if (!openedAtRequestedLine && parsed.blocks.isNotEmpty()) {
             openedAtRequestedLine = true
             if (initialSourceLine != null) {
-                listState.scrollToItem(blockIndexForLine(parsed.startLines, initialSourceLine))
+                listState.scrollToItem(
+                    previewItemIndexForBlock(blockIndexForLine(parsed.startLines, initialSourceLine), header != null)
+                )
             }
         }
     }
@@ -138,6 +143,9 @@ fun MarkdownPreview(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
+                if (header != null) {
+                    item(key = "preview_header") { header() }
+                }
                 items(parsedBlocks.size) { index ->
                     val block = parsedBlocks[index]
                     Box(modifier = Modifier.padding(top = blockGap(parsedBlocks.getOrNull(index - 1), block))) {
@@ -154,6 +162,17 @@ fun MarkdownPreview(
         LazyListScrollbar(listState)
     }
 }
+
+/**
+ * The list item that shows block [block]. With a header, item 0 is the header and the blocks
+ * follow it. Block 0 maps to the very top so the header stays in view.
+ */
+internal fun previewItemIndexForBlock(block: Int, hasHeader: Boolean): Int =
+    if (hasHeader && block > 0) block + 1 else block
+
+/** The block shown at list item [item], or 0 for the header. The reverse of [previewItemIndexForBlock]. */
+internal fun previewBlockForItem(item: Int, hasHeader: Boolean): Int =
+    if (hasHeader) (item - 1).coerceAtLeast(0) else item
 
 private fun isListItem(block: MarkdownBlock?): Boolean =
     block is MarkdownBlock.BulletItem || block is MarkdownBlock.NumberedItem || block is MarkdownBlock.ChecklistItem

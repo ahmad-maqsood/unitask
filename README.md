@@ -39,8 +39,9 @@ UniTask helps students keep track of what is due, when classes start and what th
 
 - **Coursework.** Deadlines with priorities, reminders and attachments, colour-coded courses and repeating tasks.
 - **Timetable.** Weekly or bi-weekly schedule with a live next-class card and `.ics` export.
-- **Notes.** Markdown notes with a preview mode, course tags and photos. Deleted notes stay in the trash for 30 days.
+- **Notes.** Markdown notes with a preview mode, find in note, code highlighting, course tags and photos. Deleted notes stay in the trash for 30 days.
 - **Study timer.** Stopwatch, countdown and Pomodoro (focus and break rounds) that alert you when time is up, even if the app is closed.
+- **Progress.** Tasks finished this week, your streak and how far each course is.
 - **Study groups.** Shared tasks and real-time chat, joined with a QR code, an invite link or a code.
 - **Backup.** Optional private backup to your own Google Drive, and password-protected local backups.
 
@@ -151,17 +152,25 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Each task can have multiple reminders and offline file attachments of up to 25 MB.
 - **Courses.** Modules, credit hours, instructors and colour tags, which timetable slots and assignments inherit.
 - **Repeating tasks.** Tasks can repeat daily, on weekdays, weekly, every two weeks, monthly or yearly. A completed repeating task moves to its next due date and its checklist is reset.
+- **Get started card.** A checklist on the Deadlines tab for new users: allow notifications, turn off battery optimization, enable auto-start, then add a course, a deadline, a reminder and a class, try the timer and back up. The three phone-setting steps are read live from the phone, so they un-tick if you turn the setting off again.
 - **My tasks.** A separate to-do list for items that are not coursework, with quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. One-time tasks can use **Delete when done**, which removes them the day after they are finished.
+
+### Progress
+
+- Open **Progress** from the More menu to see tasks finished this week compared with last week, your streak (days in a row with at least one task finished), the last weeks as bars, and how many tasks are done in each course.
 
 ### Notes
 
 - **Markdown notes.** Notes with an optional course tag, opened from the More menu in the top bar.
   - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
   - Edit and Preview modes with interactive checklists that can be ticked in Preview.
+  - **Find in note** searches the text of the open note, in both Edit and Preview.
+  - Fenced code blocks (for example ` ```kotlin `) get syntax highlighting.
+  - Pinch with two fingers to change the text size. The size is remembered between notes.
   - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
   - Autosave as you type with full undo and redo history in the editor.
   - Recently deleted notes are kept in the trash for 30 days before permanent deletion, with instant restore.
-  - Share notes as plain text or export as `.md` files, and import `.md` or `.txt` files directly into Notes.
+  - Share notes as plain text or export as `.md` or PDF files, and import `.md` or `.txt` files directly into Notes.
   - Open Markdown files from other apps via "Open with" and Share, and save the preview to Notes.
   - Photos from the gallery are stored locally with thumbnail preview, full-screen viewing and automatic orphan cleanup.
   - Notes are included in encrypted local backups, data export and Google Drive backup.
@@ -269,7 +278,12 @@ app/src/main/java/com/example/
     screens/       Compose screens, dialogs and ViewModels
     theme/         Colours, accent themes, typography, theme preference
   util/            Supabase client, local backup, update checker, announcements,
-                   attachments, notification sounds, .ics export, QR codes
+                   attachments, notification sounds, .ics export, QR codes,
+                   progress statistics, Get started steps, RunLogged
+    crash/         Local crash log and crash reporter
+    drive/         Google Drive backup
+    markdown/      Markdown helpers and code highlighter
+    timer/         Stopwatch, countdown and Pomodoro timer
 app/schemas/       Room database schema files, one per version, read by the migration test
 supabase/          schema.sql, a reference copy of the live database
 .github/workflows/ Release APK build, tests, CodeQL and a Supabase keep-alive ping
@@ -296,6 +310,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 - Signing in is optional and is needed only for study groups and chat. Notes and other personal data stay on the device.
 - Google Drive backup: the only permission asked is access to the app's own hidden folder in Google Drive (the appdata scope). The app cannot see other Drive files, and the user can remove access in their Google account settings.
 - Local backups can be password-protected (encrypted). Restore only backups you trust.
+- If UniTask crashes, it saves the error to a small log file on the phone (the newest 5 crashes: time, app version, Android version, device model and the stack trace). On the next start a recovery screen offers **Share crash log** and **Report a problem**. There is no crash reporting service, so nothing leaves the phone unless you share it.
 - **Report a problem** opens a form that is pre-filled with only the app version, Android version and phone model.
 
 | Permission | Purpose |

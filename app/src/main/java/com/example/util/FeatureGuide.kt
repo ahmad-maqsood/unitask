@@ -77,7 +77,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Search", "Find tasks, notes, courses and settings with multi-word search. Archived items and these help guides can be included too.", "search", 76,
-            "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Turn on Include archived to find items from past semesters.\n5. Turn on Include app guides to search these help guides too. Tap a guide to open it."
+            "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Tap the settings icon in the search box to open Search options.\n5. Turn on Include archived to find items from past semesters.\n6. Turn on Include app guides to search these help guides too. Tap a guide to open it."
         ),
         AppFeature(
             "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "qr_code", 80,
@@ -124,7 +124,7 @@ object FeatureGuide {
             "1. Open Settings, then Notifications & reminders.\n2. Turn on Daily summary and pick the time."
         ),
         AppFeature(
-            "Notification History", "See reminders you missed, with unread counts.", "history", 33,
+            "Notification History", "See your daily summary, missed reminders and group updates, with unread counts.", "history", 33,
             "1. Tap the bell in the top bar.\n2. Open an item to jump to the task."
         ),
         AppFeature(
@@ -153,7 +153,7 @@ object FeatureGuide {
         ),
         AppFeature(
             "Timer and Countdown", "Track study time with a stopwatch, a countdown or Pomodoro, in full screen if you like.", "timer", 150,
-            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, Countdown to count down, or Pomodoro for focus rounds with short and long breaks. In Pomodoro, tap the lengths chip or the big clock to change the lengths. When a phase ends, tap Start break or Start focus to move on, or tap Skip to jump ahead. Breaks are not saved as study time.\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted. The ring around the time shows how much of a countdown is left, and a running countdown also shows when it will end.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it.\n8. Every run of at least 10 seconds is saved as a study session when you tap Reset or a countdown finishes. Tap the history icon at the top, or the Studied today card, to see your totals, the last 7 days and each session. Delete one session with its bin icon, or clear everything with the sweep icon."
+            "1. Tap the More icon in the top bar, then tap Timer.\n2. Choose Stopwatch to count up, Countdown to count down, or Pomodoro for focus rounds with short and long breaks. In Pomodoro, tap the lengths chip or the big clock to change the lengths. When a phase ends, tap Start break or Start focus to move on, or tap Skip to jump ahead. Breaks are not saved as study time. Tap the gear icon at the top to choose whether a finished round rings like an alarm or only vibrates, and to start the next round automatically after 10 seconds (tap Cancel to stop it).\n3. For a countdown pick a preset, tap Custom or the big clock, type hours and minutes or use the quick add buttons.\n4. Tap Start. Tap Pause to stop counting and Resume to continue. Paused time is not counted. The ring around the time shows how much of a countdown is left, and a running countdown also shows when it will end.\n5. Tap the full screen icon to show only the time in landscape. The bulb icon keeps the screen on; tap it to turn that off. Tap the exit icon or press Back to return.\n6. You can close the screen while it runs. A dot on the More icon shows that a timer is active. The running timer also shows on the lock screen with Pause, Resume and Stop buttons.\n7. When a countdown ends the countdown rings like an alarm for up to a minute, also on the lock screen and when the phone is silent; tap Stop to silence it.\n8. Every run of at least 10 seconds is saved as a study session when you tap Reset or a countdown finishes. Tap the history icon at the top, or the Studied today card, to see your totals, the last 7 days and each session. Delete one session with its bin icon, or clear everything with the sweep icon."
         ),
         AppFeature(
             "Recently deleted", "Restore deleted tasks, notes and classes, or remove them forever.", "restore_trash", 155,

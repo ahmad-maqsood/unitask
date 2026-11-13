@@ -428,22 +428,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
         notificationManager?.notify(notificationId, notification)
 
-        // The test reminder from "Check reminders" is not saved in the bell history.
-        if (!isSilence && intent.data?.host != "reminder-test") {
-            com.example.util.NotificationHistory.add(
-                context,
-                kind = if (isGroupTask) "Group deadline" else "Deadline",
-                title = title,
-                body = "$bigSummary\n$dueInfo",
-                target = when {
-                    isGroupTask -> "group:$groupId"
-                    isMyTask -> "tab:MYTASKS"
-                    else -> "tab:DEADLINES"
-                },
-                key = "n|$notificationId"
-            )
-        }
-
         val summaryNotification = NotificationCompat.Builder(
             context,
             when {

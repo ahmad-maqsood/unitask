@@ -55,7 +55,10 @@ fun FullscreenTimerContent(
     isPaused: Boolean,
     isFinished: Boolean,
     controller: TimerController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Pomodoro auto-start: "Short break starts in 7s" while the next round is about to begin.
+    autoStartText: String? = null,
+    onCancelAutoStart: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
     val accent = if (isFinished) colors.tertiary else colors.primary
@@ -111,7 +114,9 @@ fun FullscreenTimerContent(
                 isRunning = isRunning,
                 isFinished = isFinished,
                 controller = controller,
-                align = align
+                align = align,
+                autoStartText = autoStartText,
+                onCancelAutoStart = onCancelAutoStart
             )
         }
 
@@ -144,7 +149,9 @@ private fun FullscreenTimerPanel(
     isRunning: Boolean,
     isFinished: Boolean,
     controller: TimerController,
-    align: Alignment.Horizontal
+    align: Alignment.Horizontal,
+    autoStartText: String?,
+    onCancelAutoStart: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -191,6 +198,10 @@ private fun FullscreenTimerPanel(
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.testTag("timer_end_time")
             )
+        }
+
+        if (autoStartText != null) {
+            AutoStartBanner(text = autoStartText, onCancel = onCancelAutoStart)
         }
 
         Row(

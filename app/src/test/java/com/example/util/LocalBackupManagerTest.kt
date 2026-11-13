@@ -62,6 +62,22 @@ class LocalBackupManagerTest {
     }
 
     @Test
+    fun backupFileIncludesAppSettingsAndRestoreAppliesThem() = runBlocking {
+        val (file, uri) = createTempBackupFile("settings_backup.json")
+
+        val exportResult = LocalBackupManager.export(context, uri, password = null)
+        assertTrue("Export must succeed: $exportResult", exportResult is BackupResult.Success)
+
+        val data = JSONObject(file.readText()).getJSONObject("data")
+        assertTrue("The backup file must carry the app settings", data.has("settings"))
+        assertTrue(data.getJSONObject("settings").has("settingsVersion"))
+
+        val restoreResult = LocalBackupManager.restore(context, uri, password = null)
+        assertTrue("Restore must succeed: $restoreResult", restoreResult is BackupResult.Success)
+        assertTrue((restoreResult as BackupResult.Success).counts.settingsApplied > 0)
+    }
+
+    @Test
     fun testPlainBackupExportAndRestoreRoundTrip() = runBlocking {
         val courseDao = db.courseDao()
         val slotDao = db.lectureSlotDao()

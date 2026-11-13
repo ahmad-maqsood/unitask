@@ -90,8 +90,8 @@ sealed class BackupResult {
  *
  * Restoring MERGES: what is already on the phone is kept, missing items are added, and items the
  * user deleted earlier come back. Study sessions from the timer are merged the same way: ones
- * already on the phone are kept and only missing ones are added. Attachment files are not part of
- * this file backup.
+ * already on the phone are kept and only missing ones are added. App settings are included, but
+ * attachment files are not part of this file backup.
  */
 object LocalBackupManager {
 
@@ -397,6 +397,9 @@ object LocalBackupManager {
         withContext(Dispatchers.IO) {
             try {
                 val built = buildData(context, inlineImages = true, maxImageBytes = maxImageBytes)
+                // The same allowlisted app settings the Drive backup carries, so restoring a backup
+                // file also brings back the phone's setup (theme, daily summary, timer and so on).
+                built.data.put("settings", SettingsSnapshot.capture(context))
 
                 val envelope = JSONObject()
                     .put("format", FORMAT)

@@ -115,6 +115,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -200,7 +201,10 @@ fun NoteEditorScreen(
             val line = lineIndexAtOffset(text, offset)
             if (previewStartLines.isNotEmpty()) {
                 previewListState.animateScrollToItem(
-                    com.example.util.markdown.blockIndexForLine(previewStartLines, line)
+                    previewItemIndexForBlock(
+                        com.example.util.markdown.blockIndexForLine(previewStartLines, line),
+                        hasHeader = true
+                    )
                 )
             }
         } else {
@@ -233,7 +237,9 @@ fun NoteEditorScreen(
 
     fun switchToEdit() {
         if (!isPreviewMode) return
-        val line = previewStartLines.getOrNull(previewListState.firstVisibleItemIndex) ?: 0
+        val line = previewStartLines.getOrNull(
+            previewBlockForItem(previewListState.firstVisibleItemIndex, hasHeader = true)
+        ) ?: 0
         editTargetOffset = offsetOfLine(viewModel.bodyValue.text, line)
         bodyLayout = null // wait for the fresh layout of the editor
         isPreviewMode = false
@@ -453,6 +459,9 @@ fun NoteEditorScreen(
     }
 
     var showCoursePicker by remember { mutableStateOf(false) }
+    // A long title shows 3 lines in Preview; tapping it shows all of it. Back to 3 lines on another note.
+    var titleExpanded by rememberSaveable(viewModel.currentId) { mutableStateOf(false) }
+    var titleOverflows by remember(viewModel.currentId) { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showShareDialog by rememberSaveable { mutableStateOf(false) }
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
@@ -671,62 +680,24 @@ fun NoteEditorScreen(
             )
         }
 
-        // Visible in every note, in both Edit and Preview mode
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = viewModel.keepScreenOn,
-                    role = Role.Switch,
-                    onValueChange = { viewModel.toggleKeepScreenOn(it) }
-                )
-                .padding(horizontal = 16.dp, vertical = 2.dp)
-                .testTag("note_keep_screen_on_row"),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Keep screen on",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Switch(
+        // Edit mode keeps it above the title. In Preview it is part of the note header, which
+        // scrolls away with the note instead of staying on screen.
+        if (!isPreviewMode) {
+            KeepScreenOnRow(
                 checked = viewModel.keepScreenOn,
-                onCheckedChange = null,
-                modifier = Modifier.testTag("note_keep_screen_on_switch")
+                onCheckedChange = { viewModel.toggleKeepScreenOn(it) }
             )
         }
 
         if (isPreviewMode) {
-            // Preview mode: shows title (headlineSmall), course chip, then MarkdownPreview(body)
+            // Preview mode: MarkdownPreview(body), with the Keep screen on row, the title
+            // (headlineSmall, 3 lines until tapped) and the course chip as its first list item
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .pinchToZoomText(onPinchZoom)
             ) {
-                Text(
-                    text = viewModel.title.ifBlank { "Untitled Note" },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (viewModel.title.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .testTag("note_preview_title")
-                )
-
-                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
-                    CoursePickerPill(
-                        selectedCourse = selectedCourse,
-                        courseColor = courseColor,
-                        courses = courses,
-                        expanded = showCoursePicker,
-                        onExpandedChange = { showCoursePicker = it },
-                        onSelectCourse = { viewModel.setCourse(it) }
-                    )
-                }
-
                 CompositionLocalProvider(
                     LocalNoteFindQuery provides (if (showFind) findQuery else ""),
                     LocalNoteLinkHandler provides noteLinkHandler
@@ -750,6 +721,57 @@ fun NoteEditorScreen(
                         listState = previewListState,
                         initialSourceLine = previewTargetLine,
                         onBlockStartLines = { previewStartLines = it },
+                        header = {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                KeepScreenOnRow(
+                                    checked = viewModel.keepScreenOn,
+                                    onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
+                                    horizontalPadding = 0.dp
+                                )
+                                val titleBlank = viewModel.title.isBlank()
+                                Text(
+                                    text = viewModel.title.ifBlank { "Untitled Note" },
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (titleBlank) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    maxLines = if (titleExpanded) Int.MAX_VALUE else 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    onTextLayout = { if (!titleExpanded) titleOverflows = it.hasVisualOverflow },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = titleOverflows || titleExpanded) {
+                                            titleExpanded = !titleExpanded
+                                        }
+                                        .padding(vertical = 4.dp)
+                                        .testTag("note_preview_title")
+                                )
+                                if (titleOverflows || titleExpanded) {
+                                    Text(
+                                        text = if (titleExpanded) "Show less" else "Show full title",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .clickable { titleExpanded = !titleExpanded }
+                                            .padding(vertical = 4.dp)
+                                            .testTag("note_preview_title_toggle")
+                                    )
+                                }
+                                Box(modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)) {
+                                    CoursePickerPill(
+                                        selectedCourse = selectedCourse,
+                                        courseColor = courseColor,
+                                        courses = courses,
+                                        expanded = showCoursePicker,
+                                        onExpandedChange = { showCoursePicker = it },
+                                        onSelectCourse = { viewModel.setCourse(it) }
+                                    )
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
@@ -1111,6 +1133,39 @@ fun NoteEditorScreen(
                     Text("Creating PDF...")
                 }
             }
+        )
+    }
+}
+
+/** "Keep screen on" with its switch. The whole row is the tap target. */
+@Composable
+private fun KeepScreenOnRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    horizontalPadding: Dp = 16.dp
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            )
+            .padding(horizontal = horizontalPadding, vertical = 2.dp)
+            .testTag("note_keep_screen_on_row"),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Keep screen on",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            modifier = Modifier.testTag("note_keep_screen_on_switch")
         )
     }
 }

@@ -12,7 +12,7 @@ The workflow uploads its SARIF report to the repository's **Security → Code sc
 
 The [MobSF project](https://github.com/MobSF/Mobile-Security-Framework-MobSF) provides a static analyser for Android APK files. Its maintainers also provide an online static-analysis instance at [mobsf.live](https://www.mobsf.live/).
 
-1. Download the APK from the [latest UniTask release](https://github.com/ahmad-maqsood/unitask/releases/latest).
+1. Download the APK from the [latest UniTask release](https://github.com/CondaLabs/unitask/releases/latest).
 2. Open [mobsf.live](https://www.mobsf.live/) and follow its current upload and scan instructions.
 3. Upload the APK and start its static analysis.
 4. Review the report, paying attention to high-risk findings, exported components, permissions, network security configuration, certificate settings and embedded secrets.

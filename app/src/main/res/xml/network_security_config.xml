@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   UniTask only talks to HTTPS services (Supabase, Google). Android already blocks plain HTTP
+   by default on modern phones; this file states it explicitly so it cannot change by accident.
+   Links the user taps (for example in notes) open in the browser and are not affected.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

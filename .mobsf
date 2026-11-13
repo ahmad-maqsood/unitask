@@ -1,0 +1,7 @@
+# mobsfscan settings: https://github.com/MobSF/mobsfscan#configure
+# Unit tests are not shipped in the app. The only hit there is a fake password used to test
+# backup encryption, so tests are left out of the scan.
+---
+- ignore-paths:
+    - app/src/test
+    - app/src/androidTest

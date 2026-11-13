@@ -5,7 +5,7 @@ import android.content.Context
 
 /**
  * Group chat was removed from UniTask. Phones that had an older version still hold its leftovers:
- * the "Group chat" notification channel and two small files with chat read marks. This tidies them
+ * the "Group chat" notification channel and small files with chat read marks and unsent messages. This tidies them
  * up once, so the channel no longer shows in the phone's notification settings.
  */
 object LegacyChatCleanup {
@@ -30,6 +30,7 @@ object LegacyChatCleanup {
         runCatching {
             appContext.getSharedPreferences("group_chat_read", Context.MODE_PRIVATE).edit().clear().apply()
             appContext.getSharedPreferences("group_chat_notified", Context.MODE_PRIVATE).edit().clear().apply()
+            appContext.getSharedPreferences("chat_outbox_queue", Context.MODE_PRIVATE).edit().clear().apply()
         }
         prefs.edit().putBoolean(KEY_DONE, true).apply()
     }

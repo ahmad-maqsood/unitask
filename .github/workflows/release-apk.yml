@@ -16,14 +16,20 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+# Keep workflow-wide permissions read-only. Grant write access only to the build job.
+permissions: read-all
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -51,8 +57,8 @@ jobs:
       - name: Read app version
         id: version
         run: |
-          NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
-          CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -1)
+          NAME=$(grep -oP 'versionName\\s*=\\s*"\\K[^"]+' app/build.gradle.kts | head -1)
+          CODE=$(grep -oP 'versionCode\\s*=\\s*\\K[0-9]+' app/build.gradle.kts | head -1)
           if [ -z "$NAME" ] || [ -z "$CODE" ]; then
             echo "::error::Could not read versionName or versionCode from app/build.gradle.kts"
             exit 1
@@ -93,7 +99,7 @@ jobs:
               echo "::error::Git tag $TAG already exists. Choose a new version."
               exit 1
             fi
-            if grep -Eq "^## \[$NAME\]([[:space:]]|$)" CHANGELOG.md; then
+            if grep -Eq "^## \\[$NAME\\]([[:space:]]|$)" CHANGELOG.md; then
               echo "::error::CHANGELOG.md already contains a section for $NAME."
               exit 1
             fi
@@ -115,10 +121,10 @@ jobs:
             echo "Comparing v$NAME against $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "base_tag=$BASE_TAG" >> "$GITHUB_OUTPUT"
-          python3 .github/scripts/release_notes.py generate \
-            --repo "$GITHUB_REPOSITORY" --base-tag "$BASE_TAG" \
-            --head-ref "$GITHUB_SHA" --version "$NAME" \
-            --release-output "$RUNNER_TEMP/release-description.md" \
+          python3 .github/scripts/release_notes.py generate \\
+            --repo "$GITHUB_REPOSITORY" --base-tag "$BASE_TAG" \\
+            --head-ref "$GITHUB_SHA" --version "$NAME" \\
+            --release-output "$RUNNER_TEMP/release-description.md" \\
             --changelog-output "$RUNNER_TEMP/changelog-entry.md"
           echo "release_file=$RUNNER_TEMP/release-description.md" >> "$GITHUB_OUTPUT"
           echo "changelog_file=$RUNNER_TEMP/changelog-entry.md" >> "$GITHUB_OUTPUT"
@@ -188,12 +194,38 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Upload APK
+      # Generate signed SLSA build provenance for the exact APK produced above.
+      - name: Attest release APK
+        if: ${{ !inputs.test_release_notes }}
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: app/build/outputs/apk/release/*.apk
+
+      # Scorecard looks for .intoto.jsonl release assets. The action's signed
+      # Sigstore bundle is JSON; compacting it produces a valid one-line JSONL bundle.
+      - name: Export Scorecard-compatible provenance bundle
+        if: ${{ !inputs.test_release_notes }}
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          if [ -z "$BUNDLE_PATH" ] || [ ! -s "$BUNDLE_PATH" ]; then
+            echo "::error::The attestation action did not produce a bundle."
+            exit 1
+          fi
+          jq -c . "$BUNDLE_PATH" > "$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
+          jq -e '.mediaType and .verificationMaterial and .dsseEnvelope' "$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl" >/dev/null
+          echo "Generated provenance bundle for UniTask-$NAME.apk." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK and provenance
         if: ${{ !inputs.test_release_notes }}
         uses: actions/upload-artifact@v7
         with:
           name: unitask-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
-          path: app/build/outputs/apk/release/*.apk
+          path: |
+            app/build/outputs/apk/release/*.apk
+            ${{ runner.temp }}/UniTask-${{ steps.version.outputs.name }}.apk.intoto.jsonl
           retention-days: 14
 
       - name: Create draft GitHub release
@@ -204,13 +236,14 @@ jobs:
           BASE_TAG: ${{ steps.notes.outputs.base_tag }}
         run: |
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          PROVENANCE="$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
           cp "$APK" "$RUNNER_TEMP/UniTask-$NAME.apk"
           FLAGS="--draft"
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
-          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" \
-            --target "$GITHUB_SHA" --title "UniTask $NAME" \
+          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" \\
+            --target "$GITHUB_SHA" --title "UniTask $NAME" \\
             --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
-          echo "Created draft release v$NAME (compared with $BASE_TAG)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create CHANGELOG pull request
         if: ${{ inputs.prepare_release }}
@@ -224,16 +257,16 @@ jobs:
           RELEASE_DATE=$(TZ=Asia/Karachi date +%d-%m-%Y)
           git fetch origin main
           git checkout -b "$BRANCH" origin/main
-          python3 .github/scripts/release_notes.py insert-changelog \
-            --changelog CHANGELOG.md --version "$NAME" --date "$RELEASE_DATE" \
+          python3 .github/scripts/release_notes.py insert-changelog \\
+            --changelog CHANGELOG.md --version "$NAME" --date "$RELEASE_DATE" \\
             --download-url "$RELEASE_URL" --notes-file "$RUNNER_TEMP/changelog-entry.md"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
           git commit -m "docs: add release notes for $TAG"
           git push origin "$BRANCH"
-          PR_URL=$(gh pr create --base main --head "$BRANCH" \
-            --title "docs: add CHANGELOG entry for $TAG" \
+          PR_URL=$(gh pr create --base main --head "$BRANCH" \\
+            --title "docs: add CHANGELOG entry for $TAG" \\
             --body "Automatically generated release notes for $TAG. Review all entries, especially **Other Changes**, before merging. The matching GitHub Release is a draft and has not been published.
 
           Merge this PR after reviewing the changelog; publish the draft release separately when ready.

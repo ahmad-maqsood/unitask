@@ -24,6 +24,15 @@ object QrCodeUtil {
     private const val URI_SCHEME = "unitask"
     private const val URI_HOST = "join"
 
+    /** Where the join page lives now that the repo is under the CondaLabs organization. */
+    private const val INVITE_WEB_BASE = "https://condalabs.github.io/unitask/join/"
+
+    /**
+     * Hosts whose invite links the app still reads. The old owner's address stays so links
+     * shared before the move keep working.
+     */
+    private val INVITE_WEB_HOSTS = listOf("condalabs.github.io", "ahmad-maqsood.github.io")
+    
     /**
      * Builds a universal join link: unitask://join?username=...&code=...
      */
@@ -34,7 +43,7 @@ object QrCodeUtil {
      * A normal https link. Chat apps make it tappable, and the page it opens starts UniTask.
      */
     fun buildGroupInviteWebLink(username: String, joinCode: String): String {
-        return "https://ahmad-maqsood.github.io/unitask/join/?username=${Uri.encode(username.trim())}&code=${Uri.encode(joinCode.trim())}"
+        return "$INVITE_WEB_BASE?username=${Uri.encode(username.trim())}&code=${Uri.encode(joinCode.trim())}"
     }
     /**
      * Parses username and joinCode from an invite link, QR text, or message.
@@ -45,7 +54,7 @@ object QrCodeUtil {
             val uri = Uri.parse(trimmed)
             if (uri.scheme.equals(URI_SCHEME, ignoreCase = true) ||
                 uri.host.equals("unitask.app", ignoreCase = true) ||
-                uri.host.equals("ahmad-maqsood.github.io", ignoreCase = true)
+                INVITE_WEB_HOSTS.any { uri.host.equals(it, ignoreCase = true) }
             ) {
                 val username = uri.getQueryParameter("username")
                 val code = uri.getQueryParameter("code")

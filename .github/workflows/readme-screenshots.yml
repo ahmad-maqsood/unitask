@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.12'
 
@@ -30,13 +30,13 @@ jobs:
         run: python -m pip install --disable-pip-version-check Pillow
 
       - name: Set up Java 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle with basic caching
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           cache-provider: basic
 
@@ -88,7 +88,7 @@ jobs:
           ls -l /dev/kvm
 
       - name: Capture screens on an Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env:
           SCREENSHOT_DEMO_OWNER_EMAIL: ${{ secrets.SCREENSHOT_DEMO_OWNER_EMAIL }}
           SCREENSHOT_DEMO_OWNER_PASSWORD: ${{ secrets.SCREENSHOT_DEMO_OWNER_PASSWORD }}
@@ -108,7 +108,7 @@ jobs:
 
       - name: Upload emulator crash data
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: emulator-crash-data
           path: /tmp/android-runner/
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload Android instrumentation test reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: unitask-android-test-reports
           path: |
@@ -132,7 +132,7 @@ jobs:
 
       - name: Upload captured screenshots for inspection
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: unitask-readme-screenshots
           path: docs/screenshots/
@@ -140,7 +140,7 @@ jobs:
           retention-days: 7
 
       - name: Create pull request with refreshed screenshots
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: automation/update-readme-screenshots

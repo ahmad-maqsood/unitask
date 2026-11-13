@@ -6,7 +6,7 @@ Please do not open a public issue for a security problem.
 
 Use GitHub's private reporting instead:
 
-1. Open the [Security tab](https://github.com/ahmad-maqsood/unitask/security) of this repository.
+1. Open the [Security tab](https://github.com/CondaLabs/unitask/security) of this repository.
 2. Click **Report a vulnerability**.
 3. Describe what you found and how to reproduce it.
 

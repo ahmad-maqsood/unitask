@@ -71,6 +71,24 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --base-tag "${{ steps.base.outputs.tag }}" \
             --head-ref "$GITHUB_SHA" --report "$RUNNER_TEMP/docs-report.md"
           cat "$RUNNER_TEMP/docs-report.md" >> "$GITHUB_STEP_SUMMARY"
+          
+      - name: Collect the edited documents
+        if: ${{ inputs.report_only }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/edited-docs"
+          git diff --name-only | while read -r f; do
+            mkdir -p "$RUNNER_TEMP/edited-docs/$(dirname "$f")"
+            cp "$f" "$RUNNER_TEMP/edited-docs/$f"
+          done
+
+      - name: Upload the edited documents
+        if: ${{ inputs.report_only }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: edited-docs
+          path: ${{ runner.temp }}/edited-docs
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Report only, discard edits
         if: ${{ inputs.report_only }}

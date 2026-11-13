@@ -969,10 +969,21 @@ private fun PomodoroSettingsDialog(
     onDismiss: () -> Unit,
     onConfirm: (PomodoroSettings) -> Unit
 ) {
-    var focus by rememberSaveable { mutableStateOf(initial.focusMinutes) }
-    var shortBreak by rememberSaveable { mutableStateOf(initial.shortBreakMinutes) }
-    var longBreak by rememberSaveable { mutableStateOf(initial.longBreakMinutes) }
-    var rounds by rememberSaveable { mutableStateOf(initial.roundsBeforeLongBreak) }
+    var focusText by rememberSaveable { mutableStateOf(initial.focusMinutes.toString()) }
+    var shortText by rememberSaveable { mutableStateOf(initial.shortBreakMinutes.toString()) }
+    var longText by rememberSaveable { mutableStateOf(initial.longBreakMinutes.toString()) }
+    var roundsText by rememberSaveable { mutableStateOf(initial.roundsBeforeLongBreak.toString()) }
+
+    // Each is null while the typed text is empty or outside the allowed range.
+    val focus = focusText.toIntOrNull()
+        ?.takeIf { it in PomodoroSettings.MIN_MINUTES..PomodoroSettings.MAX_FOCUS_MINUTES }
+    val shortBreak = shortText.toIntOrNull()
+        ?.takeIf { it in PomodoroSettings.MIN_MINUTES..PomodoroSettings.MAX_BREAK_MINUTES }
+    val longBreak = longText.toIntOrNull()
+        ?.takeIf { it in PomodoroSettings.MIN_MINUTES..PomodoroSettings.MAX_BREAK_MINUTES }
+    val rounds = roundsText.toIntOrNull()
+        ?.takeIf { it in PomodoroSettings.MIN_ROUNDS..PomodoroSettings.MAX_ROUNDS }
+    val canSave = focus != null && shortBreak != null && longBreak != null && rounds != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -983,47 +994,103 @@ private fun PomodoroSettingsDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 PomodoroStepperRow(
-                    label = "Focus",
-                    valueText = "$focus min",
+                    label = "Focus (min)",
+                    text = focusText,
+                    isValid = focus != null,
                     tag = "timer_pomodoro_focus",
-                    onMinus = { focus = (focus - 5).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
-                    onPlus = { focus = (focus + 5).coerceAtMost(PomodoroSettings.MAX_FOCUS_MINUTES) }
+                    imeAction = ImeAction.Next,
+                    onTextChange = { focusText = it },
+                    onMinus = {
+                        focusText = stepPomodoroText(
+                            focusText, -5, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_FOCUS_MINUTES
+                        )
+                    },
+                    onPlus = {
+                        focusText = stepPomodoroText(
+                            focusText, 5, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_FOCUS_MINUTES
+                        )
+                    }
                 )
                 PomodoroStepperRow(
-                    label = "Short break",
-                    valueText = "$shortBreak min",
+                    label = "Short break (min)",
+                    text = shortText,
+                    isValid = shortBreak != null,
                     tag = "timer_pomodoro_short",
-                    onMinus = { shortBreak = (shortBreak - 1).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
-                    onPlus = { shortBreak = (shortBreak + 1).coerceAtMost(PomodoroSettings.MAX_BREAK_MINUTES) }
+                    imeAction = ImeAction.Next,
+                    onTextChange = { shortText = it },
+                    onMinus = {
+                        shortText = stepPomodoroText(
+                            shortText, -1, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_BREAK_MINUTES
+                        )
+                    },
+                    onPlus = {
+                        shortText = stepPomodoroText(
+                            shortText, 1, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_BREAK_MINUTES
+                        )
+                    }
                 )
                 PomodoroStepperRow(
-                    label = "Long break",
-                    valueText = "$longBreak min",
+                    label = "Long break (min)",
+                    text = longText,
+                    isValid = longBreak != null,
                     tag = "timer_pomodoro_long",
-                    onMinus = { longBreak = (longBreak - 5).coerceAtLeast(PomodoroSettings.MIN_MINUTES) },
-                    onPlus = { longBreak = (longBreak + 5).coerceAtMost(PomodoroSettings.MAX_BREAK_MINUTES) }
+                    imeAction = ImeAction.Next,
+                    onTextChange = { longText = it },
+                    onMinus = {
+                        longText = stepPomodoroText(
+                            longText, -5, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_BREAK_MINUTES
+                        )
+                    },
+                    onPlus = {
+                        longText = stepPomodoroText(
+                            longText, 5, PomodoroSettings.MIN_MINUTES, PomodoroSettings.MAX_BREAK_MINUTES
+                        )
+                    }
                 )
                 PomodoroStepperRow(
                     label = "Rounds before long break",
-                    valueText = "$rounds",
+                    text = roundsText,
+                    isValid = rounds != null,
                     tag = "timer_pomodoro_rounds",
-                    onMinus = { rounds = (rounds - 1).coerceAtLeast(PomodoroSettings.MIN_ROUNDS) },
-                    onPlus = { rounds = (rounds + 1).coerceAtMost(PomodoroSettings.MAX_ROUNDS) }
+                    imeAction = ImeAction.Done,
+                    onTextChange = { roundsText = it },
+                    onMinus = {
+                        roundsText = stepPomodoroText(
+                            roundsText, -1, PomodoroSettings.MIN_ROUNDS, PomodoroSettings.MAX_ROUNDS
+                        )
+                    },
+                    onPlus = {
+                        roundsText = stepPomodoroText(
+                            roundsText, 1, PomodoroSettings.MIN_ROUNDS, PomodoroSettings.MAX_ROUNDS
+                        )
+                    }
                 )
+                if (!canSave) {
+                    Text(
+                        text = "Focus 1–${PomodoroSettings.MAX_FOCUS_MINUTES} min, breaks " +
+                            "1–${PomodoroSettings.MAX_BREAK_MINUTES} min, rounds " +
+                            "${PomodoroSettings.MIN_ROUNDS}–${PomodoroSettings.MAX_ROUNDS}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(
-                        PomodoroSettings(
-                            focusMinutes = focus,
-                            shortBreakMinutes = shortBreak,
-                            longBreakMinutes = longBreak,
-                            roundsBeforeLongBreak = rounds
+                    if (focus != null && shortBreak != null && longBreak != null && rounds != null) {
+                        onConfirm(
+                            PomodoroSettings(
+                                focusMinutes = focus,
+                                shortBreakMinutes = shortBreak,
+                                longBreakMinutes = longBreak,
+                                roundsBeforeLongBreak = rounds
+                            )
                         )
-                    )
+                    }
                 },
+                enabled = canSave,
                 modifier = Modifier.testTag("timer_pomodoro_save_button")
             ) {
                 Text("Save")
@@ -1040,12 +1107,15 @@ private fun PomodoroSettingsDialog(
     )
 }
 
-/** One line of the Pomodoro dialog: a label, the value, and minus / plus buttons. */
+/** One line of the Pomodoro dialog: a label, a number the user can type, and minus / plus buttons. */
 @Composable
 private fun PomodoroStepperRow(
     label: String,
-    valueText: String,
+    text: String,
+    isValid: Boolean,
     tag: String,
+    imeAction: ImeAction,
+    onTextChange: (String) -> Unit,
     onMinus: () -> Unit,
     onPlus: () -> Unit
 ) {
@@ -1061,18 +1131,36 @@ private fun PomodoroStepperRow(
         IconButton(onClick = onMinus, modifier = Modifier.testTag(tag + "_minus")) {
             Icon(Icons.Default.Remove, contentDescription = "Less $label")
         }
-        Text(
-            text = valueText,
-            style = MaterialTheme.typography.titleMedium,
+        OutlinedTextField(
+            value = text,
+            onValueChange = { newValue ->
+                if (newValue.length <= 3 && newValue.all { it.isDigit() }) {
+                    onTextChange(newValue)
+                }
+            },
+            singleLine = true,
+            isError = !isValid,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = imeAction
+            ),
             modifier = Modifier
-                .widthIn(min = 56.dp)
-                .testTag(tag + "_value"),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                .width(76.dp)
+                .testTag(tag + "_value")
         )
         IconButton(onClick = onPlus, modifier = Modifier.testTag(tag + "_plus")) {
             Icon(Icons.Default.Add, contentDescription = "More $label")
         }
     }
+}
+
+/** One minus / plus step on a typed value. Empty or out-of-range text counts as the lowest allowed value. */
+private fun stepPomodoroText(text: String, delta: Int, min: Int, max: Int): String {
+    val base = text.toIntOrNull()?.coerceIn(min, max) ?: min
+    return (base + delta).coerceIn(min, max).toString()
 }
 
 /** The short line shown under the clock inside the ring. */

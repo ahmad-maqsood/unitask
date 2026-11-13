@@ -29,8 +29,6 @@ object DateFormats {
     /** 9:30 AM */
     fun clock(millis: Long) = format("h:mm a", millis)
 
-    /** 09:30 AM (chat bubbles) */
-    fun chatClock(millis: Long) = format("hh:mm a", millis)
 
     /** Mon, Nov 4 at 9:30 AM */
     fun shortDateAtClock(millis: Long) = format("EEE, MMM d 'at' h:mm a", millis)

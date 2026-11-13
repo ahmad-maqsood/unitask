@@ -7,7 +7,6 @@ import androidx.work.WorkerParameters
 import com.example.data.groups.GroupCacheRepository
 import com.example.Repositories
 import com.example.reminder.AnnouncementNotifier
-import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupTaskProcessor
 import com.example.util.Announcements
 import com.example.util.AppVisibility
@@ -23,7 +22,7 @@ import kotlinx.coroutines.withContext
 /**
  * Runs about every 15 minutes, even when the app is closed.
  * Sequentially executes:
- * 1. Group sync logic (updates group state, sets deadline alarms, checks chat messages).
+ * 1. Group sync logic (updates group state, sets deadline alarms).
  * 2. Announcement check (refreshes announcements and shows notifications for new ones).
  *
  * Each step runs in its own try/catch so a failure in one does not skip the other.
@@ -50,26 +49,6 @@ class PeriodicSyncWorker(
                 }
                 GroupCacheRepository(context).saveGroupsState(sbUid, state)
                 GroupTaskProcessor(context).process(sbUid, state)
-
-                val notifier = GroupChatNotifier(context)
-                for (snapshot in state.loaded) {
-                    try {
-                        val threshold = notifier.thresholdFor(snapshot.groupId)
-                        // -1 means "no baseline yet": the repository then fetches only the newest message.
-                        val tail = repo.getNewMessagesOnce(snapshot.groupId, threshold ?: -1L)
-                        if (tail != null) {
-                            notifier.onMessages(
-                                myUid = user.uid,
-                                groupId = snapshot.groupId,
-                                groupName = snapshot.groupName,
-                                messages = tail.messages,
-                                fromServer = tail.fromServer
-                            )
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Chat check failed for group ${snapshot.groupId}: ${e.message}")
-                    }
-                }
 
                 Result.success()
             } catch (e: Exception) {

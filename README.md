@@ -34,7 +34,7 @@ UniTask helps students keep track of what is due, when classes start and what th
 | Principle | Description |
 | --- | --- |
 | **Offline first** | Deadlines, personal tasks, courses, the timetable and reminders are stored on the device. No account is required to use them. |
-| **Optional cloud** | Signing in with Google is for study groups and chat. |
+| **Optional cloud** | Signing in with Google is for study groups. |
 | **Private by design** | The application contains no advertising and no tracking. |
 
 ### Highlights
@@ -44,7 +44,7 @@ UniTask helps students keep track of what is due, when classes start and what th
 - **Notes.** Markdown notes with a preview mode, find in note, code highlighting, course tags and photos. Deleted notes stay in the trash for 30 days.
 - **Study timer.** Stopwatch, countdown and Pomodoro (focus and break rounds) that alert you when time is up, even if the app is closed.
 - **Progress.** Tasks finished this week, your streak and how far each course is.
-- **Study groups.** Shared tasks and real-time chat, joined with a QR code, an invite link or a code.
+- **Study groups.** Shared tasks, joined with a QR code, an invite link or a code.
 - **Backup.** Optional private backup to your own Google Drive, and password-protected local backups.
 
 UniTask is a personal project, created to solve everyday planning problems for its author and classmates.
@@ -59,7 +59,6 @@ UniTask is a personal project, created to solve everyday planning problems for i
   </tr>
   <tr>
     <td align="center"><a href="docs/screenshots/groups.jpg"><img src="docs/screenshots/groups.jpg" width="220" alt="Study groups" /></a><br/><sub><b>Study groups</b><br/>Shared study spaces</sub></td>
-    <td align="center"><a href="docs/screenshots/group_chat.jpg"><img src="docs/screenshots/group_chat.jpg" width="220" alt="Group chat" /></a><br/><sub><b>Group chat</b><br/>A real conversation with fictional demo messages</sub></td>
     <td align="center"><a href="docs/screenshots/my_tasks.jpg"><img src="docs/screenshots/my_tasks.jpg" width="220" alt="My tasks" /></a><br/><sub><b>My tasks</b><br/>Personal to-do list</sub></td>
   </tr>
   <tr>
@@ -99,7 +98,7 @@ UniTask follows the system theme or can be set to light or dark, with ten accent
 
 <p align="center"><sub>Automatically captured from UniTask 4.2.0 using fictional demo data on an Android emulator.</sub></p>
 
-Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**Group chat**](docs/screenshots/group_chat.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
+Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
 
 ## Installation
 
@@ -193,7 +192,6 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 - Create or join a group with a **QR code** (scanned with the camera or from an image), an invite link or an 8-character code.
 - Owner tools to rename the group, regenerate codes and transfer ownership.
 - Shared tasks with member tagging (`@all`), shared courses and personal done ticks.
-- **Group chat** with real-time search by keyword or sender, sticky date headers, earlier messages loaded in batches, swipe to reply with a quote, and an offline outbox that sends messages when the connection returns.
 
 ### Reminders and widget
 
@@ -231,7 +229,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 
 ## Architecture
 
-UniTask is local-first. Personal data lives in Room on the device and is backed up to the user's own Google Drive, so the application remains fast and usable offline. Supabase is used for groups, chat and announcements.
+UniTask is local-first. Personal data lives in Room on the device and is backed up to the user's own Google Drive, so the application remains fast and usable offline. Supabase is used for groups and announcements.
 
 ```mermaid
 flowchart LR
@@ -252,7 +250,7 @@ flowchart LR
 | Local data | Room 2.8.5 with explicit migrations |
 | Cloud | Supabase (`supabase-kt` 3.8.0): Auth with Google sign-in, PostgREST and Realtime |
 | Networking | Ktor 3.6.1 |
-| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
+| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync and announcement polling |
 | Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, minimum SDK 24, target SDK 36 |
 | Continuous integration | GitHub Actions builds the signed release APK, runs tests and lint, and scans the code with CodeQL |
 
@@ -260,9 +258,9 @@ flowchart LR
 
 - Personal data is stored on the device in Room and can be backed up to the user's own Google Drive. It is not uploaded to Supabase.
 - Group screens use Supabase Realtime for instant updates, with a short polling safety net in case an event is missed.
-- Actions in groups, such as adding a task, ticking it done or sending a message, appear on screen immediately and are confirmed by the server shortly afterwards.
+- Actions in groups, such as adding a task or ticking it done, appear on screen immediately and are confirmed by the server shortly afterwards.
 - Row Level Security on every table controls who can read and write which data. The anon key in the application is public by design and carries no additional access.
-- Database triggers set the sender name and reply quote of chat messages, and the author name of group tasks, on the server. A member therefore cannot post under another member's name.
+- Database triggers set the author name of group tasks on the server. A member therefore cannot post under another member's name.
 
 <details>
 <summary><b>Project layout</b></summary>
@@ -309,7 +307,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 ## Privacy and permissions
 
 - Personal tasks, courses, the timetable and notes are stored on the device and work without an account.
-- Signing in is optional and is needed only for study groups and chat. Notes and other personal data stay on the device.
+- Signing in is optional and is needed only for study groups. Notes and other personal data stay on the device.
 - Google Drive backup: the only permission asked is access to the app's own hidden folder in Google Drive (the appdata scope). The app cannot see other Drive files, and the user can remove access in their Google account settings.
 - Local backups can be password-protected (encrypted). Restore only backups you trust.
 - If UniTask crashes, it saves the error to a small log file on the phone (the newest 5 crashes: time, app version, Android version, device model and the stack trace). On the next start a recovery screen offers **Share crash log** and **Report a problem**. There is no crash reporting service, so nothing leaves the phone unless you share it.
@@ -317,7 +315,7 @@ Some phone manufacturers aggressively stop background applications. If reminders
 
 | Permission | Purpose |
 | --- | --- |
-| `POST_NOTIFICATIONS` | Deadline, class, daily summary, chat and announcement alerts |
+| `POST_NOTIFICATIONS` | Deadline, class, daily summary and announcement alerts |
 | `USE_EXACT_ALARM` | Reminders at the exact time on Android 13 and newer. Granted automatically |
 | `SCHEDULE_EXACT_ALARM` | The same on Android 12 only. It may need to be allowed in Settings |
 | `RECEIVE_BOOT_COMPLETED` | Restores reminders after a restart |
@@ -358,8 +356,6 @@ The Scorecard rating measures observable repository-development practices. It is
 - The Drive backup is not encrypted by UniTask and is stored in the user's own Google Drive.
 - Automatic backup runs about 30 seconds after a change, once Google Drive is connected and the network rule (Wi-Fi only by default) is met. A change made while the phone is offline is uploaded when the connection returns.
 - If the newest backup is 7 days old (or there never was one), a reminder card appears on the Deadlines tab.
-- Chat notifications come from a background check, so Android battery limits can delay them. No external push service is used.
-- Group chat supports text only. Messages cannot be edited after sending, and to keep the database small, each group keeps only its 500 newest messages (older ones are removed automatically as new ones arrive), and messages older than 30 days are deleted automatically by a scheduled database job.
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](#reliable-notifications)).
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. **Delete when done** is kept in backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.

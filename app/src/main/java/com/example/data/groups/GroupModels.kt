@@ -48,21 +48,6 @@ data class GroupTask(
 /** True when this task belongs on [uid]'s Deadlines tab: it is tagged @all or tags this user. */
 fun GroupTask.isForUser(uid: String): Boolean = assignedTo.isEmpty() || uid in assignedTo
 
-/** One chat message in a group. */
-data class GroupMessage(
-    val id: String = "",
-    val groupId: String = "",
-    val text: String = "",
-    val senderId: String = "",
-    val senderName: String = "Student",
-    val createdAtMillis: Long = 0L,
-    val replyToId: String? = null,
-    val replyToName: String? = null,
-    val replyToText: String? = null
-)
-
-data class ChatTail(val messages: List<GroupMessage>, val fromServer: Boolean)
-
 data class GroupCourse(
     val id: String = "",
     val groupId: String = "",
@@ -102,18 +87,4 @@ data class GroupTaskEntry(
     val groupName: String,
     val isDone: Boolean,
     val groupCourses: List<GroupCourse> = emptyList()
-)
-
-
-@Serializable
-data class PendingOutboxMessage(
-    val localId: String,
-    val groupId: String,
-    val uid: String,
-    val senderName: String,
-    val text: String,
-    val replyToId: Long? = null,
-    val replyToName: String? = null,
-    val replyToText: String? = null,
-    val createdAtMillis: Long = System.currentTimeMillis()
 )

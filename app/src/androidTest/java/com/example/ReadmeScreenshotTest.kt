@@ -109,14 +109,6 @@ class ReadmeScreenshotTest {
         waitForGroupCard(groupId, timeoutMillis = 30_000)
         capture("groups")
 
-        tap("group_item_$groupId")
-        waitForTag("group_tab_chat")
-        tap("group_tab_chat")
-        waitForTag("group_chat_list")
-        waitForText("See you in the library!", timeoutMillis = 30_000)
-        capture("group_chat")
-        tap("group_detail_back_button")
-
         tap("tab_mytasks")
         capture("my_tasks")
 

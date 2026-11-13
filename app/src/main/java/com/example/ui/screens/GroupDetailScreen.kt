@@ -72,7 +72,6 @@ import androidx.compose.ui.unit.dp
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
-import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupTask
 import java.util.Date
 import java.util.Locale
@@ -103,24 +102,16 @@ fun GroupDetailScreen(
     onRemoveMember: (GroupMember) -> Unit,
     onLeaveGroupClick: () -> Unit,
     onDeleteGroupClick: () -> Unit,
-    chatMessages: List<GroupMessage>,
-    onSendMessage: (String, GroupMessage?) -> Unit,
-    onDeleteMessage: (GroupMessage) -> Unit,
-    chatUnreadCount: Int = 0,
-    chatLastReadMillis: Long? = null,
-    onChatRead: (Long) -> Unit = {},
-    startOnChat: Boolean = false,
     onUpdateGroupProfile: ((String, String) -> Unit)? = null,
     onRegenerateGroupCode: (() -> Unit)? = null,
     onTransferOwnership: ((String) -> Unit)? = null,
-    onLoadEarlierMessages: (() -> Unit)? = null,
     groupId: String = groupDetail?.id ?: ""
 ) {
     val context = LocalContext.current
     val effectiveGroupId = groupId.ifBlank { groupDetail?.id ?: fallbackUsername }
-    var selectedSectionTab by rememberSaveable(effectiveGroupId, startOnChat) {
-        mutableIntStateOf(if (startOnChat) 3 else 0)
-    } // 0: Tasks, 1: Courses, 2: Members, 3: Chat
+    var selectedSectionTab by rememberSaveable(effectiveGroupId) {
+        mutableIntStateOf(0)
+    } // 0: Tasks, 1: Courses, 2: Members
 
     BackHandler {
         if (selectedSectionTab != 0) {
@@ -278,7 +269,7 @@ fun GroupDetailScreen(
         ) {
 
 
-            // Tab bar for Tasks, Courses, Members, Chat
+            // Tab bar for Tasks, Courses, Members
             ScrollableTabRow(
                 edgePadding = 8.dp,
                 selectedTabIndex = selectedSectionTab,
@@ -303,53 +294,10 @@ fun GroupDetailScreen(
                     text = { Text("Members (${members.size})") },
                     modifier = Modifier.testTag("group_tab_members")
                 )
-                Tab(
-                    selected = selectedSectionTab == 3,
-                    onClick = { selectedSectionTab = 3 },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text("Chat")
-                            if (chatUnreadCount > 0 && selectedSectionTab != 3) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError,
-                                    modifier = Modifier.defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                    ) {
-                                        Text(
-                                            text = if (chatUnreadCount >= 50) "50+" else "$chatUnreadCount",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.testTag("group_tab_chat")
-                )
 
             }
 
-            if (selectedSectionTab == 3) {
-                GroupChatPanel(
-                    messages = chatMessages,
-                    currentUid = currentUid,
-                    canModerate = isStaff,
-                    onSend = onSendMessage,
-                    onDelete = onDeleteMessage,
-                    lastReadAtOpenMillis = chatLastReadMillis,
-                    onMarkRead = onChatRead,
-                    onLoadEarlier = onLoadEarlierMessages
-                )
-            } else if (selectedSectionTab == 1) {
+            if (selectedSectionTab == 1) {
                 GroupCoursesSection(
                     courses = courses,
                     tasks = sortedTasks,

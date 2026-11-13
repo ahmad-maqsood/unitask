@@ -80,7 +80,7 @@ object FeatureGuide {
             "1. Tap the Search icon (magnifier) in the top bar.\n2. Type words to find tasks, notes, and courses matching all terms.\n3. Tap a task to edit it, a note to open it, or a course to view details.\n4. Tap the settings icon in the search box to open Search options.\n5. Turn on Include archived to find items from past semesters.\n6. Turn on Include app guides to search these help guides too. Tap a guide to open it."
         ),
         AppFeature(
-            "Study Groups & QR Codes", "Collaborate on shared tasks and chat with classmates.", "qr_code", 80,
+            "Study Groups & QR Codes", "Share tasks and courses with classmates.", "qr_code", 80,
             "1. Sign in with Google and open the Groups tab.\n2. Tap the QR icon in group details to show your invite QR code and link.\n3. To join, tap 'Join Group' and scan a QR screenshot or paste an invite link."
         ),
         AppFeature(
@@ -88,15 +88,7 @@ object FeatureGuide {
             "1. As owner, tap the Settings icon to edit name/handle or regenerate invite code.\n2. In the Members tab, tap the three dots next to a member to transfer ownership."
         ),
         AppFeature(
-            "Group Chat & Search", "Real-time messaging with search, replies, and date headers.", "chat", 100,
-            "1. Open the Chat tab in any group.\n2. Tap the search icon to filter messages by text or sender.\n3. A sticky date header floats at the top while scrolling."
-        ),
-        AppFeature(
-            "Offline Outbox & Chat History", "Send messages offline and scroll back through chat history.", "cloud_off", 105,
-            "1. Messages sent offline are queued in an outbox and sent automatically when reconnected.\n2. Scroll to the top and tap 'Load earlier messages' to view older chat history."
-        ),
-        AppFeature(
-            "Online Account", "Sign in with Google for study groups and chat.", "account", 120,
+            "Online Account", "Sign in with Google for study groups.", "account", 120,
             "1. Open Settings and tap Online account.\n2. Sign in with Google.\n3. Your courses, tasks and notes stay on this phone; use Backup and data to save them to Google Drive."
         ),
         AppFeature(

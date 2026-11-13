@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Job
 
 /**
- * Keeps track of saves that are still running (a new task or chat message on its way to the server).
+ * Keeps track of saves that are still running (a new task on its way to the server).
  *
  * Anything done to an item before its save has finished, such as deleting, editing or ticking it,
  * must wait for the save first. Otherwise the server does not have the item yet, the action finds

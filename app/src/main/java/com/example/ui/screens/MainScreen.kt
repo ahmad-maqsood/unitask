@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -97,7 +96,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -342,9 +340,6 @@ fun MainScreen(
     AnnouncementHost(announcements)
     UpdatePrompt()
     val isCloudBackupSheetOpen by viewModel.isCloudBackupSheetOpen.collectAsStateWithLifecycle()
-    val totalUnreadMessages by viewModel.totalUnreadMessages.collectAsStateWithLifecycle()
-    val groupChatInfo by viewModel.groupChatInfo.collectAsStateWithLifecycle()
-    val groupChatToOpen by viewModel.groupChatToOpen.collectAsStateWithLifecycle()
     val pendingGroupInvite by viewModel.pendingGroupInvite.collectAsStateWithLifecycle()
     val openBellRequest by viewModel.openBellRequest.collectAsStateWithLifecycle()
     val openTimerRequest by viewModel.openTimerRequest.collectAsStateWithLifecycle()
@@ -450,16 +445,12 @@ fun MainScreen(
     }
     val lastDetailCourse = remember { mutableStateOf<com.example.data.local.CourseWithTaskCount?>(null) }
     if (detailCourse != null) lastDetailCourse.value = detailCourse
-    // While the keyboard is open on the Groups tab, hide the app title bar and the tab row so the
-    // chat gets the space. They come back when the keyboard closes.
-    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    val hideMainChrome = imeVisible && currentTab == MainTab.GROUPS
     Box(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (!hideMainChrome) TopAppBar(
+            TopAppBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -505,7 +496,8 @@ fun MainScreen(
                     ) { target ->
                         when {
                             target.startsWith("group:") -> viewModel.openGroup(target.removePrefix("group:"))
-                            target.startsWith("chat:") -> viewModel.openGroup(target.removePrefix("chat:"), openChat = true)
+                            // Old notification history entries from the removed group chat.
+                            target.startsWith("chat:") -> viewModel.openGroup(target.removePrefix("chat:"))
                             target == "tab:DEADLINES" -> viewModel.setTab(MainTab.DEADLINES)
                             target == "tab:TIMETABLE" -> viewModel.setTab(MainTab.TIMETABLE)
                             target == "tab:MYTASKS" -> viewModel.setTab(MainTab.MYTASKS)
@@ -532,7 +524,6 @@ fun MainScreen(
             )
         },
         bottomBar = {
-            if (!hideMainChrome) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     windowInsets = NavigationBarDefaults.windowInsets
@@ -566,10 +557,7 @@ fun MainScreen(
                         onClick = { viewModel.setTab(MainTab.GROUPS) },
                         label = "Groups",
                         icon = Icons.Default.Groups,
-                        count = totalUnreadMessages,
-                        testTag = "tab_groups",
-                        badgeContainerColor = MaterialTheme.colorScheme.error,
-                        badgeContentColor = MaterialTheme.colorScheme.onError
+                        testTag = "tab_groups"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.MYTASKS,
@@ -580,7 +568,6 @@ fun MainScreen(
                         testTag = "tab_mytasks"
                     )
                 }
-            }
         },
         floatingActionButton = {
             // One plain button per tab that adds what the tab lists (Groups has its own buttons).
@@ -869,9 +856,6 @@ fun MainScreen(
                             onOpenCloudSheet = { viewModel.openCloudBackupSheet() },
                             groupToOpen = groupToOpen,
                             onGroupOpened = { viewModel.onGroupOpened() },
-                            chatInfo = groupChatInfo,
-                            onChatRead = { groupId, upToMillis -> viewModel.markGroupChatRead(groupId, upToMillis) },
-                            openChatGroupId = groupChatToOpen,
                             pendingInvite = pendingGroupInvite,
                             onInviteConsumed = { viewModel.onGroupInviteConsumed() }
                         )
@@ -1237,7 +1221,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
     label: String,
     icon: ImageVector,
     testTag: String,
-    // A number badge, kept for unread group messages.
+    // An optional number badge.
     count: Int = 0,
     badgeContainerColor: Color = MaterialTheme.colorScheme.primary,
     badgeContentColor: Color = MaterialTheme.colorScheme.onPrimary,

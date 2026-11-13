@@ -138,7 +138,7 @@ fun CloudBackupSheet(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "UniTask works fully offline. Your account is used for study groups, chat and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.",
+                    text = "UniTask works fully offline. Your account is used for study groups and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center

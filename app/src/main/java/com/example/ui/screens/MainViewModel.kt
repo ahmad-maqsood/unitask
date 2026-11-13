@@ -3,9 +3,6 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.groups.ChatTail
-import com.example.data.groups.GroupChatInfo
-import com.example.data.groups.GroupChatTracker
 import com.example.Repositories
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTaskEntry
@@ -36,7 +33,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
-import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupReminderScheduler
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
@@ -641,20 +637,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _groupToOpen = MutableStateFlow<String?>(null)
     val groupToOpen: StateFlow<String?> = _groupToOpen.asStateFlow()
 
-    private val _groupChatToOpen = MutableStateFlow<String?>(null)
-    val groupChatToOpen: StateFlow<String?> = _groupChatToOpen.asStateFlow()
-
-    fun openGroup(groupId: String, openChat: Boolean = false) {
+    fun openGroup(groupId: String) {
         _groupToOpen.value = groupId
-        if (openChat) {
-            _groupChatToOpen.value = groupId
-        }
         _currentTab.value = MainTab.GROUPS
     }
 
     fun onGroupOpened() {
         _groupToOpen.value = null
-        _groupChatToOpen.value = null
     }
 
     // Set when the daily summary notification is tapped; the top bar bell opens on the Notifications tab.
@@ -1253,93 +1242,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeCourseDetail() {
         _selectedCourseDetailId.value = null
-    }
-
-    // -------------------------------------------------------------------------
-    // Group chat unread message tracking (in-app, phone-local) and notifications
-    // -------------------------------------------------------------------------
-    private val groupChatTracker = GroupChatTracker(application)
-    private val groupChatNotifier = GroupChatNotifier(application)
-    private val _chatReadVersion = MutableStateFlow(0)
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val groupChatInfo: StateFlow<Map<String, GroupChatInfo>> = _currentUser.flatMapLatest { user ->
-        if (user == null) {
-            groupChatTracker.clearAll()
-            groupChatNotifier.clearAll()
-            flowOf(emptyMap<String, GroupChatInfo>())
-        } else {
-            val myUid = user.uid
-            groupRepository.observeMyGroupMemberships(myUid).flatMapLatest { memberships ->
-                val currentGroupIds = memberships.map { it.groupId }.toSet()
-                if (memberships.isNotEmpty()) {
-                    groupChatTracker.retainOnly(currentGroupIds)
-                }
-                if (memberships.isEmpty()) {
-                    flowOf(emptyMap<String, GroupChatInfo>())
-                } else {
-                    val flows = memberships.map { m ->
-                        val gid = m.groupId
-                        val groupName = m.name.ifBlank { m.username }.ifBlank { "Group" }
-                        combine(
-                            groupRepository.observeGroupChatTail(gid)
-                                .onStart { emit(ChatTail(emptyList(), fromServer = false)) }
-                                .catch { emit(ChatTail(emptyList(), fromServer = false)) },
-                            _chatReadVersion
-                        ) { tail, _ ->
-                            groupChatNotifier.onMessages(myUid, gid, groupName, tail.messages, tail.fromServer)
-
-                            val storedLastRead = groupChatTracker.lastRead(gid)
-                            val effectiveLastRead: Long?
-                            val unreadCount: Int
-
-                            if (storedLastRead == null) {
-                                if (tail.fromServer) {
-                                    val newestMillis = tail.messages.lastOrNull()?.createdAtMillis ?: 0L
-                                    groupChatTracker.setBaseline(gid, newestMillis)
-                                    effectiveLastRead = newestMillis
-                                } else {
-                                    effectiveLastRead = null
-                                }
-                                unreadCount = 0
-                            } else {
-                                effectiveLastRead = storedLastRead
-                                unreadCount = tail.messages.count { msg ->
-                                    msg.senderId != myUid && msg.createdAtMillis > storedLastRead
-                                }
-                            }
-
-                            GroupChatInfo(
-                                groupId = gid,
-                                unreadCount = unreadCount,
-                                lastMessage = tail.messages.lastOrNull(),
-                                lastReadMillis = effectiveLastRead
-                            )
-                        }
-                    }
-                    combine(flows) { array ->
-                        array.associateBy { it.groupId }
-                    }
-                }
-            }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-
-    val totalUnreadMessages: StateFlow<Int> = groupChatInfo.map { map ->
-        map.values.sumOf { it.unreadCount }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-    // Keeps groupChatInfo active for the whole life of the ViewModel, so chat notifications also work
-    // while the app is in the background. This block MUST stay below the groupChatInfo declaration.
-    init {
-        viewModelScope.launch {
-            groupChatInfo.collect { }
-        }
-    }
-
-    fun markGroupChatRead(groupId: String, upToMillis: Long) {
-        if (groupId.isBlank()) return
-        groupChatTracker.markRead(groupId, upToMillis)
-        _chatReadVersion.value++
-        groupChatNotifier.cancel(groupId)
     }
 }

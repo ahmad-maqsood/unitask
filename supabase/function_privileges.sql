@@ -74,8 +74,8 @@ set local role anon;
 select * from public.create_group('x', 'x', 'x');
 rollback;
 
--- 3c. Then, in the app on your phone: open Groups, open a group, create or join a group, and open
--- group chat. If anything shows "permission denied" or fails, run the ROLLBACK block below and
+-- 3c. Then, in the app on your phone: open Groups, open a group, create or join a group, and open a
+-- group task. If anything shows "permission denied" or fails, run the ROLLBACK block below and
 -- send Claude the error.
 
 

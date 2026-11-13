@@ -8,7 +8,7 @@ import org.json.JSONObject
  * One notification the app showed, kept for the Notifications tab of the bell.
  *
  * [target] says where a tap should go: "" (nowhere), "tab:DEADLINES", "tab:TIMETABLE",
- * "tab:MYTASKS", "group:<groupId>" or "chat:<groupId>".
+ * "tab:MYTASKS", "group:<groupId>" (older versions also saved "chat:<groupId>").
  */
 data class AppNotification(
     val id: Long,
@@ -25,8 +25,8 @@ data class AppNotification(
 
 /**
  * The notifications the app sent, saved on the phone only. Newest 100 items, nothing older than
- * 30 days. An item with the same [AppNotification.key] as an older one replaces it, so a group chat
- * has one line that shows its latest message.
+ * 30 days. An item with the same [AppNotification.key] as an older one replaces it, so a repeated
+ * notification keeps one line that shows the latest text.
  */
 object NotificationHistory {
     private const val PREFS = "notification_history"

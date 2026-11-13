@@ -606,6 +606,11 @@ using (
 ) r
 where m.id = r.id and r.rn > 500;
 
+-- 2026-11-13: group chat was removed from the app. The group_messages table, its policies, triggers
+-- (t_gmsg_identity, t_gmsg_trim), functions (enforce_message_identity, trim_group_messages) and the
+-- delete-old-chat job above stay here as history until you run supabase/remove_group_chat.sql
+-- (after your classmates have updated the app). That file also updates delete_my_account().
+
 -- =====================================================================
 -- PART C: function permissions (2026-11-13)
 -- Only signed-in users ("authenticated") may run the database functions. Anyone with the public anon

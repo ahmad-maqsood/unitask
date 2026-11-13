@@ -8,6 +8,8 @@ class UniTaskApp : Application() {
         super.onCreate()
         // Saves unexpected crashes to a log file, so the next start can offer to send it.
         CrashReporter.install(this)
+        // Group chat was removed; tidy up what older versions left behind (runs once).
+        com.example.util.LegacyChatCleanup.runOnce(this)
         // Backs up to Google Drive shortly after data changes. Does nothing unless Drive backup is on.
         // It starts here, not only when a screen opens, so a change made by a notification button
         // while the app is closed is also noticed.

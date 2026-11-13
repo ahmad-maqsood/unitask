@@ -16,7 +16,7 @@ enum class AppTip(val text: String, val guideTitle: String) {
         "Timer and Countdown"
     ),
     GROUPS(
-        "Study with classmates: create a group or join one with a code, then share tasks and chat.",
+        "Study with classmates: create a group or join one with a code, then share tasks and courses.",
         "Study Groups & QR Codes"
     )
 }

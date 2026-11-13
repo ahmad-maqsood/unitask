@@ -273,7 +273,7 @@ fun SettingsButton(
                             SettingsRow(
                                 icon = Icons.Default.AccountCircle,
                                 title = if (currentUser == null) "Sign in for groups" else "Online account",
-                                subtitle = currentUser?.email ?: "Needed for groups and chat",
+                                subtitle = currentUser?.email ?: "Needed for study groups",
                                 onClick = {
                                     showSheet = false
                                     page = null

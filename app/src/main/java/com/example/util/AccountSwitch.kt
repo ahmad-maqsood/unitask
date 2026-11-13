@@ -3,10 +3,8 @@ package com.example.util
 import android.content.Context
 import androidx.work.WorkManager
 import com.example.data.groups.GroupCacheRepository
-import com.example.data.groups.GroupChatTracker
 import com.example.Repositories
 import com.example.data.groups.GroupRepository
-import com.example.reminder.GroupChatNotifier
 import com.example.reminder.GroupReminderScheduler
 import com.example.reminder.GroupTaskProcessor
 
@@ -21,7 +19,7 @@ fun shouldResetGroupState(previousUid: String?, newUid: String?): Boolean {
 }
 
 /**
- * Resets group-only caches, tracker records, pending done ticks, and group reminders
+ * Resets group-only caches, pending done ticks, and group reminders
  * when switching to a different user account. Personal data (courses, tasks, slots,
  * notes, reminders) is preserved on the phone.
  */
@@ -31,8 +29,6 @@ suspend fun resetGroupStateOnAccountSwitch(context: Context) {
     runCatching { GroupCacheRepository(context).clearCache() }
     runCatching { GroupTaskProcessor(context).clearAll() }
     runCatching { Repositories.group(context).clearPendingDone() }
-    runCatching { GroupChatTracker(context).clearAll() }
-    runCatching { GroupChatNotifier(context).clearAll() }
 }
 
 /**
@@ -45,8 +41,6 @@ suspend fun clearGroupDataForDeletedAccount(context: Context) {
     runCatching { GroupRepository.clearCache(context) }
     runCatching { GroupCacheRepository(context).clearCache() }
     runCatching { Repositories.group(context).clearPendingDone() }
-    runCatching { GroupChatTracker(context).clearAll() }
-    runCatching { GroupChatNotifier(context).clearAll() }
     runCatching { AuthStorage.clear(context) }
     runCatching { WorkManager.getInstance(context).cancelUniqueWork("unitask_periodic_sync") }
 }

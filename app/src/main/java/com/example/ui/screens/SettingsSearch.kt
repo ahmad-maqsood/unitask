@@ -31,10 +31,10 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(
         id = "account",
         title = "Online account",
-        summary = "Sign in for groups and chat",
+        summary = "Sign in for study groups",
         pageLabel = "Settings",
         opensAccount = true,
-        keywords = listOf("sign in", "login", "log in", "google", "groups", "chat", "cloud", "sign out", "logout")
+        keywords = listOf("sign in", "login", "log in", "google", "groups", "cloud", "sign out", "logout")
     ),
     SettingsSearchEntry(
         id = "theme",

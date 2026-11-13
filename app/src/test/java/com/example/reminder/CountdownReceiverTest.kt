@@ -248,7 +248,10 @@ class CountdownReceiverTest {
         val notif = shadowNotificationManager.allNotifications.single()
         assertEquals(CountdownNotifier.CHANNEL_ID_VIBRATE, notif.channelId)
         assertNull(notif.sound)
-        assertTrue(notif.vibrate != null && notif.vibrate.isNotEmpty())
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = nm.getNotificationChannel(CountdownNotifier.CHANNEL_ID_VIBRATE)
+        assertTrue(channel.shouldVibrate())
+        assertNull(channel.sound)
         // One burst of vibration, not an alarm that repeats until it is silenced.
         assertEquals(0, notif.flags and Notification.FLAG_INSISTENT)
         assertEquals(1, notif.actions.size)

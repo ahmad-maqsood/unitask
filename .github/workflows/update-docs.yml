@@ -1,0 +1,100 @@
+name: Update documentation
+# Run manually from Actions > Update documentation.
+# It compares this branch with the latest release, fixes documents that no longer match the code
+# and opens a pull request. Nothing is merged or published, and CHANGELOG.md is never touched.
+# Tick "Report only" to see the findings in the run summary without opening a pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      base_tag:
+        description: 'Compare against this tag (leave empty for the latest published release)'
+        type: string
+        default: ''
+      report_only:
+        description: 'Report only: do not change files or open a pull request'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: update-docs
+  cancel-in-progress: false
+
+jobs:
+  docs:
+    name: Check documents and open a PR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Validate documentation script
+        run: |
+          python3 -m py_compile .github/scripts/update_docs.py
+          python3 .github/scripts/update_docs.py self-test
+
+      - name: Choose the release to compare with
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.base_tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+            TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$VERSION")
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Comparing $GITHUB_SHA with $TAG." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check documents against the code
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-3.1-flash-lite
+        run: |
+          python3 .github/scripts/update_docs.py run \
+            --repo "$GITHUB_REPOSITORY" --base-tag "${{ steps.base.outputs.tag }}" \
+            --head-ref "$GITHUB_SHA" --report "$RUNNER_TEMP/docs-report.md"
+          cat "$RUNNER_TEMP/docs-report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report only, discard edits
+        if: ${{ inputs.report_only }}
+        run: git checkout -- .
+
+      - name: Ensure the skip-release-notes label exists
+        if: ${{ !inputs.report_only }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create skip-release-notes --color "BFD4F2" --description "Exclude this pull request from release summaries" --force
+
+      - name: Create pull request with documentation updates
+        if: ${{ !inputs.report_only }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/update-docs
+          delete-branch: true
+          add-paths: |
+            README.md
+            CONTRIBUTING.md
+            ACCESSIBILITY.md
+            docs/SCREENSHOT_AUTOMATION.md
+          commit-message: "docs: update documentation to match the code"
+          title: "docs: update documentation to match the code"
+          body-path: ${{ runner.temp }}/docs-report.md
+          labels: skip-release-notes

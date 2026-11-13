@@ -31,10 +31,10 @@ sealed class UpdateResult {
 object UpdateChecker {
 
     private const val RELEASES_PAGE =
-        "https://github.com/ahmad-maqsood/unitask/releases/latest"
+        "https://github.com/CondaLabs/unitask/releases/latest"
 
     private const val RELEASE_BY_TAG_API =
-        "https://api.github.com/repos/ahmad-maqsood/unitask/releases/tags/"
+        "https://api.github.com/repos/CondaLabs/unitask/releases/tags/"
 
     /** The notes of the newest release, kept so the 10 minute re-checks do not ask GitHub again. */
     @Volatile private var cachedNotes: Pair<String, String>? = null

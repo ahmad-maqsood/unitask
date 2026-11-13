@@ -169,7 +169,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 
 ### Study timer
 
-- **Stopwatch, countdown and Pomodoro.** Track study sessions with a stopwatch, a 15, 25, 45 or 60-minute countdown (or a custom duration), or Pomodoro mode with focus rounds and short and long breaks you can adjust, an option to vibrate instead of ringing when a round ends, and an option to start the next round automatically after 10 seconds. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
+- **Stopwatch, countdown and Pomodoro.** Track study sessions with a stopwatch, a 15, 25, 45 or 60-minute countdown (or a custom duration), or Pomodoro mode with focus rounds and short and long breaks you can adjust. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
 
 ### Timetable
 

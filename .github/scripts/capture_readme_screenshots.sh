@@ -94,7 +94,7 @@ fi
 # debuggable, so run-as can read them, and exec-out keeps the PNG bytes intact.
 # (Android/data on external storage was not visible to adb on this emulator.)
 SCREENSHOT_DIR="files/readme-screenshots"
-expected=(deadlines timetable courses groups group_chat my_tasks timer global_search recently_deleted theme_dark theme_accent notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
+expected=(deadlines timetable courses groups my_tasks timer global_search recently_deleted theme_dark theme_accent notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
 
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.

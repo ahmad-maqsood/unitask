@@ -3,7 +3,7 @@ package com.example
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -21,7 +21,7 @@ class GroupDetailTabStateTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun selectingChatTabWhileGroupDetailsLoadingDoesNotResetTab() {
+    fun selectingMembersTabWhileGroupDetailsLoadingDoesNotResetTab() {
         var groupDetail by mutableStateOf<GroupDetail?>(null)
 
         composeRule.setContent {
@@ -44,19 +44,14 @@ class GroupDetailTabStateTest {
                 onSetMemberRole = { _, _ -> },
                 onRemoveMember = {},
                 onLeaveGroupClick = {},
-                onDeleteGroupClick = {},
-                chatMessages = emptyList(),
-                onSendMessage = { _, _ -> },
-                onDeleteMessage = {}
+                onDeleteGroupClick = {}
             )
         }
 
-        // Tap the chat tab while groupDetail is null (still loading)
-        composeRule.onNodeWithTag("group_tab_chat").performClick()
+        // Tap the Members tab while groupDetail is null (still loading)
+        composeRule.onNodeWithTag("group_tab_members").performClick()
         composeRule.waitForIdle()
-
-        // The chat panel is displayed even when there are no messages yet.
-        composeRule.onNodeWithTag("group_chat_panel").assertIsDisplayed()
+        composeRule.onNodeWithTag("group_tab_members").assertIsSelected()
 
         // Asynchronously simulate group details finishing loading from server
         groupDetail = GroupDetail(
@@ -68,7 +63,7 @@ class GroupDetailTabStateTest {
         )
         composeRule.waitForIdle()
 
-        // Verify that the chat panel remains displayed and has NOT reset back to tasks (tab 0).
-        composeRule.onNodeWithTag("group_chat_panel").assertIsDisplayed()
+        // Verify that the Members tab is still selected and has NOT reset back to Tasks (tab 0).
+        composeRule.onNodeWithTag("group_tab_members").assertIsSelected()
     }
 }

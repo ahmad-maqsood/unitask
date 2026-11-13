@@ -59,10 +59,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.data.groups.GroupChatInfo
 import com.example.util.AppTip
 import com.example.data.groups.GroupMembership
-import com.example.data.groups.GroupMessage
 import com.example.util.currentSupabaseUid
 import kotlinx.coroutines.flow.collectLatest
 
@@ -73,9 +71,6 @@ fun GroupsTab(
     // Set when the user taps a group task on the Deadlines tab: open that group.
     groupToOpen: String? = null,
     onGroupOpened: () -> Unit = {},
-    chatInfo: Map<String, GroupChatInfo> = emptyMap(),
-    onChatRead: (groupId: String, upToMillis: Long) -> Unit = { _, _ -> },
-    openChatGroupId: String? = null,
     pendingInvite: Pair<String, String>? = null,
     onInviteConsumed: () -> Unit = {},
     viewModel: GroupsViewModel = viewModel()
@@ -94,7 +89,6 @@ fun GroupsTab(
     val selectedGroupMembers by viewModel.selectedGroupMembers.collectAsStateWithLifecycle()
     val selectedGroupTasks by viewModel.selectedGroupTasks.collectAsStateWithLifecycle()
     val selectedGroupCourses by viewModel.selectedGroupCourses.collectAsStateWithLifecycle()
-    val selectedGroupMessages by viewModel.selectedGroupMessages.collectAsStateWithLifecycle()
     val myDoneTaskIds by viewModel.myDoneTaskIds.collectAsStateWithLifecycle()
     val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
 
@@ -107,13 +101,6 @@ fun GroupsTab(
     val courseSaveError by viewModel.courseSaveError.collectAsStateWithLifecycle()
 
     var createdGroupSuccessInfo by remember { mutableStateOf<Triple<String, String, String>?>(null) }
-    var activeOpenChatGroupId by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(openChatGroupId) {
-        if (openChatGroupId != null) {
-            activeOpenChatGroupId = openChatGroupId
-        }
-    }
 
     LaunchedEffect(pendingInvite, effectiveUser, sessionReady) {
         if (pendingInvite != null) {
@@ -189,8 +176,6 @@ fun GroupsTab(
                 // Snapshot the delegated state value so Kotlin can treat it as a non-null String.
                 val groupId = selectedGroupId.orEmpty()
                 val activeMembership = memberships.find { it.groupId == groupId }
-                val currentChatInfo = chatInfo[groupId]
-                val isChatTarget = groupId == openChatGroupId || groupId == activeOpenChatGroupId
                 GroupDetailScreen(
                     currentUid = currentSupabaseUid() ?: effectiveUser.uid,
                     groupId = groupId,
@@ -202,14 +187,8 @@ fun GroupsTab(
                     courses = selectedGroupCourses,
                     members = selectedGroupMembers,
                     doneTaskIds = myDoneTaskIds,
-                    chatMessages = selectedGroupMessages,
-                    onSendMessage = { text, replyTo -> viewModel.sendMessage(text, replyTo) },
-                    onDeleteMessage = { message -> viewModel.deleteMessage(message) },
                     isLoading = isActionLoading,
-                    onBack = {
-                        activeOpenChatGroupId = null
-                        viewModel.clearSelectedGroup()
-                    },
+                    onBack = { viewModel.clearSelectedGroup() },
                     onAddTaskClick = { viewModel.openAddTaskDialog() },
                     onEditTaskClick = { task -> viewModel.openEditTaskDialog(task) },
                     onDeleteTaskClick = { task -> viewModel.deleteTask(task) },
@@ -246,12 +225,7 @@ fun GroupsTab(
                     },
                     onTransferOwnership = { newOwnerUid ->
                         viewModel.transferOwnership(newOwnerUid)
-                    },
-                    onLoadEarlierMessages = { viewModel.loadEarlierMessages() },
-                    chatUnreadCount = currentChatInfo?.unreadCount ?: 0,
-                    chatLastReadMillis = currentChatInfo?.lastReadMillis,
-                    onChatRead = { upToMillis -> onChatRead(groupId, upToMillis) },
-                    startOnChat = isChatTarget
+                    }
                 )
             } else {
                 // Group list screen with non-blocking reconnecting banner
@@ -286,12 +260,7 @@ fun GroupsTab(
                         memberships = memberships,
                         onCreateGroupClick = { viewModel.openCreateDialog() },
                         onJoinGroupClick = { viewModel.openJoinDialog() },
-                        onSelectGroup = { groupId ->
-                            activeOpenChatGroupId = null
-                            viewModel.selectGroup(groupId)
-                        },
-                        chatInfo = chatInfo,
-                        currentUid = currentSupabaseUid() ?: effectiveUser.uid
+                        onSelectGroup = { groupId -> viewModel.selectGroup(groupId) }
                     )
                 }
             }
@@ -440,9 +409,7 @@ fun GroupsListScreen(
     memberships: List<GroupMembership>,
     onCreateGroupClick: () -> Unit,
     onJoinGroupClick: () -> Unit,
-    onSelectGroup: (String) -> Unit,
-    chatInfo: Map<String, GroupChatInfo> = emptyMap(),
-    currentUid: String = ""
+    onSelectGroup: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -526,13 +493,9 @@ fun GroupsListScreen(
                 contentPadding = PaddingValues(bottom = 88.dp)
             ) {
                 items(memberships, key = { it.groupId }) { group ->
-                    val info = chatInfo[group.groupId]
                     GroupCardItem(
                         membership = group,
-                        onClick = { onSelectGroup(group.groupId) },
-                        unreadCount = info?.unreadCount ?: 0,
-                        lastMessage = info?.lastMessage,
-                        currentUid = currentUid
+                        onClick = { onSelectGroup(group.groupId) }
                     )
                 }
             }
@@ -543,10 +506,7 @@ fun GroupsListScreen(
 @Composable
 fun GroupCardItem(
     membership: GroupMembership,
-    onClick: () -> Unit,
-    unreadCount: Int = 0,
-    lastMessage: GroupMessage? = null,
-    currentUid: String = ""
+    onClick: () -> Unit
 ) {
     val isOwner = membership.role == "owner"
 
@@ -597,21 +557,6 @@ fun GroupCardItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (lastMessage != null) {
-                    val previewPrefix = if (currentUid.isNotBlank() && lastMessage.senderId == currentUid) {
-                        "You: "
-                    } else {
-                        "${lastMessage.senderName}: "
-                    }
-                    Text(
-                        text = "$previewPrefix${lastMessage.text}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (unreadCount > 0) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (unreadCount > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
 
             Column(
@@ -629,26 +574,6 @@ fun GroupCardItem(
                         color = if (isOwner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
-                }
-
-                if (unreadCount > 0) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                        modifier = Modifier.defaultMinSize(minWidth = 20.dp, minHeight = 20.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = if (unreadCount >= 50) "50+" else "$unreadCount",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
                 }
             }
         }

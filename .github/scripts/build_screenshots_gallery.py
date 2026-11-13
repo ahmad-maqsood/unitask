@@ -13,7 +13,6 @@ SCREENS = [
     ("timetable", "Timetable", "Weekly class schedule"),
     ("courses", "Courses", "Course list and colour coding"),
     ("groups", "Study groups", "Shared study spaces"),
-    ("group_chat", "Group chat", "A real conversation with fictional demo messages"),
     ("my_tasks", "My tasks", "Personal to-do list"),
     ("timer", "Study timer", "Stopwatch and countdown for study sessions"),
     ("global_search", "Global search", "Find tasks, notes and courses in one place"),

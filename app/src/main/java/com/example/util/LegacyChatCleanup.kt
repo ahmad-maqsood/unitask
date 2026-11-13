@@ -2,6 +2,8 @@ package com.example.util
 
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 /**
  * Group chat was removed from UniTask. Phones that had an older version still hold its leftovers:
@@ -23,9 +25,10 @@ object LegacyChatCleanup {
         runCatching {
             val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             manager?.cancel(SUMMARY_ID)
-            manager?.notificationChannels
-                ?.filter { it.id.startsWith(CHANNEL_PREFIX) }
-                ?.forEach { manager.deleteNotificationChannel(it.id) }
+            // Notification channels exist only on Android 8 and newer, so there is nothing to delete below that.
+            if (manager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                deleteLegacyChannels(manager)
+            }
         }
         runCatching {
             appContext.getSharedPreferences("group_chat_read", Context.MODE_PRIVATE).edit().clear().apply()
@@ -33,5 +36,12 @@ object LegacyChatCleanup {
             appContext.getSharedPreferences("chat_outbox_queue", Context.MODE_PRIVATE).edit().clear().apply()
         }
         prefs.edit().putBoolean(KEY_DONE, true).apply()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun deleteLegacyChannels(manager: NotificationManager) {
+        manager.notificationChannels
+            .filter { it.id.startsWith(CHANNEL_PREFIX) }
+            .forEach { manager.deleteNotificationChannel(it.id) }
     }
 }

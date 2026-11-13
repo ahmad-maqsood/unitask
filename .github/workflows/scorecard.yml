@@ -1,0 +1,52 @@
+name: OpenSSF Scorecard
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Run weekly so the public score and README badge stay current.
+    - cron: '23 4 * * 1'
+
+permissions: read-all
+
+concurrency:
+  group: scorecard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: Analyze repository security practices
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2.5.0
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always() && hashFiles('scorecard-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
+        with:
+          sarif_file: scorecard-results.sarif
+          category: openssf-scorecard
+
+      - name: Upload Scorecard results artifact
+        if: always() && hashFiles('scorecard-results.sarif') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: openssf-scorecard-results
+          path: scorecard-results.sarif
+          retention-days: 30

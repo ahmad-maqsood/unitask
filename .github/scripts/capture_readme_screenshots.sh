@@ -94,8 +94,12 @@ fi
 # debuggable, so run-as can read them, and exec-out keeps the PNG bytes intact.
 # (Android/data on external storage was not visible to adb on this emulator.)
 SCREENSHOT_DIR="files/readme-screenshots"
+# Screens the test must always produce. If one is missing, the capture fails.
 expected=(deadlines timetable courses groups my_tasks timer global_search recently_deleted theme_dark theme_accent notes note_preview note_editor settings_menu settings_general settings_notifications settings_backup settings_about)
-
+# Extra screens. The test skips one of these if its step fails, so a missing file here is only
+# a warning, and the README gallery leaves that screen out. Keep in sync with
+# build_screenshots_gallery.py (OPTIONAL_SCREENS) and ReadmeScreenshotTest.kt.
+optional=(add_task course_detail tools_menu timer_pomodoro timer_options progress)
 mkdir -p docs/screenshots
 # Do not let old checked-in screenshots masquerade as a fresh capture.
 find docs/screenshots -maxdepth 1 -type f -delete
@@ -134,4 +138,19 @@ for name in "${expected[@]}"; do
   fi
 done
 
-echo "Successfully exported and validated all ${#expected[@]} screenshots."
+echo "Successfully exported and validated all ${#expected[@]} required screenshots."
+
+optional_ok=0
+for name in "${optional[@]}"; do
+  destination="docs/screenshots/$name.png"
+  if timeout 60 adb exec-out run-as "$APP_ID" cat "$SCREENSHOT_DIR/$name.png" > "$destination" 2>/dev/null \
+     && [[ -s "$destination" ]] \
+     && [[ "$(od -An -tx1 -N8 "$destination" | tr -d ' \n')" == "89504e470d0a1a0a" ]]; then
+    optional_ok=$((optional_ok + 1))
+  else
+    rm -f "$destination"
+    echo "Note: optional screenshot $name.png was not captured; it will be left out of the gallery." >&2
+  fi
+done
+echo "Exported $optional_ok of ${#optional[@]} optional screenshots."
+

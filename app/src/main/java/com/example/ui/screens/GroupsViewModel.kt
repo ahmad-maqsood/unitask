@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
-import com.example.data.groups.GroupMessage
 import com.example.data.groups.GroupMembership
 import com.example.Repositories
 import com.example.data.groups.GroupTask
@@ -36,7 +35,7 @@ import kotlinx.coroutines.launch
 
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = Repositories.group(application).also { it.resetChatPageLimits() }
+    private val repository = Repositories.group(application)
     private val _currentUser = MutableStateFlow<AppUser?>(
         currentAppUser() ?: AuthStorage.getLastUid(application)?.let { AppUser(uid = it, email = null, displayName = null) }
     )
@@ -176,15 +175,6 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val selectedGroupMessages: StateFlow<List<GroupMessage>> = _selectedGroupId.flatMapLatest { groupId ->
-        if (!groupId.isNullOrBlank()) {
-            repository.observeGroupMessages(groupId)
-        } else {
-            flowOf(emptyList())
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
     val myDoneTaskIds: StateFlow<Set<String>> = kotlinx.coroutines.flow.combine(
         _currentUser,
         _selectedGroupId
@@ -224,7 +214,6 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     /** Called when the app notices you are not a member of the open group any more (kicked or left elsewhere). */
     fun onRemovedFromGroup(groupId: String) {
-        repository.clearChatOutbox(groupId)
         reminderScheduler.cancelGroup(groupId)
         if (_selectedGroupId.value == groupId) {
             _selectedGroupId.value = null
@@ -478,24 +467,6 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
     }
-    fun sendMessage(text: String, replyTo: GroupMessage? = null) {
-        val groupId = _selectedGroupId.value ?: return
-        val user = _currentUser.value ?: return
-        repository.sendMessage(groupId, user.uid, user.displayName ?: "Student", text, replyTo) { e ->
-            viewModelScope.launch {
-                _snackbarMessage.emit(e.message ?: "Your message could not be sent.")
-            }
-        }
-    }
-
-    fun deleteMessage(message: GroupMessage) {
-        repository.deleteMessage(message.groupId, message.id) { e ->
-            viewModelScope.launch {
-                _snackbarMessage.emit("Could not delete message: ${e.message}")
-            }
-        }
-    }
-
 
     fun deleteTask(task: GroupTask) {
         reminderScheduler.cancel(task.groupId, task.id)
@@ -534,11 +505,6 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                     _snackbarMessage.emit("Failed to transfer ownership: ${e.message}")
                 }
         }
-    }
-
-    fun loadEarlierMessages() {
-        val groupId = _selectedGroupId.value ?: return
-        repository.loadEarlierMessages(groupId)
     }
 
     fun removeMember(member: GroupMember) {

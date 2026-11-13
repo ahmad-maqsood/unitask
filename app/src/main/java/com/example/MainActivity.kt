@@ -107,13 +107,11 @@ class MainActivity : ComponentActivity() {
             intent.removeExtra(EXTRA_OPEN_TIMER)
         }
         val groupId = intent.getStringExtra("open_group_id")
-        val openChat = intent.getBooleanExtra("open_group_chat", false)
         val openedTaskId = intent.getLongExtra("opened_task_id", -1L)
         val isMyTask = intent.getBooleanExtra("extra_is_my_task", false)
         if (!groupId.isNullOrBlank()) {
-            mainViewModel.openGroup(groupId, openChat = openChat)
+            mainViewModel.openGroup(groupId)
             intent.removeExtra("open_group_id")
-            intent.removeExtra("open_group_chat")
         } else if (openedTaskId > 0L || intent.hasExtra("opened_task_id")) {
             if (isMyTask) {
                 mainViewModel.setTab(com.example.ui.screens.MainTab.MYTASKS)

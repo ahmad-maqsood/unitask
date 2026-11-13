@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: readme-screenshots
@@ -16,6 +15,10 @@ jobs:
     name: Capture app screens and open a PR
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    # Write access only for this job, which pushes a branch and opens a PR.
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Check out code

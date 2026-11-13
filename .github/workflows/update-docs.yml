@@ -16,9 +16,7 @@ on:
         default: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
 
 concurrency:
   group: update-docs
@@ -29,6 +27,11 @@ jobs:
     name: Check documents and open a PR
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # Write access only for this job, which pushes a branch and opens a PR.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
 
     steps:
       - name: Check out code

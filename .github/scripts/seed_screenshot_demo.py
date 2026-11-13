@@ -8,7 +8,6 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -17,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 GROUP_USERNAME = "unitask-screenshot-demo"
 GROUP_NAME = "UniTask Screenshot Demo"
-# Fictional display names shown in the group chat screenshot.
+# Fictional display names shown in the study group screenshot.
 OWNER_DISPLAY_NAME = "Hamza Qureshi"
 MEMBER_DISPLAY_NAME = "Zainab Fatima"
 
@@ -145,7 +144,6 @@ def main():
     ) or []
     for old in old_groups:
         gid = quote(old["id"], safe="")
-        request(base, anon, "DELETE", f"/rest/v1/group_messages?group_id=eq.{gid}", owner_token)
         request(
             base, anon, "DELETE",
             f"/rest/v1/group_members?group_id=eq.{gid}&role=neq.owner",
@@ -184,42 +182,11 @@ def main():
         base, anon, member_token, member_id, group_id, "member", "member"
     )
 
-    messages = [
-        ("owner", "Hey everyone! Welcome to our study group."),
-        ("member", "Thanks! I added our study plan for this week."),
-        ("owner", "The Data Structures assignment is due on Friday."),
-        ("member", "I'll finish the linked-list exercises tonight."),
-        ("owner", "Can someone share the lecture notes after class?"),
-        ("member", "Of course — I have a summary ready to share."),
-        ("owner", "Let's review the database questions together tomorrow."),
-        ("member", "Sounds good. I'll bring the practice questions."),
-        ("owner", "Please add any topics you want to cover."),
-        ("member", "SQL joins and normalisation would be helpful!"),
-        ("owner", "Great, those are on the agenda."),
-        ("member", "See you in the library!"),
-    ]
-    now = datetime.now(timezone.utc)
-    for index, (sender, message) in enumerate(messages):
-        owner_message = sender == "owner"
-        request(
-            base, anon, "POST", "/rest/v1/group_messages",
-            owner_token if owner_message else member_token,
-            {
-                "group_id": group_id,
-                "sender_id": owner_id if owner_message else member_id,
-                "sender_name": OWNER_DISPLAY_NAME if owner_message else MEMBER_DISPLAY_NAME,
-                "text": message,
-                "created_at": (
-                    now - timedelta(minutes=(len(messages) - index) * 3)
-                ).isoformat(),
-            },
-        )
-
     output = os.environ.get("GITHUB_OUTPUT")
     if output:
         with open(output, "a", encoding="utf-8") as stream:
             stream.write(f"group_id={group_id}\n")
-    print("Prepared and verified the fictional UniTask Screenshot Demo group and chat messages.")
+    print("Prepared and verified the fictional UniTask Screenshot Demo group.")
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ Only the maintainer can see the report.
 
 ## What counts
 
-- Reading or changing another user's tasks, groups or chat messages
+- Reading or changing another user's tasks or groups
 - Bypassing Row Level Security or the server functions in `supabase/schema.sql`
 - Leaking personal data, or account deletion and export not working as described
 - Any secret (keystore, service key) exposed in the repository

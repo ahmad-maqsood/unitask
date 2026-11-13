@@ -4,7 +4,7 @@ UniTask can refresh its README screenshots from the real Android app. The workfl
 
 ## One-time Supabase setup
 
-The Group Chat screenshot uses the real group-chat screen and Supabase's normal security rules. Create two dedicated demo users in **Supabase Dashboard → Authentication → Users**:
+The Study groups screenshot uses the real Groups screen and Supabase's normal security rules. Create two dedicated demo users in **Supabase Dashboard → Authentication → Users**:
 
 1. Create a user for the group owner, for example `unitask-screenshot-owner@example.com`.
 2. Create a second user for the group member, for example `unitask-screenshot-member@example.com`.
@@ -36,9 +36,9 @@ This workflow is separate from APK releases. It only runs when you manually star
 
 ## Demo data and cleanup
 
-The emulator uses fictional courses, deadlines, timetable entries, notes and tasks, plus a few deleted items so the **Recently deleted** screen has something to show. The **Global search** screenshot searches for "design". Two extra screenshots show the dark theme and the Rose accent colour; the test switches the theme in code and switches back to the default afterwards. The group chat uses fictional messages from the two demo accounts, shown with the Pakistani display names Hamza Qureshi and Zainab Fatima (set at the top of `.github/scripts/seed_screenshot_demo.py`).
+The emulator uses fictional courses, deadlines, timetable entries, notes and tasks, plus a few deleted items so the **Recently deleted** screen has something to show. The **Global search** screenshot searches for "design". Two extra screenshots show the dark theme and the Rose accent colour; the test switches the theme in code and switches back to the default afterwards. The demo group uses the two demo accounts, shown with the Pakistani display names Hamza Qureshi and Zainab Fatima (set at the top of `.github/scripts/seed_screenshot_demo.py`).
 
-The workflow reserves the group username `unitask-screenshot-demo`. Before creating a fresh group, it removes the previous screenshot group's messages and member, then deletes that group. It does not touch other groups. The latest demo group and messages remain in Supabase after a run, until the next screenshot run replaces them or you delete the group from UniTask while signed in as its owner.
+The workflow reserves the group username `unitask-screenshot-demo`. Before creating a fresh group, it removes the previous screenshot group's members, then deletes that group. It does not touch other groups. The latest demo group remains in Supabase after a run, until the next screenshot run replaces them or you delete the group from UniTask while signed in as its owner.
 
 If the workflow fails during setup, check that both demo users exist, their email addresses are confirmed, and the four GitHub secrets are spelled exactly as shown above.
 

@@ -50,16 +50,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Pin the scanner version so the same source revision is checked
-      # with a predictable scanner release on every run.
+      # Pin the scanner version so results are reproducible between runs.
       - name: Install mobsfscan
-        run: python -m pip install --disable-pip-version-check mobsfscan==0.4.1
+        run: python -m pip install --disable-pip-version-check mobsfscan==1.0.1
 
-      # Findings are uploaded to GitHub Code Scanning. We initially keep
-      # findings informational rather than failing builds, so we can review
-      # the baseline and distinguish genuine issues from false positives.
+      # Keep findings informational initially. We can review the baseline
+      # before deciding whether any rules should block future pull requests.
       - name: Run mobsfscan
-        run: mobsfscan . --sarif --output mobsfscan.sarif
+        run: mobsfscan . --sarif --output mobsfscan.sarif --no-fail
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && hashFiles('mobsfscan.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)

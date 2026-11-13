@@ -28,7 +28,7 @@ class NotificationHistoryTest {
     fun newestFirstAndUnreadUntilMarked() {
         val now = System.currentTimeMillis()
         NotificationHistory.add(context, "Group update", "First", "a", nowMillis = now - 1_000L)
-        NotificationHistory.add(context, "Group chat", "Second", "b", nowMillis = now)
+        NotificationHistory.add(context, "Group tasks", "Second", "b", nowMillis = now)
         val items = NotificationHistory.items(context)
         assertEquals(listOf("Second", "First"), items.map { it.title })
         assertEquals(2, NotificationHistory.unreadCount(context))
@@ -40,13 +40,13 @@ class NotificationHistoryTest {
     @Test
     fun sameKeyReplacesOlderItemAndBecomesUnreadAgain() {
         val now = System.currentTimeMillis()
-        NotificationHistory.add(context, "Group chat", "Group A", "Sam: hi", key = "chat|a", nowMillis = now - 5_000)
+        NotificationHistory.add(context, "Group tasks", "Group A", "Sam added a task", key = "tasks|a", nowMillis = now - 5_000)
         NotificationHistory.markAllRead(context)
-        NotificationHistory.add(context, "Group chat", "Group A", "Sam: hello again", key = "chat|a", nowMillis = now)
+        NotificationHistory.add(context, "Group tasks", "Group A", "Sam added another task", key = "tasks|a", nowMillis = now)
 
         val items = NotificationHistory.items(context)
         assertEquals(1, items.size)
-        assertEquals("Sam: hello again", items[0].body)
+        assertEquals("Sam added another task", items[0].body)
         assertTrue(items[0].unread)
     }
 
@@ -124,7 +124,7 @@ class NotificationHistoryTest {
         // The other kinds stay in the bell.
         NotificationHistory.add(context, "Daily summary", "Today in UniTask", "", key = "daily|1", nowMillis = now)
         NotificationHistory.add(context, "Missed reminder", "Missed", "", key = "missed|1", nowMillis = now + 1)
-        NotificationHistory.add(context, "Group chat", "Group A", "Sam: hi", key = "chat|a", nowMillis = now + 2)
+        NotificationHistory.add(context, "Group tasks", "Group A", "Sam added a task", key = "tasks|a", nowMillis = now + 2)
         assertEquals(3, NotificationHistory.items(context).size)
     }
 

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Code
@@ -86,7 +85,6 @@ internal fun featureIcon(name: String): ImageVector? = when (name.trim().lowerca
     "schedule" -> Icons.Default.Schedule
     "school" -> Icons.Default.School
     "groups" -> Icons.Default.Groups
-    "chat" -> Icons.Default.ChatBubble
     "notifications" -> Icons.Default.Notifications
     "calendar" -> Icons.Default.CalendarMonth
     "backup" -> Icons.Default.Backup

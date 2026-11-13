@@ -250,7 +250,7 @@ flowchart LR
 | Local data | Room 2.8.5 with explicit migrations |
 | Cloud | Supabase (`supabase-kt` 3.8.0): Auth with Google sign-in, PostgREST and Realtime |
 | Networking | Ktor 3.6.1 |
-| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync, message checks and announcement polling |
+| Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync and announcement polling |
 | Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, minimum SDK 24, target SDK 36 |
 | Continuous integration | GitHub Actions builds the signed release APK, runs tests and lint, and scans the code with CodeQL |
 
@@ -258,7 +258,7 @@ flowchart LR
 
 - Personal data is stored on the device in Room and can be backed up to the user's own Google Drive. It is not uploaded to Supabase.
 - Group screens use Supabase Realtime for instant updates, with a short polling safety net in case an event is missed.
-- Actions in groups, such as adding a task, ticking it done or sending a message, appear on screen immediately and are confirmed by the server shortly afterwards.
+- Actions in groups, such as adding a task or ticking it done, appear on screen immediately and are confirmed by the server shortly afterwards.
 - Row Level Security on every table controls who can read and write which data. The anon key in the application is public by design and carries no additional access.
 - Database triggers set the author name of group tasks on the server. A member therefore cannot post under another member's name.
 

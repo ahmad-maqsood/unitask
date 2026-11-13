@@ -23,7 +23,7 @@ These points may change as the app is tested and improved. If you encounter a ba
 You can report an accessibility problem in either of these ways:
 
 - **In the app:** Open **Settings → Report a problem**.
-- **On GitHub:** [Open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose).
+- **On GitHub:** [Open an issue](https://github.com/CondaLabs/unitask/issues/new/choose).
 
 If possible, include:
 

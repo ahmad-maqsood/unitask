@@ -51,39 +51,91 @@ UniTask is a personal project, created to solve everyday planning problems for i
 
 ## Screenshots
 
+Jump to: [Plan your work](#plan-your-work) · [Study tools](#study-tools) · [Notes](#notes) · [Groups, search and trash](#groups-search-and-trash) · [Settings](#settings) · [Themes](#themes)
+
+### Plan your work
+
+Deadlines, classes and courses, plus personal tasks that need no account.
+
 <table align="center">
   <tr>
-    <td align="center"><a href="docs/screenshots/deadlines.jpg"><img src="docs/screenshots/deadlines.jpg" width="220" alt="Deadlines" /></a><br/><sub><b>Deadlines</b><br/>Upcoming work and daily overview</sub></td>
-    <td align="center"><a href="docs/screenshots/timetable.jpg"><img src="docs/screenshots/timetable.jpg" width="220" alt="Timetable" /></a><br/><sub><b>Timetable</b><br/>Weekly class schedule</sub></td>
-    <td align="center"><a href="docs/screenshots/courses.jpg"><img src="docs/screenshots/courses.jpg" width="220" alt="Courses" /></a><br/><sub><b>Courses</b><br/>Course list and colour coding</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/deadlines.jpg"><img src="docs/screenshots/deadlines.jpg" width="220" alt="Deadlines" /></a><br/><sub><b>Deadlines</b><br/>Upcoming work and daily overview</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/add_task.jpg"><img src="docs/screenshots/add_task.jpg" width="220" alt="New assignment" /></a><br/><sub><b>New assignment</b><br/>Add a deadline with priority, reminders and files</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/my_tasks.jpg"><img src="docs/screenshots/my_tasks.jpg" width="220" alt="My tasks" /></a><br/><sub><b>My tasks</b><br/>Personal to-do list</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/screenshots/groups.jpg"><img src="docs/screenshots/groups.jpg" width="220" alt="Study groups" /></a><br/><sub><b>Study groups</b><br/>Shared study spaces</sub></td>
-    <td align="center"><a href="docs/screenshots/my_tasks.jpg"><img src="docs/screenshots/my_tasks.jpg" width="220" alt="My tasks" /></a><br/><sub><b>My tasks</b><br/>Personal to-do list</sub></td>
-    <td align="center"><a href="docs/screenshots/timer.jpg"><img src="docs/screenshots/timer.jpg" width="220" alt="Study timer" /></a><br/><sub><b>Study timer</b><br/>Stopwatch and countdown for study sessions</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/timetable.jpg"><img src="docs/screenshots/timetable.jpg" width="220" alt="Timetable" /></a><br/><sub><b>Timetable</b><br/>Weekly class schedule</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/courses.jpg"><img src="docs/screenshots/courses.jpg" width="220" alt="Courses" /></a><br/><sub><b>Courses</b><br/>Course list and colour coding</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/course_detail.jpg"><img src="docs/screenshots/course_detail.jpg" width="220" alt="Course details" /></a><br/><sub><b>Course details</b><br/>Every task and class for one course</sub></td>
   </tr>
+</table>
+
+### Study tools
+
+Everything in the More menu, from the timer to your weekly progress.
+
+<table align="center">
   <tr>
-    <td align="center"><a href="docs/screenshots/global_search.jpg"><img src="docs/screenshots/global_search.jpg" width="220" alt="Global search" /></a><br/><sub><b>Global search</b><br/>Find tasks, notes and courses in one place</sub></td>
-    <td align="center"><a href="docs/screenshots/notes.jpg"><img src="docs/screenshots/notes.jpg" width="220" alt="Notes" /></a><br/><sub><b>Notes</b><br/>Pinned and course-linked notes</sub></td>
-    <td align="center"><a href="docs/screenshots/note_preview.jpg"><img src="docs/screenshots/note_preview.jpg" width="220" alt="Note preview" /></a><br/><sub><b>Note preview</b><br/>Formatted Markdown preview</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="docs/screenshots/note_editor.jpg"><img src="docs/screenshots/note_editor.jpg" width="220" alt="Note editor" /></a><br/><sub><b>Note editor</b><br/>Markdown editing and formatting tools</sub></td>
-    <td align="center"><a href="docs/screenshots/recently_deleted.jpg"><img src="docs/screenshots/recently_deleted.jpg" width="220" alt="Recently deleted" /></a><br/><sub><b>Recently deleted</b><br/>Restore deleted tasks, notes and classes for 30 days</sub></td>
-    <td align="center"><a href="docs/screenshots/settings_menu.jpg"><img src="docs/screenshots/settings_menu.jpg" width="220" alt="Settings" /></a><br/><sub><b>Settings</b><br/>Settings overview</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="docs/screenshots/settings_general.jpg"><img src="docs/screenshots/settings_general.jpg" width="220" alt="General settings" /></a><br/><sub><b>General settings</b><br/>Theme and app preferences</sub></td>
-    <td align="center"><a href="docs/screenshots/settings_notifications.jpg"><img src="docs/screenshots/settings_notifications.jpg" width="220" alt="Notifications" /></a><br/><sub><b>Notifications</b><br/>Reminder controls</sub></td>
-    <td align="center"><a href="docs/screenshots/settings_backup.jpg"><img src="docs/screenshots/settings_backup.jpg" width="220" alt="Backup and data" /></a><br/><sub><b>Backup and data</b><br/>Backup and data options</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/tools_menu.jpg"><img src="docs/screenshots/tools_menu.jpg" width="220" alt="More menu" /></a><br/><sub><b>More menu</b><br/>Notes, timer, progress, search and more</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/timer.jpg"><img src="docs/screenshots/timer.jpg" width="220" alt="Study timer" /></a><br/><sub><b>Study timer</b><br/>Stopwatch and countdown for study sessions</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/timer_pomodoro.jpg"><img src="docs/screenshots/timer_pomodoro.jpg" width="220" alt="Pomodoro" /></a><br/><sub><b>Pomodoro</b><br/>Focus and break rounds</sub></td>
   </tr>
 </table>
 
 <table align="center">
   <tr>
-    <td align="center"><a href="docs/screenshots/settings_about.jpg"><img src="docs/screenshots/settings_about.jpg" width="220" alt="About and help" /></a><br/><sub><b>About and help</b><br/>App information and support</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/timer_options.jpg"><img src="docs/screenshots/timer_options.jpg" width="220" alt="Pomodoro options" /></a><br/><sub><b>Pomodoro options</b><br/>Alarm or vibrate, and auto-start the next round</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/progress.jpg"><img src="docs/screenshots/progress.jpg" width="220" alt="Progress" /></a><br/><sub><b>Progress</b><br/>Tasks finished this week and your streak</sub></td>
   </tr>
 </table>
+
+### Notes
+
+Markdown notes with a live preview, linked to your courses.
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top"><a href="docs/screenshots/notes.jpg"><img src="docs/screenshots/notes.jpg" width="220" alt="Notes" /></a><br/><sub><b>Notes</b><br/>Pinned and course-linked notes</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/note_preview.jpg"><img src="docs/screenshots/note_preview.jpg" width="220" alt="Note preview" /></a><br/><sub><b>Note preview</b><br/>Formatted Markdown preview</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/note_editor.jpg"><img src="docs/screenshots/note_editor.jpg" width="220" alt="Note editor" /></a><br/><sub><b>Note editor</b><br/>Markdown editing and formatting tools</sub></td>
+  </tr>
+</table>
+
+### Groups, search and trash
+
+Share work with classmates, find anything fast and undo a deletion.
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top"><a href="docs/screenshots/groups.jpg"><img src="docs/screenshots/groups.jpg" width="220" alt="Study groups" /></a><br/><sub><b>Study groups</b><br/>Shared study spaces</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/global_search.jpg"><img src="docs/screenshots/global_search.jpg" width="220" alt="Global search" /></a><br/><sub><b>Global search</b><br/>Find tasks, notes and courses in one place</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/recently_deleted.jpg"><img src="docs/screenshots/recently_deleted.jpg" width="220" alt="Recently deleted" /></a><br/><sub><b>Recently deleted</b><br/>Restore deleted tasks, notes and classes for 30 days</sub></td>
+  </tr>
+</table>
+
+### Settings
+
+Reminders, backup and account options, one section at a time.
+
+<details>
+<summary>Show the 5 settings screens</summary>
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top"><a href="docs/screenshots/settings_menu.jpg"><img src="docs/screenshots/settings_menu.jpg" width="220" alt="Settings" /></a><br/><sub><b>Settings</b><br/>Settings overview</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/settings_general.jpg"><img src="docs/screenshots/settings_general.jpg" width="220" alt="General settings" /></a><br/><sub><b>General settings</b><br/>Theme and app preferences</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/settings_notifications.jpg"><img src="docs/screenshots/settings_notifications.jpg" width="220" alt="Notifications" /></a><br/><sub><b>Notifications</b><br/>Reminder controls</sub></td>
+  </tr>
+</table>
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top"><a href="docs/screenshots/settings_backup.jpg"><img src="docs/screenshots/settings_backup.jpg" width="220" alt="Backup and data" /></a><br/><sub><b>Backup and data</b><br/>Backup and data options</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/settings_about.jpg"><img src="docs/screenshots/settings_about.jpg" width="220" alt="About and help" /></a><br/><sub><b>About and help</b><br/>App information and support</sub></td>
+  </tr>
+</table>
+
+</details>
 
 ### Themes
 
@@ -91,14 +143,14 @@ UniTask follows the system theme or can be set to light or dark, with ten accent
 
 <table align="center">
   <tr>
-    <td align="center"><a href="docs/screenshots/theme_dark.jpg"><img src="docs/screenshots/theme_dark.jpg" width="220" alt="Dark theme" /></a><br/><sub><b>Dark theme</b><br/>Deadlines in dark mode</sub></td>
-    <td align="center"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Ten accent colours, shown here in Rose</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/theme_dark.jpg"><img src="docs/screenshots/theme_dark.jpg" width="220" alt="Dark theme" /></a><br/><sub><b>Dark theme</b><br/>Deadlines in dark mode</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Ten accent colours, shown here in Rose</sub></td>
   </tr>
 </table>
 
 <p align="center"><sub>Automatically captured from UniTask 4.3.0 using fictional demo data on an Android emulator.</sub></p>
 
-Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
+Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**New assignment**](docs/screenshots/add_task.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Course details**](docs/screenshots/course_detail.jpg) · [**More menu**](docs/screenshots/tools_menu.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Pomodoro**](docs/screenshots/timer_pomodoro.jpg) · [**Pomodoro options**](docs/screenshots/timer_options.jpg) · [**Progress**](docs/screenshots/progress.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
 
 ## Installation
 

@@ -33,7 +33,6 @@ jobs:
           results_file: scorecard-results.sarif
           results_format: sarif
           publish_results: true
-          fail_on_publish_error: true
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && hashFiles('scorecard-results.sarif') != ''

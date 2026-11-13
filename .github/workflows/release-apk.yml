@@ -16,14 +16,20 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+# Keep workflow-wide permissions read-only. Grant write access only to the build job.
+permissions: read-all
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -188,12 +194,40 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Upload APK
+      # Generate signed SLSA build provenance for the exact APK produced above.
+      - name: Attest release APK
+        if: ${{ !inputs.test_release_notes }}
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: app/build/outputs/apk/release/*.apk
+
+      # Export the signed in-toto/Sigstore bundle in the JSONL format Scorecard detects.
+      - name: Export Scorecard-compatible provenance bundle
+        if: ${{ !inputs.test_release_notes }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          gh attestation download "$APK" --repo "$GITHUB_REPOSITORY"
+          BUNDLE=$(find . -maxdepth 1 -type f -name 'sha256*.jsonl' -print -quit)
+          if [ -z "$BUNDLE" ] || [ ! -s "$BUNDLE" ]; then
+            echo "::error::GitHub did not return an attestation bundle for the APK."
+            exit 1
+          fi
+          mv "$BUNDLE" "$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
+          jq -e 'select(type == "object")' "$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl" >/dev/null
+          echo "Exported signed provenance for UniTask-$NAME.apk." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK and provenance
         if: ${{ !inputs.test_release_notes }}
         uses: actions/upload-artifact@v7
         with:
           name: unitask-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
-          path: app/build/outputs/apk/release/*.apk
+          path: |
+            app/build/outputs/apk/release/*.apk
+            ${{ runner.temp }}/UniTask-${{ steps.version.outputs.name }}.apk.intoto.jsonl
           retention-days: 14
 
       - name: Create draft GitHub release
@@ -204,13 +238,14 @@ jobs:
           BASE_TAG: ${{ steps.notes.outputs.base_tag }}
         run: |
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          PROVENANCE="$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
           cp "$APK" "$RUNNER_TEMP/UniTask-$NAME.apk"
           FLAGS="--draft"
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
-          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" \
+          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" \
             --target "$GITHUB_SHA" --title "UniTask $NAME" \
             --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
-          echo "Created draft release v$NAME (compared with $BASE_TAG)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create CHANGELOG pull request
         if: ${{ inputs.prepare_release }}

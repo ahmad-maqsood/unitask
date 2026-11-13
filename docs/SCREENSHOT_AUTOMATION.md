@@ -34,6 +34,18 @@ After the automation pull request has been merged:
 
 This workflow is separate from APK releases. It only runs when you manually start it.
 
+## What is captured
+
+There are 18 required screenshots and 6 optional extras (the new-assignment screen, course details, the More menu, Pomodoro mode and its options, and Progress). The extras are wrapped in `optionalShot(...)` in `ReadmeScreenshotTest.kt`: if one of those steps fails on the emulator, the failure is logged and the run carries on, and the gallery simply leaves that screen out. A missing required screenshot still fails the run.
+
+The README gallery is grouped into sections (Plan your work, Study tools, Notes, Groups search and trash, Settings, Themes). To add a screenshot, change three places so they agree:
+
+1. `ReadmeScreenshotTest.kt`: add a `capture("name")` call (inside `optionalShot` if it is an extra).
+2. `capture_readme_screenshots.sh`: add the name to `expected` (required) or `optional`.
+3. `build_screenshots_gallery.py`: add it to a section in `SECTIONS`, and to `OPTIONAL_SCREENS` if it is an extra.
+
+To change only the gallery layout without running the emulator, run `python3 .github/scripts/build_screenshots_gallery.py --readme-only`. It rebuilds the README section from the images already in `docs/screenshots/`.
+
 ## Demo data and cleanup
 
 The emulator uses fictional courses, deadlines, timetable entries, notes and tasks, plus a few deleted items so the **Recently deleted** screen has something to show. The **Global search** screenshot searches for "design". Two extra screenshots show the dark theme and the Rose accent colour; the test switches the theme in code and switches back to the default afterwards. The demo group uses the two demo accounts, shown with the Pakistani display names Hamza Qureshi and Zainab Fatima (set at the top of `.github/scripts/seed_screenshot_demo.py`).

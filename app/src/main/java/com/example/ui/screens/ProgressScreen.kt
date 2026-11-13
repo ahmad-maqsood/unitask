@@ -64,7 +64,7 @@ fun ProgressScreen(
             TopAppBar(
                 title = { Text("Progress") },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(onClick = onClose, modifier = Modifier.testTag("progress_back_button")) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

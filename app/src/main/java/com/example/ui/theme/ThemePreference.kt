@@ -14,6 +14,7 @@ enum class ThemeMode(val label: String) {
 /** Remembers the Light / Dark / System choice and the accent colour on the phone. */
 object ThemePreference {
     private const val PREFS = "unitask_settings"
+    // nosemgrep: android_kotlin_hardcoded (this is a preference name, not a secret)
     private const val KEY = "theme_mode"
     private const val ACCENT_KEY = "theme_accent"
 

@@ -46,6 +46,9 @@ class ReadmeScreenshotTest {
 
     private var scenario: ActivityScenario<MainActivity>? = null
 
+    /** Id of the "Data Structures" demo course, set by seedLocalDemoData(). */
+    private var demoCourseId = 0L
+    
     @After
     fun closeActivity() {
         scenario?.close()
@@ -92,6 +95,16 @@ class ReadmeScreenshotTest {
         waitForTag("tab_deadlines")
         capture("deadlines")
 
+
+        // Extra screenshot: the "New Assignment" screen, opened with the + button.
+        optionalShot("add_task", cleanupTags = listOf("task_cancel_button")) {
+            tap("main_fab_button")
+            waitForTag("task_save_button")
+            capture("add_task")
+            tap("task_cancel_button")
+            waitForTagToDisappear("task_save_button")
+        }
+        
         // Theme variation: the same Deadlines screen in dark mode. ThemePreference is what the
         // Settings screen changes, so the screen redraws at once. The default look (system
         // theme, Indigo) is restored before the main screenshots continue.
@@ -105,6 +118,16 @@ class ReadmeScreenshotTest {
         tap("tab_courses")
         capture("courses")
 
+
+        // Extra screenshot: tapping a course opens its detail page with its tasks and classes.
+        optionalShot("course_detail", cleanupTags = listOf("course_detail_back_button")) {
+            tap("course_card_$demoCourseId")
+            waitForTag("course_detail_back_button")
+            capture("course_detail")
+            tap("course_detail_back_button")
+            waitForTagToDisappear("course_detail_back_button")
+        }
+        
         tap("tab_groups")
         waitForGroupCard(groupId, timeoutMillis = 30_000)
         capture("groups")
@@ -119,14 +142,45 @@ class ReadmeScreenshotTest {
 
         // Study timer: open it from the More sheet and show a 25 minute countdown.
         tap("top_bar_tools_button")
+        // Extra screenshot: the "More" sheet that lists every tool. The sheet closes by itself
+        // when a tile is tapped, so the timer tile below doubles as the way out.
+        optionalShot("tools_menu") {
+            waitForTag("tools_sheet")
+            capture("tools_menu")
+        }
         tap("tools_tile_timer")
         waitForTag("timer_screen")
         tap("timer_mode_countdown")
         tap("timer_preset_25")
         waitForText("25:00")
         capture("timer")
+
+        // Extra screenshots: Pomodoro mode (idle, nothing is started) and its options dialog.
+        optionalShot("timer_pomodoro", cleanupTags = listOf("timer_options_done_button")) {
+            tap("timer_mode_pomodoro")
+            waitForTag("timer_pomodoro_options_button")
+            capture("timer_pomodoro")
+            tap("timer_pomodoro_options_button")
+            waitForTag("timer_options_done_button")
+            capture("timer_options")
+            tap("timer_options_done_button")
+            waitForTagToDisappear("timer_options_done_button")
+        }
+        // Leave Pomodoro mode so no timer state carries into the screenshots that follow.
+        runCatching { tap("timer_mode_countdown") }
         tap("timer_back_button")
         waitForTagToDisappear("timer_screen")
+
+        // Extra screenshot: Progress (tasks done this week, streak, per-course progress).
+        optionalShot("progress", cleanupTags = listOf("progress_back_button")) {
+            tap("top_bar_tools_button")
+            tap("tools_tile_progress")
+            waitForTag("progress_screen")
+            waitForTag("progress_list")
+            capture("progress")
+            tap("progress_back_button")
+            waitForTagToDisappear("progress_screen")
+        }
 
         // Global search: open it from the top bar search icon and search for "design". That word
         // matches a task, a note and a course, so all three result sections are shown.
@@ -208,6 +262,8 @@ class ReadmeScreenshotTest {
                 isSynced = true
             )
         )
+        
+        demoCourseId = algorithmsId
         val databasesId = database.courseDao().insertCourse(
             Course(
                 name = "Database Systems",
@@ -261,6 +317,7 @@ class ReadmeScreenshotTest {
                 title = "Read Chapter 4",
                 dueDateEpochMillis = dayOffset(-1),
                 status = TaskStatus.COMPLETED,
+                completedAtMillis = dayOffset(-1) + 12L * 60L * 60L * 1000L,
                 priority = Priority.LOW,
                 isSynced = true
             )
@@ -427,7 +484,39 @@ class ReadmeScreenshotTest {
         tap("top_bar_tools_button")
         tap("tools_tile_notes")
     }
-
+    
+    /**
+     * Runs an extra screenshot step. These are "nice to have": if one fails (a slow emulator, a
+     * screen that changed), the failure is logged, the screen is closed again where possible, and
+     * the required screenshots after it are still captured. The capture script treats the images
+     * of these steps as optional too. A name that is missing from the output is simply left out
+     * of the README gallery.
+     */
+    private fun optionalShot(name: String, cleanupTags: List<String> = emptyList(), block: () -> Unit) {
+        try {
+            block()
+        } catch (error: Throwable) {
+            android.util.Log.w("ReadmeScreenshotTest", "Optional screenshot '$name' skipped: $error")
+            for (tag in cleanupTags) {
+                runCatching {
+                    if (composeRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+                        composeRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+                        composeRule.waitForIdle()
+                    }
+                }
+            }
+            // A bottom sheet or dialog left open would hide the tab bar, so close it if it is there.
+            runCatching {
+                if (composeRule.onAllNodesWithTag("tools_sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+                    InstrumentationRegistry.getInstrumentation().uiAutomation
+                        .executeShellCommand("input keyevent 4")
+                        .let { ParcelFileDescriptor.AutoCloseInputStream(it).use { stream -> stream.readBytes() } }
+                    composeRule.waitForIdle()
+                }
+            }
+        }
+    }
+    
     private fun tap(tag: String) {
         composeRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed().performClick()
         composeRule.waitForIdle()

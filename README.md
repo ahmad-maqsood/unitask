@@ -16,11 +16,12 @@ No advertising. No tracking.
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Security scanning](https://img.shields.io/badge/security-scanning%20enabled-0D9488?style=flat-square&logo=github)](docs/SECURITY_SCANNING.md)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ahmad-maqsood/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ahmad-maqsood/badge.svg)](https://hub.xerj.org/contributors/ahmad-maqsood)
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Security scanning](#security-scanning) · [Limitations](#known-limitations) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Security scanning](#security-scanning) · [Repository security](#repository-security) · [Limitations](#known-limitations) · [Support](#support)
 
 </div>
 
@@ -336,6 +337,14 @@ UniTask uses automated security-analysis tools as an additional layer of checkin
 - **MobSF** can analyse a built APK. The [security scanning guide](docs/SECURITY_SCANNING.md) explains how to submit a release APK to the official online static analyser and review its report.
 
 These automated checks are not a professional security audit, do not guarantee that the app is secure, and may produce false positives or miss issues. No independent human security audit is currently claimed.
+
+## Repository security
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ahmad-maqsood/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask)
+
+UniTask uses [OpenSSF Scorecard](https://scorecard.dev/) to automatically assess repository security practices, such as workflow permissions, dependency management and code review protections. The assessment runs on pushes to `main` and weekly, and publishes its results to the public Scorecard service and GitHub Code Scanning.
+
+The Scorecard rating measures observable repository-development practices. It is not an Android application security audit and does not establish that the APK is vulnerability-free. Review the [Scorecard report](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask) for the individual checks and their limitations.
 
 ## Known limitations
 

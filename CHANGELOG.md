@@ -2,6 +2,26 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.3.0] - 13-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.3.0)
+
+### Improved
+- Enhanced Pomodoro timer logic with improved state handling, persistence, and support for auto-starting alarms even when the app is closed.
+- Expanded local backup files to include app settings, such as theme and timer preferences, for a more complete restoration experience.
+- Updated the Notes feature to include find-in-note functionality and code highlighting.
+- Refined search screen and notification handling for reminders and countdowns.
+
+### Fixed
+- Resolved a potential crash in the legacy chat cleanup process by restricting notification channel deletion to Android 8.0 (API 26) and newer.
+
+### Developer & project maintenance
+- Removed the group chat feature, including all related UI elements, view models, and background notification logic.
+- Hardened the Android manifest with empty taskAffinity for the MainActivity to prevent task hijacking.
+- Implemented network_security_config.xml to explicitly block cleartext HTTP traffic.
+- Integrated automated mobile security scanning (mobsfscan) and OpenSSF Scorecard into CI/CD pipelines.
+- Added GitHub Artifact Attestations for APKs to allow verification of release file provenance.
+- Updated GitHub Actions workflows to use pinned commit hashes and restricted CI/CD permissions.
+
 ## [4.2.0] - 12-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.2.0)
 

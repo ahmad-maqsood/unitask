@@ -36,9 +36,19 @@ class QrCodeUtilTest {
     @Test
     fun testBuildAndParseGroupInviteWebLink() {
         val link = QrCodeUtil.buildGroupInviteWebLink("alice", "ABCD1234")
-        assertTrue(link.startsWith("https://ahmad-maqsood.github.io/unitask/join/"))
+        assertTrue(link.startsWith("https://condalabs.github.io/unitask/join/"))
 
         val parsed = QrCodeUtil.parseGroupInvite(link)
+        assertNotNull(parsed)
+        assertEquals("alice", parsed?.first)
+        assertEquals("ABCD1234", parsed?.second)
+    }
+
+    @Test
+    fun testParseGroupInvite_acceptsLinksMadeBeforeTheMove() {
+        val parsed = QrCodeUtil.parseGroupInvite(
+            "https://ahmad-maqsood.github.io/unitask/join/?username=alice&code=ABCD1234"
+        )
         assertNotNull(parsed)
         assertEquals("alice", parsed?.first)
         assertEquals("ABCD1234", parsed?.second)

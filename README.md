@@ -15,11 +15,12 @@ No advertising. No tracking.
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Security scanning](https://img.shields.io/badge/security-scanning%20enabled-0D9488?style=flat-square&logo=github)](docs/SECURITY_SCANNING.md)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ahmad-maqsood/badge.svg)](https://hub.xerj.org/contributors/ahmad-maqsood)
 
 [**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Limitations](#known-limitations) · [Support](#support)
+[Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Security scanning](#security-scanning) · [Limitations](#known-limitations) · [Support](#support)
 
 </div>
 
@@ -324,6 +325,17 @@ Some phone manufacturers aggressively stop background applications. If reminders
 | `CAMERA` | Optional. Scans a group's QR code. The application works without it |
 | `INTERNET` | Google Drive backup, study groups, update checks and announcements |
 | `ACCESS_NETWORK_STATE` | Checks that the device is online before network operations |
+
+## Security scanning
+
+[![mobsfscan](https://img.shields.io/badge/mobsfscan-automated%20source%20checks-0D9488?style=flat-square)](https://github.com/MobSF/mobsfscan) [![MobSF](https://img.shields.io/badge/MobSF-APK%20analysis-6D5DFB?style=flat-square)](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
+
+UniTask uses automated security-analysis tools as an additional layer of checking:
+
+- **mobsfscan** scans the Android source code in GitHub Actions and uploads findings to GitHub Code Scanning. Findings are currently informational and are reviewed before being treated as confirmed vulnerabilities.
+- **MobSF** can analyse a built APK. The [security scanning guide](docs/SECURITY_SCANNING.md) explains how to submit a release APK to the official online static analyser and review its report.
+
+These automated checks are not a professional security audit, do not guarantee that the app is secure, and may produce false positives or miss issues. No independent human security audit is currently claimed.
 
 ## Known limitations
 

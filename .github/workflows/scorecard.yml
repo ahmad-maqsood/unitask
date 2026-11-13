@@ -109,7 +109,7 @@ jobs:
           </head>
           <body>
             <h1>OpenSSF Scorecard Report</h1>
-            <p>Repository: <a href="https://github.com/ahmad-maqsood/unitask">ahmad-maqsood/unitask</a></p>
+            <p>Repository: <a href="https://github.com/CondaLabs/unitask">CondaLabs/unitask</a></p>
             <p>This report contains the complete Scorecard JSON results in a readable,
             formatted view. Use the JSON file for automated analysis and the SARIF file
             for GitHub Code Scanning.</p>

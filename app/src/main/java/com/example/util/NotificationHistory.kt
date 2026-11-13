@@ -34,10 +34,11 @@ object NotificationHistory {
     private const val MAX_ITEMS = 100
     private const val MAX_AGE_MILLIS = 30L * 24 * 60 * 60 * 1000
     /**
-     * Kinds that never appear in the bell. Class start alerts are only shown as phone
-     * notifications. Items of these kinds saved by older versions are hidden too.
+     * Kinds that never appear in the bell. Class start alerts and task deadline reminders are only
+     * shown as phone notifications (the Deadlines tab already lists the tasks). Items of these
+     * kinds saved by older versions are hidden too.
      */
-    private val HIDDEN_KINDS = setOf("Class")
+    private val HIDDEN_KINDS = setOf("Class", "Deadline", "Group deadline")
     private val LOCK = Any()
 
     /** Saves one notification. Safe to call from a background thread. Never throws. */

@@ -124,7 +124,7 @@ object FeatureGuide {
             "1. Open Settings, then Notifications & reminders.\n2. Turn on Daily summary and pick the time."
         ),
         AppFeature(
-            "Notification History", "See reminders you missed, with unread counts.", "history", 33,
+            "Notification History", "See your daily summary, missed reminders and group updates, with unread counts.", "history", 33,
             "1. Tap the bell in the top bar.\n2. Open an item to jump to the task."
         ),
         AppFeature(

@@ -56,8 +56,16 @@ jobs:
 
       # Keep findings informational initially. We can review the baseline
       # before deciding whether any rules should block future pull requests.
-      - name: Run mobsfscan
+      - name: Run mobsfscan (SARIF)
         run: mobsfscan . --sarif --output mobsfscan.sarif --no-fail
+
+      - name: Run mobsfscan (JSON report)
+        if: always()
+        run: mobsfscan . --json --output mobsfscan.json --no-fail
+
+      - name: Run mobsfscan (HTML report)
+        if: always()
+        run: mobsfscan . --html --output mobsfscan.html --no-fail
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && hashFiles('mobsfscan.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
@@ -65,3 +73,16 @@ jobs:
         with:
           sarif_file: mobsfscan.sarif
           category: mobsfscan
+
+      # Keep downloadable reports together in one ZIP artifact.
+      - name: Upload mobsfscan reports
+        if: always() && (hashFiles('mobsfscan.sarif') != '' || hashFiles('mobsfscan.json') != '' || hashFiles('mobsfscan.html') != '')
+        uses: actions/upload-artifact@v7
+        with:
+          name: mobsfscan-reports
+          path: |
+            mobsfscan.sarif
+            mobsfscan.json
+            mobsfscan.html
+          if-no-files-found: ignore
+          retention-days: 30

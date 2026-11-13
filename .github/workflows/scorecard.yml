@@ -8,11 +8,8 @@ on:
     # Run weekly so the public score and README badge stay current.
     - cron: '23 4 * * 1'
 
+# Keep workflow-wide permissions read-only.
 permissions: read-all
-
-concurrency:
-  group: scorecard-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   analysis:
@@ -30,11 +27,13 @@ jobs:
           persist-credentials: false
 
       - name: Run OpenSSF Scorecard
+        id: scorecard
         uses: ossf/scorecard-action@v2.5.0
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
           publish_results: true
+          fail_on_publish_error: true
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && hashFiles('scorecard-results.sarif') != ''

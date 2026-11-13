@@ -3,7 +3,7 @@
 All notable changes to UniTask are documented in this file.
 
 ## [4.3.0] - 13-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.3.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.3.0)
 
 ### Improved
 - Enhanced Pomodoro timer logic with improved state handling, persistence, and support for auto-starting alarms even when the app is closed.
@@ -23,7 +23,7 @@ All notable changes to UniTask are documented in this file.
 - Updated GitHub Actions workflows to use pinned commit hashes and restricted CI/CD permissions.
 
 ## [4.2.0] - 12-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.2.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.2.0)
 
 ### Added
 - New Pomodoro timer mode with dedicated focus and break rounds.
@@ -55,7 +55,7 @@ All notable changes to UniTask are documented in this file.
 - Updated backup rules to align with 'allowBackup=false'.
 
 ## [4.1.0] - 10-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.1.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.1.0)
 
 ### Added
 - New full-screen timer design featuring a watch-style dial, progress-tracking ticks, gradient arc, and inner orbit animation.
@@ -90,7 +90,7 @@ All notable changes to UniTask are documented in this file.
 - Enhanced automated release notes workflow using Gemini and improved screenshot automation.
 
 ## [4.0.0] - 08-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.0.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.0.0)
 
 ### Added
 - **Study timer:** added a stopwatch and countdown with preset or custom durations, plus a fullscreen landscape display.
@@ -118,7 +118,7 @@ All notable changes to UniTask are documented in this file.
 - Added supporting website pages and automated Firebase Hosting deployment for the Google consent screen.
 
 ## [3.5.0] - 06-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.5.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.5.0)
 
 ### Improved
 - Improved note editing, recovery and synchronization, including safer handling of deleted notes and more efficient note updates.
@@ -138,7 +138,7 @@ All notable changes to UniTask are documented in this file.
 - Updated the networking engine to support Supabase Realtime WebSockets and raised the compile SDK requirement for compatibility.
 
 ## [3.4.0] - 05-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.4.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.4.0)
 
 ### Added
 - Notes: markdown notes with an optional course tag, opened from the top bar.
@@ -163,7 +163,7 @@ All notable changes to UniTask are documented in this file.
 - The daily summary now moves repeating tasks to today first, so it matches your task list.
   
 ## [3.2.0] - 04-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.2.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.2.0)
 
 ### Added
 - **Task checklist editor:** add, edit, tick off and remove checklist items directly in the task dialog, with progress shown on task cards.
@@ -197,7 +197,7 @@ All notable changes to UniTask are documented in this file.
 - Updated Gradle and Android dependencies and improved build caching and workflow permissions.
 
 ## [3.1.0] - 01-11-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.1.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.1.0)
 
 ### Added
 - Today home screen widget displaying classes, upcoming tasks, and overdue task counts.
@@ -217,7 +217,7 @@ All notable changes to UniTask are documented in this file.
 - Various performance, reliability, and UI improvements.
 
 ## [3.0.0] - 31-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.0.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.0.0)
 
 ### Added
 - Interactive task checklists with individual item completion.
@@ -244,7 +244,7 @@ All notable changes to UniTask are documented in this file.
 - Various synchronization, backup, timetable, reminder, and task management issues.
 
 ## [3.0.0-beta4] - 31-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.0.0-beta4)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.0.0-beta4)
 
 ### Added
 - Interactive task checklists directly from task cards.
@@ -276,7 +276,7 @@ All notable changes to UniTask are documented in this file.
 - Unwanted vibration when silenced alarms were active.
 
 ## [3.0.0-beta3] - 31-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.0.0-beta3)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.0.0-beta3)
 
 ### Added
 - Bi-weekly timetables with configurable Week A / Week B scheduling.
@@ -309,7 +309,7 @@ All notable changes to UniTask are documented in this file.
 - Missing completion timestamps during backup restoration.
 
 ## [3.0.0-beta2] - 31-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.0.0-beta2)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.0.0-beta2)
 
 ### Improved
 - **Groups Tab Stability:** Prevented temporary authentication states from clearing user sessions and cached groups when the screen is unlocked. Cached data remains visible while reconnecting.
@@ -318,7 +318,7 @@ All notable changes to UniTask are documented in this file.
 - **Synchronization:** Faster sync feedback, immediate data refresh when returning to the app, reduced observer delay, and less unnecessary polling while the app is in the background.
 
 ## [3.0.0-beta] - 30-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v3.0.0-beta)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v3.0.0-beta)
 
 ### Added
 
@@ -359,7 +359,7 @@ All notable changes to UniTask are documented in this file.
 - Overall synchronization, performance, and stability.
 
 ## [2.3.0-beta] - 30-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v2.3.0-beta)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v2.3.0-beta)
 
 ### Added
 - Announcement inbox with notification bell and unread count.
@@ -374,7 +374,7 @@ All notable changes to UniTask are documented in this file.
 - Prevented duplicate announcement notifications.
 
 ## [2.2.0] - 30-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v2.2.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v2.2.0)
 
 ### Added
 - Interactive Feature Guide with step-by-step instructions for major app features.
@@ -386,7 +386,7 @@ All notable changes to UniTask are documented in this file.
 - General code cleanup and maintenance.
 
 ## [2.1.1] - 29-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v2.1.1)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v2.1.1)
 
 ### Added
 - Reply to group chat messages.
@@ -412,7 +412,7 @@ All notable changes to UniTask are documented in this file.
 - Documented database security policies and maintenance procedures.
 
 ## [2.1.0] - 29-10-2026 (Beta)
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v2.1.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v2.1.0)
 
 ### Added
 - Supabase cloud integration for authentication and data synchronization.
@@ -426,7 +426,7 @@ All notable changes to UniTask are documented in this file.
 - Database migrations and synchronization reliability.
 
 ## [2.0.0] - 28-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v2.0.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v2.0.0)
 
 ### Added
 - My Tasks for personal tasks and habits independent of university courses.
@@ -451,7 +451,7 @@ All notable changes to UniTask are documented in this file.
 - Various UI, accessibility, and performance improvements.
 
 ## [1.3.0] - 25-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v1.3.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v1.3.0)
 
 ### Added
 - Daily summary notifications.
@@ -475,7 +475,7 @@ All notable changes to UniTask are documented in this file.
 - Updated project documentation.
 
 ## [1.2.0] - 25-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v1.2.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v1.2.0)
 
 ### Added
 - Class reminders.
@@ -496,7 +496,7 @@ All notable changes to UniTask are documented in this file.
 - Various UI and stability issues.
 
 ## [1.1.0] - 24-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v1.1.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v1.1.0)
 
 ### Added
 - Group chat with real-time messaging.
@@ -515,7 +515,7 @@ All notable changes to UniTask are documented in this file.
 - Build configuration issues.
 
 ## [1.0.0] - 23-10-2026
-[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v1.0.0)
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v1.0.0)
 
 ### Initial Release
 - Task and deadline management with priority tags.

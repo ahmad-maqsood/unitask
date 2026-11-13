@@ -1,0 +1,67 @@
+name: Mobile security scan (mobsfscan)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - '**/*.gradle'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - '.github/workflows/mobsfscan.yml'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - '**/*.gradle'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - '.github/workflows/mobsfscan.yml'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: mobsfscan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan Android source code
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Pin the scanner version so results are reproducible between runs.
+      - name: Install mobsfscan
+        run: python -m pip install --disable-pip-version-check mobsfscan==1.0.1
+
+      # Keep findings informational initially. We can review the baseline
+      # before deciding whether any rules should block future pull requests.
+      - name: Run mobsfscan
+        run: mobsfscan . --sarif --output mobsfscan.sarif --no-fail
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always() && hashFiles('mobsfscan.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
+        with:
+          sarif_file: mobsfscan.sarif
+          category: mobsfscan

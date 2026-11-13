@@ -10,22 +10,9 @@ import java.util.concurrent.TimeUnit
 
 object SyncScheduler {
 
-    private const val UNIQUE_WORK_NAME = "unitask_cloud_sync_onetime"
-    private const val PERIODIC_WORK_NAME = "unitask_cloud_sync_periodic"
     private const val GROUP_PERIODIC_WORK_NAME = "unitask_group_sync_periodic"
     private const val ANNOUNCEMENT_PERIODIC_WORK_NAME = "unitask_announcement_check_periodic"
     private const val PERIODIC_SYNC_WORK_NAME = "unitask_periodic_sync"
-
-    /**
-     * Cancels any pending or periodic personal sync work from older versions of the app.
-     * WorkManager keeps jobs across updates, so without this it would attempt to run
-     * a worker class that has been removed.
-     */
-    fun cancelLegacyPersonalSync(context: Context) {
-        val workManager = WorkManager.getInstance(context.applicationContext)
-        workManager.cancelUniqueWork(UNIQUE_WORK_NAME)
-        workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
-    }
 
     /**
      * Checks user's groups and announcements sequentially every 15 minutes (the minimum WorkManager allows).

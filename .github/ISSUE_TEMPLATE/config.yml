@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security problem
-    url: https://github.com/ahmad-maqsood/unitask/security/advisories/new
+    url: https://github.com/CondaLabs/unitask/security/advisories/new
     about: Please report vulnerabilities privately, not as a public issue.
   - name: Report a problem without a GitHub account
     url: https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform

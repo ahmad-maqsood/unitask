@@ -60,27 +60,27 @@ UniTask is a personal project, created to solve everyday planning problems for i
   <tr>
     <td align="center"><a href="docs/screenshots/groups.jpg"><img src="docs/screenshots/groups.jpg" width="220" alt="Study groups" /></a><br/><sub><b>Study groups</b><br/>Shared study spaces</sub></td>
     <td align="center"><a href="docs/screenshots/my_tasks.jpg"><img src="docs/screenshots/my_tasks.jpg" width="220" alt="My tasks" /></a><br/><sub><b>My tasks</b><br/>Personal to-do list</sub></td>
+    <td align="center"><a href="docs/screenshots/timer.jpg"><img src="docs/screenshots/timer.jpg" width="220" alt="Study timer" /></a><br/><sub><b>Study timer</b><br/>Stopwatch and countdown for study sessions</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/screenshots/timer.jpg"><img src="docs/screenshots/timer.jpg" width="220" alt="Study timer" /></a><br/><sub><b>Study timer</b><br/>Stopwatch and countdown for study sessions</sub></td>
     <td align="center"><a href="docs/screenshots/global_search.jpg"><img src="docs/screenshots/global_search.jpg" width="220" alt="Global search" /></a><br/><sub><b>Global search</b><br/>Find tasks, notes and courses in one place</sub></td>
     <td align="center"><a href="docs/screenshots/notes.jpg"><img src="docs/screenshots/notes.jpg" width="220" alt="Notes" /></a><br/><sub><b>Notes</b><br/>Pinned and course-linked notes</sub></td>
+    <td align="center"><a href="docs/screenshots/note_preview.jpg"><img src="docs/screenshots/note_preview.jpg" width="220" alt="Note preview" /></a><br/><sub><b>Note preview</b><br/>Formatted Markdown preview</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/screenshots/note_preview.jpg"><img src="docs/screenshots/note_preview.jpg" width="220" alt="Note preview" /></a><br/><sub><b>Note preview</b><br/>Formatted Markdown preview</sub></td>
     <td align="center"><a href="docs/screenshots/note_editor.jpg"><img src="docs/screenshots/note_editor.jpg" width="220" alt="Note editor" /></a><br/><sub><b>Note editor</b><br/>Markdown editing and formatting tools</sub></td>
     <td align="center"><a href="docs/screenshots/recently_deleted.jpg"><img src="docs/screenshots/recently_deleted.jpg" width="220" alt="Recently deleted" /></a><br/><sub><b>Recently deleted</b><br/>Restore deleted tasks, notes and classes for 30 days</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_menu.jpg"><img src="docs/screenshots/settings_menu.jpg" width="220" alt="Settings" /></a><br/><sub><b>Settings</b><br/>Settings overview</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/screenshots/settings_menu.jpg"><img src="docs/screenshots/settings_menu.jpg" width="220" alt="Settings" /></a><br/><sub><b>Settings</b><br/>Settings overview</sub></td>
     <td align="center"><a href="docs/screenshots/settings_general.jpg"><img src="docs/screenshots/settings_general.jpg" width="220" alt="General settings" /></a><br/><sub><b>General settings</b><br/>Theme and app preferences</sub></td>
     <td align="center"><a href="docs/screenshots/settings_notifications.jpg"><img src="docs/screenshots/settings_notifications.jpg" width="220" alt="Notifications" /></a><br/><sub><b>Notifications</b><br/>Reminder controls</sub></td>
+    <td align="center"><a href="docs/screenshots/settings_backup.jpg"><img src="docs/screenshots/settings_backup.jpg" width="220" alt="Backup and data" /></a><br/><sub><b>Backup and data</b><br/>Backup and data options</sub></td>
   </tr>
 </table>
 
 <table align="center">
   <tr>
-    <td align="center"><a href="docs/screenshots/settings_backup.jpg"><img src="docs/screenshots/settings_backup.jpg" width="220" alt="Backup and data" /></a><br/><sub><b>Backup and data</b><br/>Backup and data options</sub></td>
     <td align="center"><a href="docs/screenshots/settings_about.jpg"><img src="docs/screenshots/settings_about.jpg" width="220" alt="About and help" /></a><br/><sub><b>About and help</b><br/>App information and support</sub></td>
   </tr>
 </table>
@@ -96,7 +96,7 @@ UniTask follows the system theme or can be set to light or dark, with ten accent
   </tr>
 </table>
 
-<p align="center"><sub>Automatically captured from UniTask 4.2.0 using fictional demo data on an Android emulator.</sub></p>
+<p align="center"><sub>Automatically captured from UniTask 4.3.0 using fictional demo data on an Android emulator.</sub></p>
 
 Each screen is also available separately: [**Deadlines**](docs/screenshots/deadlines.jpg) · [**Timetable**](docs/screenshots/timetable.jpg) · [**Courses**](docs/screenshots/courses.jpg) · [**Study groups**](docs/screenshots/groups.jpg) · [**My tasks**](docs/screenshots/my_tasks.jpg) · [**Study timer**](docs/screenshots/timer.jpg) · [**Global search**](docs/screenshots/global_search.jpg) · [**Notes**](docs/screenshots/notes.jpg) · [**Note preview**](docs/screenshots/note_preview.jpg) · [**Note editor**](docs/screenshots/note_editor.jpg) · [**Recently deleted**](docs/screenshots/recently_deleted.jpg) · [**Settings**](docs/screenshots/settings_menu.jpg) · [**General settings**](docs/screenshots/settings_general.jpg) · [**Notifications**](docs/screenshots/settings_notifications.jpg) · [**Backup and data**](docs/screenshots/settings_backup.jpg) · [**About and help**](docs/screenshots/settings_about.jpg) · [**Dark theme**](docs/screenshots/theme_dark.jpg) · [**Accent colours**](docs/screenshots/theme_accent.jpg).
 

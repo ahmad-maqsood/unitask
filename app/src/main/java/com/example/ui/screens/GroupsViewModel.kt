@@ -78,6 +78,22 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
 
+    /** False while the phone has no working internet. Groups then show the last saved data. */
+    val isOnline: StateFlow<Boolean> = repository.observeIsOnline()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    private val offlineMessage = "You're offline. Connect to the internet and try again."
+
+    /**
+     * Group changes (add, edit, delete, roles, join codes) must reach the server, so they cannot run offline.
+     * Returns true when it is fine to go on. Otherwise it tells the person why nothing happened.
+     */
+    private fun requireOnline(): Boolean {
+        if (isOnline.value) return true
+        _snackbarMessage.tryEmit(offlineMessage)
+        return false
+    }
+
     private val _isActionLoading = MutableStateFlow(false)
     val isActionLoading: StateFlow<Boolean> = _isActionLoading.asStateFlow()
 
@@ -274,6 +290,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun saveCourse(code: String, name: String, instructor: String, colorHex: String) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
         val existingCourse = _courseToEdit.value
@@ -344,6 +361,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteCourse(course: GroupCourse) {
+        if (!requireOnline()) return
         repository.deleteGroupCourse(course.groupId, course.id) { e ->
             viewModelScope.launch {
                 _snackbarMessage.emit("Failed to delete course: ${e.message}")
@@ -352,6 +370,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun createGroup(name: String, username: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
             onComplete(false, "You must be signed in to create a group.")
@@ -378,6 +397,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun joinGroup(username: String, joinCode: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
             onComplete(false, "You must be signed in to join a group.")
@@ -420,6 +440,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         reminderOptions: String,
         assignedTo: List<String>
     ) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
         val existingTask = _taskToEdit.value
@@ -469,6 +490,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteTask(task: GroupTask) {
+        if (!requireOnline()) return
         reminderScheduler.cancel(task.groupId, task.id)
         repository.deleteTask(task.groupId, task.id) { e ->
             viewModelScope.launch {
@@ -479,6 +501,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     
     fun setMemberRole(member: GroupMember, makeAdmin: Boolean) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.setMemberRole(groupId, member.uid, if (makeAdmin) "admin" else "member")
@@ -495,6 +518,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun transferOwnership(newOwnerUid: String) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.transferOwnership(groupId, newOwnerUid)
@@ -508,6 +532,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun removeMember(member: GroupMember) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.removeMember(groupId, member.uid)
@@ -517,6 +542,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun leaveCurrentGroup(onSuccess: () -> Unit) {
+        if (!requireOnline()) return
         val user = _currentUser.value ?: return
         val groupId = _selectedGroupId.value ?: return
 
@@ -535,6 +561,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteCurrentGroup(username: String, onSuccess: () -> Unit) {
+        if (!requireOnline()) return
         val user = _currentUser.value ?: return
         val groupId = _selectedGroupId.value ?: return
 
@@ -553,6 +580,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun updateGroupProfile(newName: String, newUsername: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             _isActionLoading.value = true
@@ -568,6 +596,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun regenerateGroupCode(onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             _isActionLoading.value = true

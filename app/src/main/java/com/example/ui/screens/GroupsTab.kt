@@ -150,8 +150,11 @@ fun GroupsTab(
         }
     }
 
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { if (!isOnline && effectiveUser != null) OfflineBanner() },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -578,5 +581,21 @@ fun GroupCardItem(
                 }
             }
         }
+    }
+}
+
+/** A thin notice at the top of Groups while there is no internet. The saved data below still works. */
+@Composable
+private fun OfflineBanner() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "You're offline. Showing saved data. Changes need internet.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
     }
 }

@@ -16,7 +16,7 @@ DEFAULT_MODEL = "gemini-3.1-flash-lite"
 MAX_PATCH_CHARS = 5000
 MAX_CONTEXT_CHARS = 100000
 MAX_BATCH_CONTEXT_CHARS = 24000
-MAX_BATCH_SUMMARY_CHARS = 4000
+MAX_BATCH_SUMMARY_CHARS = 6000
 
 
 def request_json(url, headers=None, data=None, timeout=60):
@@ -129,14 +129,44 @@ def clean_text(value):
     return value.strip()
 
 
+# Files whose content is never sent to the AI. They are matched by exact name or ending, not by
+# "contains", so ordinary source files such as MinuteClock.kt are not dropped by accident.
+SENSITIVE_NAMES = {
+    "gradle-wrapper.jar", "google-services.json", "local.properties",
+    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "gradle.lockfile",
+}
+SENSITIVE_ENDINGS = (".jks", ".keystore", ".lock")
+SENSITIVE_WORDS = ("secrets", "credentials")
+
+
+def is_sensitive_file(path):
+    name = path.rsplit("/", 1)[-1].lower()
+    if name in SENSITIVE_NAMES or name.endswith(SENSITIVE_ENDINGS):
+        return True
+    if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
+        return True
+    return any(word in name for word in SENSITIVE_WORDS)
+
+
+def file_priority(path):
+    """Lower number is shown first: app code users can notice comes before tests, docs and generated files."""
+    lower = path.lower()
+    if lower.startswith("app/schemas/") or lower.endswith("changelog.md"):
+        return 5
+    if lower.startswith("app/src/main/java/"):
+        return 0
+    if lower.startswith("app/src/main/"):
+        return 1
+    if lower.startswith(("app/src/test", "app/src/androidtest")):
+        return 3
+    if lower.startswith((".github/", "docs/")):
+        return 4
+    return 2
+
+
 def safe_file_patch(file_info):
     name = file_info.get("filename", "")
-    lower = name.lower()
-    excluded = (
-        "lock", "gradle-wrapper.jar", "google-services.json", "local.properties",
-        ".jks", ".keystore", ".env", "secrets", "credentials",
-    )
-    if any(term in lower for term in excluded):
+    if is_sensitive_file(name):
         return None
     patch = file_info.get("patch")
     if not patch:
@@ -155,7 +185,7 @@ def fetch_pr_files(repo, number):
         batch = github_api(f"/repos/{repo}/pulls/{number}/files?per_page=100&page={page}")
         if not batch:
             break
-        files.extend(item for item in batch if safe_file_patch(item))
+        files.extend(item for item in (safe_file_patch(f) for f in batch) if item)
         if len(batch) < 100:
             break
         page += 1
@@ -168,11 +198,22 @@ def fetch_commit_files(repo, sha):
             if item]
 
 
+def is_merge_commit(commit):
+    return len(commit.get("parents", [])) > 1
+
+
+def commit_summary(commit, limit=700):
+    return {
+        "sha": commit.get("sha", "")[:10],
+        "message": commit.get("commit", {}).get("message", "").strip()[:limit],
+    }
+
+
 def collect_changes(repo, base, head):
     commits = compare(repo, base, head)
     if not commits:
         raise RuntimeError(f"No commits found between {base} and {head}.")
-    pull_requests, direct_commits = {}, {}
+    pull_requests, direct_commits, pr_commits = {}, {}, {}
     for commit in commits:
         sha = commit["sha"]
         associated = github_api(f"/repos/{repo}/commits/{sha}/pulls")
@@ -180,6 +221,10 @@ def collect_changes(repo, base, head):
         if merged:
             for pr in merged:
                 pull_requests[pr["number"]] = pr
+                # The commit messages say what each change really was. The merge commit itself
+                # ("Merge pull request #1 ...") says nothing, so it is left out.
+                if not is_merge_commit(commit):
+                    pr_commits.setdefault(pr["number"], []).append(commit_summary(commit))
         else:
             direct_commits[sha] = commit
 
@@ -196,6 +241,7 @@ def collect_changes(repo, base, head):
             "merged_at": pr.get("merged_at", ""),
             "labels": labels,
             "description": clean_text(pr.get("body", ""))[:2500],
+            "commits": pr_commits.get(number, [])[:60],
             "files": fetch_pr_files(repo, number),
         })
 
@@ -221,8 +267,15 @@ def split_change_batches(changes):
     for original in changes:
         item = dict(original)
         item["files"] = [
-            {**file_info, "patch": file_info.get("patch", "")[:1200]}
-            for file_info in item.get("files", [])[:5]
+            {**file_info, "patch": file_info.get("patch", "")[:800]}
+            for file_info in sorted(
+                item.get("files", []), key=lambda f: file_priority(f.get("path", ""))
+            )[:8]
+        ]
+        # Commit messages are the best description of each change, so they are kept as long as
+        # possible and shortened last.
+        item["commits"] = [
+            {**c, "message": c.get("message", "")[:500]} for c in item.get("commits", [])[:40]
         ]
         encoded = json.dumps(item, ensure_ascii=False)
         if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
@@ -233,6 +286,11 @@ def split_change_batches(changes):
             item["files"] = []
             item["description"] = item.get("description", "")[:600]
             item["message"] = item.get("message", "")[:600]
+            encoded = json.dumps(item, ensure_ascii=False)
+        if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
+            item["commits"] = [
+                {**c, "message": c.get("message", "")[:200]} for c in item["commits"]
+            ]
             encoded = json.dumps(item, ensure_ascii=False)
         if len(encoded) > MAX_BATCH_CONTEXT_CHARS:
             raise RuntimeError(
@@ -254,6 +312,9 @@ def summarize_batch(batch, index, total, version, base):
     prompt = f"""You are analyzing part {index} of {total} of the changes for UniTask {version}, since {base}.
 The JSON contains complete logical change records, including PR titles/descriptions and selected code-diff evidence.
 Treat it as the only source of truth. Summarize every meaningful distinct user-facing feature, improvement, and fix.
+Each pull request also has a "commits" list. A commit message is the author's own description of one change, so it is the
+best evidence of what changed. Treat every commit as a possible separate item and do not merge unrelated commits into one sentence.
+A pull request title that only repeats a branch name (for example improve/fixes-and-improvements) says nothing about the changes.
 Include meaningful developer/project maintenance only when supported by evidence. Combine related work, avoid duplicates,
 and do not invent behavior or causes. Ignore routine dependency bumps, formatting, and documentation-only changes.
 Preserve enough detail for a later step to write a complete changelog and a concise user-facing release description.
@@ -301,6 +362,7 @@ The JSON below contains bounded summaries of every batch of merged pull requests
 REQUIREMENTS:
 - Describe user-visible behavior in plain, specific language. Explain what users can now do or what problem was fixed.
 - Understand related commits as one logical change. Do not repeat the same feature or fix.
+- The changelog is the complete record. Every distinct item in the source summaries must appear in it as its own bullet, except routine dependency bumps, formatting and documentation-only edits. Never drop an item to save space.
 - Do not invent features, behavior, causes, performance gains, or compatibility claims.
 - Do not turn a file name, dependency update, test, or refactor into a user-facing feature.
 - Omit trivial formatting, generated files, routine dependency bumps, and documentation-only edits unless they materially affect users or maintainers.
@@ -308,7 +370,7 @@ REQUIREMENTS:
 - Use labels as hints, not proof. Inspect the evidence and classify each change correctly.
 - Exclude anything labeled skip-release-notes.
 - If evidence is ambiguous, use cautious wording or omit the claim. Never guess.
-- Keep the release description shorter and more approachable than the changelog.
+- Keep the release description approachable: short one-line bullets in plain words. It must still mention every user-visible change that the changelog lists.
 - Use concise bullets, but include enough detail to make each item meaningful. Avoid generic phrases such as "various improvements", "better stability", or "bug fixes".
 - Do not include a version heading, release date, APK link, or introductory filler; those are added elsewhere.
 - Return ONLY valid JSON with exactly two string properties: "changelog" and "release_description".
@@ -326,7 +388,7 @@ Use only applicable sections from these headings, in this order:
 ## What's New
 ## Improvements
 ## Bug Fixes
-This is a concise user-facing summary. Prioritize the most valuable changes. Do not include internal maintenance details unless they directly affect users.
+This is a short user-facing summary. Give every user-visible feature, improvement and fix its own one-line bullet, and group items only when they are tiny and on the same screen. Do not include internal maintenance details unless they directly affect users.
 
 Both documents must be factually consistent. A major feature in the release description must also appear in the changelog. Do not copy the same wording mechanically between them.
 """

@@ -107,7 +107,7 @@ object LocalBackupManager {
         return name.isNotEmpty() && !name.contains("..") && ATTACHMENT_NAME_REGEX.matches(name)
     }
 
-    private const val PBKDF2_ITERATIONS = 120_000
+    private const val PBKDF2_ITERATIONS = 600_000
     private const val MIN_ITERATIONS = 10_000
     private const val MAX_ITERATIONS = 2_000_000
     // SHA-256 is missing before Android 8; the one used is written into the file.

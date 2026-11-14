@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Join a study group on UniTask</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5fa;color:#1c1b1f}
+  main{max-width:360px;padding:24px;text-align:center}
+  h1{font-size:1.4rem}
+  .btn{display:block;margin:12px 0;padding:14px;border-radius:12px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:600}
+  .btn.secondary{background:#fff;color:#4f46e5;border:1px solid #4f46e5}
+  .small{color:#555;font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>Join a study group on UniTask</h1>
+  <p class="small">Username: <b id="u">-</b><br>Join code: <b id="c">-</b></p>
+  <a id="open" class="btn" href="#">Open in UniTask</a>
+  <a class="btn secondary" href="https://github.com/CondaLabs/unitask/releases/latest">Get the app</a>
+  <p class="small">If the button does nothing, install UniTask first, then tap it again.</p>
+</main>
+<script>
+(function () {
+  var p = new URLSearchParams(location.search);
+  var u = (p.get('username') || '').trim();
+  var c = (p.get('code') || '').trim();
+  var ok = /^[A-Za-z0-9_]{3,30}$/.test(u) && /^[A-Za-z0-9]{4,12}$/.test(c);
+  if (!ok) return;
+  document.getElementById('u').textContent = u;
+  document.getElementById('c').textContent = c;
+  var q = 'username=' + encodeURIComponent(u) + '&code=' + encodeURIComponent(c);
+  var android = /android/i.test(navigator.userAgent);
+  var link = android
+    ? 'intent://join?' + q + '#Intent;scheme=unitask;package=com.aistudio.unitask.zrvqk;end'
+    : 'unitask://join?' + q;
+  document.getElementById('open').href = link;
+  if (android) setTimeout(function () { location.href = link; }, 300);
+})();
+</script>
+</body>
+</html>

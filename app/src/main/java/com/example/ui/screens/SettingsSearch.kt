@@ -141,6 +141,14 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
         keywords = listOf("github", "repository", "repo", "open source", "code")
     ),
     SettingsSearchEntry(
+        id = "latest_release",
+        title = "Latest release",
+        summary = "Open the newest version on GitHub",
+        pageLabel = "About & help",
+        page = SettingsPage.About,
+        keywords = listOf("download", "apk", "newest", "new version", "releases")
+    ),
+    SettingsSearchEntry(
         id = "report_problem",
         title = "Report a problem",
         summary = "Opens a short form",

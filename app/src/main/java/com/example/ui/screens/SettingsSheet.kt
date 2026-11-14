@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
@@ -105,6 +106,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private const val SOURCE_CODE_URL = "https://github.com/CondaLabs/unitask"
+private const val LATEST_RELEASE_URL = "https://github.com/CondaLabs/unitask/releases/latest"
 internal const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
 private const val FEATURE_FORM_URL =
@@ -576,6 +578,27 @@ fun SettingsButton(
                                             )
                                         },
                                         testTag = "settings_source_code_row"
+                                    )
+                                    SettingsRow(
+                                        icon = Icons.Default.NewReleases,
+                                        title = "Latest release",
+                                        subtitle = "Open the newest version on GitHub",
+                                        onClick = {
+                                            try {
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
+                                            } catch (_: Exception) {
+                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        trailing = {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        },
+                                        testTag = "settings_latest_release_row"
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.BugReport,

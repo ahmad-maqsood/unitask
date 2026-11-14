@@ -17,6 +17,7 @@ import com.example.data.groups.GroupTask
 import com.example.data.groups.isForUser
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.groups.GroupsState
+import com.example.ui.theme.AccentColors
 import com.example.util.NotificationSound
 
 /** A pending group task as saved for the daily summary. */
@@ -52,7 +53,6 @@ class GroupTaskProcessor(context: Context) {
         private const val SEP = "\u001F"
         const val GROUP_KEY_UPDATES = "com.example.GROUP_TASKS"
         private const val SUMMARY_ID = 9902
-        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
         // One lock for every instance: the app-level listener and the background worker can
         // run at the same moment, and must not both announce the same task.
@@ -321,7 +321,7 @@ class GroupTaskProcessor(context: Context) {
         )
         val notification = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(appContext))
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -350,7 +350,7 @@ class GroupTaskProcessor(context: Context) {
 
         val summary = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(appContext))
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("Group updates"))
             .setGroup(GROUP_KEY_UPDATES)
             .setGroupSummary(true)

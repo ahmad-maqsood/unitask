@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
+import com.example.ui.theme.AccentColors
 import com.example.util.Announcement
 import com.example.util.NotificationSound
 
@@ -26,7 +27,6 @@ object AnnouncementNotifier {
     private const val MAX_AT_ONCE = 3
     const val GROUP_KEY_ANNOUNCEMENTS = "com.example.ANNOUNCEMENTS"
     private const val SUMMARY_ID = 9905
-    private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
     private fun notificationId(announcementId: Long): Int = ("announcement|" + announcementId).hashCode()
 
@@ -63,7 +63,7 @@ object AnnouncementNotifier {
 
                 val builder = NotificationCompat.Builder(appContext, channelId)
                     .setSmallIcon(R.drawable.ic_stat_unitask)
-                    .setColor(PRIMARY_COLOR)
+                    .setColor(AccentColors.notificationColor(appContext))
                     .setContentTitle(item.title.ifBlank { "UniTask Announcement" })
                     .setContentText(item.body.replace('\n', ' ').trim())
                     .setStyle(NotificationCompat.BigTextStyle().bigText(item.body.trim()))
@@ -88,7 +88,7 @@ object AnnouncementNotifier {
         try {
             val summary = NotificationCompat.Builder(appContext, channelId)
                 .setSmallIcon(R.drawable.ic_stat_unitask)
-                .setColor(PRIMARY_COLOR)
+                .setColor(AccentColors.notificationColor(appContext))
                 .setStyle(NotificationCompat.InboxStyle().setSummaryText("Announcements"))
                 .setGroup(GROUP_KEY_ANNOUNCEMENTS)
                 .setGroupSummary(true)

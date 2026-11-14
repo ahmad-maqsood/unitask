@@ -24,6 +24,7 @@ import com.example.Repositories
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.ui.screens.groupTaskItemId
+import com.example.ui.theme.AccentColors
 import com.example.util.AuthStorage
 import com.example.util.CompletionLog
 import com.example.util.HighPriorityAlarm
@@ -56,7 +57,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val EXTRA_GROUP_TASK_ID = "extra_group_task_id"
         const val GROUP_KEY_DEADLINES = "com.example.DEADLINE_REMINDERS"
         private const val SUMMARY_ID = 9903
-        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
 
         /**
          * Android does not remove a group summary when its last reminder is removed, so the empty
@@ -331,7 +331,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setContentTitle(title)
             .setContentText(contentText)
             .setStyle(
@@ -437,7 +437,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             }
         )
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("Deadlines and reminders"))
             .setGroup(GROUP_KEY_DEADLINES)
             .setGroupSummary(true)

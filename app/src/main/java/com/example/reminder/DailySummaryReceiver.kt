@@ -19,6 +19,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.local.isMyTasksCourse
+import com.example.ui.theme.AccentColors
 import com.example.util.NotificationHistory
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
@@ -37,7 +38,6 @@ class DailySummaryReceiver : BroadcastReceiver() {
         private const val NOTIFICATION_ID = 7702
         private const val MAX_LINES = 4
         const val GROUP_KEY_DAILY = "com.example.DAILY_SUMMARY"
-        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
     }
 
     /** One task due on some day, from your own tasks or from a group. */
@@ -182,7 +182,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setContentTitle("Today in UniTask")
             .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))

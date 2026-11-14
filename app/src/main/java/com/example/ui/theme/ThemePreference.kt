@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.widget.UniTaskWidget
 
 enum class ThemeMode(val label: String) {
     SYSTEM("System"),
@@ -46,5 +47,7 @@ object ThemePreference {
             .edit()
             .putString(ACCENT_KEY, newAccent.name)
             .apply()
+        // The home screen widget uses this colour too, so redraw it now.
+        UniTaskWidget.refreshAsync(context)
     }
 }

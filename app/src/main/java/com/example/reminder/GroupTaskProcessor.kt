@@ -18,7 +18,6 @@ import com.example.data.groups.isForUser
 import com.example.data.local.computeDeadlineMillis
 import com.example.data.groups.GroupsState
 import com.example.util.NotificationSound
-import com.example.util.TimeFormatter
 
 /** A pending group task as saved for the daily summary. */
 data class SummaryTask(
@@ -216,7 +215,10 @@ class GroupTaskProcessor(context: Context) {
         }
         for (task in fresh) {
             val who = task.createdByName.ifBlank { "A member" }
-            val due = "Due at ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+            // Date and time: a new task is often due days away, and a time alone does not say which day.
+            val due = "Due " + com.example.util.DateFormats.shortDateAtClock(
+                computeDeadlineMillis(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+            )
             val course = task.courseLabel?.trim()?.takeIf { it.isNotBlank() }
             val body = if (course != null) {
                 "[$course] $due • ${task.title} (by $who)"

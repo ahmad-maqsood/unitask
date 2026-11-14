@@ -229,7 +229,8 @@ fun GroupsTab(
                     },
                     onTransferOwnership = { newOwnerUid ->
                         viewModel.transferOwnership(newOwnerUid)
-                    }
+                    },
+                    isOnline = isOnline
                 )
             } else {
                 // Group list screen with non-blocking reconnecting banner
@@ -264,7 +265,8 @@ fun GroupsTab(
                         memberships = memberships,
                         onCreateGroupClick = { viewModel.openCreateDialog() },
                         onJoinGroupClick = { viewModel.openJoinDialog() },
-                        onSelectGroup = { groupId -> viewModel.selectGroup(groupId) }
+                        onSelectGroup = { groupId -> viewModel.selectGroup(groupId) },
+                        isOnline = isOnline
                     )
                 }
             }
@@ -413,7 +415,9 @@ fun GroupsListScreen(
     memberships: List<GroupMembership>,
     onCreateGroupClick: () -> Unit,
     onJoinGroupClick: () -> Unit,
-    onSelectGroup: (String) -> Unit
+    onSelectGroup: (String) -> Unit,
+    /** False while the phone has no internet: creating or joining a group needs the server. */
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -429,6 +433,7 @@ fun GroupsListScreen(
         ) {
             Button(
                 onClick = onCreateGroupClick,
+                enabled = isOnline,
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -441,6 +446,7 @@ fun GroupsListScreen(
 
             FilledTonalButton(
                 onClick = onJoinGroupClick,
+                enabled = isOnline,
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)

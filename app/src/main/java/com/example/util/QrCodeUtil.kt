@@ -24,14 +24,19 @@ object QrCodeUtil {
     private const val URI_SCHEME = "unitask"
     private const val URI_HOST = "join"
 
-    /** Where the join page lives now that the repo is under the CondaLabs organization. */
-    private const val INVITE_WEB_BASE = "https://condalabs.github.io/unitask/join/"
+    /** Where the join page lives. It is on the app's own website, so it does not depend on the GitHub owner name. */
+    private const val INVITE_WEB_BASE = "https://gen-lang-client-0196140574.firebaseapp.com/join/"
 
     /**
-     * Hosts whose invite links the app still reads. The old owner's address stays so links
+     * Hosts whose invite links the app still reads. The older GitHub Pages addresses stay so links
      * shared before the move keep working.
      */
-    private val INVITE_WEB_HOSTS = listOf("condalabs.github.io", "ahmad-maqsood.github.io")
+    private val INVITE_WEB_HOSTS = listOf(
+        "gen-lang-client-0196140574.firebaseapp.com",
+        "gen-lang-client-0196140574.web.app",
+        "condalabs.github.io",
+        "ahmad-maqsood.github.io"
+    )
     
     /**
      * Builds a universal join link: unitask://join?username=...&code=...

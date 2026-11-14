@@ -20,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.ui.screens.MainScreen
+import com.example.ui.screens.MainTab
 import com.example.ui.screens.MainViewModel
 import com.example.ui.screens.OnboardingScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -180,9 +181,14 @@ class MainActivity : ComponentActivity() {
                     }
                     if (showOnboarding) {
                         OnboardingScreen(
-                            onFinished = {
+                            onFinished = { startFirstCourse ->
                                 OnboardingPrefs.markDone(applicationContext)
                                 showOnboarding = false
+                                if (startFirstCourse) {
+                                    // Same first step as the Get started card: the Add course screen.
+                                    mainViewModel.setTab(MainTab.COURSES)
+                                    mainViewModel.openAddCourseDialog()
+                                }
                             }
                         )
                     } else {

@@ -74,7 +74,8 @@ import com.example.util.OnboardingLogic
 import com.example.util.OnboardingSetting
 import kotlinx.coroutines.launch
 
-private const val PAGE_COUNT = 2
+private const val PAGE_COUNT = 3
+private const val SETUP_PAGE = 1
 private const val SETTINGS_PREFS = "unitask_settings"
 
 /**
@@ -82,12 +83,17 @@ private const val SETTINGS_PREFS = "unitask_settings"
  *
  * Page 1 says what UniTask does. Page 2 turns on the phone settings that reminders need
  * (notifications, battery, and auto-start on phones that have it). Each setting ticks itself when the
- * person comes back from the system screen. Skipping is always fine: the app asks again later, when a
- * reminder is saved, and the "Get started" card on Deadlines keeps the same steps.
+ * person comes back from the system screen. Page 3 shows the first steps of the "Get started" card
+ * and ends with a button that opens the Add course screen.
+ *
+ * Skipping is always fine: the app asks again later, when a reminder is saved, and the "Get started"
+ * card on Deadlines keeps the same steps.
+ *
+ * [onFinished] is called with true when the person chose to add their first course right away.
  */
 @Composable
 fun OnboardingScreen(
-    onFinished: () -> Unit,
+    onFinished: (startFirstCourse: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -195,7 +201,7 @@ fun OnboardingScreen(
         ) {
             if (currentPage < lastPage) {
                 TextButton(
-                    onClick = onFinished,
+                    onClick = { onFinished(false) },
                     modifier = Modifier.testTag("onboarding_skip")
                 ) {
                     Text("Skip")
@@ -209,14 +215,14 @@ fun OnboardingScreen(
                 .weight(1f)
                 .fillMaxWidth()
         ) { page ->
-            if (page == 0) {
-                WelcomePage()
-            } else {
-                SetupPage(
+            when (page) {
+                0 -> WelcomePage()
+                SETUP_PAGE -> SetupPage(
                     shown = shownSettings,
                     on = on,
                     onClick = onSettingClick
                 )
+                else -> FirstStepsPage()
             }
         }
 
@@ -226,7 +232,7 @@ fun OnboardingScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (currentPage == lastPage && !allOn) {
+            if (currentPage == SETUP_PAGE && !allOn) {
                 Text(
                     text = "You can finish these later from Get started on the home screen.",
                     style = MaterialTheme.typography.bodySmall,
@@ -237,26 +243,32 @@ fun OnboardingScreen(
             }
             PageDots(count = PAGE_COUNT, current = currentPage)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    if (currentPage < lastPage) {
-                        scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
-                    } else {
-                        onFinished()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .testTag("onboarding_next")
-            ) {
-                Text(
-                    when {
-                        currentPage < lastPage -> "Get started"
-                        allOn -> "Start using UniTask"
-                        else -> "Continue"
-                    }
-                )
+            if (currentPage < lastPage) {
+                Button(
+                    onClick = { scope.launch { pagerState.animateScrollToPage(currentPage + 1) } },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("onboarding_next")
+                ) {
+                    Text(if (currentPage == SETUP_PAGE && !allOn) "Continue" else "Next")
+                }
+            } else {
+                Button(
+                    onClick = { onFinished(true) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("onboarding_get_started")
+                ) {
+                    Text("Get started")
+                }
+                TextButton(
+                    onClick = { onFinished(false) },
+                    modifier = Modifier.testTag("onboarding_look_around")
+                ) {
+                    Text("I'll look around first")
+                }
             }
         }
     }
@@ -421,6 +433,91 @@ private fun SetupPage(
             Spacer(modifier = Modifier.height(12.dp))
         }
         Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun FirstStepsPage() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Your first steps",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Three quick things and UniTask is working for you. It takes about a minute.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        StepRow(
+            number = 1,
+            title = "Add a course",
+            text = "Something like \"Calculus\" or \"CS101\". Deadlines and classes belong to a course."
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        StepRow(
+            number = 2,
+            title = "Add a deadline",
+            text = "An assignment, a quiz or an exam, with the date it is due."
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        StepRow(
+            number = 3,
+            title = "Set a reminder",
+            text = "Use the Remind me row on a deadline so it rings before it is due."
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "A Get started card at the top of Deadlines keeps track of these and a few more " +
+                "(timetable, timer, backup), and ticks them for you as you go.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun StepRow(number: Int, title: String, text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = number.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

@@ -173,8 +173,20 @@ fun MyTaskDialog(
     val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
     val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
 
+    // Ask before throwing away input: back, the close button and a tap outside all go through the guard.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            title, description,
+            checklist.joinToString("|") { "${it.text}:${it.checked}" },
+            selectedDueDateMillis, dueHour, dueMinute, ringAlarm,
+            reminderOptions.map { it.name }.sorted(),
+            repeatRule, autoDeleteWhenDone
+        ),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -192,7 +204,7 @@ fun MyTaskDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = { discardGuard.request() },
                         modifier = Modifier
                             .size(48.dp)
                             .testTag("my_task_cancel_button")

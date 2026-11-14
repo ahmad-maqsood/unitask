@@ -93,8 +93,16 @@ fun AddEditCourseDialog(
 
     val activeArchivedConflict = typingArchivedConflict ?: archivedConflict
 
+    // A tap outside or the back gesture asks first when something was typed. The Cancel button
+    // is a deliberate tap, so it still closes right away.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(code, name, instructor, location, selectedColor),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         title = {
             Text(
                 text = if (courseToEdit != null) "Edit Course" else "Add New Course",

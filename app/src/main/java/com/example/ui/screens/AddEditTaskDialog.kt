@@ -286,8 +286,20 @@ fun AddEditTaskDialog(
         }
         onDismiss()
     }
+    // Ask before throwing away input: back, the close button and a tap outside all go through the guard.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            title, description,
+            checklist.joinToString("|") { "${it.text}:${it.checked}" },
+            selectedCourseId, selectedDueDateMillis, dueHour, dueMinute, ringAlarm, status,
+            reminderOptions.map { it.name }.sorted(),
+            newAttachments.map { it.relativePath }
+        ),
+        onClose = cleanupAndDismiss
+    )
+    discardGuard.Render()
     Dialog(
-        onDismissRequest = cleanupAndDismiss,
+        onDismissRequest = { discardGuard.request() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -305,7 +317,7 @@ fun AddEditTaskDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = cleanupAndDismiss,
+                        onClick = { discardGuard.request() },
                         modifier = Modifier
                             .size(48.dp)
                             .testTag("task_cancel_button")

@@ -132,8 +132,18 @@ fun AddEditLectureSlotDialog(
         )
     }
 
+    // A tap outside or the back gesture asks first when something was changed. The Cancel button
+    // is a deliberate tap, so it still closes right away.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            selectedCourseId, dayOfWeek, startHour, startMinute, endHour, endMinute, classroom, instructor
+        ),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         title = {
             Text(
                 text = if (slotToEdit != null) "Edit Lecture Slot" else "Add Lecture Slot",

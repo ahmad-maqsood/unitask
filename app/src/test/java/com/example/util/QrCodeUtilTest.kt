@@ -36,7 +36,7 @@ class QrCodeUtilTest {
     @Test
     fun testBuildAndParseGroupInviteWebLink() {
         val link = QrCodeUtil.buildGroupInviteWebLink("alice", "ABCD1234")
-        assertTrue(link.startsWith("https://condalabs.github.io/unitask/join/"))
+        assertTrue(link.startsWith("https://gen-lang-client-0196140574.firebaseapp.com/join/"))
 
         val parsed = QrCodeUtil.parseGroupInvite(link)
         assertNotNull(parsed)

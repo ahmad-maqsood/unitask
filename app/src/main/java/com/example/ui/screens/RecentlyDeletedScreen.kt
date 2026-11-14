@@ -86,6 +86,7 @@ fun RecentlyDeletedScreen(
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = true) {

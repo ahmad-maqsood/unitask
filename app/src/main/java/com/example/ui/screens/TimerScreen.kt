@@ -463,9 +463,7 @@ fun TimerScreen(
                 ) {
                     if (endMillis != null) {
                         val endText = remember(endMillis) {
-                            java.text.DateFormat
-                                .getTimeInstance(java.text.DateFormat.SHORT)
-                                .format(java.util.Date(endMillis))
+                            com.example.util.DateFormats.clock(endMillis)
                         }
                         Text(
                             text = "Ends at $endText",

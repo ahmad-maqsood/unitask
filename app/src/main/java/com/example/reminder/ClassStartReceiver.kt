@@ -17,6 +17,7 @@ import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
+import com.example.ui.theme.AccentColors
 import com.example.util.NotificationSound
 import com.example.util.TimeFormatter
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +39,6 @@ class ClassStartReceiver : BroadcastReceiver() {
         const val EXTRA_START_MILLIS = "extra_class_start_millis"
         const val GROUP_KEY_CLASSES = "com.example.CLASS_ALERTS"
         private const val SUMMARY_ID = 9904
-        private const val PRIMARY_COLOR = 0xFF4F46E5.toInt()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -163,7 +163,7 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setContentTitle("Class in progress: ${course.code}")
             .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
@@ -189,7 +189,7 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
             .setGroup(GROUP_KEY_CLASSES)
             .setGroupSummary(true)
@@ -244,7 +244,7 @@ class ClassStartReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setContentTitle("Class in $minutesLeft min: ${course.code}")
             .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
@@ -272,7 +272,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         
         val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
-            .setColor(PRIMARY_COLOR)
+            .setColor(AccentColors.notificationColor(context))
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
             .setGroup(GROUP_KEY_CLASSES)
             .setGroupSummary(true)

@@ -26,15 +26,15 @@ object DateFormats {
     /** Nov 4 */
     fun monthDay(millis: Long) = format("MMM d", millis)
 
-    /** 9:30 AM */
-    fun clock(millis: Long) = format("h:mm a", millis)
+    /** 9:30 AM on a 12-hour phone, 09:30 on a 24-hour phone */
+    fun clock(millis: Long) = format(TimeFormatter.clockPattern(), millis)
 
 
-    /** Mon, Nov 4 at 9:30 AM */
-    fun shortDateAtClock(millis: Long) = format("EEE, MMM d 'at' h:mm a", millis)
+    /** Mon, Nov 4 at 9:30 AM (or 09:30 on a 24-hour phone) */
+    fun shortDateAtClock(millis: Long) = format("EEE, MMM d 'at' ${TimeFormatter.clockPattern()}", millis)
 
-    /** Nov 4, 9:30 AM */
-    fun monthDayClock(millis: Long) = format("MMM d, h:mm a", millis)
+    /** Nov 4, 9:30 AM (or 09:30 on a 24-hour phone) */
+    fun monthDayClock(millis: Long) = format("MMM d, ${TimeFormatter.clockPattern()}", millis)
 
     /** November 2026 */
     fun monthYear(millis: Long) = format("MMMM yyyy", millis)
@@ -63,6 +63,6 @@ object DateFormats {
     /** 20261104-2130. For file names. */
     fun fileDateTime(millis: Long) = formatUs("yyyyMMdd-HHmm", millis)
 
-    /** Mon, 4 Nov 9:30 AM (day first) */
-    fun dayFirstDateClock(millis: Long) = format("EEE, d MMM h:mm a", millis)
+    /** Mon, 4 Nov 9:30 AM (day first; 09:30 on a 24-hour phone) */
+    fun dayFirstDateClock(millis: Long) = format("EEE, d MMM ${TimeFormatter.clockPattern()}", millis)
 }

@@ -77,6 +77,7 @@ fun GroupsTab(
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
 
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val sessionReady by viewModel.sessionReady.collectAsStateWithLifecycle()
@@ -109,7 +110,7 @@ fun GroupsTab(
                 viewModel.openJoinDialog(username, code)
                 onInviteConsumed()
             } else if (sessionReady) {
-                Toast.makeText(context, "Sign in to join this group", Toast.LENGTH_SHORT).show()
+                com.example.ui.AppMessages.show("Sign in to join this group")
                 onInviteConsumed()
             }
         }
@@ -149,8 +150,11 @@ fun GroupsTab(
         }
     }
 
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { if (!isOnline && effectiveUser != null) OfflineBanner() },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -200,32 +204,33 @@ fun GroupsTab(
                     onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
                         viewModel.leaveCurrentGroup {
-                            Toast.makeText(context, "Left group", Toast.LENGTH_SHORT).show()
+                            com.example.ui.AppMessages.show("Left group")
                         }
                     },
                     onDeleteGroupClick = {
                         val username = selectedGroupDetail?.username ?: activeMembership?.username ?: ""
                         viewModel.deleteCurrentGroup(username) {
-                            Toast.makeText(context, "Group deleted", Toast.LENGTH_SHORT).show()
+                            com.example.ui.AppMessages.show("Group deleted")
                         }
                     },
                     onUpdateGroupProfile = { newName, newUsername ->
                         viewModel.updateGroupProfile(newName, newUsername) { success, error ->
                             if (error != null) {
-                                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                com.example.ui.AppMessages.show(error)
                             }
                         }
                     },
                     onRegenerateGroupCode = {
                         viewModel.regenerateGroupCode { success, codeOrError ->
                             if (codeOrError != null) {
-                                Toast.makeText(context, if (success) "New code: $codeOrError" else codeOrError, Toast.LENGTH_SHORT).show()
+                                com.example.ui.AppMessages.show(if (success) "New code: $codeOrError" else codeOrError)
                             }
                         }
                     },
                     onTransferOwnership = { newOwnerUid ->
                         viewModel.transferOwnership(newOwnerUid)
-                    }
+                    },
+                    isOnline = isOnline
                 )
             } else {
                 // Group list screen with non-blocking reconnecting banner
@@ -260,7 +265,8 @@ fun GroupsTab(
                         memberships = memberships,
                         onCreateGroupClick = { viewModel.openCreateDialog() },
                         onJoinGroupClick = { viewModel.openJoinDialog() },
-                        onSelectGroup = { groupId -> viewModel.selectGroup(groupId) }
+                        onSelectGroup = { groupId -> viewModel.selectGroup(groupId) },
+                        isOnline = isOnline
                     )
                 }
             }
@@ -409,7 +415,9 @@ fun GroupsListScreen(
     memberships: List<GroupMembership>,
     onCreateGroupClick: () -> Unit,
     onJoinGroupClick: () -> Unit,
-    onSelectGroup: (String) -> Unit
+    onSelectGroup: (String) -> Unit,
+    /** False while the phone has no internet: creating or joining a group needs the server. */
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -425,6 +433,7 @@ fun GroupsListScreen(
         ) {
             Button(
                 onClick = onCreateGroupClick,
+                enabled = isOnline,
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -437,6 +446,7 @@ fun GroupsListScreen(
 
             FilledTonalButton(
                 onClick = onJoinGroupClick,
+                enabled = isOnline,
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -577,5 +587,21 @@ fun GroupCardItem(
                 }
             }
         }
+    }
+}
+
+/** A thin notice at the top of Groups while there is no internet. The saved data below still works. */
+@Composable
+private fun OfflineBanner() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "You're offline. Showing saved data. Changes need internet.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        )
     }
 }

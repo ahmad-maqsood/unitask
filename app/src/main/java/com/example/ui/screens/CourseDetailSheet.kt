@@ -131,6 +131,7 @@ fun CourseDetailSheet(
         )
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
     val scope = rememberCoroutineScope()
 
     slotPendingDelete?.let { slotToDelete ->

@@ -126,7 +126,9 @@ class ReminderScheduler(private val context: Context) {
         putExtra(TaskReminderReceiver.EXTRA_PRIORITY, task.priority.name)
         putExtra(
             TaskReminderReceiver.EXTRA_DUE_INFO,
-            "Due at ${com.example.util.TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+            // Same wording as a snoozed reminder ("Due Fri, Nov 7 at 5:00 PM"). The date matters
+            // for the "1 day / 3 days / 1 week before" reminders, which fire on another day.
+            "Due " + DateFormats.shortDateAtClock(calculateDeadlineMillis(task))
         )
     }
 

@@ -74,6 +74,8 @@ class ReadmeScreenshotTest {
             .putBoolean("notification_permission_prompted", true)
             .putBoolean("background_setup_prompted", true)
             .apply()
+        // A fresh install starts with the welcome screens. Skip them, or every screenshot would show them.
+        com.example.util.OnboardingPrefs.markDone(context)
         com.example.util.drive.DrivePrefs(context).restoreOfferDismissed = true
         // Hide the "Get started" checklist so it does not push the demo tasks down
         // in the Deadlines screenshots.

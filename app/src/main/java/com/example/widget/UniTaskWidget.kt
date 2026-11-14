@@ -34,6 +34,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.example.MainActivity
+import com.example.ui.theme.AccentColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,7 +44,6 @@ private const val MAX_PER_SECTION = 8
 private val ColorBackground = ColorProvider(day = Color(0xFFFFFFFF), night = Color(0xFF1C1B22))
 private val ColorText = ColorProvider(day = Color(0xFF1B1B1F), night = Color(0xFFE6E1E9))
 private val ColorDim = ColorProvider(day = Color(0xFF6B6B76), night = Color(0xFF9A98A3))
-private val ColorAccent = ColorProvider(day = Color(0xFF4F46E5), night = Color(0xFFA5A0FF))
 private val ColorDanger = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFF2B8B5))
 
 /** The "Today" home screen widget: today's classes and tasks due today. */
@@ -131,6 +131,10 @@ private fun openAppAction(context: Context, task: WidgetTask? = null): Action {
 @Composable
 private fun WidgetContent(context: Context, data: TodayOverview?) {
     val rows = buildRows(data)
+    val accentColor = ColorProvider(
+        day = AccentColors.widgetLightColor(context),
+        night = AccentColors.widgetDarkColor(context)
+    )
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -144,7 +148,7 @@ private fun WidgetContent(context: Context, data: TodayOverview?) {
         ) {
             Text(
                 text = "Today",
-                style = TextStyle(color = ColorAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(color = accentColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
             Text(
@@ -161,6 +165,10 @@ private fun WidgetContent(context: Context, data: TodayOverview?) {
 
 @Composable
 private fun RowContent(context: Context, row: WidgetRow) {
+    val accentColor = ColorProvider(
+        day = AccentColors.widgetLightColor(context),
+        night = AccentColors.widgetDarkColor(context)
+    )
     when (row) {
         is WidgetRow.Section -> Text(
             text = row.title.uppercase(),
@@ -194,7 +202,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
                 if (c.state == ClassState.NOW) {
                     Text(
                         text = "NOW",
-                        style = TextStyle(color = ColorAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        style = TextStyle(color = accentColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     )
                 }
             }

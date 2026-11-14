@@ -28,7 +28,6 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -550,18 +549,17 @@ private fun TimetableBreakIndicator(gapMinutes: Int) {
 
 private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCourse>) {
     if (slots.isEmpty()) {
-        Toast.makeText(context, "No classes to export", Toast.LENGTH_SHORT).show()
+        com.example.ui.AppMessages.show("No classes to export")
         return
     }
 
     val anchorMillis = WeekParity.getWeekAAnchor(context)
     val hasAlternating = slots.any { weekTypeOf(it.slot) != WeekType.ALL }
     if (hasAlternating && anchorMillis == null) {
-        Toast.makeText(
-            context,
+        com.example.ui.AppMessages.show(
             "Week A anchor is not set, so alternating classes may be offset by a week",
-            Toast.LENGTH_LONG
-        ).show()
+            long = true
+        )
     }
 
     val icsContent = buildTimetableIcs(slots, anchorMillis)
@@ -608,8 +606,8 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
         }
     }
 
-    // Last fallback: plain-text share with a Toast explaining that no calendar app could open the file.
-    Toast.makeText(context, "No calendar app could open the file", Toast.LENGTH_LONG).show()
+    // Last fallback: plain-text share with a message explaining that no calendar app could open the file.
+    com.example.ui.AppMessages.show("No calendar app could open the file", long = true)
     try {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"

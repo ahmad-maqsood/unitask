@@ -173,8 +173,20 @@ fun MyTaskDialog(
     val isDateOrTimeEmpty = selectedDueDateMillis == null || dueHour == null || dueMinute == null
     val isSaveEnabled = title.isNotBlank() && !isDateOrTimeEmpty
 
+    // Ask before throwing away input: back, the close button and a tap outside all go through the guard.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            title, description,
+            checklist.joinToString("|") { "${it.text}:${it.checked}" },
+            selectedDueDateMillis, dueHour, dueMinute, ringAlarm,
+            reminderOptions.map { it.name }.sorted(),
+            repeatRule, autoDeleteWhenDone
+        ),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -192,7 +204,7 @@ fun MyTaskDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = { discardGuard.request() },
                         modifier = Modifier
                             .size(48.dp)
                             .testTag("my_task_cancel_button")
@@ -486,7 +498,7 @@ fun MyTaskDialog(
                         val shownHour = dueHour
                         val shownMinute = dueMinute
                         val timeStr = if (shownHour != null && shownMinute != null) {
-                            TimeFormatter.format12Hour(shownHour, shownMinute)
+                            TimeFormatter.format(shownHour, shownMinute)
                         } else null
 
                         OutlinedCard(
@@ -598,23 +610,23 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) {
+                        QuickDateChip(com.example.util.TimeFormatter.format(12, 0), selected = dueHour == 12 && dueMinute == 0) {
                             dueHour = 12
                             dueMinute = 0
                         }
-                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) {
+                        QuickDateChip(com.example.util.TimeFormatter.format(23, 59), selected = dueHour == 23 && dueMinute == 59) {
                             dueHour = 23
                             dueMinute = 59
                         }
-                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) {
+                        QuickDateChip(com.example.util.TimeFormatter.format(9, 0), selected = dueHour == 9 && dueMinute == 0) {
                             dueHour = 9
                             dueMinute = 0
                         }
-                        QuickDateChip("1:00 PM", selected = dueHour == 13 && dueMinute == 0) {
+                        QuickDateChip(com.example.util.TimeFormatter.format(13, 0), selected = dueHour == 13 && dueMinute == 0) {
                             dueHour = 13
                             dueMinute = 0
                         }
-                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) {
+                        QuickDateChip(com.example.util.TimeFormatter.format(17, 0), selected = dueHour == 17 && dueMinute == 0) {
                             dueHour = 17
                             dueMinute = 0
                         }

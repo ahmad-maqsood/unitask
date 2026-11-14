@@ -10,7 +10,6 @@ import com.example.MainActivity
 import com.example.data.groups.GroupTask
 import com.example.data.local.ReminderOption
 import com.example.data.local.decodeReminderOptions
-import com.example.util.TimeFormatter
 import com.example.data.local.computeDeadlineMillis
 
 /**
@@ -62,7 +61,8 @@ class GroupReminderScheduler(private val context: Context) {
         for (task in tasks) {
             if (task.id in doneIds) continue
             val deadline = deadlineMillis(task)
-            val dueInfo = "Due at ${TimeFormatter.format12Hour(task.dueTimeHour, task.dueTimeMinute)}"
+            // With the date, like personal reminders: "1 day before" fires on another day.
+            val dueInfo = "Due " + com.example.util.DateFormats.shortDateAtClock(deadline)
 
             for (option in optionsFor(task)) {
                 val trigger = deadline - option.offsetMinutes * 60_000L

@@ -201,6 +201,7 @@ fun MainScreen(
 
     var showBackgroundSetupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {

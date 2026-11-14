@@ -62,6 +62,57 @@ class GroupRepository(private val context: Context) {
     private fun effectiveUid(): String? =
         currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(context)
 
+    /** Last known group details and member lists, so a group opens without internet. */
+    private val offlineCache by lazy { GroupOfflineCache(context) }
+
+    /**
+     * What is saved on the phone for one group (tasks, done marks, courses), or null if nothing is saved.
+     * Group tasks, courses and done marks are saved by [GroupCacheRepository] after every successful read.
+     */
+    private suspend fun savedSnapshot(groupId: String): GroupSnapshot? {
+        val uid = effectiveUid() ?: return null
+        return GroupCacheRepository(context).getGroupsState(uid)?.loaded?.firstOrNull { it.groupId == groupId }
+    }
+
+    /**
+     * True while the phone has a working internet connection. Changes the moment the connection is
+     * lost or comes back, so screens can say "You're offline" and show saved data.
+     */
+    fun observeIsOnline(): Flow<Boolean> = callbackFlow<Boolean> {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        if (cm == null) {
+            trySend(true)
+            close()
+            return@callbackFlow
+        }
+        fun hasInternet(caps: NetworkCapabilities?): Boolean =
+            caps != null &&
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: android.net.Network, caps: NetworkCapabilities) {
+                trySend(hasInternet(caps))
+            }
+
+            override fun onLost(network: android.net.Network) {
+                trySend(false)
+            }
+        }
+        trySend(isGoodConnection())
+        try {
+            cm.registerDefaultNetworkCallback(callback)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not watch the connection: ${e.message}")
+        }
+        awaitClose {
+            try {
+                cm.unregisterNetworkCallback(callback)
+            } catch (_: Exception) {
+            }
+        }
+    }.distinctUntilChanged()
+
     companion object {
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
@@ -289,6 +340,9 @@ class GroupRepository(private val context: Context) {
             return@callbackFlow
         }
 
+        // Show the last known details at once, so the screen is not empty while offline.
+        effectiveUid()?.let { uid -> offlineCache.detail(uid, groupId) }?.let { trySend(it) }
+
         suspend fun queryAndEmit() {
             try {
                 val rows = SupabaseProvider.client.postgrest["groups"]
@@ -307,6 +361,11 @@ class GroupRepository(private val context: Context) {
                     )
                 }
                 trySend(group)
+                if (group != null) {
+                    effectiveUid()?.let { uid -> offlineCache.saveDetail(uid, group) }
+                } else {
+                    offlineCache.forget(groupId)
+                }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -363,6 +422,9 @@ class GroupRepository(private val context: Context) {
             return@callbackFlow
         }
 
+        // Show the last known member list at once, so the screen is not empty while offline.
+        effectiveUid()?.let { uid -> offlineCache.members(uid, groupId) }?.let { trySend(it) }
+
         suspend fun queryAndEmit() {
             try {
                 val rows = SupabaseProvider.client.postgrest["group_members"]
@@ -380,6 +442,7 @@ class GroupRepository(private val context: Context) {
                     )
                 }
                 trySend(members)
+                effectiveUid()?.let { uid -> offlineCache.saveMembers(uid, groupId, members) }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -429,7 +492,13 @@ class GroupRepository(private val context: Context) {
      * Observes tasks for a group using Supabase.
      */
     fun observeGroupTasks(groupId: String): Flow<List<GroupTask>> =
-        combine(observeGroupTasksFromServer(groupId).distinctUntilChanged(), pendingTasks) { server, pending ->
+        combine(
+            observeGroupTasksFromServer(groupId)
+                // Saved copy first, so the list is not empty while offline. The server list replaces it.
+                .onStart { savedSnapshot(groupId)?.let { emit(it.allTasks) } }
+                .distinctUntilChanged(),
+            pendingTasks
+        ) { server, pending ->
             withPendingTasks(groupId, server, pending)
         }
 
@@ -538,7 +607,7 @@ class GroupRepository(private val context: Context) {
      * Observes courses for a group using Supabase.
      */
     @OptIn(FlowPreview::class)
-    fun observeGroupCourses(groupId: String): Flow<List<GroupCourse>> = callbackFlow {
+    fun observeGroupCourses(groupId: String): Flow<List<GroupCourse>> = callbackFlow<List<GroupCourse>> {
         if (groupId.isBlank() || effectiveUid() == null) {
             trySend(emptyList())
             close()
@@ -597,6 +666,9 @@ class GroupRepository(private val context: Context) {
                 }
             }
         }
+    }.onStart {
+        // Saved copy first, so the list is not empty while offline. The server list replaces it.
+        savedSnapshot(groupId)?.let { emit(it.courses.sortedBy { course -> course.code.lowercase() }) }
     }
 
     private fun <T : Any> Flow<T>.startWithNull(): Flow<T?> = flow {
@@ -758,7 +830,11 @@ class GroupRepository(private val context: Context) {
      * Observes personal done marks for tasks in this group using Supabase.
      */
     fun observeGroupDoneTasks(uid: String, groupId: String): Flow<Set<String>> =
-        combine(observeGroupDoneTasksFromServer(uid, groupId), pendingDone) { server, pending ->
+        combine(
+            observeGroupDoneTasksFromServer(uid, groupId)
+                .onStart { savedSnapshot(groupId)?.let { emit(it.done) } },
+            pendingDone
+        ) { server, pending ->
             val now = System.currentTimeMillis()
             val active = pending.filter { (_, pair) -> now - pair.second < PENDING_DONE_MAX_AGE_MILLIS }
             var result = server

@@ -14,13 +14,20 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.ui.screens.MainScreen
+import com.example.ui.screens.MainTab
 import com.example.ui.screens.MainViewModel
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.ThemeMode
 import com.example.ui.theme.ThemePreference
 import com.example.util.AppVisibility
+import com.example.util.OnboardingPrefs
 
 class MainActivity : ComponentActivity() {
 
@@ -167,7 +174,26 @@ class MainActivity : ComponentActivity() {
 
             MyApplicationTheme(darkTheme = darkTheme, accent = ThemePreference.accent) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainScreen(viewModel = mainViewModel)
+                    // The welcome screens show once, on a brand new install. MainScreen is only built
+                    // after them, so it reads the phone's permission state fresh when it starts.
+                    var showOnboarding by rememberSaveable {
+                        mutableStateOf(OnboardingPrefs.shouldShow(applicationContext))
+                    }
+                    if (showOnboarding) {
+                        OnboardingScreen(
+                            onFinished = { startFirstCourse ->
+                                OnboardingPrefs.markDone(applicationContext)
+                                showOnboarding = false
+                                if (startFirstCourse) {
+                                    // Same first step as the Get started card: the Add course screen.
+                                    mainViewModel.setTab(MainTab.COURSES)
+                                    mainViewModel.openAddCourseDialog()
+                                }
+                            }
+                        )
+                    } else {
+                        MainScreen(viewModel = mainViewModel)
+                    }
                 }
             }
         }

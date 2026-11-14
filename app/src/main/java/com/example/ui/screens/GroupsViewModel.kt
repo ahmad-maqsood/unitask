@@ -31,6 +31,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
@@ -77,6 +81,22 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
+
+    /** False while the phone has no working internet. Groups then show the last saved data. */
+    val isOnline: StateFlow<Boolean> = repository.observeIsOnline()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    private val offlineMessage = "You're offline. Connect to the internet and try again."
+
+    /**
+     * Group changes (add, edit, delete, roles, join codes) must reach the server, so they cannot run offline.
+     * Returns true when it is fine to go on. Otherwise it tells the person why nothing happened.
+     */
+    private fun requireOnline(): Boolean {
+        if (isOnline.value) return true
+        _snackbarMessage.tryEmit(offlineMessage)
+        return false
+    }
 
     private val _isActionLoading = MutableStateFlow(false)
     val isActionLoading: StateFlow<Boolean> = _isActionLoading.asStateFlow()
@@ -157,12 +177,19 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val selectedGroupTasks: StateFlow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
+    private val allGroupTasks: Flow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
         if (!groupId.isNullOrBlank()) {
             repository.observeGroupTasks(groupId)
         } else {
             flowOf(emptyList())
         }
+    }
+
+    /** Tasks that were just deleted and can still be brought back with Undo. They are hidden from the list. */
+    private val hiddenTaskIds = MutableStateFlow<Set<String>>(emptySet())
+
+    val selectedGroupTasks: StateFlow<List<GroupTask>> = combine(allGroupTasks, hiddenTaskIds) { tasks, hidden ->
+        if (hidden.isEmpty()) tasks else tasks.filter { it.id !in hidden }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -274,6 +301,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun saveCourse(code: String, name: String, instructor: String, colorHex: String) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
         val existingCourse = _courseToEdit.value
@@ -344,6 +372,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteCourse(course: GroupCourse) {
+        if (!requireOnline()) return
         repository.deleteGroupCourse(course.groupId, course.id) { e ->
             viewModelScope.launch {
                 _snackbarMessage.emit("Failed to delete course: ${e.message}")
@@ -352,6 +381,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun createGroup(name: String, username: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
             onComplete(false, "You must be signed in to create a group.")
@@ -378,6 +408,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun joinGroup(username: String, joinCode: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
             onComplete(false, "You must be signed in to join a group.")
@@ -420,6 +451,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         reminderOptions: String,
         assignedTo: List<String>
     ) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         val user = _currentUser.value ?: return
         val existingTask = _taskToEdit.value
@@ -468,17 +500,63 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /** A deleted task waiting out its Undo time: the task and the timer that will really delete it. */
+    private class PendingDelete(val task: GroupTask, val timer: Job)
+
+    private val pendingDeletes = HashMap<String, PendingDelete>()
+
+    /**
+     * Deletes a task, with a few seconds to change your mind. The task disappears from the list at once,
+     * but it is only deleted on the server when [UNDO_WINDOW_MILLIS] has passed. Undo just shows it again.
+     * (Creating the task again instead would give it a new id, lose everyone's done marks and tell the
+     * whole group about a "new" task.)
+     */
     fun deleteTask(task: GroupTask) {
+        if (!requireOnline()) return
+        if (pendingDeletes.containsKey(task.id)) return
+        hiddenTaskIds.update { it + task.id }
+        val timer = viewModelScope.launch {
+            delay(UNDO_WINDOW_MILLIS)
+            commitDelete(task.id)
+        }
+        pendingDeletes[task.id] = PendingDelete(task, timer)
+        com.example.ui.AppMessages.show(
+            message = "Task deleted",
+            actionLabel = "Undo",
+            onAction = { undoDelete(task.id) }
+        )
+    }
+
+    private fun undoDelete(taskId: String) {
+        // Too late (already deleted on the server) means there is nothing left to bring back.
+        val pending = pendingDeletes.remove(taskId) ?: return
+        pending.timer.cancel()
+        hiddenTaskIds.update { it - taskId }
+    }
+
+    /** Deletes on the server for real. Safe to call twice: the second call finds nothing waiting. */
+    private fun commitDelete(taskId: String) {
+        val pending = pendingDeletes.remove(taskId) ?: return
+        val task = pending.task
         reminderScheduler.cancel(task.groupId, task.id)
         repository.deleteTask(task.groupId, task.id) { e ->
+            // The server refused: show the task again so the list matches what is really there.
+            hiddenTaskIds.update { it - taskId }
             viewModelScope.launch {
                 _snackbarMessage.emit("Failed to delete task: ${e.message}")
             }
         }
     }
 
+    /** Closing the app must not undo a delete: whatever is still waiting is deleted now. */
+    override fun onCleared() {
+        pendingDeletes.keys.toList().forEach { commitDelete(it) }
+        super.onCleared()
+    }
+
     
     fun setMemberRole(member: GroupMember, makeAdmin: Boolean) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.setMemberRole(groupId, member.uid, if (makeAdmin) "admin" else "member")
@@ -495,6 +573,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun transferOwnership(newOwnerUid: String) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.transferOwnership(groupId, newOwnerUid)
@@ -508,6 +587,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun removeMember(member: GroupMember) {
+        if (!requireOnline()) return
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.removeMember(groupId, member.uid)
@@ -517,6 +597,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun leaveCurrentGroup(onSuccess: () -> Unit) {
+        if (!requireOnline()) return
         val user = _currentUser.value ?: return
         val groupId = _selectedGroupId.value ?: return
 
@@ -535,6 +616,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteCurrentGroup(username: String, onSuccess: () -> Unit) {
+        if (!requireOnline()) return
         val user = _currentUser.value ?: return
         val groupId = _selectedGroupId.value ?: return
 
@@ -553,6 +635,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun updateGroupProfile(newName: String, newUsername: String, onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             _isActionLoading.value = true
@@ -568,6 +651,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun regenerateGroupCode(onComplete: (Boolean, String?) -> Unit) {
+        if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             _isActionLoading.value = true
@@ -580,5 +664,10 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 onComplete(false, e.message ?: "Failed to regenerate join code")
             }
         }
+    }
+
+    private companion object {
+        /** How long a deleted task can be brought back. Matches how long the Undo message stays on screen. */
+        const val UNDO_WINDOW_MILLIS = 10_000L
     }
 }

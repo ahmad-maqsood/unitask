@@ -288,7 +288,8 @@ object LocalBackupManager {
 
                     val bytes = try {
                         file.readBytes()
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not read the image file for the backup", e)
                         // Count it, so the backup summary does not claim every image was saved.
                         skippedImagesCount++
                         continue
@@ -779,7 +780,8 @@ object LocalBackupManager {
                     if (rawData.isEmpty()) continue
                     val decoded = try {
                         Base64.decode(rawData, Base64.NO_WRAP)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not decode an image from the backup file", e)
                         skippedImages++
                         continue
                     }
@@ -792,10 +794,12 @@ object LocalBackupManager {
                     try {
                         targetFile.writeBytes(decoded)
                         addedImages++
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not write a restored image", e)
                         skippedImages++
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("UniTask", "Could not restore an image from the backup", e)
                     skippedImages++
                 }
             }
@@ -812,7 +816,8 @@ object LocalBackupManager {
 
                     val bytes = try {
                         source.noteImage(name)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not download a note image", e)
                         null
                     }
                     if (bytes == null) {
@@ -826,10 +831,12 @@ object LocalBackupManager {
                     try {
                         targetFile.writeBytes(bytes)
                         addedImages++
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not write a restored image", e)
                         skippedImages++
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("UniTask", "Could not restore an image from the backup", e)
                     skippedImages++
                 }
             }
@@ -903,7 +910,8 @@ object LocalBackupManager {
 
                     val downloaded = try {
                         source.downloadAttachment(storedName, destFile)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UniTask", "Could not download an attachment", e)
                         false
                     }
 
@@ -925,7 +933,8 @@ object LocalBackupManager {
                     )
                     taskAttachmentDao.insertAttachment(attachment)
                     addedAttachments++
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("UniTask", "Could not restore an attachment", e)
                     skippedAttachments++
                 }
             }
@@ -946,7 +955,8 @@ object LocalBackupManager {
                 val o = sessionArray.optJSONObject(i) ?: continue
                 val session = try {
                     TimerHistoryStore.sessionFromJson(o)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("UniTask", "Skipped a study session that could not be read", e)
                     null
                 }
                 if (session != null) parsed.add(session)

@@ -65,6 +65,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -105,7 +107,9 @@ fun GroupDetailScreen(
     onUpdateGroupProfile: ((String, String) -> Unit)? = null,
     onRegenerateGroupCode: (() -> Unit)? = null,
     onTransferOwnership: ((String) -> Unit)? = null,
-    groupId: String = groupDetail?.id ?: ""
+    groupId: String = groupDetail?.id ?: "",
+    /** False while the phone has no internet: the add buttons are greyed out, because saving needs the server. */
+    isOnline: Boolean = true
 ) {
     val context = LocalContext.current
     val effectiveGroupId = groupId.ifBlank { groupDetail?.id ?: fallbackUsername }
@@ -243,19 +247,23 @@ fun GroupDetailScreen(
         floatingActionButton = {
             if (selectedSectionTab == 0) {
                 FloatingActionButton(
-                    onClick = onAddTaskClick,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.testTag("group_add_task_fab")
+                    onClick = { if (isOnline) onAddTaskClick() },
+                    containerColor = offlineAwareFabContainer(isOnline),
+                    contentColor = offlineAwareFabContent(isOnline),
+                    modifier = Modifier
+                        .testTag("group_add_task_fab")
+                        .then(if (isOnline) Modifier else Modifier.semantics { disabled() })
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Task")
                 }
             } else if (selectedSectionTab == 1) {
                 FloatingActionButton(
-                    onClick = onAddCourseClick,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.testTag("group_add_course_fab")
+                    onClick = { if (isOnline) onAddCourseClick() },
+                    containerColor = offlineAwareFabContainer(isOnline),
+                    contentColor = offlineAwareFabContent(isOnline),
+                    modifier = Modifier
+                        .testTag("group_add_course_fab")
+                        .then(if (isOnline) Modifier else Modifier.semantics { disabled() })
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Course")
                 }
@@ -669,3 +677,12 @@ fun GroupDetailScreen(
     }
 
 }
+
+/** Same colours Material uses for a disabled button, so a greyed-out add button looks switched off. */
+@Composable
+private fun offlineAwareFabContainer(isOnline: Boolean) =
+    if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+
+@Composable
+private fun offlineAwareFabContent(isOnline: Boolean) =
+    if (isOnline) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)

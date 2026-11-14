@@ -278,8 +278,19 @@ fun GroupTaskDialog(
         )
     }
 
+    // Ask before throwing away input: back, the close button and a tap outside all go through the guard.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            title, description, courseLabel,
+            selectedDueDateMillis, dueHour, dueMinute, ringAlarm,
+            reminderOptions.map { it.name }.sorted(),
+            tagAll, taggedUids.sorted()
+        ),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -297,7 +308,7 @@ fun GroupTaskDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = { discardGuard.request() },
                         modifier = Modifier
                             .size(48.dp)
                             .testTag("group_task_cancel_button")
@@ -548,7 +559,7 @@ fun GroupTaskDialog(
                             }
 
                             // Time Selector
-                            val formattedTime = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
+                            val formattedTime = com.example.util.TimeFormatter.format(dueHour, dueMinute)
                             OutlinedCard(
                                 modifier = Modifier
                                     .weight(0.9f)

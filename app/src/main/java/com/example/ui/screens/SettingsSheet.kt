@@ -521,7 +521,7 @@ fun SettingsButton(
                                         icon = Icons.Default.WbSunny,
                                         title = "Daily summary",
                                         subtitle = if (summaryEnabled) {
-                                            "Every day at ${TimeFormatter.format12Hour(summaryHour, summaryMinute)}"
+                                            "Every day at ${TimeFormatter.format(summaryHour, summaryMinute)}"
                                         } else {
                                             "Off. Get one alert with today's classes and tasks"
                                         },
@@ -538,7 +538,7 @@ fun SettingsButton(
                                         SettingsRow(
                                             icon = Icons.Default.Schedule,
                                             title = "Summary time",
-                                            subtitle = TimeFormatter.format12Hour(summaryHour, summaryMinute),
+                                            subtitle = TimeFormatter.format(summaryHour, summaryMinute),
                                             onClick = { showSummaryTimePicker = true },
                                             testTag = "settings_daily_summary_time_row"
                                         )

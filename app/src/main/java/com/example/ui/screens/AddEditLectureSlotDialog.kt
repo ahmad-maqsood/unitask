@@ -132,8 +132,18 @@ fun AddEditLectureSlotDialog(
         )
     }
 
+    // A tap outside or the back gesture asks first when something was changed. The Cancel button
+    // is a deliberate tap, so it still closes right away.
+    val discardGuard = rememberDiscardGuard(
+        snapshot = changeSnapshot(
+            selectedCourseId, dayOfWeek, startHour, startMinute, endHour, endMinute, classroom, instructor
+        ),
+        onClose = onDismiss
+    )
+    discardGuard.Render()
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { discardGuard.request() },
         title = {
             Text(
                 text = if (slotToEdit != null) "Edit Lecture Slot" else "Add Lecture Slot",
@@ -260,7 +270,7 @@ fun AddEditLectureSlotDialog(
                                 Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.size(4.dp))
                                 Text(
-                                    text = com.example.util.TimeFormatter.format12Hour(startHour, startMinute),
+                                    text = com.example.util.TimeFormatter.format(startHour, startMinute),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -285,7 +295,7 @@ fun AddEditLectureSlotDialog(
                                 Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.size(4.dp))
                                 Text(
-                                    text = com.example.util.TimeFormatter.format12Hour(endHour, endMinute),
+                                    text = com.example.util.TimeFormatter.format(endHour, endMinute),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -408,7 +418,7 @@ fun AddEditLectureSlotDialog(
                     }
                     if (overlapping != null && conflictWarningMessage == null) {
                         val courseLabel = overlapping.course?.code ?: "Another class"
-                        val timeLabel = "${com.example.util.TimeFormatter.format12Hour(overlapping.slot.startHour, overlapping.slot.startMinute)} - ${com.example.util.TimeFormatter.format12Hour(overlapping.slot.endHour, overlapping.slot.endMinute)}"
+                        val timeLabel = "${com.example.util.TimeFormatter.format(overlapping.slot.startHour, overlapping.slot.startMinute)} - ${com.example.util.TimeFormatter.format(overlapping.slot.endHour, overlapping.slot.endMinute)}"
                         conflictWarningMessage = "Time conflict: overlaps with $courseLabel ($timeLabel). Click '${if (slotToEdit != null) "Update Slot" else "Save Slot"}' again to save anyway."
                         return@Button
                     }

@@ -559,7 +559,7 @@ fun GroupTaskDialog(
                             }
 
                             // Time Selector
-                            val formattedTime = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
+                            val formattedTime = com.example.util.TimeFormatter.format(dueHour, dueMinute)
                             OutlinedCard(
                                 modifier = Modifier
                                     .weight(0.9f)

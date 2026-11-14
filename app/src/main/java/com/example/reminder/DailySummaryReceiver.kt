@@ -135,11 +135,11 @@ class DailySummaryReceiver : BroadcastReceiver() {
         // Every class and task, for the bell. The notification below only has room for a few.
         val classLines = classes.map { slot ->
             val code = courses[slot.courseId]?.code.orEmpty()
-            "${TimeFormatter.format12Hour(slot.startHour, slot.startMinute)} \u2022 $code"
+            "${TimeFormatter.format(slot.startHour, slot.startMinute)} \u2022 $code"
         }
         val dueLines = dueToday.map { item ->
             val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
-            val time = TimeFormatter.format12Hour(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            val time = TimeFormatter.format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
             "Due $time \u2022 ${item.label}: ${item.title}"
         }
 

@@ -58,7 +58,7 @@ fun dayOfWeekName(dayOfWeek: Int): String {
  */
 fun formatTrashClassTime(dayOfWeek: Int, startHour: Int, startMinute: Int, endHour: Int, endMinute: Int): String {
     val day = dayOfWeekName(dayOfWeek)
-    val startTime = TimeFormatter.format12Hour(startHour, startMinute)
-    val endTime = TimeFormatter.format12Hour(endHour, endMinute)
+    val startTime = TimeFormatter.format(startHour, startMinute)
+    val endTime = TimeFormatter.format(endHour, endMinute)
     return if (day.isNotEmpty()) "$day, $startTime to $endTime" else "$startTime to $endTime"
 }

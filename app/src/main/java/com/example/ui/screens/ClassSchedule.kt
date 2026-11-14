@@ -52,7 +52,7 @@ internal fun MainViewModel.buildClassSchedule(
     }
     fun slotsOn(day: Int) = slots.filter { it.slot.dayOfWeek == day }.sortedBy { startOf(it) }
     fun startTimeText(s: LectureSlotWithCourse) =
-        com.example.util.TimeFormatter.format12Hour(s.slot.startHour, s.slot.startMinute)
+        com.example.util.TimeFormatter.format(s.slot.startHour, s.slot.startMinute)
 
     val nowMillis = cal.timeInMillis
     val visibleToday = slotsOn(todayDay).filter {

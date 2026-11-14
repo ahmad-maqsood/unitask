@@ -40,7 +40,7 @@ fun snoozeChoices(now: Long, deadlineMillis: Long): List<SnoozeChoice> {
         SnoozeChoice("30 minutes", now + 30 * 60_000L),
         SnoozeChoice("1 hour", now + 60 * 60_000L),
         SnoozeChoice("3 hours", now + 3 * 60 * 60_000L),
-        SnoozeChoice("Tomorrow, 8:00 AM", tomorrowMorning)
+        SnoozeChoice("Tomorrow, ${com.example.util.TimeFormatter.format(8, 0)}", tomorrowMorning)
     )
     return if (deadlineMillis > now) all.filter { it.atMillis < deadlineMillis } else all
 }

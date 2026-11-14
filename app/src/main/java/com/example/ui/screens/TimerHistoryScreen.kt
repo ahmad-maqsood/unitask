@@ -59,7 +59,6 @@ import com.example.util.timer.TimerSession
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.format.TextStyle
 
 /**
@@ -392,9 +391,8 @@ private fun DayHeader(day: LocalDate, today: LocalDate, totalMillis: Long) {
 @Composable
 private fun SessionRow(session: TimerSession, zone: ZoneId, onDelete: () -> Unit) {
     val startText = remember(session.startedAtMillis) {
-        java.time.Instant.ofEpochMilli(session.startedAtMillis)
-            .atZone(zone)
-            .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+        val started = java.time.Instant.ofEpochMilli(session.startedAtMillis).atZone(zone)
+        com.example.util.TimeFormatter.format(started.hour, started.minute)
     }
     val detail = if (session.mode == TimerMode.COUNTDOWN && session.plannedMillis != null) {
         "$startText · Countdown · goal ${TimerHistoryLogic.formatTotal(session.plannedMillis)}"

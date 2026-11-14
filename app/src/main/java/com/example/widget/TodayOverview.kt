@@ -71,7 +71,7 @@ object TodayOverviewLoader {
                 val end = slot.endHour * 60 + slot.endMinute
                 val course = courses[slot.courseId]
                 WidgetClass(
-                    timeText = TimeFormatter.format12Hour(slot.startHour, slot.startMinute),
+                    timeText = TimeFormatter.format(slot.startHour, slot.startMinute),
                     code = course?.code.orEmpty(),
                     place = slot.classroom.ifBlank { course?.location.orEmpty() },
                     state = when {
@@ -113,7 +113,7 @@ object TodayOverviewLoader {
             .map { item ->
                 val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
                 WidgetTask(
-                    timeText = TimeFormatter.format12Hour(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)),
+                    timeText = TimeFormatter.format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)),
                     label = item.label,
                     title = item.title,
                     personalTaskId = item.personalTaskId,

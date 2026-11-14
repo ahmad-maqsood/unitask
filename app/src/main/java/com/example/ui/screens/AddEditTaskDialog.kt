@@ -656,7 +656,7 @@ fun AddEditTaskDialog(
                         }
 
                         // Time selector
-                        val timeStr = com.example.util.TimeFormatter.format12Hour(dueHour, dueMinute)
+                        val timeStr = com.example.util.TimeFormatter.format(dueHour, dueMinute)
                         OutlinedCard(
                             modifier = Modifier
                                 .weight(0.9f)
@@ -716,10 +716,10 @@ fun AddEditTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("9:00 AM", selected = dueHour == 9 && dueMinute == 0) { dueHour = 9; dueMinute = 0 }
-                        QuickDateChip("12:00 PM", selected = dueHour == 12 && dueMinute == 0) { dueHour = 12; dueMinute = 0 }
-                        QuickDateChip("5:00 PM", selected = dueHour == 17 && dueMinute == 0) { dueHour = 17; dueMinute = 0 }
-                        QuickDateChip("11:59 PM", selected = dueHour == 23 && dueMinute == 59) { dueHour = 23; dueMinute = 59 }
+                        QuickDateChip(com.example.util.TimeFormatter.format(9, 0), selected = dueHour == 9 && dueMinute == 0) { dueHour = 9; dueMinute = 0 }
+                        QuickDateChip(com.example.util.TimeFormatter.format(12, 0), selected = dueHour == 12 && dueMinute == 0) { dueHour = 12; dueMinute = 0 }
+                        QuickDateChip(com.example.util.TimeFormatter.format(17, 0), selected = dueHour == 17 && dueMinute == 0) { dueHour = 17; dueMinute = 0 }
+                        QuickDateChip(com.example.util.TimeFormatter.format(23, 59), selected = dueHour == 23 && dueMinute == 59) { dueHour = 23; dueMinute = 59 }
                     }
                 }
 

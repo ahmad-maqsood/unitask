@@ -2,6 +2,26 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.4.0] - 14-11-2026
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.4.0)
+
+### Added
+- Added manual text input for focus, break, and round values in the Pomodoro settings dialog with input validation.
+- Added a "Latest release" row to the "About & help" settings section to directly open the GitHub release page.
+
+### Improved
+- Increased key stretching iterations for new encrypted backups from 120,000 to 600,000 to enhance brute-force resistance.
+- Updated group invite links to point to the official Firebase-hosted website, while maintaining support for legacy GitHub Pages links.
+
+### Fixed
+- Resolved an issue where the update checker failed to follow redirects after the repository moved to a new organization; it now follows up to 5 redirects.
+
+### Developer & project maintenance
+- Migrated all repository links and references to the CondaLabs organization.
+- Removed obsolete legacy code related to group chat cleanup and personal sync cancellation.
+- Added a CODEOWNERS file to manage review requirements.
+- Improved screenshot automation to capture additional screens and added a --readme-only mode for gallery layout updates.
+
 ## [4.3.0] - 13-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.3.0)
 

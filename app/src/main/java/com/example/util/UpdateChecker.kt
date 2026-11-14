@@ -47,21 +47,34 @@ object UpdateChecker {
 
     private suspend fun fetch(context: Context): UpdateResult = withContext(Dispatchers.IO) {
         val current = currentVersion(context)
-        var connection: HttpURLConnection? = null
         try {
-            // The web address of the latest release redirects to ".../releases/tag/<tag>".
-            // Reading that redirect needs no GitHub API call, so it is not hit by the API's
-            // small per-network limit (which showed up as error 403).
-            connection = (URL(RELEASES_PAGE).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 10_000
-                readTimeout = 10_000
-                instanceFollowRedirects = false
-                requestMethod = "HEAD"
-                setRequestProperty("User-Agent", "UniTask-Android/$current")
+            // Follow redirects by hand (at most 5) until the address contains ".../releases/tag/<tag>".
+            // A moved or renamed repository adds one extra redirect before that, so one hop is not enough.
+            var url = RELEASES_PAGE
+            var code = 0
+            var location = ""
+            var hops = 0
+            while (hops < 5) {
+                val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10_000
+                    readTimeout = 10_000
+                    instanceFollowRedirects = false
+                    requestMethod = "HEAD"
+                    setRequestProperty("User-Agent", "UniTask-Android/$current")
+                }
+                try {
+                    code = connection.responseCode
+                    location = connection.getHeaderField("Location").orEmpty()
+                } finally {
+                    connection.disconnect()
+                }
+                if (code !in 300..399 || location.isBlank() || location.contains("/releases/tag/")) break
+                val next = URL(URL(url), location)
+                if (next.host != "github.com") break
+                url = next.toString()
+                hops++
             }
-            val code = connection.responseCode
             if (code in 300..399) {
-                val location = connection.getHeaderField("Location").orEmpty()
                 val rawTag = location
                     .substringAfter("/releases/tag/", "")
                     .substringBefore('?')
@@ -90,8 +103,6 @@ object UpdateChecker {
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             UpdateResult.Failed("Could not reach GitHub. Check your internet connection.")
-        } finally {
-            connection?.disconnect()
         }
     }
 

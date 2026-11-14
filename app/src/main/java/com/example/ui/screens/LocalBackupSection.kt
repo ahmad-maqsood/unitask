@@ -50,6 +50,21 @@ import com.example.util.DateFormats
 
 private const val MIN_PASSWORD_LENGTH = 6
 
+/**
+ * One sentence about images that were left out, or "" when none were. Backup and restore give different reasons:
+ * a backup skips images that are too large or cannot be read, a restore skips images that are damaged,
+ * too large or could not be downloaded.
+ */
+internal fun skippedImagesNote(count: Int, restoring: Boolean): String {
+    if (count <= 0) return ""
+    val noun = if (count == 1) "image" else "images"
+    return if (restoring) {
+        " $count $noun could not be restored (damaged, too large or not downloaded)."
+    } else {
+        " $count $noun left out (too large or could not be read)."
+    }
+}
+
 internal fun describe(counts: BackupCounts): String {
     val base = "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
     var result = if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
@@ -115,7 +130,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     showResult(
                         "Backup restored",
                         "Added ${describe(result.counts)}." +
-                            (if (result.counts.skippedImages > 0) " ${result.counts.skippedImages} images were too large to include." else "") +
+                            skippedImagesNote(result.counts.skippedImages, restoring = true) +
                             " Items that were already on this phone were kept."
                     )
                 }
@@ -147,7 +162,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     is BackupResult.Success -> showResult(
                         "Backup saved",
                         "Saved ${describe(result.counts)}." +
-                            (if (result.counts.skippedImages > 0) " ${result.counts.skippedImages} images were too large to include." else "") +
+                            skippedImagesNote(result.counts.skippedImages, restoring = false) +
                             " Keep the file somewhere safe, such as Google Drive " +
                             "or another phone. Attached files are not included."
                     )

@@ -77,6 +77,7 @@ fun GroupsTab(
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
 
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val sessionReady by viewModel.sessionReady.collectAsStateWithLifecycle()
@@ -109,7 +110,7 @@ fun GroupsTab(
                 viewModel.openJoinDialog(username, code)
                 onInviteConsumed()
             } else if (sessionReady) {
-                Toast.makeText(context, "Sign in to join this group", Toast.LENGTH_SHORT).show()
+                com.example.ui.AppMessages.show("Sign in to join this group")
                 onInviteConsumed()
             }
         }
@@ -200,26 +201,26 @@ fun GroupsTab(
                     onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
                         viewModel.leaveCurrentGroup {
-                            Toast.makeText(context, "Left group", Toast.LENGTH_SHORT).show()
+                            com.example.ui.AppMessages.show("Left group")
                         }
                     },
                     onDeleteGroupClick = {
                         val username = selectedGroupDetail?.username ?: activeMembership?.username ?: ""
                         viewModel.deleteCurrentGroup(username) {
-                            Toast.makeText(context, "Group deleted", Toast.LENGTH_SHORT).show()
+                            com.example.ui.AppMessages.show("Group deleted")
                         }
                     },
                     onUpdateGroupProfile = { newName, newUsername ->
                         viewModel.updateGroupProfile(newName, newUsername) { success, error ->
                             if (error != null) {
-                                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                com.example.ui.AppMessages.show(error)
                             }
                         }
                     },
                     onRegenerateGroupCode = {
                         viewModel.regenerateGroupCode { success, codeOrError ->
                             if (codeOrError != null) {
-                                Toast.makeText(context, if (success) "New code: $codeOrError" else codeOrError, Toast.LENGTH_SHORT).show()
+                                com.example.ui.AppMessages.show(if (success) "New code: $codeOrError" else codeOrError)
                             }
                         }
                     },

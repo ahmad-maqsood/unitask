@@ -1,7 +1,6 @@
 package com.example.ui.screens
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -302,12 +301,8 @@ fun NoteEditorScreen(
         )
     }
 
-    val showImageLimitToast = {
-        Toast.makeText(
-            context,
-            "A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images",
-            Toast.LENGTH_SHORT
-        ).show()
+    val showImageLimitMessage = {
+        com.example.ui.AppMessages.show("A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images")
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -316,7 +311,7 @@ fun NoteEditorScreen(
         if (uri != null) {
             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
             if (!NoteImages.canAddImage(count)) {
-                showImageLimitToast()
+                showImageLimitMessage()
                 return@rememberLauncherForActivityResult
             }
             isImportingImage = true
@@ -328,12 +323,12 @@ fun NoteEditorScreen(
                             insertImageLine(current, NoteImages.imageMarkdown(imageName))
                         }
                     } else {
-                        Toast.makeText(context, "Could not add that image", Toast.LENGTH_SHORT).show()
+                        com.example.ui.AppMessages.show("Could not add that image")
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
-                    Toast.makeText(context, "Could not add that image", Toast.LENGTH_SHORT).show()
+                    com.example.ui.AppMessages.show("Could not add that image")
                 } finally {
                     isImportingImage = false
                 }
@@ -369,15 +364,15 @@ fun NoteEditorScreen(
                             format = format
                         )
                         val message = if (ok) "Saved to your device" else "Could not save the file"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        com.example.ui.AppMessages.show(message)
                     } catch (_: Exception) {
-                        Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+                        com.example.ui.AppMessages.show("Could not save the file")
                     } finally {
                         if (isPdf) isWorking = false
                     }
                 }
             } else {
-                Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+                com.example.ui.AppMessages.show("Could not save the file")
             }
         }
     }
@@ -440,7 +435,7 @@ fun NoteEditorScreen(
     val openLinkByTitle: (String) -> Unit = { title ->
         val target = findNoteForLink(allNotes, title)
         if (target == null) {
-            Toast.makeText(context, "No note called \"$title\"", Toast.LENGTH_SHORT).show()
+            com.example.ui.AppMessages.show("No note called \"$title\"")
         } else {
             openLinkedNote(target.id)
         }
@@ -1054,7 +1049,7 @@ fun NoteEditorScreen(
                         onClick = {
                             val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
                             if (!NoteImages.canAddImage(count)) {
-                                showImageLimitToast()
+                                showImageLimitMessage()
                             } else {
                                 pickImageLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -1096,7 +1091,7 @@ fun NoteEditorScreen(
                             format = format
                         )
                     } catch (_: Exception) {
-                        Toast.makeText(context, "Could not share the file", Toast.LENGTH_SHORT).show()
+                        com.example.ui.AppMessages.show("Could not share the file")
                     } finally {
                         if (isPdf) isWorking = false
                     }

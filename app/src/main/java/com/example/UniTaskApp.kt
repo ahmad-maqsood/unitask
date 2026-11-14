@@ -8,6 +8,8 @@ class UniTaskApp : Application() {
         super.onCreate()
         // Lets every time label follow the phone's 12-hour / 24-hour setting.
         com.example.util.TimeFormatter.init(this)
+        // Short messages ("Left group", "Could not save the file") all go through one place.
+        com.example.ui.AppMessages.init(this)
         // Saves unexpected crashes to a log file, so the next start can offer to send it.
         CrashReporter.install(this)
         // Backs up to Google Drive shortly after data changes. Does nothing unless Drive backup is on.

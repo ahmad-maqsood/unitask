@@ -33,6 +33,7 @@ fun NotesHost(
     // When a new note is started inside a folder, it is filed into that folder
     var newNoteFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    com.example.ui.RegisterMessageHost(snackbarHostState)
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {

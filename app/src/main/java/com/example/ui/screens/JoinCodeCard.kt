@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,7 +71,7 @@ internal fun JoinCodeCard(
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("Join Code", joinCode))
-                        Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                        com.example.ui.AppMessages.show("Join code copied!")
                     },
                     modifier = Modifier.testTag("copy_join_code_button")
                 ) {

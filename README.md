@@ -156,7 +156,7 @@ Each screen is also available separately: [**Deadlines**](docs/screenshots/deadl
 
 1. Open the [latest release](https://github.com/CondaLabs/unitask/releases/latest).
 2. Download the `.apk` file and open it on your phone. If Android asks, allow installation from your browser or file manager.
-3. To update an existing installation, use the update button in the top bar or open **Settings, Check for updates**. The check compares your installed version with the tag of the newest GitHub release.
+3. To update an existing installation, use the update button in the top bar or open **Settings, About and help, Check for updates**. The check compares your installed version with the tag of the newest GitHub release. If the check does not work, open **Settings, About and help, Latest release** to go straight to the download page.
 
 UniTask requires **Android 7.0 (API 24)** or newer.
 

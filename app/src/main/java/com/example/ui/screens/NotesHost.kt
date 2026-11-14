@@ -1,7 +1,16 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -13,7 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
 import com.example.util.NoteImages
@@ -47,42 +59,54 @@ fun NotesHost(
         onClose()
     }
 
-    if (editorTarget != null) {
-        val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
-        NoteEditorScreen(
-            noteId = targetId,
-            viewModelSession = editorSession,
-            newNoteFolderId = newNoteFolderId,
-            onClose = { editorTarget = null },
-            onDeleted = { deletedId ->
-                editorTarget = null
-                coroutineScope.launch {
-                    val result = snackbarHostState.showSnackbar(
-                        message = "Note moved to Recently deleted",
-                        actionLabel = "Undo",
-                        duration = SnackbarDuration.Short
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        viewModel.restoreFromTrash(deletedId)
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (editorTarget != null) {
+            val targetId = if (editorTarget == "new") null else editorTarget?.toLongOrNull()
+            NoteEditorScreen(
+                noteId = targetId,
+                viewModelSession = editorSession,
+                newNoteFolderId = newNoteFolderId,
+                onClose = { editorTarget = null },
+                onDeleted = { deletedId ->
+                    editorTarget = null
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Note moved to Recently deleted",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.restoreFromTrash(deletedId)
+                        }
                     }
                 }
-            }
-        )
-    } else {
-        NotesScreen(
-            onOpenNote = { id ->
-                editorSession = NoteEditorSessions.next()
-                newNoteFolderId = null
-                editorTarget = id.toString()
-            },
-            onNewNote = {
-                editorSession = NoteEditorSessions.next()
-                newNoteFolderId = (viewModel.folderFilter.value as? NotesFolderFilter.Folder)?.folderId
-                editorTarget = "new"
-            },
-            onClose = onClose,
-            viewModel = viewModel,
-            snackbarHostState = snackbarHostState
-        )
+            )
+            // The notes list draws this snackbar, but it is not on screen while the editor is open.
+            // Show it here too, so messages from the editor ("Saved to your device") are not hidden.
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+                    // Keeps it above the formatting toolbar.
+                    .padding(bottom = 56.dp)
+            )
+        } else {
+            NotesScreen(
+                onOpenNote = { id ->
+                    editorSession = NoteEditorSessions.next()
+                    newNoteFolderId = null
+                    editorTarget = id.toString()
+                },
+                onNewNote = {
+                    editorSession = NoteEditorSessions.next()
+                    newNoteFolderId = (viewModel.folderFilter.value as? NotesFolderFilter.Folder)?.folderId
+                    editorTarget = "new"
+                },
+                onClose = onClose,
+                viewModel = viewModel,
+                snackbarHostState = snackbarHostState
+            )
+        }
     }
 }

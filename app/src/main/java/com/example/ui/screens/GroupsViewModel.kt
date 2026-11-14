@@ -31,6 +31,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GroupsViewModel(application: Application) : AndroidViewModel(application) {
@@ -173,12 +177,19 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val selectedGroupTasks: StateFlow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
+    private val allGroupTasks: Flow<List<GroupTask>> = _selectedGroupId.flatMapLatest { groupId ->
         if (!groupId.isNullOrBlank()) {
             repository.observeGroupTasks(groupId)
         } else {
             flowOf(emptyList())
         }
+    }
+
+    /** Tasks that were just deleted and can still be brought back with Undo. They are hidden from the list. */
+    private val hiddenTaskIds = MutableStateFlow<Set<String>>(emptySet())
+
+    val selectedGroupTasks: StateFlow<List<GroupTask>> = combine(allGroupTasks, hiddenTaskIds) { tasks, hidden ->
+        if (hidden.isEmpty()) tasks else tasks.filter { it.id !in hidden }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -489,14 +500,58 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /** A deleted task waiting out its Undo time: the task and the timer that will really delete it. */
+    private class PendingDelete(val task: GroupTask, val timer: Job)
+
+    private val pendingDeletes = HashMap<String, PendingDelete>()
+
+    /**
+     * Deletes a task, with a few seconds to change your mind. The task disappears from the list at once,
+     * but it is only deleted on the server when [UNDO_WINDOW_MILLIS] has passed. Undo just shows it again.
+     * (Creating the task again instead would give it a new id, lose everyone's done marks and tell the
+     * whole group about a "new" task.)
+     */
     fun deleteTask(task: GroupTask) {
         if (!requireOnline()) return
+        if (pendingDeletes.containsKey(task.id)) return
+        hiddenTaskIds.update { it + task.id }
+        val timer = viewModelScope.launch {
+            delay(UNDO_WINDOW_MILLIS)
+            commitDelete(task.id)
+        }
+        pendingDeletes[task.id] = PendingDelete(task, timer)
+        com.example.ui.AppMessages.show(
+            message = "Task deleted",
+            actionLabel = "Undo",
+            onAction = { undoDelete(task.id) }
+        )
+    }
+
+    private fun undoDelete(taskId: String) {
+        // Too late (already deleted on the server) means there is nothing left to bring back.
+        val pending = pendingDeletes.remove(taskId) ?: return
+        pending.timer.cancel()
+        hiddenTaskIds.update { it - taskId }
+    }
+
+    /** Deletes on the server for real. Safe to call twice: the second call finds nothing waiting. */
+    private fun commitDelete(taskId: String) {
+        val pending = pendingDeletes.remove(taskId) ?: return
+        val task = pending.task
         reminderScheduler.cancel(task.groupId, task.id)
         repository.deleteTask(task.groupId, task.id) { e ->
+            // The server refused: show the task again so the list matches what is really there.
+            hiddenTaskIds.update { it - taskId }
             viewModelScope.launch {
                 _snackbarMessage.emit("Failed to delete task: ${e.message}")
             }
         }
+    }
+
+    /** Closing the app must not undo a delete: whatever is still waiting is deleted now. */
+    override fun onCleared() {
+        pendingDeletes.keys.toList().forEach { commitDelete(it) }
+        super.onCleared()
     }
 
     
@@ -609,5 +664,10 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 onComplete(false, e.message ?: "Failed to regenerate join code")
             }
         }
+    }
+
+    private companion object {
+        /** How long a deleted task can be brought back. Matches how long the Undo message stays on screen. */
+        const val UNDO_WINDOW_MILLIS = 10_000L
     }
 }

@@ -107,6 +107,14 @@ internal fun SelectableTaskCard(
         }
     }
 }
+
+/**
+ * Background of a task card while it is swiped to the right: green to mark it done, amber to take a
+ * finished task back. Deadlines and My tasks both use it, so the two always match.
+ */
+internal fun swipeToDoneColor(isDone: Boolean): Color =
+    if (isDone) Color(0xFFD97706) else Color(0xFF16A34A)
+
 /**
  * A task card you can swipe to the right to mark done (or not done).
  * Swiping left does nothing here: deleting stays behind the card's own delete button.
@@ -146,7 +154,7 @@ internal fun SwipeDoneTaskCard(
         backgroundContent = {
             val color by animateColorAsState(
                 targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
-                    if (isDone) Color(0xFFD97706) else Color(0xFF16A34A)
+                    swipeToDoneColor(isDone)
                 } else {
                     Color.Transparent
                 },

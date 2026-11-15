@@ -520,7 +520,7 @@ private fun SwipeableTaskItem(
             val direction = dismissState.dismissDirection
             val color by animateColorAsState(
                 targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> if (task.status == TaskStatus.COMPLETED) Color(0xFFD97706) else Color(0xFF16A34A)
+                    SwipeToDismissBoxValue.StartToEnd -> swipeToDoneColor(task.status == TaskStatus.COMPLETED)
                     SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
                     SwipeToDismissBoxValue.Settled -> Color.Transparent
                 },

@@ -544,4 +544,15 @@
     <!-- OneTimeTip.kt -->
     <string name="one_time_tip_learn_more">Learn more</string>
     <string name="one_time_tip_dismiss_tip">Dismiss tip</string>
+    <!-- ProgressScreen.kt -->
+    <string name="progress_progress">Progress</string>
+    <string name="progress_add_a_few_deadlines_and">Add a few deadlines and tick them off. Your progress will show up here.</string>
+    <string name="progress_done_this_week">done this week</string>
+    <string name="progress_day_streak">day streak</string>
+    <string name="progress_finish_a_task_today_to">Finish a task today to start one</string>
+    <string name="progress_keep_it_going">Keep it going</string>
+    <string name="progress_by_course">By course</string>
+    <string name="progress_counts_the_tasks_saved_on">Counts the tasks saved on this phone. A task that was deleted, or that is set to delete when done, is no longer counted.</string>
+    <string name="progress_tasks_done_per_week">Tasks done per week</string>
+    <string name="progress_of">%1$s of %2$s</string>
 </resources>

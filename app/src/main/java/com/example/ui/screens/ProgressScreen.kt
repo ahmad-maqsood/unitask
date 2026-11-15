@@ -34,11 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.ui.theme.rememberCourseColor
 import com.example.util.CourseProgress
 import com.example.util.ProgressSummary
@@ -62,10 +64,10 @@ fun ProgressScreen(
             .testTag("progress_screen"),
         topBar = {
             TopAppBar(
-                title = { Text("Progress") },
+                title = { Text(stringResource(R.string.progress_progress)) },
                 navigationIcon = {
                     IconButton(onClick = onClose, modifier = Modifier.testTag("progress_back_button")) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -83,7 +85,7 @@ fun ProgressScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Add a few deadlines and tick them off. Your progress will show up here.",
+                    text = stringResource(R.string.progress_add_a_few_deadlines_and),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -107,14 +109,14 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
                 StatCard(
                     modifier = Modifier.weight(1f),
                     value = data.doneThisWeek.toString(),
-                    label = "done this week",
+                    label = stringResource(R.string.progress_done_this_week),
                     note = weekNote(data.doneThisWeek, data.doneLastWeek)
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     value = data.streakDays.toString(),
-                    label = "day streak",
-                    note = if (data.streakDays == 0) "Finish a task today to start one" else "Keep it going"
+                    label = stringResource(R.string.progress_day_streak),
+                    note = stringResource(if (data.streakDays == 0) R.string.progress_finish_a_task_today_to else R.string.progress_keep_it_going)
                 )
             }
         }
@@ -122,7 +124,7 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
         if (data.courses.isNotEmpty()) {
             item {
                 Text(
-                    text = "By course",
+                    text = stringResource(R.string.progress_by_course),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp)
@@ -132,7 +134,7 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
         }
         item {
             Text(
-                text = "Counts the tasks saved on this phone. A task that was deleted, or that is set to delete when done, is no longer counted.",
+                text = stringResource(R.string.progress_counts_the_tasks_saved_on),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -186,7 +188,7 @@ private fun WeeksCard(weeks: List<WeekBar>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Tasks done per week",
+                text = stringResource(R.string.progress_tasks_done_per_week),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -255,7 +257,7 @@ private fun CourseRow(course: CourseProgress) {
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = "${course.done} of ${course.total}",
+                text = stringResource(R.string.progress_of, course.done, course.total),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

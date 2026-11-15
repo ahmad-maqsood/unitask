@@ -713,4 +713,6 @@
     <string name="timetable_delete_slot">Delete Slot</string>
     <string name="timetable_will_be_moved_to_recently">%1$s will be moved to Recently deleted. You can restore it from there.</string>
     <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
+    <!-- ToolsSheet.kt -->
+    <string name="tools_more">More</string>
 </resources>

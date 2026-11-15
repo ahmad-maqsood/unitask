@@ -65,12 +65,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
@@ -189,7 +191,7 @@ fun GroupDetailScreen(
                         onClick = onBack,
                         modifier = Modifier.testTag("group_detail_back_button")
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -200,7 +202,7 @@ fun GroupDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.QrCode,
-                                contentDescription = "Show QR Code",
+                                contentDescription = stringResource(R.string.group_detail_show_qr_code),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -212,7 +214,7 @@ fun GroupDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.Settings,
-                                contentDescription = "Group Settings",
+                                contentDescription = stringResource(R.string.create_join_group_group_settings),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -222,7 +224,7 @@ fun GroupDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.DeleteForever,
-                                contentDescription = "Delete Group",
+                                contentDescription = stringResource(R.string.group_detail_delete_group),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -233,7 +235,7 @@ fun GroupDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.ExitToApp,
-                                contentDescription = "Leave Group",
+                                contentDescription = stringResource(R.string.group_detail_leave_group),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -254,7 +256,7 @@ fun GroupDetailScreen(
                         .testTag("group_add_task_fab")
                         .then(if (isOnline) Modifier else Modifier.semantics { disabled() })
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Task")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_edit_task_add_task))
                 }
             } else if (selectedSectionTab == 1) {
                 FloatingActionButton(
@@ -265,7 +267,7 @@ fun GroupDetailScreen(
                         .testTag("group_add_course_fab")
                         .then(if (isOnline) Modifier else Modifier.semantics { disabled() })
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Course")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_edit_course_add_course))
                 }
             }
         }
@@ -287,19 +289,19 @@ fun GroupDetailScreen(
                 Tab(
                     selected = selectedSectionTab == 0,
                     onClick = { selectedSectionTab = 0 },
-                    text = { Text("Tasks (${sortedTasks.size})") },
+                    text = { Text(stringResource(R.string.group_detail_tasks, sortedTasks.size)) },
                     modifier = Modifier.testTag("group_tab_tasks")
                 )
                 Tab(
                     selected = selectedSectionTab == 1,
                     onClick = { selectedSectionTab = 1 },
-                    text = { Text("Courses (${courses.size})") },
+                    text = { Text(stringResource(R.string.group_detail_courses, courses.size)) },
                     modifier = Modifier.testTag("group_tab_courses")
                 )
                 Tab(
                     selected = selectedSectionTab == 2,
                     onClick = { selectedSectionTab = 2 },
-                    text = { Text("Members (${members.size})") },
+                    text = { Text(stringResource(R.string.group_detail_members, members.size)) },
                     modifier = Modifier.testTag("group_tab_members")
                 )
 
@@ -346,12 +348,12 @@ fun GroupDetailScreen(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                                 Text(
-                                    text = "No tasks in this group yet",
+                                    text = stringResource(R.string.group_detail_no_tasks_in_this_group),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "Tap the + button to add the first assignment or milestone.",
+                                    text = stringResource(R.string.group_detail_tap_the_button_to_add),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -454,7 +456,7 @@ fun GroupDetailScreen(
                                         )
                                         if (member.uid == currentUid) {
                                             Text(
-                                                text = "(You)",
+                                                text = stringResource(R.string.group_detail_you),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
@@ -496,7 +498,7 @@ fun GroupDetailScreen(
                                                 .size(48.dp)
                                                 .testTag("member_menu_${member.uid}")
                                         ) {
-                                            Icon(Icons.Default.MoreVert, contentDescription = "Member options")
+                                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.group_detail_member_options))
                                         }
                                         DropdownMenu(
                                             expanded = menuOpen,
@@ -505,7 +507,7 @@ fun GroupDetailScreen(
                                             if (isOwner) {
                                                 DropdownMenuItem(
                                                     text = {
-                                                        Text(if (member.role == "admin") "Remove admin role" else "Make admin")
+                                                        Text(stringResource(if (member.role == "admin") R.string.group_detail_remove_admin_role else R.string.group_detail_make_admin))
                                                     },
                                                     onClick = {
                                                         menuOpen = false
@@ -514,7 +516,7 @@ fun GroupDetailScreen(
                                                 )
                                                 DropdownMenuItem(
                                                     text = {
-                                                        Text("Transfer Ownership")
+                                                        Text(stringResource(R.string.group_detail_transfer_ownership))
                                                     },
                                                     onClick = {
                                                         menuOpen = false
@@ -524,7 +526,7 @@ fun GroupDetailScreen(
                                             }
                                             DropdownMenuItem(
                                                 text = {
-                                                    Text("Remove from group", color = MaterialTheme.colorScheme.error)
+                                                    Text(stringResource(R.string.group_detail_remove_from_group), color = MaterialTheme.colorScheme.error)
                                                 },
                                                 onClick = {
                                                     menuOpen = false
@@ -548,8 +550,8 @@ fun GroupDetailScreen(
     if (showLeaveConfirmDialog) {
         AlertDialog(
             onDismissRequest = { if (!isLoading) showLeaveConfirmDialog = false },
-            title = { Text("Leave Group?") },
-            text = { Text("Are you sure you want to leave \"$effectiveName\"? You will need the join code to re-join.") },
+            title = { Text(stringResource(R.string.group_detail_leave_group_2)) },
+            text = { Text(stringResource(R.string.group_detail_are_you_sure_you_want, effectiveName)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -559,12 +561,12 @@ fun GroupDetailScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("confirm_leave_group_button")
                 ) {
-                    Text("Leave")
+                    Text(stringResource(R.string.common_leave))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLeaveConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -574,8 +576,8 @@ fun GroupDetailScreen(
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { if (!isLoading) showDeleteConfirmDialog = false },
-            title = { Text("Delete Group?") },
-            text = { Text("Are you sure you want to delete \"$effectiveName\"? This permanently removes the group, all tasks, and memberships for all students.") },
+            title = { Text(stringResource(R.string.group_detail_delete_group_2)) },
+            text = { Text(stringResource(R.string.group_detail_are_you_sure_you_want_2, effectiveName)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -585,12 +587,12 @@ fun GroupDetailScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("confirm_delete_group_button")
                 ) {
-                    Text("Delete for Everyone")
+                    Text(stringResource(R.string.group_detail_delete_for_everyone))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -600,8 +602,8 @@ fun GroupDetailScreen(
     memberToRemove?.let { target ->
         AlertDialog(
             onDismissRequest = { memberToRemove = null },
-            title = { Text("Remove member?") },
-            text = { Text("Remove ${target.displayName} from \"$effectiveName\"? They can join again with the join code.") },
+            title = { Text(stringResource(R.string.group_detail_remove_member)) },
+            text = { Text(stringResource(R.string.group_detail_remove_from_they_can_join, target.displayName, effectiveName)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -611,13 +613,13 @@ fun GroupDetailScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("confirm_remove_member_button")
                 ) {
-                    Text("Remove")
+                    Text(stringResource(R.string.common_remove))
                 }
 
             },
             dismissButton = {
                 TextButton(onClick = { memberToRemove = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -627,8 +629,8 @@ fun GroupDetailScreen(
     memberToTransferOwnership?.let { target ->
         AlertDialog(
             onDismissRequest = { memberToTransferOwnership = null },
-            title = { Text("Transfer Group Ownership?") },
-            text = { Text("Transfer ownership of \"$effectiveName\" to ${target.displayName}? You will remain in the group as an admin.") },
+            title = { Text(stringResource(R.string.group_detail_transfer_group_ownership)) },
+            text = { Text(stringResource(R.string.group_detail_transfer_ownership_of_to_you, effectiveName, target.displayName)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -638,12 +640,12 @@ fun GroupDetailScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Transfer")
+                    Text(stringResource(R.string.group_detail_transfer))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { memberToTransferOwnership = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )

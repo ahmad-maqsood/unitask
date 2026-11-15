@@ -348,4 +348,31 @@
     <string name="group_courses_add_first_course">+ Add First Course</string>
     <string name="group_courses_course_options">Course options</string>
     <string name="group_courses_assignment">%1$s assignment%2$s</string>
+    <!-- GroupDetailScreen.kt -->
+    <string name="group_detail_show_qr_code">Show QR Code</string>
+    <string name="group_detail_delete_group">Delete Group</string>
+    <string name="group_detail_leave_group">Leave Group</string>
+    <string name="group_detail_tasks">Tasks (%1$s)</string>
+    <string name="group_detail_courses">Courses (%1$s)</string>
+    <string name="group_detail_members">Members (%1$s)</string>
+    <string name="group_detail_no_tasks_in_this_group">No tasks in this group yet</string>
+    <string name="group_detail_tap_the_button_to_add">Tap the + button to add the first assignment or milestone.</string>
+    <string name="group_detail_you">(You)</string>
+    <string name="group_detail_member_options">Member options</string>
+    <string name="group_detail_remove_admin_role">Remove admin role</string>
+    <string name="group_detail_make_admin">Make admin</string>
+    <string name="group_detail_transfer_ownership">Transfer Ownership</string>
+    <string name="group_detail_remove_from_group">Remove from group</string>
+    <string name="group_detail_leave_group_2">Leave Group?</string>
+    <string name="group_detail_are_you_sure_you_want">Are you sure you want to leave \"%1$s\"? You will need the join code to re-join.</string>
+    <string name="common_leave">Leave</string>
+    <string name="group_detail_delete_group_2">Delete Group?</string>
+    <string name="group_detail_are_you_sure_you_want_2">Are you sure you want to delete \"%1$s\"? This permanently removes the group, all tasks, and memberships for all students.</string>
+    <string name="group_detail_delete_for_everyone">Delete for Everyone</string>
+    <string name="group_detail_remove_member">Remove member?</string>
+    <string name="group_detail_remove_from_they_can_join">Remove %1$s from \"%2$s\"? They can join again with the join code.</string>
+    <string name="common_remove">Remove</string>
+    <string name="group_detail_transfer_group_ownership">Transfer Group Ownership?</string>
+    <string name="group_detail_transfer_ownership_of_to_you">Transfer ownership of \"%1$s\" to %2$s? You will remain in the group as an admin.</string>
+    <string name="group_detail_transfer">Transfer</string>
 </resources>

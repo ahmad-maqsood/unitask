@@ -39,4 +39,24 @@
     <string name="onboarding_step_reminder_body">Use the Remind me row on a deadline so it rings before it is due.</string>
     <string name="onboarding_steps_card_note">A Get started card at the top of Deadlines keeps track of these and a few more (timetable, timer, backup), and ticks them for you as you go.</string>
     <string name="onboarding_turned_on">Turned on</string>
+    <!-- AddEditCourseDialog.kt -->
+    <string name="add_edit_course_edit_course">Edit Course</string>
+    <string name="add_edit_course_add_new_course">Add New Course</string>
+    <string name="add_edit_course_course_code">Course Code *</string>
+    <string name="add_edit_course_e_g_cs_301_math">e.g. CS 301, MATH 240</string>
+    <string name="add_edit_course_course_code_is_required">Course code is required</string>
+    <string name="add_edit_course_this_code_is_reserved">This code is reserved</string>
+    <string name="add_edit_course_is_archived_in">%1$s is archived in %2$s.</string>
+    <string name="add_edit_course_restore">Restore %1$s</string>
+    <string name="add_edit_course_course_name">Course Name *</string>
+    <string name="add_edit_course_e_g_data_structures_algorithms">e.g. Data Structures &amp; Algorithms</string>
+    <string name="add_edit_course_course_name_is_required">Course name is required</string>
+    <string name="add_edit_course_instructor_professor">Instructor / Professor</string>
+    <string name="add_edit_course_e_g_dr_jane_doe">e.g. Dr. Jane Doe</string>
+    <string name="add_edit_course_classroom_location">Classroom / Location</string>
+    <string name="add_edit_course_e_g_science_bldg_rm">e.g. Science Bldg Rm 102</string>
+    <string name="add_edit_course_course_color_tag">Course Color Tag</string>
+    <string name="add_edit_course_update">Update</string>
+    <string name="add_edit_course_add_course">Add Course</string>
+    <string name="common_cancel">Cancel</string>
 </resources>

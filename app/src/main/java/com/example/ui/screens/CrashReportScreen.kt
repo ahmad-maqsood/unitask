@@ -29,10 +29,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.UpdateChecker
 import com.example.util.crash.CrashReport
 import com.example.util.crash.CrashReporter
@@ -69,15 +71,14 @@ fun CrashReportScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Something went wrong",
+            text = stringResource(R.string.crash_report_something_went_wrong),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "UniTask closed unexpectedly. A technical log was saved on this phone. " +
-                "Nothing is sent unless you choose to send it.",
+            text = stringResource(R.string.crash_report_unitask_closed_unexpectedly_a),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -105,7 +106,7 @@ fun CrashReportScreen(
             onClick = { scope.launch { CrashReporter.shareLog(context) } },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Share crash log")
+            Text(stringResource(R.string.crash_report_share_crash_log))
         }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
@@ -123,11 +124,11 @@ fun CrashReportScreen(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Report a problem")
+            Text(stringResource(R.string.crash_report_report_a_problem))
         }
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onDismiss) {
-            Text("Continue to UniTask")
+            Text(stringResource(R.string.crash_report_continue_to_unitask))
         }
     }
 }

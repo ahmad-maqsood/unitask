@@ -197,4 +197,10 @@
     <string name="courses_add_your_first_course_2">+ Add Your First Course</string>
     <string name="courses_archived_semesters">Archived semesters (%1$s)</string>
     <string name="courses_view_archived_semesters">View archived semesters</string>
+    <!-- CrashReportScreen.kt -->
+    <string name="crash_report_something_went_wrong">Something went wrong</string>
+    <string name="crash_report_unitask_closed_unexpectedly_a">UniTask closed unexpectedly. A technical log was saved on this phone. Nothing is sent unless you choose to send it.</string>
+    <string name="crash_report_share_crash_log">Share crash log</string>
+    <string name="crash_report_report_a_problem">Report a problem</string>
+    <string name="crash_report_continue_to_unitask">Continue to UniTask</string>
 </resources>

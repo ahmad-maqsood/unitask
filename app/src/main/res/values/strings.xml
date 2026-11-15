@@ -160,4 +160,6 @@
     <string name="cloud_backup_delete_account">Delete Account</string>
     <string name="cloud_backup_delete_account_2">Delete Account?</string>
     <string name="cloud_backup_this_permanently_deletes_your">This permanently deletes your online account. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks and group courses you created are removed for everyone in those groups. Your courses, tasks and notes on this phone are not touched. This action cannot be undone.</string>
+    <!-- ConfirmDeleteDialog.kt -->
+    <string name="common_delete">Delete</string>
 </resources>

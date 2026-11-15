@@ -560,4 +560,19 @@
     <string name="qr_scanner_unitask_needs_camera_permission_to">UniTask needs camera permission to scan a QR code. You can also use From image or Paste Link.</string>
     <string name="qr_scanner_open_app_settings">Open app settings</string>
     <string name="qr_scanner_close_scanner">Close scanner</string>
+    <!-- RecentlyDeletedScreen.kt -->
+    <string name="recently_deleted_recently_deleted">Recently deleted</string>
+    <string name="recently_deleted_empty_trash">Empty trash</string>
+    <string name="recently_deleted_items_are_removed_for_good">Items are removed for good 30 days after deleting.</string>
+    <string name="recently_deleted_no_deleted_tasks">No deleted tasks</string>
+    <string name="recently_deleted_deleted_tasks_will_appear_here">Deleted tasks will appear here.</string>
+    <string name="recently_deleted_no_deleted_notes">No deleted notes</string>
+    <string name="recently_deleted_deleted_notes_will_appear_here">Deleted notes will appear here.</string>
+    <string name="recently_deleted_no_deleted_classes">No deleted classes</string>
+    <string name="recently_deleted_deleted_classes_will_appear_here">Deleted classes will appear here.</string>
+    <string name="recently_deleted_delete_forever">Delete forever?</string>
+    <string name="recently_deleted_this_task_will_be_permanently">This task will be permanently deleted. This cannot be undone.</string>
+    <string name="recently_deleted_this_note_will_be_permanently">This note will be permanently deleted. This cannot be undone.</string>
+    <string name="recently_deleted_this_class_will_be_permanently">This class will be permanently deleted. This cannot be undone.</string>
+    <string name="recently_deleted_empty_trash_2">Empty trash?</string>
 </resources>

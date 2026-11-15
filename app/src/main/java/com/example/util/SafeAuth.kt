@@ -30,6 +30,9 @@ fun currentAppUser(): AppUser? = try {
 suspend fun awaitAppUser(): AppUser? = try {
     SupabaseProvider.client.auth.awaitInitialization()
     SupabaseProvider.client.auth.currentUserOrNull()?.toAppUser()
+} catch (e: kotlinx.coroutines.CancellationException) {
+    // The caller was cancelled: pass it on instead of carrying on as if nobody was signed in.
+    throw e
 } catch (_: Exception) {
     null
 }

@@ -638,4 +638,13 @@
     <string name="snooze_snooze_reminder">Snooze reminder</string>
     <string name="snooze_the_deadline_is_too_close">The deadline is too close to snooze.</string>
     <string name="snooze_clear_snooze">Clear snooze</string>
+    <!-- TaskCard.kt -->
+    <string name="task_card_change_snooze">Change snooze</string>
+    <string name="task_card_open_group">Open group</string>
+    <string name="task_card_subtasks">☑ %1$s/%2$s subtasks</string>
+    <string name="task_card_more_open_edit">+%1$s more, open Edit</string>
+    <string name="task_card_repeats">Repeats: %1$s</string>
+    <string name="task_card_reminders">Reminders: %1$s</string>
+    <string name="task_card_snoozed">Snoozed</string>
+    <string name="task_card_snoozed_until">Snoozed until %1$s</string>
 </resources>

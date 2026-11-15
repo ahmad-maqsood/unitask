@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.util.parseChecklist
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -212,7 +214,7 @@ fun TaskCard(
                             if (groupEntry != null) {
                                 Icon(
                                     imageVector = Icons.Default.Groups,
-                                    contentDescription = "Group task",
+                                    contentDescription = stringResource(R.string.current_next_class_card_group_task),
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -246,7 +248,7 @@ fun TaskCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Task options",
+                                contentDescription = stringResource(R.string.group_task_row_task_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -258,7 +260,7 @@ fun TaskCard(
                         ) {
                             if (!isCompleted) {
                                 DropdownMenuItem(
-                                    text = { Text(if (snoozedUntil != null) "Change snooze" else "Snooze reminder") },
+                                    text = { Text(stringResource(if (snoozedUntil != null) R.string.task_card_change_snooze else R.string.snooze_snooze_reminder)) },
                                     onClick = {
                                         showMenu = false
                                         showSnooze = true
@@ -271,7 +273,7 @@ fun TaskCard(
                             if (groupEntry != null) {
                                 // Group tasks are edited or deleted inside the group.
                                 DropdownMenuItem(
-                                    text = { Text("Open group") },
+                                    text = { Text(stringResource(R.string.task_card_open_group)) },
                                     onClick = {
                                         showMenu = false
                                         onEditClick(task)
@@ -282,7 +284,7 @@ fun TaskCard(
                                 )
                             } else {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Task") },
+                                    text = { Text(stringResource(R.string.group_task_row_edit_task)) },
                                     onClick = {
                                         showMenu = false
                                         onEditClick(task)
@@ -292,7 +294,7 @@ fun TaskCard(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.group_task_row_delete_task_2), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         // No confirm dialog: callers show an Undo bar instead.
@@ -320,7 +322,7 @@ fun TaskCard(
                 if (groupEntry != null) {
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Added by ${groupEntry.task.createdByName.ifBlank { "a member" }}",
+                        text = stringResource(R.string.group_task_row_added_by, groupEntry.task.createdByName.ifBlank { "a member" }),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary,
@@ -358,7 +360,7 @@ fun TaskCard(
                                 modifier = chipModifier
                             ) {
                                 Text(
-                                    text = "☑ $doneCount/${checklistItems.size} subtasks",
+                                    text = stringResource(R.string.task_card_subtasks, doneCount, checklistItems.size),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (doneCount == checklistItems.size) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -428,7 +430,7 @@ fun TaskCard(
                                 }
                                 if (overflowCount > 0) {
                                     Text(
-                                        text = "+$overflowCount more, open Edit",
+                                        text = stringResource(R.string.task_card_more_open_edit, overflowCount),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier
@@ -515,11 +517,11 @@ fun TaskCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Alarm,
-                                        contentDescription = "Rings like an alarm",
+                                        contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
-                                        text = "Alarm",
+                                        text = stringResource(R.string.group_task_row_alarm),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -549,7 +551,7 @@ fun TaskCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Repeat,
-                                        contentDescription = "Repeats: $repeatShortLabel",
+                                        contentDescription = stringResource(R.string.task_card_repeats, repeatShortLabel),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
@@ -569,7 +571,7 @@ fun TaskCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
+                                    contentDescription = stringResource(R.string.task_card_reminders, task.reminderOptions.joinToString { it.label }),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -596,12 +598,12 @@ fun TaskCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Snooze,
-                            contentDescription = "Snoozed",
+                            contentDescription = stringResource(R.string.task_card_snoozed),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Snoozed until ${formatSnoozeTime(snoozedUntil)}",
+                            text = stringResource(R.string.task_card_snoozed_until, formatSnoozeTime(snoozedUntil)),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,
@@ -625,7 +627,7 @@ fun TaskCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccessTime,
-                            contentDescription = "Due time",
+                            contentDescription = stringResource(R.string.group_task_row_due_time),
                             tint = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -663,7 +665,7 @@ fun AlarmBadge() {
     ) {
         Icon(
             imageVector = Icons.Default.Alarm,
-            contentDescription = "Rings like an alarm",
+            contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
             modifier = Modifier
                 .padding(horizontal = 5.dp, vertical = 2.dp)
                 .size(14.dp)

@@ -55,9 +55,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.local.Priority
 import com.example.data.local.ReminderOption
 import com.example.data.local.RepeatRule
@@ -158,7 +160,7 @@ fun MyTaskDialog(
 
     if (showTimePicker) {
         Material3TimePickerDialog(
-            title = "Select Due Time",
+            title = stringResource(R.string.add_edit_task_select_due_time),
             initialHour = dueHour ?: 12,
             initialMinute = dueMinute ?: 0,
             onDismiss = { showTimePicker = false },
@@ -209,10 +211,10 @@ fun MyTaskDialog(
                             .size(48.dp)
                             .testTag("my_task_cancel_button")
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel))
                     }
                     Text(
-                        text = if (taskToEdit != null) "Edit My Task" else "Add My Task",
+                        text = stringResource(if (taskToEdit != null) R.string.my_task_edit_my_task else R.string.my_task_add_my_task),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -248,7 +250,7 @@ fun MyTaskDialog(
                             .defaultMinSize(minHeight = 48.dp)
                             .testTag("my_task_save_button")
                     ) {
-                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                        Text(stringResource(if (taskToEdit != null) R.string.common_save else R.string.add_edit_task_add_task))
                     }
                 }
                 HorizontalDivider()
@@ -268,11 +270,11 @@ fun MyTaskDialog(
                         title = it.take(200)
                         if (it.isNotBlank()) titleError = false
                     },
-                    label = { Text("Task Title *") },
-                    placeholder = { Text("e.g. Call home, Buy groceries") },
+                    label = { Text(stringResource(R.string.group_task_task_title)) },
+                    placeholder = { Text(stringResource(R.string.my_task_e_g_call_home_buy)) },
                     isError = titleError,
                     supportingText = if (titleError) {
-                        { Text("Title is required") }
+                        { Text(stringResource(R.string.add_edit_task_title_is_required)) }
                     } else null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -287,8 +289,8 @@ fun MyTaskDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description & Notes (optional)") },
-                    placeholder = { Text("Add any details or notes") },
+                    label = { Text(stringResource(R.string.add_edit_task_description_notes_optional)) },
+                    placeholder = { Text(stringResource(R.string.my_task_add_any_details_or_notes)) },
                     maxLines = 4,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -302,7 +304,7 @@ fun MyTaskDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Checklist",
+                            text = stringResource(R.string.add_edit_task_checklist),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -317,13 +319,13 @@ fun MyTaskDialog(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Add item", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.add_edit_task_add_item), style = MaterialTheme.typography.labelMedium)
                         }
                     }
 
                     if (checklist.isEmpty()) {
                         Text(
-                            text = "Break the task into small steps you can tick off.",
+                            text = stringResource(R.string.my_task_break_the_task_into_small),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -355,7 +357,7 @@ fun MyTaskDialog(
                                             if (it.id == item.id) it.copy(text = clean) else it
                                         }
                                     },
-                                    placeholder = { Text("Checklist item") },
+                                    placeholder = { Text(stringResource(R.string.add_edit_task_checklist_item)) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                                     keyboardActions = KeyboardActions(
@@ -378,7 +380,7 @@ fun MyTaskDialog(
                                 IconButton(
                                     onClick = { checklist = checklist.filter { it.id != item.id } }
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove item")
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.add_edit_task_remove_item))
                                 }
                             }
                         }
@@ -387,7 +389,7 @@ fun MyTaskDialog(
                 // Due Date & Time Section
                 Column {
                     Text(
-                        text = "Due Date & Time *",
+                        text = stringResource(R.string.my_task_due_date_time),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -448,7 +450,7 @@ fun MyTaskDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CalendarToday,
-                                        contentDescription = "Select due date",
+                                        contentDescription = stringResource(R.string.my_task_select_due_date),
                                         modifier = Modifier.size(16.dp),
                                         tint = if (isDateMissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                     )
@@ -463,13 +465,13 @@ fun MyTaskDialog(
                                             )
                                         } else {
                                             Text(
-                                                text = "Select date",
+                                                text = stringResource(R.string.my_task_select_date),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.error
                                             )
                                             Text(
-                                                text = "Date required",
+                                                text = stringResource(R.string.my_task_date_required),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.error
                                             )
@@ -484,7 +486,7 @@ fun MyTaskDialog(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Clear date",
+                                            contentDescription = stringResource(R.string.my_task_clear_date),
                                             modifier = Modifier.size(14.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -532,7 +534,7 @@ fun MyTaskDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.AccessTime,
-                                        contentDescription = "Select due time",
+                                        contentDescription = stringResource(R.string.my_task_select_due_time),
                                         modifier = Modifier.size(16.dp),
                                         tint = if (isTimeMissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                     )
@@ -546,13 +548,13 @@ fun MyTaskDialog(
                                             )
                                         } else {
                                             Text(
-                                                text = "Select time",
+                                                text = stringResource(R.string.my_task_select_time),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.error
                                             )
                                             Text(
-                                                text = "Time required",
+                                                text = stringResource(R.string.my_task_time_required),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.error
                                             )
@@ -570,7 +572,7 @@ fun MyTaskDialog(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Clear time",
+                                            contentDescription = stringResource(R.string.my_task_clear_time),
                                             modifier = Modifier.size(14.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -636,7 +638,7 @@ fun MyTaskDialog(
                 // Repeat Rule
                 Column {
                     Text(
-                        text = "Repeat",
+                        text = stringResource(R.string.my_task_repeat),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -675,7 +677,7 @@ fun MyTaskDialog(
                                 }
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "Expand repeat options",
+                                    contentDescription = stringResource(R.string.my_task_expand_repeat_options),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -700,7 +702,7 @@ fun MyTaskDialog(
                     if (repeatRule != RepeatRule.NONE) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "When you tick it done, it moves to the next date.",
+                            text = stringResource(R.string.my_task_when_you_tick_it_done),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp)
@@ -720,12 +722,12 @@ fun MyTaskDialog(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Delete when done",
+                                text = stringResource(R.string.my_task_delete_when_done),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Removed automatically after the day you finish it.",
+                                text = stringResource(R.string.my_task_removed_automatically_after_the),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

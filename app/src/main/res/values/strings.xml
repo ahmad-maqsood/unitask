@@ -448,4 +448,24 @@
     <string name="main_overdue_tasks">%1$s, overdue tasks</string>
     <!-- MarkdownPreview.kt -->
     <string name="markdown_preview_image">Image: %1$s</string>
+    <!-- MyTaskDialog.kt -->
+    <string name="my_task_edit_my_task">Edit My Task</string>
+    <string name="my_task_add_my_task">Add My Task</string>
+    <string name="my_task_e_g_call_home_buy">e.g. Call home, Buy groceries</string>
+    <string name="my_task_add_any_details_or_notes">Add any details or notes</string>
+    <string name="my_task_break_the_task_into_small">Break the task into small steps you can tick off.</string>
+    <string name="my_task_due_date_time">Due Date &amp; Time *</string>
+    <string name="my_task_select_due_date">Select due date</string>
+    <string name="my_task_select_date">Select date</string>
+    <string name="my_task_date_required">Date required</string>
+    <string name="my_task_clear_date">Clear date</string>
+    <string name="my_task_select_due_time">Select due time</string>
+    <string name="my_task_select_time">Select time</string>
+    <string name="my_task_time_required">Time required</string>
+    <string name="my_task_clear_time">Clear time</string>
+    <string name="my_task_repeat">Repeat</string>
+    <string name="my_task_expand_repeat_options">Expand repeat options</string>
+    <string name="my_task_when_you_tick_it_done">When you tick it done, it moves to the next date.</string>
+    <string name="my_task_delete_when_done">Delete when done</string>
+    <string name="my_task_removed_automatically_after_the">Removed automatically after the day you finish it.</string>
 </resources>

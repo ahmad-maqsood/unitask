@@ -81,4 +81,32 @@
     <string name="add_edit_lecture_slot_e_g_prof_feynman">e.g. Prof. Feynman</string>
     <string name="add_edit_lecture_slot_update_slot">Update Slot</string>
     <string name="add_edit_lecture_slot_save_slot">Save Slot</string>
+    <!-- AddEditTaskDialog.kt -->
+    <string name="common_ok">OK</string>
+    <string name="add_edit_task_select_due_time">Select Due Time</string>
+    <string name="add_edit_task_edit_assignment">Edit Assignment</string>
+    <string name="add_edit_task_new_assignment">New Assignment</string>
+    <string name="common_save">Save</string>
+    <string name="add_edit_task_add_task">Add Task</string>
+    <string name="add_edit_task_course">Course *</string>
+    <string name="add_edit_task_add_a_course_first_to">+ Add a course first to link tasks</string>
+    <string name="add_edit_task_select_course">Select Course</string>
+    <string name="add_edit_task_expand_courses">Expand courses</string>
+    <string name="add_edit_task_please_select_or_create_a">Please select or create a course</string>
+    <string name="add_edit_task_assignment_title">Assignment Title *</string>
+    <string name="add_edit_task_e_g_midterm_lab_report">e.g. Midterm Lab Report, HW 3</string>
+    <string name="add_edit_task_title_is_required">Title is required</string>
+    <string name="add_edit_task_description_notes_optional">Description &amp; Notes (optional)</string>
+    <string name="add_edit_task_e_g_5_pages_cover">e.g. 5 pages, cover chapters 1-4</string>
+    <string name="add_edit_task_checklist">Checklist</string>
+    <string name="add_edit_task_add_item">Add item</string>
+    <string name="add_edit_task_break_the_assignment_into_small">Break the assignment into small steps you can tick off.</string>
+    <string name="add_edit_task_checklist_item">Checklist item</string>
+    <string name="add_edit_task_remove_item">Remove item</string>
+    <string name="add_edit_task_due_date_time">Due Date &amp; Time</string>
+    <string name="add_edit_task_status">Status</string>
+    <string name="add_edit_task_importing">Importing...</string>
+    <string name="add_edit_task_attach_file">Attach file</string>
+    <string name="add_edit_task_attached">%1$s attached</string>
+    <string name="add_edit_task_remove_attachment">Remove attachment</string>
 </resources>

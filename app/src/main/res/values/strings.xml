@@ -237,4 +237,9 @@
     <string name="create_join_group_new_code">New code</string>
     <string name="create_join_group_regenerating_creates_a_new_8">Regenerating creates a new 8-character code and invalidates the old one immediately.</string>
     <string name="create_join_group_save_changes">Save Changes</string>
+    <!-- CurrentNextClassCard.kt -->
+    <string name="current_next_class_card_current_class_in_progress">CURRENT CLASS IN PROGRESS</string>
+    <string name="current_next_class_card_next_upcoming_class">NEXT UPCOMING CLASS</string>
+    <string name="current_next_class_card_group_task">Group task</string>
+    <string name="current_next_class_card_no_pending_assignments">No pending assignments</string>
 </resources>

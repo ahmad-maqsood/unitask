@@ -377,6 +377,11 @@ fun AnnouncementBell(
                                 try {
                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(found.pageUrl)))
                                 } catch (_: Exception) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "No app can open this link",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             },
                             onDismiss = { state.dismissUpdate() }

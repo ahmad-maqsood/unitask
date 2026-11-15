@@ -40,10 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupTask
 import java.util.Calendar
@@ -71,8 +73,8 @@ fun GroupTaskRow(
     var showMenu by remember { mutableStateOf(false) }
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
-            title = "Delete task?",
-            message = "\"${task.title}\" will be deleted for everyone in the group.",
+            title = stringResource(R.string.group_task_row_delete_task),
+            message = stringResource(R.string.group_task_row_will_be_deleted_for_everyone, task.title),
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false }
         )
@@ -170,7 +172,7 @@ fun GroupTaskRow(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Groups,
-                                        contentDescription = "Group task",
+                                        contentDescription = stringResource(R.string.current_next_class_card_group_task),
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Text(
@@ -198,7 +200,7 @@ fun GroupTaskRow(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Task options",
+                                    contentDescription = stringResource(R.string.group_task_row_task_options),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -208,7 +210,7 @@ fun GroupTaskRow(
                                 onDismissRequest = { showMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Task") },
+                                    text = { Text(stringResource(R.string.group_task_row_edit_task)) },
                                     onClick = {
                                         showMenu = false
                                         onEdit()
@@ -217,7 +219,7 @@ fun GroupTaskRow(
                                     leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.group_task_row_delete_task_2), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         showDeleteConfirm = true
@@ -271,11 +273,11 @@ fun GroupTaskRow(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Alarm,
-                                    contentDescription = "Rings like an alarm",
+                                    contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "Alarm",
+                                    text = stringResource(R.string.group_task_row_alarm),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -300,7 +302,7 @@ fun GroupTaskRow(
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "Added by ${task.createdByName}",
+                                    text = stringResource(R.string.group_task_row_added_by, task.createdByName),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
@@ -316,7 +318,7 @@ fun GroupTaskRow(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                     ) {
                         Text(
-                            text = "Tagged: $tagText",
+                            text = stringResource(R.string.group_task_row_tagged, tagText),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             maxLines = 2,
@@ -329,7 +331,7 @@ fun GroupTaskRow(
                 if (notOnMyDeadlines) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Not on your Deadlines",
+                        text = stringResource(R.string.group_task_row_not_on_your_deadlines),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -350,7 +352,7 @@ fun GroupTaskRow(
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccessTime,
-                            contentDescription = "Due time",
+                            contentDescription = stringResource(R.string.group_task_row_due_time),
                             tint = if (isOverdue) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)

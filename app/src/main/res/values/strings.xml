@@ -391,4 +391,16 @@
     <string name="group_task_e_g_cs_301_physics">e.g. CS 301, Physics Lab</string>
     <string name="group_task_e_g_prepare_slides_and">e.g. Prepare slides and code demo</string>
     <string name="group_task_everyone_tagged_gets_these_alerts">Everyone tagged gets these alerts.</string>
+    <!-- GroupTaskRow.kt -->
+    <string name="group_task_row_delete_task">Delete task?</string>
+    <string name="group_task_row_will_be_deleted_for_everyone">\"%1$s\" will be deleted for everyone in the group.</string>
+    <string name="group_task_row_task_options">Task options</string>
+    <string name="group_task_row_edit_task">Edit Task</string>
+    <string name="group_task_row_delete_task_2">Delete Task</string>
+    <string name="group_task_row_rings_like_an_alarm">Rings like an alarm</string>
+    <string name="group_task_row_alarm">Alarm</string>
+    <string name="group_task_row_added_by">Added by %1$s</string>
+    <string name="group_task_row_tagged">Tagged: %1$s</string>
+    <string name="group_task_row_not_on_your_deadlines">Not on your Deadlines</string>
+    <string name="group_task_row_due_time">Due time</string>
 </resources>

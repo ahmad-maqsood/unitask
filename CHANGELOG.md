@@ -2,6 +2,37 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.5.0] - 15-11-2026
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.5.0)
+
+### Added
+- New three-page welcome flow for first-time users covering system settings and initial course setup.
+- Offline support for group functionality, allowing access to cached tasks, courses, and member lists with an offline status banner.
+- Undo functionality for deleted group tasks with a 10-second recovery window.
+- 'Discard changes?' confirmation dialog when closing add/edit screens with unsaved input.
+- Unified snackbar system for consistent in-app messaging.
+- Descriptive error messaging when the update link fails to open.
+
+### Improved
+- Time formatting now respects system-wide 12-hour or 24-hour clock settings across the app, widgets, and notifications.
+- Notifications and home screen widgets now dynamically match the user's selected accent color.
+- Reminder and group task notifications now display the due date alongside the time.
+- Backup and restore processes now provide clearer logging and user-facing feedback for image processing errors.
+- Accessibility enhancements by marking interactive elements like search results, settings, and cards as buttons for screen readers.
+
+### Fixed
+- Resolved a crash occurring when the system exact alarm settings screen is unavailable.
+- Improved coroutine handling to ensure tasks are correctly cancelled and do not continue execution in background workers or repositories.
+- Removed support for deprecated GitHub Pages-based invite links.
+
+### Developer & project maintenance
+- Migrated hardcoded UI strings to strings.xml to support future localization.
+- Added release workflow security checks for version codes and certificate fingerprints.
+- Retained R8 mapping files as build artifacts for improved crash log debugging.
+- Implemented security headers and policies on the project website.
+- Enforced CI workflow time limits and restricted repository permissions.
+- Cleaned up unused Google AI Studio files and deprecated test cases.
+
 ## [4.4.0] - 14-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.4.0)
 

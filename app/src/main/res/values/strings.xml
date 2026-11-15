@@ -468,4 +468,15 @@
     <string name="my_task_when_you_tick_it_done">When you tick it done, it moves to the next date.</string>
     <string name="my_task_delete_when_done">Delete when done</string>
     <string name="my_task_removed_automatically_after_the">Removed automatically after the day you finish it.</string>
+    <!-- MyTasksTab.kt -->
+    <string name="my_tasks_no_personal_tasks_yet">No personal tasks yet</string>
+    <string name="my_tasks_add_tasks_to_dos_or">Add tasks, to-dos, or habits that aren\'t tied to any university course.</string>
+    <string name="my_tasks_add_task">+ Add task</string>
+    <string name="my_tasks_today">Today</string>
+    <string name="my_tasks_tomorrow">Tomorrow</string>
+    <string name="my_tasks_add_quick_task">Add quick task</string>
+    <string name="my_tasks_add_a_task">Add a task...</string>
+    <string name="my_tasks_save_task">Save task</string>
+    <string name="my_tasks_collapse_done_section">Collapse Done section</string>
+    <string name="my_tasks_expand_done_section">Expand Done section</string>
 </resources>

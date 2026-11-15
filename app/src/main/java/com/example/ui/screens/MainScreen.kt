@@ -660,7 +660,7 @@ fun MainScreen(
                     }
                 }
             }
-                        if (needsExactAlarmAccess) {
+            if (needsExactAlarmAccess) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -670,12 +670,16 @@ fun MainScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                context.startActivity(
-                                    android.content.Intent(
-                                        android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                        android.net.Uri.parse("package:${context.packageName}")
+                                try {
+                                    context.startActivity(
+                                        android.content.Intent(
+                                            android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                            android.net.Uri.parse("package:${context.packageName}")
+                                        )
                                     )
-                                )
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "No app can open this setting", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                         .testTag("exact_alarm_banner")

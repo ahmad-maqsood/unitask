@@ -328,4 +328,9 @@
     <string name="feature_guide_how_to_use">How to use</string>
     <string name="feature_guide_collapse">Collapse</string>
     <string name="feature_guide_expand">Expand</string>
+    <!-- FindInNote.kt -->
+    <string name="find_in_note_find_in_note">Find in note</string>
+    <string name="find_in_note_previous_match">Previous match</string>
+    <string name="find_in_note_next_match">Next match</string>
+    <string name="find_in_note_close_find">Close find</string>
 </resources>

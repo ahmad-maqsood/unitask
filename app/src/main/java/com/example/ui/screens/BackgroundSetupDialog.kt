@@ -23,11 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.R
 import com.example.util.BackgroundAccess
 
 private enum class SetupStep {
@@ -93,13 +95,10 @@ fun BackgroundSetupDialog(
                 val hasAutostart = BackgroundAccess.needsAutostartStep()
                 AlertDialog(
                     onDismissRequest = dismissDialog,
-                    title = { Text("Battery optimization is already off") },
+                    title = { Text(stringResource(R.string.background_setup_battery_optimization_is_already)) },
                     text = {
                         Text(
-                            if (hasAutostart)
-                                "UniTask is already allowed to run in the background. Some phones also need Auto-start turned on, so it's worth checking that in your phone's settings."
-                            else
-                                "UniTask is already allowed to run in the background. No other setting is needed on this phone.",
+                            stringResource(if (hasAutostart) R.string.background_setup_unitask_is_already_allowed_to else R.string.background_setup_unitask_is_already_allowed_to_2),
                             modifier = Modifier.verticalScroll(rememberScrollState())
                         )
                     },
@@ -109,14 +108,14 @@ fun BackgroundSetupDialog(
                                 onClick = { currentStep = SetupStep.AUTOSTART },
                                 modifier = Modifier.testTag("background_setup_check_autostart_button")
                             ) {
-                                Text("Check auto-start")
+                                Text(stringResource(R.string.background_setup_check_auto_start))
                             }
                         } else {
                             Button(
                                 onClick = dismissDialog,
                                 modifier = Modifier.testTag("background_setup_ok_button")
                             ) {
-                                Text("OK")
+                                Text(stringResource(R.string.common_ok))
                             }
                         }
                     },
@@ -126,7 +125,7 @@ fun BackgroundSetupDialog(
                                 onClick = dismissDialog,
                                 modifier = Modifier.testTag("background_setup_close_button")
                             ) {
-                                Text("Close")
+                                Text(stringResource(R.string.common_close))
                             }
                         }
                     }
@@ -134,9 +133,9 @@ fun BackgroundSetupDialog(
             } else {
                 AlertDialog(
                     onDismissRequest = dismissDialog,
-                    title = { Text("Keep alerts on time") },
+                    title = { Text(stringResource(R.string.background_setup_keep_alerts_on_time)) },
                     text = {
-                        Text("Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.", modifier = Modifier.verticalScroll(rememberScrollState()))
+                        Text(stringResource(R.string.background_setup_some_phones_stop_apps_in), modifier = Modifier.verticalScroll(rememberScrollState()))
                     },
                     confirmButton = {
                         Button(
@@ -153,7 +152,7 @@ fun BackgroundSetupDialog(
                             },
                             modifier = Modifier.testTag("background_setup_start_button")
                         ) {
-                            Text("Set up")
+                            Text(stringResource(R.string.background_setup_set_up))
                         }
                     },
                     dismissButton = {
@@ -161,7 +160,7 @@ fun BackgroundSetupDialog(
                             onClick = dismissDialog,
                             modifier = Modifier.testTag("background_setup_not_now_button")
                         ) {
-                            Text("Not now")
+                            Text(stringResource(R.string.background_setup_not_now))
                         }
                     }
                 )
@@ -176,7 +175,7 @@ fun BackgroundSetupDialog(
         SetupStep.AUTOSTART -> {
             AlertDialog(
                 onDismissRequest = dismissDialog,
-                title = { Text("Allow auto-start") },
+                title = { Text(stringResource(R.string.background_setup_allow_auto_start)) },
                 text = {
                     Text(
                         text = BackgroundAccess.brandHint(),
@@ -199,7 +198,7 @@ fun BackgroundSetupDialog(
                         },
                         modifier = Modifier.testTag("background_setup_open_settings_button")
                     ) {
-                        Text("Open settings")
+                        Text(stringResource(R.string.onboarding_open_settings))
                     }
                 },
                 dismissButton = {
@@ -220,7 +219,7 @@ fun BackgroundSetupDialog(
                             modifier = Modifier.testTag("background_setup_guide_button")
                         ) {
                             Text(
-                                text = "Steps for my phone",
+                                text = stringResource(R.string.background_setup_steps_for_my_phone),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -229,7 +228,7 @@ fun BackgroundSetupDialog(
                             onClick = dismissDialog,
                             modifier = Modifier.testTag("background_setup_skip_button")
                         ) {
-                            Text("Skip")
+                            Text(stringResource(R.string.onboarding_skip))
                         }
                     }
                 }

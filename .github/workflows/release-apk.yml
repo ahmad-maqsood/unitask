@@ -17,7 +17,8 @@ on:
         default: false
 
 # Keep workflow-wide permissions read-only. Grant write access only to the build job.
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   build:

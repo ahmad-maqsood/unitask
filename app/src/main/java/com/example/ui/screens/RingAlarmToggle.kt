@@ -20,9 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
+import com.example.R
 
 /**
  * The "Ring alarm" switch used when adding or editing a task. When it is on, the task's
@@ -69,7 +71,7 @@ fun RingAlarmToggleRow(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Ring alarm",
+                    text = stringResource(R.string.ring_alarm_toggle_ring_alarm),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold
                 )

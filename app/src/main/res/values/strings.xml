@@ -584,4 +584,6 @@
     <!-- ReminderChipGrid.kt -->
     <string name="reminder_chip_grid_alert_me_before_the_deadline">Alert me before the deadline:</string>
     <string name="reminder_chip_grid_remind_me">Remind me</string>
+    <!-- RingAlarmToggle.kt -->
+    <string name="ring_alarm_toggle_ring_alarm">Ring alarm</string>
 </resources>

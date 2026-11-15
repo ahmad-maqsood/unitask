@@ -715,4 +715,6 @@
     <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
     <!-- ToolsSheet.kt -->
     <string name="tools_more">More</string>
+    <!-- UpdatePrompt.kt -->
+    <string name="update_prompt_what_s_new">What\'s new</string>
 </resources>

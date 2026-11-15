@@ -314,4 +314,9 @@
     <string name="drive_migration_try_again">Try again</string>
     <string name="drive_migration_remind_me_later">Remind me later</string>
     <string name="drive_migration_don_t_ask_again">Don\'t ask again</string>
+    <!-- DriveRestoreDialogs.kt -->
+    <string name="drive_restore_no_backup_found_in_this">No backup found in this Google account.</string>
+    <string name="drive_restore_use_the_latest_backup_instead">Use the latest backup instead</string>
+    <string name="drive_restore_use_the_older_backup_instead">Use the older backup instead</string>
+    <string name="drive_restore_older_backup">Older backup: %1$s</string>
 </resources>

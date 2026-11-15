@@ -9,9 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.example.R
 
 /**
  * Shared restore dialogs used by both Settings (DriveBackupSection) and
@@ -52,11 +54,11 @@ fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
 fun DriveNoBackupFoundDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restore from Google Drive") },
-        text = { Text("No backup found in this Google account.") },
+        title = { Text(stringResource(R.string.drive_backup_restore_from_google_drive)) },
+        text = { Text(stringResource(R.string.drive_restore_no_backup_found_in_this)) },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         }
     )
@@ -74,7 +76,7 @@ fun DriveRestoreConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restore from Google Drive") },
+        title = { Text(stringResource(R.string.drive_backup_restore_from_google_drive)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
@@ -93,13 +95,12 @@ fun DriveRestoreConfirmDialog(
                         modifier = Modifier.testTag("drive_restore_older_toggle")
                     ) {
                         Text(
-                            if (useOlder) "Use the latest backup instead"
-                            else "Use the older backup instead"
+                            stringResource(if (useOlder) R.string.drive_restore_use_the_latest_backup_instead else R.string.drive_restore_use_the_older_backup_instead)
                         )
                     }
                     if (!useOlder) {
                         Text(
-                            "Older backup: $olderDetails",
+                            stringResource(R.string.drive_restore_older_backup, olderDetails),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -109,12 +110,12 @@ fun DriveRestoreConfirmDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Restore")
+                Text(stringResource(R.string.common_restore))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

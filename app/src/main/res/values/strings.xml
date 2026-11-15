@@ -26,9 +26,7 @@
     <string name="onboarding_allow">Allow</string>
     <string name="onboarding_battery_title">Battery optimization</string>
     <string name="onboarding_battery_body">Stops your phone from putting UniTask to sleep, so reminders ring on time.</string>
-    <string name="onboarding_autostart_title">Auto-start</string>
-    <string name="onboarding_autostart_body">Keeps reminders working after your phone restarts.</string>
-    <string name="onboarding_open_settings">Open settings</string>
+    <string name="reminders_autostart_tip">If reminders still arrive late, you can also try turning on auto-start for UniTask in your phone\'s settings, if your phone has that option.</string>
     <string name="onboarding_steps_title">Your first steps</string>
     <string name="onboarding_steps_body">Three quick things and UniTask is working for you. It takes about a minute.</string>
     <string name="onboarding_step_course_title">Add a course</string>
@@ -137,16 +135,12 @@
     <string name="common_restore">Restore</string>
     <!-- BackgroundSetupDialog.kt -->
     <string name="background_setup_battery_optimization_is_already">Battery optimization is already off</string>
-    <string name="background_setup_unitask_is_already_allowed_to">UniTask is already allowed to run in the background. Some phones also need Auto-start turned on, so it\'s worth checking that in your phone\'s settings.</string>
-    <string name="background_setup_unitask_is_already_allowed_to_2">UniTask is already allowed to run in the background. No other setting is needed on this phone.</string>
-    <string name="background_setup_check_auto_start">Check auto-start</string>
+    <string name="background_setup_unitask_is_already_allowed_to">UniTask is already allowed to run in the background.</string>
     <string name="common_close">Close</string>
     <string name="background_setup_keep_alerts_on_time">Keep alerts on time</string>
-    <string name="background_setup_some_phones_stop_apps_in">Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. Two quick settings fix this.</string>
+    <string name="background_setup_some_phones_stop_apps_in">Some phones stop apps in the background, so task reminders and group alerts can arrive late or never. One quick setting fixes this.</string>
     <string name="background_setup_set_up">Set up</string>
     <string name="background_setup_not_now">Not now</string>
-    <string name="background_setup_allow_auto_start">Allow auto-start</string>
-    <string name="background_setup_steps_for_my_phone">Steps for my phone</string>
     <!-- BackupReminderCard.kt -->
     <string name="backup_reminder_card_back_up_your_data">Back up your data</string>
     <string name="backup_reminder_card_later">Later</string>
@@ -722,7 +716,6 @@
     <string name="toast_add_a_course_first_then">Add a course first, then choose it for this class</string>
     <string name="toast_couldn_t_attach_that_file">Couldn\'t attach that file. The limit is 25 MB.</string>
     <string name="toast_no_app_can_open_this">No app can open this link</string>
-    <string name="toast_could_not_open_that_screen">Could not open that screen. Find UniTask in your phone\'s app settings.</string>
     <string name="toast_qr_code_detected_filled">QR code detected &amp; filled!</string>
     <string name="toast_invite_filled_from_clipboard">Invite filled from clipboard!</string>
     <string name="toast_no_valid_group_invite_in">No valid group invite in clipboard</string>

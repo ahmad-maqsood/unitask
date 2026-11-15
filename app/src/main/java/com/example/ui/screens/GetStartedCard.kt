@@ -60,7 +60,7 @@ private fun buildRows(steps: List<GetStartedStep>, done: Set<GetStartedStep>): L
         )
     }.toMutableList()
 
-    // Notifications, battery and auto-start are shown as one "Make reminders reliable" line at the
+    // Notifications and battery optimization are shown as one "Make reminders reliable" line at the
     // bottom. Tapping it walks through the settings one at a time.
     val system = steps.filter { it.isSystem }
     if (system.isNotEmpty()) {

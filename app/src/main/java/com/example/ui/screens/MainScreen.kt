@@ -221,19 +221,15 @@ fun MainScreen(
 
     val checkAndShowBackgroundSetup: () -> Unit = {
         if (!BackgroundAccess.isBackgroundSetupPrompted(context)) {
-            val needsBattery = !BackgroundAccess.isIgnoringBatteryOptimizations(context)
-            val needsAutostart = BackgroundAccess.needsAutostartStep() && !BackgroundAccess.isAutostartStepDone(context)
-            if (needsBattery || needsAutostart) {
-                BackgroundAccess.setBackgroundSetupPrompted(context, true)
+            BackgroundAccess.setBackgroundSetupPrompted(context, true)
+            if (!BackgroundAccess.isIgnoringBatteryOptimizations(context)) {
                 showBackgroundSetupDialog = true
-            } else {
-                BackgroundAccess.setBackgroundSetupPrompted(context, true)
             }
         }
     }
 
-    // True once Android's notification dialog was answered in this session. The battery and
-    // auto-start dialog never follows it in the same session, so a new user sees one request at a time.
+    // True once Android's notification dialog was answered in this session. The battery
+    // dialog never follows it in the same session, so a new user sees one request at a time.
     var askedNotificationThisSession by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -244,7 +240,7 @@ fun MainScreen(
 
     // No permission dialog at launch. A new person is first asked for notifications when they save
     // their first task with a reminder (see onReminderSaved below), and the notification banner stays
-    // available as a gentle fallback. The battery and auto-start dialog comes on a later visit, once
+    // available as a gentle fallback. The battery dialog comes on a later visit, once
     // a reminder has been saved and notifications were already dealt with.
     LaunchedEffect(Unit) {
         val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
@@ -800,18 +796,6 @@ fun MainScreen(
                                         }
                                     }
                                     GetStartedStep.BATTERY -> BackgroundAccess.requestIgnoreBatteryOptimizations(context)
-                                    GetStartedStep.AUTOSTART -> {
-                                        val started = BackgroundAccess.openAutostartSettings(context)
-                                        // Android cannot tell us if auto-start is on, so the step is ticked once
-                                        // the settings screen was opened.
-                                        BackgroundAccess.setAutostartStepDone(context, true)
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            if (started) BackgroundAccess.brandHint()
-                                            else "Could not open that screen. Find UniTask in your phone's app settings.",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    }
                                 }
                             }
                         )

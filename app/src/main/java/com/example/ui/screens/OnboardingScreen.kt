@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -84,8 +83,8 @@ private const val SETTINGS_PREFS = "unitask_settings"
  * The full-screen welcome shown once on a brand new install.
  *
  * Page 1 says what UniTask does. Page 2 turns on the phone settings that reminders need
- * (notifications, battery, and auto-start on phones that have it). Each setting ticks itself when the
- * person comes back from the system screen. Page 3 shows the first steps of the "Get started" card
+ * (notifications and battery) and tells people that auto-start is worth trying if reminders still
+ * arrive late. Each setting ticks itself when the person comes back from the system screen. Page 3 shows the first steps of the "Get started" card
  * and ends with a button that opens the Add course screen.
  *
  * Skipping is always fine: the app asks again later, when a reminder is saved, and the "Get started"
@@ -115,16 +114,13 @@ fun OnboardingScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val needsAutostart = remember { BackgroundAccess.needsAutostartStep() }
-    val shownSettings = remember(needsAutostart) { OnboardingLogic.settingsFor(needsAutostart) }
     val on: Set<OnboardingSetting> = remember(refresh) {
         buildSet {
             if (NotificationManagerCompat.from(context).areNotificationsEnabled()) add(OnboardingSetting.NOTIFICATIONS)
             if (BackgroundAccess.isIgnoringBatteryOptimizations(context)) add(OnboardingSetting.BATTERY)
-            if (BackgroundAccess.isAutostartStepDone(context)) add(OnboardingSetting.AUTOSTART)
         }
     }
-    val allOn = OnboardingLogic.allOn(on, shownSettings)
+    val allOn = OnboardingLogic.allOn(on)
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -158,21 +154,6 @@ fun OnboardingScreen(
                     Toast.makeText(
                         context,
                         context.getString(R.string.toast_could_not_open_that_screen_2),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-
-            OnboardingSetting.AUTOSTART -> {
-                val started = BackgroundAccess.openAutostartSettings(context)
-                // Android cannot tell us if auto-start is on, so it counts as done once the settings
-                // screen was opened. This is the same rule the Get started card uses.
-                BackgroundAccess.setAutostartStepDone(context, true)
-                refresh++
-                if (!started) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.toast_could_not_open_that_screen),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -220,7 +201,6 @@ fun OnboardingScreen(
             when (page) {
                 0 -> WelcomePage()
                 SETUP_PAGE -> SetupPage(
-                    shown = shownSettings,
                     on = on,
                     onClick = onSettingClick
                 )
@@ -374,7 +354,6 @@ private fun FeatureRow(icon: ImageVector, title: String, text: String) {
 
 @Composable
 private fun SetupPage(
-    shown: List<OnboardingSetting>,
     on: Set<OnboardingSetting>,
     onClick: (OnboardingSetting) -> Unit
 ) {
@@ -397,7 +376,7 @@ private fun SetupPage(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(24.dp))
-        shown.forEach { setting ->
+        OnboardingSetting.entries.forEach { setting ->
             val isOn = setting in on
             when (setting) {
                 OnboardingSetting.NOTIFICATIONS -> SettingCard(
@@ -419,20 +398,14 @@ private fun SetupPage(
                     tag = "onboarding_battery",
                     onClick = { onClick(setting) }
                 )
-
-                OnboardingSetting.AUTOSTART -> SettingCard(
-                    icon = Icons.Default.Settings,
-                    title = stringResource(R.string.onboarding_autostart_title),
-                    text = stringResource(R.string.onboarding_autostart_body),
-                    extraHint = BackgroundAccess.brandHint(),
-                    isOn = isOn,
-                    buttonLabel = stringResource(R.string.onboarding_open_settings),
-                    tag = "onboarding_autostart",
-                    onClick = { onClick(setting) }
-                )
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
+        Text(
+            text = stringResource(R.string.reminders_autostart_tip),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
@@ -529,8 +502,7 @@ private fun SettingCard(
     isOn: Boolean,
     buttonLabel: String,
     tag: String,
-    onClick: () -> Unit,
-    extraHint: String? = null
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -569,14 +541,6 @@ private fun SettingCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (!isOn && extraHint != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = extraHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (isOn) {
                     Row(

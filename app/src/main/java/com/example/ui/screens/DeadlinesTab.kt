@@ -181,8 +181,6 @@ fun DeadlinesTab(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val needsAutostart = remember { BackgroundAccess.needsAutostartStep() }
-    val getStartedSteps = remember(needsAutostart) { GetStartedLogic.requiredSteps(needsAutostart) }
     val hasCourse = remember(activeCourses) { activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() } }
     val hasDeadline = remember(activeTasks) {
         activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true }
@@ -204,7 +202,6 @@ fun DeadlinesTab(
         batteryOptimizationOff = remember(settingsRefresh) {
             BackgroundAccess.isIgnoringBatteryOptimizations(context)
         },
-        autostartDone = remember(settingsRefresh) { BackgroundAccess.isAutostartStepDone(context) },
         driveConnected = remember(settingsRefresh) {
             com.example.util.drive.DrivePrefs(context).isConnected
         }
@@ -218,7 +215,7 @@ fun DeadlinesTab(
     }
     val getStartedShown = getStartedDone.filterNot { it.isSystem }.toSet() +
         getStartedDetected.filter { it.isSystem }
-    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown, getStartedSteps)
+    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown)
 
     // Reminder that the backup is old. Needs somewhere to send the person, so it is off when
     // the screen has no way to open the backup settings.
@@ -339,7 +336,6 @@ fun DeadlinesTab(
             item(key = "get_started_card") {
                 GetStartedCard(
                     done = getStartedShown,
-                    steps = getStartedSteps,
                     onStepClick = onGetStartedStepClick,
                     onDismiss = {
                         getStartedDismissed = true

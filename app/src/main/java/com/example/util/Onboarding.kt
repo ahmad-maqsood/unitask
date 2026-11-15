@@ -5,15 +5,10 @@ import android.content.Context
 /** The phone settings shown on the second welcome page, in the order they appear. */
 enum class OnboardingSetting {
     NOTIFICATIONS,
-    BATTERY,
-    AUTOSTART
+    BATTERY
 }
 
 object OnboardingLogic {
-
-    /** Auto-start only exists on some phone brands, so it is left out everywhere else. */
-    fun settingsFor(needsAutostart: Boolean): List<OnboardingSetting> =
-        OnboardingSetting.entries.filter { needsAutostart || it != OnboardingSetting.AUTOSTART }
 
     /**
      * The welcome screens are for a brand new install only. Anyone who finished them already, or who
@@ -22,9 +17,9 @@ object OnboardingLogic {
     fun shouldShow(alreadyDone: Boolean, usedAppBefore: Boolean): Boolean =
         !alreadyDone && !usedAppBefore
 
-    /** True when every setting that is shown on this phone is turned on. */
-    fun allOn(on: Set<OnboardingSetting>, shown: List<OnboardingSetting>): Boolean =
-        on.containsAll(shown)
+    /** True when every setting on the page is turned on. */
+    fun allOn(on: Set<OnboardingSetting>): Boolean =
+        on.containsAll(OnboardingSetting.entries)
 }
 
 /** Remembers that the welcome screens were finished or skipped. Saved in SharedPreferences. */

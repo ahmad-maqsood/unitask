@@ -333,4 +333,10 @@
     <string name="find_in_note_previous_match">Previous match</string>
     <string name="find_in_note_next_match">Next match</string>
     <string name="find_in_note_close_find">Close find</string>
+    <!-- GetStartedCard.kt -->
+    <string name="get_started_card_of_done">%1$s of %2$s done</string>
+    <string name="get_started_card_show_fewer_steps">Show fewer steps</string>
+    <string name="get_started_card_show_all_steps">Show all steps</string>
+    <string name="get_started_card_dismiss_get_started">Dismiss Get started</string>
+    <string name="get_started_card_not_done_yet">Not done yet</string>
 </resources>

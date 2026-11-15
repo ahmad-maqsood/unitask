@@ -647,4 +647,9 @@
     <string name="task_card_reminders">Reminders: %1$s</string>
     <string name="task_card_snoozed">Snoozed</string>
     <string name="task_card_snoozed_until">Snoozed until %1$s</string>
+    <!-- TimerFullscreen.kt -->
+    <string name="timer_fullscreen_ends_at">Ends at %1$s</string>
+    <string name="common_reset">Reset</string>
+    <string name="timer_fullscreen_start_focus">Start focus</string>
+    <string name="timer_fullscreen_start_break">Start break</string>
 </resources>

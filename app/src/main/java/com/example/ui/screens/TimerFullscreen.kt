@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.reminder.CountdownNotifier
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerLogic
@@ -191,7 +193,7 @@ private fun FullscreenTimerPanel(
                 com.example.util.DateFormats.clock(endMillis)
             }
             Text(
-                text = "Ends at $endText",
+                text = stringResource(R.string.timer_fullscreen_ends_at, endText),
                 style = MaterialTheme.typography.titleMedium,
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.testTag("timer_end_time")
@@ -220,7 +222,7 @@ private fun FullscreenTimerPanel(
                             .size(64.dp)
                             .testTag("timer_reset_button")
                     ) {
-                        Icon(Icons.Default.Replay, contentDescription = "Reset", modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.common_reset), modifier = Modifier.size(28.dp))
                     }
                     FilledIconButton(
                         onClick = {
@@ -235,7 +237,7 @@ private fun FullscreenTimerPanel(
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
-                            contentDescription = if (state.pomodoroPhase.isBreak) "Start focus" else "Start break",
+                            contentDescription = stringResource(if (state.pomodoroPhase.isBreak) R.string.timer_fullscreen_start_focus else R.string.timer_fullscreen_start_break),
                             modifier = Modifier.size(44.dp)
                         )
                     }
@@ -250,7 +252,7 @@ private fun FullscreenTimerPanel(
                             .size(88.dp)
                             .testTag("timer_reset_button")
                     ) {
-                        Icon(Icons.Default.Replay, contentDescription = "Reset", modifier = Modifier.size(40.dp))
+                        Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.common_reset), modifier = Modifier.size(40.dp))
                     }
                 }
                 else -> {
@@ -262,7 +264,7 @@ private fun FullscreenTimerPanel(
                                 .size(64.dp)
                                 .testTag("timer_reset_button")
                         ) {
-                            Icon(Icons.Default.Replay, contentDescription = "Reset", modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.common_reset), modifier = Modifier.size(28.dp))
                         }
                     }
                     val (icon, description, tag) = when {

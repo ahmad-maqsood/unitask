@@ -503,7 +503,8 @@ alter table tasks add column completed_at_millis bigint not null default 0;
 -- 2026-11-04: day of the month a monthly/yearly repeating task keeps returning to (0 = not set)
 alter table tasks add column repeat_anchor_day int not null default 0 check (repeat_anchor_day between 0 and 31);
 
--- 2026-11-05: notes table added for cloud sync of notes; delete_my_account() also deletes the user's notes
+-- 2026-11-05 (history): notes table added for cloud sync of notes; delete_my_account() also deletes the user's notes.
+-- Since app version 4.0.0 this table is LEGACY: the app no longer reads or writes it (see the note at the top).
 create table if not exists public.notes (
   user_id           uuid not null default auth.uid() references auth.users(id) on delete cascade,
   doc_id            text not null,

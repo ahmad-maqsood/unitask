@@ -519,4 +519,26 @@
     <string name="notes_folder_ui_new_folder">New folder</string>
     <string name="notes_folder_ui_delete_folder">Delete folder?</string>
     <string name="notes_folder_ui_delete_folder_2">Delete folder</string>
+    <!-- NotesScreen.kt -->
+    <string name="notes_cancel_selection">Cancel selection</string>
+    <string name="notes_move_to_folder">Move to folder</string>
+    <string name="notes_delete_selected_notes">Delete selected notes</string>
+    <string name="notes_more_actions">More actions</string>
+    <string name="notes_share_as_one_file">Share as one file</string>
+    <string name="notes_sort_notes">Sort notes</string>
+    <string name="notes_last_edited">Last edited</string>
+    <string name="notes_date_created">Date created</string>
+    <string name="notes_title_a_to_z">Title A to Z</string>
+    <string name="notes_import_md_or_txt_file">Import .md or .txt file</string>
+    <string name="notes_new_note">New note</string>
+    <string name="notes_search_notes">Search notes</string>
+    <string name="notes_all_notes">All notes</string>
+    <string name="notes_unfiled">Unfiled (%1$s)</string>
+    <string name="notes_folder_options">Folder options</string>
+    <string name="notes_edit_folder">Edit folder</string>
+    <string name="notes_share_folder_as_zip">Share folder as zip</string>
+    <string name="notes_save_folder_as_zip">Save folder as zip</string>
+    <string name="notes_add_your_first_note">Add Your First Note</string>
+    <string name="notes_pinned">Pinned</string>
+    <string name="notes_note_actions">Note actions</string>
 </resources>

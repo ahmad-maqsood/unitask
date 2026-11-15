@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.data.local.NoteFolder
 import android.content.Context
 import android.net.Uri
@@ -254,7 +256,7 @@ fun NotesScreen(
                     ) {
                         Icon(
                             imageVector = if (selectionMode) Icons.Default.Close else Icons.Default.ArrowBack,
-                            contentDescription = if (selectionMode) "Cancel selection" else "Back"
+                            contentDescription = stringResource(if (selectionMode) R.string.notes_cancel_selection else R.string.common_back)
                         )
                     }
                 },
@@ -264,13 +266,13 @@ fun NotesScreen(
                         onClick = { viewModel.selectAllShown() },
                         modifier = Modifier.testTag("notes_select_all_button")
                     ) {
-                        Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                        Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.archive_courses_select_all))
                     }
                     IconButton(
                         onClick = { moveRequestIds = selectedIds.toList() },
                         modifier = Modifier.testTag("notes_move_selected_button")
                     ) {
-                        Icon(Icons.Default.Folder, contentDescription = "Move to folder")
+                        Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.notes_move_to_folder))
                     }
                     IconButton(
                         onClick = {
@@ -292,14 +294,14 @@ fun NotesScreen(
                         },
                         modifier = Modifier.testTag("notes_delete_selected_button")
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete selected notes")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.notes_delete_selected_notes))
                     }
                     Box {
                         IconButton(
                             onClick = { showSelectionMenu = true },
                             modifier = Modifier.testTag("notes_selection_overflow_button")
                         ) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.notes_more_actions))
                         }
                         DropdownMenu(
                             expanded = showSelectionMenu,
@@ -308,7 +310,7 @@ fun NotesScreen(
                             val selectedNotes = notes.filter { it.note.id in selectedIds }
                             val allPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.note.isPinned }
                             DropdownMenuItem(
-                                text = { Text(if (allPinned) "Unpin" else "Pin") },
+                                text = { Text(stringResource(if (allPinned) R.string.note_editor_unpin else R.string.note_editor_pin)) },
                                 leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
                                 modifier = Modifier.testTag("notes_selection_pin"),
                                 onClick = {
@@ -318,7 +320,7 @@ fun NotesScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Share as one file") },
+                                text = { Text(stringResource(R.string.notes_share_as_one_file)) },
                                 leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
                                 modifier = Modifier.testTag("notes_selection_share"),
                                 onClick = {
@@ -359,7 +361,7 @@ fun NotesScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort notes"
+                                contentDescription = stringResource(R.string.notes_sort_notes)
                             )
                         }
 
@@ -370,7 +372,7 @@ fun NotesScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = "Last edited",
+                                        text = stringResource(R.string.notes_last_edited),
                                         fontWeight = if (currentSort == NotesSort.UPDATED) FontWeight.Bold else FontWeight.Normal,
                                         color = if (currentSort == NotesSort.UPDATED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
@@ -383,7 +385,7 @@ fun NotesScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = "Date created",
+                                        text = stringResource(R.string.notes_date_created),
                                         fontWeight = if (currentSort == NotesSort.CREATED) FontWeight.Bold else FontWeight.Normal,
                                         color = if (currentSort == NotesSort.CREATED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
@@ -396,7 +398,7 @@ fun NotesScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = "Title A to Z",
+                                        text = stringResource(R.string.notes_title_a_to_z),
                                         fontWeight = if (currentSort == NotesSort.TITLE) FontWeight.Bold else FontWeight.Normal,
                                         color = if (currentSort == NotesSort.TITLE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
@@ -416,7 +418,7 @@ fun NotesScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Options"
+                                contentDescription = stringResource(R.string.note_editor_options)
                             )
                         }
 
@@ -425,7 +427,7 @@ fun NotesScreen(
                             onDismissRequest = { showListOverflowMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("New folder") },
+                                text = { Text(stringResource(R.string.notes_folder_ui_new_folder)) },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.CreateNewFolder,
@@ -440,7 +442,7 @@ fun NotesScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Import .md or .txt file") },
+                                text = { Text(stringResource(R.string.notes_import_md_or_txt_file)) },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Description,
@@ -474,7 +476,7 @@ fun NotesScreen(
                 ExtendedFloatingActionButton(
                     onClick = onNewNote,
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("New note") },
+                    text = { Text(stringResource(R.string.notes_new_note)) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.testTag("notes_fab_new_note")
@@ -497,7 +499,7 @@ fun NotesScreen(
                     .testTag("notes_search_input"),
                 placeholder = {
                     Text(
-                        text = "Search notes",
+                        text = stringResource(R.string.notes_search_notes),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -505,13 +507,13 @@ fun NotesScreen(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        contentDescription = stringResource(R.string.common_search)
                     )
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.deadlines_clear_search))
                         }
                     }
                 },
@@ -535,7 +537,7 @@ fun NotesScreen(
                     FilterChip(
                         selected = folderFilter is NotesFolderFilter.AllFolders,
                         onClick = { viewModel.setFolderFilter(NotesFolderFilter.AllFolders) },
-                        label = { Text("All notes") },
+                        label = { Text(stringResource(R.string.notes_all_notes)) },
                         modifier = Modifier.testTag("notes_folder_all")
                     )
                 }
@@ -544,7 +546,7 @@ fun NotesScreen(
                         FilterChip(
                             selected = folderFilter is NotesFolderFilter.Unfiled,
                             onClick = { viewModel.setFolderFilter(NotesFolderFilter.Unfiled) },
-                            label = { Text("Unfiled (${folderCounts[null] ?: 0})") },
+                            label = { Text(stringResource(R.string.notes_unfiled, folderCounts[null] ?: 0)) },
                             modifier = Modifier.testTag("notes_folder_unfiled")
                         )
                     }
@@ -585,7 +587,7 @@ fun NotesScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                         },
-                        label = { Text("New folder") },
+                        label = { Text(stringResource(R.string.notes_folder_ui_new_folder)) },
                         modifier = Modifier.testTag("notes_folder_new")
                     )
                 }
@@ -621,14 +623,14 @@ fun NotesScreen(
                             onClick = { showFolderMenu = true },
                             modifier = Modifier.testTag("notes_folder_menu_button")
                         ) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Folder options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.notes_folder_options))
                         }
                         DropdownMenu(
                             expanded = showFolderMenu,
                             onDismissRequest = { showFolderMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit folder") },
+                                text = { Text(stringResource(R.string.notes_edit_folder)) },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                                 onClick = {
                                     showFolderMenu = false
@@ -637,7 +639,7 @@ fun NotesScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Share folder as zip") },
+                                text = { Text(stringResource(R.string.notes_share_folder_as_zip)) },
                                 leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
                                 modifier = Modifier.testTag("notes_folder_share_zip"),
                                 onClick = {
@@ -653,7 +655,7 @@ fun NotesScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Save folder as zip") },
+                                text = { Text(stringResource(R.string.notes_save_folder_as_zip)) },
                                 leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
                                 modifier = Modifier.testTag("notes_folder_save_zip"),
                                 onClick = {
@@ -667,7 +669,7 @@ fun NotesScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete folder") },
+                                text = { Text(stringResource(R.string.notes_folder_ui_delete_folder_2)) },
                                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
                                 onClick = {
                                     showFolderMenu = false
@@ -692,7 +694,7 @@ fun NotesScreen(
                         FilterChip(
                             selected = selectedFilter is NotesFilter.All,
                             onClick = { viewModel.setFilter(NotesFilter.All) },
-                            label = { Text("All") },
+                            label = { Text(stringResource(R.string.deadlines_all)) },
                             modifier = Modifier.testTag("notes_filter_all")
                         )
                     }
@@ -700,7 +702,7 @@ fun NotesScreen(
                         FilterChip(
                             selected = selectedFilter is NotesFilter.NoCourse,
                             onClick = { viewModel.setFilter(NotesFilter.NoCourse) },
-                            label = { Text("No course") },
+                            label = { Text(stringResource(R.string.course_picker_pill_no_course)) },
                             modifier = Modifier.testTag("notes_filter_no_course")
                         )
                     }
@@ -808,7 +810,7 @@ fun NotesScreen(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Add Your First Note")
+                                    Text(stringResource(R.string.notes_add_your_first_note))
                                 }
                             }
                         }
@@ -889,8 +891,8 @@ fun NotesScreen(
     if (showNewFolderDialog) {
         val pendingMoveIds = newFolderMoveIds
         FolderNameDialog(
-            title = "New folder",
-            confirmLabel = "Create",
+            title = stringResource(R.string.notes_folder_ui_new_folder),
+            confirmLabel = stringResource(R.string.common_create),
             onConfirm = { name, colorHex ->
                 showNewFolderDialog = false
                 newFolderMoveIds = null
@@ -918,8 +920,8 @@ fun NotesScreen(
 
     renameFolderTarget?.let { folder ->
         FolderNameDialog(
-            title = "Edit folder",
-            confirmLabel = "Save",
+            title = stringResource(R.string.notes_edit_folder),
+            confirmLabel = stringResource(R.string.common_save),
             initialName = folder.name,
             initialColorHex = folder.colorHex,
             error = folderDialogError,
@@ -957,7 +959,7 @@ fun NotesScreen(
         val targetId = shareRequestNoteId
         val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
         NoteExportDialog(
-            title = "Share as",
+            title = stringResource(R.string.note_editor_share_as),
             onPick = { format ->
                 shareRequestNoteId = null
                 if (targetNote != null) {
@@ -989,7 +991,7 @@ fun NotesScreen(
         val targetId = saveRequestNoteId
         val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
         NoteExportDialog(
-            title = "Save as",
+            title = stringResource(R.string.note_editor_save_as),
             onPick = { format ->
                 saveRequestFormat = format.name
                 val realTitle = targetNote?.title.orEmpty()
@@ -1008,14 +1010,14 @@ fun NotesScreen(
         AlertDialog(
             onDismissRequest = {},
             confirmButton = {},
-            title = { Text("Please wait") },
+            title = { Text(stringResource(R.string.local_backup_please_wait)) },
             text = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    Text("Creating PDF...")
+                    Text(stringResource(R.string.note_editor_creating_pdf))
                 }
             }
         )
@@ -1088,7 +1090,7 @@ private fun NoteCard(
                     if (item.note.isPinned) {
                         Icon(
                             imageVector = Icons.Default.PushPin,
-                            contentDescription = "Pinned",
+                            contentDescription = stringResource(R.string.notes_pinned),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .size(16.dp)
@@ -1113,7 +1115,7 @@ private fun NoteCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Note actions",
+                            contentDescription = stringResource(R.string.notes_note_actions),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -1123,7 +1125,7 @@ private fun NoteCard(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text(if (item.note.isPinned) "Unpin" else "Pin") },
+                            text = { Text(stringResource(if (item.note.isPinned) R.string.note_editor_unpin else R.string.note_editor_pin)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.PushPin,
@@ -1136,7 +1138,7 @@ private fun NoteCard(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Move to folder") },
+                            text = { Text(stringResource(R.string.notes_move_to_folder)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Folder,
@@ -1150,7 +1152,7 @@ private fun NoteCard(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Share") },
+                            text = { Text(stringResource(R.string.common_share)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Share,
@@ -1164,7 +1166,7 @@ private fun NoteCard(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Save to device") },
+                            text = { Text(stringResource(R.string.note_editor_save_to_device)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Save,
@@ -1178,7 +1180,7 @@ private fun NoteCard(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete") },
+                            text = { Text(stringResource(R.string.common_delete)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Delete,

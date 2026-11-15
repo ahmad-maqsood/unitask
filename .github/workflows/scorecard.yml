@@ -15,6 +15,7 @@ jobs:
   analysis:
     name: Analyze repository security practices
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -53,6 +54,7 @@ jobs:
     name: Generate downloadable Scorecard reports
     needs: analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 

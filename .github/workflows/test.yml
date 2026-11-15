@@ -44,6 +44,7 @@ jobs:
   test:
     name: Unit tests and Android lint
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
 
     steps:
       - name: Check out code

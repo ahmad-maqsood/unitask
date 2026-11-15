@@ -170,4 +170,18 @@
     <string name="course_card_location">Location</string>
     <string name="course_card_pending">%1$s pending</string>
     <string name="course_card_done">%1$s/%2$s done</string>
+    <!-- CourseDetailSheet.kt -->
+    <string name="course_detail_delete_class">Delete class?</string>
+    <string name="course_detail_this_class_will_be_moved">This class will be moved to Recently deleted. You can restore it from there.</string>
+    <string name="course_detail_back_to_courses">Back to courses</string>
+    <string name="course_detail_pending_tasks">%1$s pending tasks</string>
+    <string name="course_detail_add_assignment_to">Add Assignment to %1$s</string>
+    <string name="course_detail_class_schedule">Class Schedule (%1$s)</string>
+    <string name="course_detail_add_slot">+ Add Slot</string>
+    <string name="course_detail_no_weekly_lecture_hours_set">No weekly lecture hours set for this course yet.</string>
+    <string name="course_detail_edit_slot">Edit slot</string>
+    <string name="course_detail_delete_slot">Delete slot</string>
+    <string name="course_detail_assignments">Assignments (%1$s)</string>
+    <string name="course_detail_no_assignments_for_yet">No assignments for %1$s yet!</string>
+    <string name="course_detail_tap_the_button_above_to">Tap the button above to add homework, lab reports, or exams.</string>
 </resources>

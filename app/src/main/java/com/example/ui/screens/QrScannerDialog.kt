@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -48,6 +49,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.example.R
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.BarcodeFormat
@@ -102,7 +104,7 @@ fun QrScannerDialog(
             if (hasPermission) {
                 CameraPreview(onResult = onResult)
                 Text(
-                    text = "Point the camera at the group's QR code",
+                    text = stringResource(R.string.qr_scanner_point_the_camera_at_the),
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
@@ -121,7 +123,7 @@ fun QrScannerDialog(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "UniTask needs camera permission to scan a QR code. You can also use From image or Paste Link.",
+                        text = stringResource(R.string.qr_scanner_unitask_needs_camera_permission_to),
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center
@@ -136,8 +138,8 @@ fun QrScannerDialog(
                         } catch (_: Exception) {
                         }
                         onDismiss()
-                    }) { Text("Open app settings") }
-                    OutlinedButton(onClick = onDismiss) { Text("Close") }
+                    }) { Text(stringResource(R.string.qr_scanner_open_app_settings)) }
+                    OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) }
                 }
             }
 
@@ -148,7 +150,7 @@ fun QrScannerDialog(
                     .padding(16.dp)
                     .background(Color.Black.copy(alpha = 0.55f), androidx.compose.foundation.shape.CircleShape)
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Close scanner", tint = Color.White)
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.qr_scanner_close_scanner), tint = Color.White)
             }
         }
     }

@@ -555,4 +555,9 @@
     <string name="progress_counts_the_tasks_saved_on">Counts the tasks saved on this phone. A task that was deleted, or that is set to delete when done, is no longer counted.</string>
     <string name="progress_tasks_done_per_week">Tasks done per week</string>
     <string name="progress_of">%1$s of %2$s</string>
+    <!-- QrScannerDialog.kt -->
+    <string name="qr_scanner_point_the_camera_at_the">Point the camera at the group\'s QR code</string>
+    <string name="qr_scanner_unitask_needs_camera_permission_to">UniTask needs camera permission to scan a QR code. You can also use From image or Paste Link.</string>
+    <string name="qr_scanner_open_app_settings">Open app settings</string>
+    <string name="qr_scanner_close_scanner">Close scanner</string>
 </resources>

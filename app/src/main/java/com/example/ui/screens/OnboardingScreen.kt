@@ -60,6 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -69,6 +70,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.R
 import com.example.util.BackgroundAccess
 import com.example.util.OnboardingLogic
 import com.example.util.OnboardingSetting
@@ -204,7 +206,7 @@ fun OnboardingScreen(
                     onClick = { onFinished(false) },
                     modifier = Modifier.testTag("onboarding_skip")
                 ) {
-                    Text("Skip")
+                    Text(stringResource(R.string.onboarding_skip))
                 }
             }
         }
@@ -234,7 +236,7 @@ fun OnboardingScreen(
         ) {
             if (currentPage == SETUP_PAGE && !allOn) {
                 Text(
-                    text = "You can finish these later from Get started on the home screen.",
+                    text = stringResource(R.string.onboarding_finish_later),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -251,7 +253,7 @@ fun OnboardingScreen(
                         .height(52.dp)
                         .testTag("onboarding_next")
                 ) {
-                    Text(if (currentPage == SETUP_PAGE && !allOn) "Continue" else "Next")
+                    Text(stringResource(if (currentPage == SETUP_PAGE && !allOn) R.string.onboarding_continue else R.string.onboarding_next))
                 }
             } else {
                 Button(
@@ -261,13 +263,13 @@ fun OnboardingScreen(
                         .height(52.dp)
                         .testTag("onboarding_get_started")
                 ) {
-                    Text("Get started")
+                    Text(stringResource(R.string.onboarding_get_started))
                 }
                 TextButton(
                     onClick = { onFinished(false) },
                     modifier = Modifier.testTag("onboarding_look_around")
                 ) {
-                    Text("I'll look around first")
+                    Text(stringResource(R.string.onboarding_look_around))
                 }
             }
         }
@@ -300,14 +302,14 @@ private fun WelcomePage() {
         }
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Welcome to UniTask",
+            text = stringResource(R.string.onboarding_welcome_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Your classes, deadlines and group work in one place, with reminders that arrive on time.",
+            text = stringResource(R.string.onboarding_welcome_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -315,20 +317,20 @@ private fun WelcomePage() {
         Spacer(modifier = Modifier.height(32.dp))
         FeatureRow(
             icon = Icons.Default.Alarm,
-            title = "Never miss a deadline",
-            text = "Add courses and deadlines, then get reminded before they are due."
+            title = stringResource(R.string.onboarding_feature_deadline_title),
+            text = stringResource(R.string.onboarding_feature_deadline_body)
         )
         Spacer(modifier = Modifier.height(20.dp))
         FeatureRow(
             icon = Icons.Default.CalendarMonth,
-            title = "Plan your week",
-            text = "Keep your class timetable and a focus timer in one app."
+            title = stringResource(R.string.onboarding_feature_week_title),
+            text = stringResource(R.string.onboarding_feature_week_body)
         )
         Spacer(modifier = Modifier.height(20.dp))
         FeatureRow(
             icon = Icons.Default.Groups,
-            title = "Work in groups",
-            text = "Share tasks with classmates using a join code."
+            title = stringResource(R.string.onboarding_feature_groups_title),
+            text = stringResource(R.string.onboarding_feature_groups_body)
         )
         Spacer(modifier = Modifier.height(24.dp))
     }
@@ -384,14 +386,13 @@ private fun SetupPage(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Keep reminders on time",
+            text = stringResource(R.string.onboarding_setup_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Some phones quiet or stop apps in the background, so reminders can arrive late or not at all. " +
-                "These settings prevent that. You can change them any time in your phone's settings.",
+            text = stringResource(R.string.onboarding_setup_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -401,31 +402,31 @@ private fun SetupPage(
             when (setting) {
                 OnboardingSetting.NOTIFICATIONS -> SettingCard(
                     icon = Icons.Default.NotificationsActive,
-                    title = "Notifications",
-                    text = "So reminders and group alerts can reach you.",
+                    title = stringResource(R.string.onboarding_notifications_title),
+                    text = stringResource(R.string.onboarding_notifications_body),
                     isOn = isOn,
-                    buttonLabel = "Allow",
+                    buttonLabel = stringResource(R.string.onboarding_allow),
                     tag = "onboarding_notifications",
                     onClick = { onClick(setting) }
                 )
 
                 OnboardingSetting.BATTERY -> SettingCard(
                     icon = Icons.Default.BatteryChargingFull,
-                    title = "Battery optimization",
-                    text = "Stops your phone from putting UniTask to sleep, so reminders ring on time.",
+                    title = stringResource(R.string.onboarding_battery_title),
+                    text = stringResource(R.string.onboarding_battery_body),
                     isOn = isOn,
-                    buttonLabel = "Allow",
+                    buttonLabel = stringResource(R.string.onboarding_allow),
                     tag = "onboarding_battery",
                     onClick = { onClick(setting) }
                 )
 
                 OnboardingSetting.AUTOSTART -> SettingCard(
                     icon = Icons.Default.Settings,
-                    title = "Auto-start",
-                    text = "Keeps reminders working after your phone restarts.",
+                    title = stringResource(R.string.onboarding_autostart_title),
+                    text = stringResource(R.string.onboarding_autostart_body),
                     extraHint = BackgroundAccess.brandHint(),
                     isOn = isOn,
-                    buttonLabel = "Open settings",
+                    buttonLabel = stringResource(R.string.onboarding_open_settings),
                     tag = "onboarding_autostart",
                     onClick = { onClick(setting) }
                 )
@@ -446,38 +447,37 @@ private fun FirstStepsPage() {
     ) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Your first steps",
+            text = stringResource(R.string.onboarding_steps_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Three quick things and UniTask is working for you. It takes about a minute.",
+            text = stringResource(R.string.onboarding_steps_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(24.dp))
         StepRow(
             number = 1,
-            title = "Add a course",
-            text = "Something like \"Calculus\" or \"CS101\". Deadlines and classes belong to a course."
+            title = stringResource(R.string.onboarding_step_course_title),
+            text = stringResource(R.string.onboarding_step_course_body)
         )
         Spacer(modifier = Modifier.height(16.dp))
         StepRow(
             number = 2,
-            title = "Add a deadline",
-            text = "An assignment, a quiz or an exam, with the date it is due."
+            title = stringResource(R.string.onboarding_step_deadline_title),
+            text = stringResource(R.string.onboarding_step_deadline_body)
         )
         Spacer(modifier = Modifier.height(16.dp))
         StepRow(
             number = 3,
-            title = "Set a reminder",
-            text = "Use the Remind me row on a deadline so it rings before it is due."
+            title = stringResource(R.string.onboarding_step_reminder_title),
+            text = stringResource(R.string.onboarding_step_reminder_body)
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "A Get started card at the top of Deadlines keeps track of these and a few more " +
-                "(timetable, timer, backup), and ticks them for you as you go.",
+            text = stringResource(R.string.onboarding_steps_card_note),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -590,7 +590,7 @@ private fun SettingCard(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Turned on",
+                            text = stringResource(R.string.onboarding_turned_on),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )

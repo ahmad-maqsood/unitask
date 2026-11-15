@@ -128,4 +128,11 @@
     <string name="archive_courses_semester_name">Semester name</string>
     <string name="archive_courses_e_g_fall_2026">e.g. Fall 2026</string>
     <string name="archive_courses_archive">Archive</string>
+    <!-- ArchivedSemestersScreen.kt -->
+    <string name="archived_semesters_archived_semesters">Archived semesters</string>
+    <string name="common_back">Back</string>
+    <string name="archived_semesters_no_archived_semesters_yet">No archived semesters yet.</string>
+    <string name="archived_semesters_delete_forever">Delete %1$s forever?</string>
+    <string name="archived_semesters_delete_forever_2">Delete forever</string>
+    <string name="common_restore">Restore</string>
 </resources>

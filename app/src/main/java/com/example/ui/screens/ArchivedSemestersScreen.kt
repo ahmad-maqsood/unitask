@@ -41,8 +41,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.ArchivedSemesterSummary
 
 /**
@@ -70,7 +72,7 @@ fun ArchivedSemestersScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Archived semesters",
+                        text = stringResource(R.string.archived_semesters_archived_semesters),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -79,7 +81,7 @@ fun ArchivedSemestersScreen(
                     IconButton(onClick = onClose) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 }
@@ -124,7 +126,7 @@ fun ArchivedSemestersScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No archived semesters yet.",
+                            text = stringResource(R.string.archived_semesters_no_archived_semesters_yet),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -163,7 +165,7 @@ fun ArchivedSemestersScreen(
             onDismissRequest = { semesterToDelete = null },
             title = {
                 Text(
-                    text = "Delete ${target.name} forever?",
+                    text = stringResource(R.string.archived_semesters_delete_forever, target.name),
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -183,12 +185,12 @@ fun ArchivedSemestersScreen(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Delete forever")
+                    Text(stringResource(R.string.archived_semesters_delete_forever_2))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { semesterToDelete = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -260,7 +262,7 @@ private fun ArchivedSemesterCard(
                         .testTag("archived_restore_button"),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Restore")
+                    Text(stringResource(R.string.common_restore))
                 }
                 TextButton(
                     onClick = onDeleteForever,
@@ -271,7 +273,7 @@ private fun ArchivedSemesterCard(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete forever")
+                    Text(stringResource(R.string.archived_semesters_delete_forever_2))
                 }
             }
         }

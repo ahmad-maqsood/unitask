@@ -242,4 +242,9 @@
     <string name="current_next_class_card_next_upcoming_class">NEXT UPCOMING CLASS</string>
     <string name="current_next_class_card_group_task">Group task</string>
     <string name="current_next_class_card_no_pending_assignments">No pending assignments</string>
+    <!-- DeadlineTaskCards.kt -->
+    <string name="deadline_task_cards_mark_not_done">Mark not done</string>
+    <string name="deadline_task_cards_mark_done">Mark done</string>
+    <string name="deadline_task_cards_not_done">Not done</string>
+    <string name="common_done">Done</string>
 </resources>

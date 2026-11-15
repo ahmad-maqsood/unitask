@@ -21,8 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -165,11 +167,11 @@ internal fun SwipeDoneTaskCard(
                     ) {
                         Icon(
                             imageVector = if (isDone) Icons.AutoMirrored.Filled.Undo else Icons.Default.Check,
-                            contentDescription = if (isDone) "Mark not done" else "Mark done",
+                            contentDescription = stringResource(if (isDone) R.string.deadline_task_cards_mark_not_done else R.string.deadline_task_cards_mark_done),
                             tint = Color.White
                         )
                         Text(
-                            text = if (isDone) "Not done" else "Done",
+                            text = stringResource(if (isDone) R.string.deadline_task_cards_not_done else R.string.common_done),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

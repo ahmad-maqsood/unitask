@@ -242,6 +242,7 @@ jobs:
           name: unitask-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
           path: |
             app/build/outputs/apk/release/*.apk
+            app/build/outputs/mapping/release/mapping.txt
             ${{ runner.temp }}/UniTask-${{ steps.version.outputs.name }}.apk.intoto.jsonl
           retention-days: 14
 
@@ -255,12 +256,21 @@ jobs:
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           PROVENANCE="$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
           cp "$APK" "$RUNNER_TEMP/UniTask-$NAME.apk"
+          # The R8 mapping file turns the obfuscated names in a crash log back into readable ones
+          # (retrace mapping.txt crash.txt). It is attached to the release so it is never lost.
+          MAPPING_SRC="app/build/outputs/mapping/release/mapping.txt"
+          if [ ! -s "$MAPPING_SRC" ]; then
+            echo "::error::The R8 mapping file was not produced at $MAPPING_SRC."
+            exit 1
+          fi
+          MAPPING="$RUNNER_TEMP/UniTask-$NAME-mapping.txt"
+          cp "$MAPPING_SRC" "$MAPPING"
           FLAGS="--draft"
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
-          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" \
+          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" "$MAPPING" \
             --target "$GITHUB_SHA" --title "UniTask $NAME" \
             --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
-          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance and the R8 mapping file." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create CHANGELOG pull request
         if: ${{ inputs.prepare_release }}

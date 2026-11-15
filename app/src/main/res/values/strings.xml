@@ -541,4 +541,7 @@
     <string name="notes_add_your_first_note">Add Your First Note</string>
     <string name="notes_pinned">Pinned</string>
     <string name="notes_note_actions">Note actions</string>
+    <!-- OneTimeTip.kt -->
+    <string name="one_time_tip_learn_more">Learn more</string>
+    <string name="one_time_tip_dismiss_tip">Dismiss tip</string>
 </resources>

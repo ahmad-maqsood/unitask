@@ -28,7 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.AppTip
 import com.example.util.TipPrefs
 
@@ -80,7 +82,7 @@ fun OneTimeTip(tip: AppTip, modifier: Modifier = Modifier) {
                         },
                         modifier = Modifier.testTag("tip_${tip.name.lowercase()}_learn_more")
                     ) {
-                        Text("Learn more")
+                        Text(stringResource(R.string.one_time_tip_learn_more))
                     }
                 }
                 IconButton(
@@ -89,7 +91,7 @@ fun OneTimeTip(tip: AppTip, modifier: Modifier = Modifier) {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss tip",
+                        contentDescription = stringResource(R.string.one_time_tip_dismiss_tip),
                         modifier = Modifier.size(18.dp)
                     )
                 }

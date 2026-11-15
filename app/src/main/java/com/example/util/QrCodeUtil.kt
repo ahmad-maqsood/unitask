@@ -34,8 +34,7 @@ object QrCodeUtil {
     private val INVITE_WEB_HOSTS = listOf(
         "gen-lang-client-0196140574.firebaseapp.com",
         "gen-lang-client-0196140574.web.app",
-        "condalabs.github.io",
-        "ahmad-maqsood.github.io"
+        "condalabs.github.io"
     )
     
     /**

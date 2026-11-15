@@ -322,4 +322,10 @@
     <!-- DriveRestoreOfferCard.kt -->
     <string name="drive_restore_offer_card_had_unitask_on_another_phone">Had UniTask on another phone?</string>
     <string name="drive_restore_offer_card_restore_your_courses_tasks_notes">Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.</string>
+    <!-- FeatureGuideDialog.kt -->
+    <string name="feature_guide_learn_to_use_unitask">Learn to use UniTask</string>
+    <string name="feature_guide_tap_a_feature_to_see">Tap a feature to see how to use it.</string>
+    <string name="feature_guide_how_to_use">How to use</string>
+    <string name="feature_guide_collapse">Collapse</string>
+    <string name="feature_guide_expand">Expand</string>
 </resources>

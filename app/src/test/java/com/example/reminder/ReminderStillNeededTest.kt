@@ -95,6 +95,23 @@ class ReminderStillNeededTest {
     }
 
     @Test
+    fun aTurnedOffTaskIsNotNeeded() {
+        val id = addTask(addCourse())
+        runBlocking { db.taskDao().updateEnabled(id, enabled = false, reminderEpochMillis = null) }
+        assertFalse(stillNeeded(id))
+    }
+
+    @Test
+    fun aTaskThatIsTurnedBackOnIsNeededAgain() {
+        val id = addTask(addCourse())
+        runBlocking {
+            db.taskDao().updateEnabled(id, enabled = false, reminderEpochMillis = null)
+            db.taskDao().updateEnabled(id, enabled = true, reminderEpochMillis = null)
+        }
+        assertTrue(stillNeeded(id))
+    }
+
+    @Test
     fun withoutATaskOrGroupTheReminderIsShown() {
         // Nothing to check against, so the reminder is never lost.
         assertTrue(stillNeeded(0L))

@@ -73,6 +73,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -465,7 +466,7 @@ fun MainScreen(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_stat_unitask),
-                                    contentDescription = "UniTask logo",
+                                    contentDescription = stringResource(R.string.main_unitask_logo),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(28.dp)
                                 )
@@ -473,7 +474,7 @@ fun MainScreen(
                         }
 
                         Text(
-                            text = "UniTask",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -488,7 +489,7 @@ fun MainScreen(
                         onClick = { showSearch = true },
                         modifier = Modifier.testTag("top_bar_search_button")
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.common_search))
                     }
                     AnnouncementBell(
                         announcements,
@@ -532,7 +533,7 @@ fun MainScreen(
                     MainNavBarItem(
                         selected = currentTab == MainTab.DEADLINES,
                         onClick = { viewModel.setTab(MainTab.DEADLINES) },
-                        label = "Deadlines",
+                        label = stringResource(R.string.main_deadlines),
                         icon = Icons.Default.Flag,
                         // Only overdue work is flagged, because that is what needs attention.
                         // A glowing dot is enough; the numbers are on the tab itself.
@@ -542,28 +543,28 @@ fun MainScreen(
                     MainNavBarItem(
                         selected = currentTab == MainTab.TIMETABLE,
                         onClick = { viewModel.setTab(MainTab.TIMETABLE) },
-                        label = "Timetable",
+                        label = stringResource(R.string.main_timetable),
                         icon = Icons.Default.Schedule,
                         testTag = "tab_timetable"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.COURSES,
                         onClick = { viewModel.setTab(MainTab.COURSES) },
-                        label = "Courses",
+                        label = stringResource(R.string.main_courses),
                         icon = Icons.Default.School,
                         testTag = "tab_courses"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.GROUPS,
                         onClick = { viewModel.setTab(MainTab.GROUPS) },
-                        label = "Groups",
+                        label = stringResource(R.string.main_groups),
                         icon = Icons.Default.Groups,
                         testTag = "tab_groups"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.MYTASKS,
                         onClick = { viewModel.setTab(MainTab.MYTASKS) },
-                        label = "My tasks",
+                        label = stringResource(R.string.main_my_tasks),
                         icon = Icons.Default.TaskAlt,
                         showDot = myTasksOverdueCount > 0,
                         testTag = "tab_mytasks"
@@ -638,12 +639,12 @@ fun MainScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Enable Deadline Reminders",
+                                text = stringResource(R.string.main_enable_deadline_reminders),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Tap here to receive deadline alerts even when the app is closed.",
+                                text = stringResource(R.string.main_tap_here_to_receive_deadline),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -653,7 +654,7 @@ fun MainScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Dismiss",
+                                contentDescription = stringResource(R.string.common_dismiss),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -696,12 +697,12 @@ fun MainScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Allow exact reminders",
+                                text = stringResource(R.string.main_allow_exact_reminders),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Tap to open the setting. Without it, deadline alerts can arrive late.",
+                                text = stringResource(R.string.main_tap_to_open_the_setting),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -1249,7 +1250,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 Box {
                     Icon(
                         imageVector = icon,
-                        contentDescription = "$label, overdue tasks",
+                        contentDescription = stringResource(R.string.main_overdue_tasks, label),
                         modifier = Modifier.size(24.dp)
                     )
                     OverdueGlowDot(

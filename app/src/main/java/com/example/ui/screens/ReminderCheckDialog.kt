@@ -22,8 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.reminder.ReminderGuard
 import com.example.reminder.ReminderHealth
@@ -46,7 +48,7 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Check reminders") },
+        title = { Text(stringResource(R.string.reminder_check_check_reminders)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -59,7 +61,7 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = if (item.ok) Icons.Default.CheckCircle else Icons.Default.Warning,
-                            contentDescription = if (item.ok) "OK" else "Needs attention",
+                            contentDescription = stringResource(if (item.ok) R.string.common_ok else R.string.reminder_check_needs_attention),
                             tint = if (item.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         )
                         Column(modifier = Modifier.weight(1f)) {
@@ -75,7 +77,7 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 TextButton(onClick = { ReminderHealth.openFix(context, item.check) }) {
-                                    Text("Fix this")
+                                    Text(stringResource(R.string.reminder_check_fix_this))
                                 }
                             }
                         }
@@ -91,7 +93,7 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 TextButton(onClick = { items = ReminderHealth.check(context) }) {
-                    Text("Check again")
+                    Text(stringResource(R.string.reminder_check_check_again))
                 }
             }
         },
@@ -99,8 +101,8 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
             TextButton(onClick = {
                 ReminderHealth.scheduleTest(context)
                 testSent = true
-            }) { Text("Send test reminder") }
+            }) { Text(stringResource(R.string.reminder_check_send_test_reminder)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } }
     )
 }

@@ -575,4 +575,10 @@
     <string name="recently_deleted_this_note_will_be_permanently">This note will be permanently deleted. This cannot be undone.</string>
     <string name="recently_deleted_this_class_will_be_permanently">This class will be permanently deleted. This cannot be undone.</string>
     <string name="recently_deleted_empty_trash_2">Empty trash?</string>
+    <!-- ReminderCheckDialog.kt -->
+    <string name="reminder_check_check_reminders">Check reminders</string>
+    <string name="reminder_check_needs_attention">Needs attention</string>
+    <string name="reminder_check_fix_this">Fix this</string>
+    <string name="reminder_check_check_again">Check again</string>
+    <string name="reminder_check_send_test_reminder">Send test reminder</string>
 </resources>

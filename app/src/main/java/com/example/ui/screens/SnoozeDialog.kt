@@ -12,7 +12,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.deadlineMillis
@@ -97,7 +99,7 @@ fun SnoozeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Snooze reminder") },
+        title = { Text(stringResource(R.string.snooze_snooze_reminder)) },
         text = {
             Column {
                 Text(
@@ -111,7 +113,7 @@ fun SnoozeDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 if (choices.isEmpty()) {
                     Text(
-                        text = "The deadline is too close to snooze.",
+                        text = stringResource(R.string.snooze_the_deadline_is_too_close),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -141,7 +143,7 @@ fun SnoozeDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Clear snooze",
+                            text = stringResource(R.string.snooze_clear_snooze),
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -150,7 +152,7 @@ fun SnoozeDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

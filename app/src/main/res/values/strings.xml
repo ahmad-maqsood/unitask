@@ -634,4 +634,8 @@
     <string name="settings_open_github_to_download">Open GitHub to download</string>
     <string name="settings_phone_default">Phone default</string>
     <string name="settings_play">Play %1$s</string>
+    <!-- SnoozeDialog.kt -->
+    <string name="snooze_snooze_reminder">Snooze reminder</string>
+    <string name="snooze_the_deadline_is_too_close">The deadline is too close to snooze.</string>
+    <string name="snooze_clear_snooze">Clear snooze</string>
 </resources>

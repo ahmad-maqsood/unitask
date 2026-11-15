@@ -512,4 +512,11 @@
     <string name="note_editor_keep_screen_on">Keep screen on</string>
     <!-- NoteImagePreview.kt -->
     <string name="note_image_preview_image_not_available_on_this">Image not available on this phone</string>
+    <!-- NotesFolderUi.kt -->
+    <string name="notes_folder_ui_folder_name">Folder name</string>
+    <string name="notes_folder_ui_colour">Colour</string>
+    <string name="notes_folder_ui_no_folder">No folder</string>
+    <string name="notes_folder_ui_new_folder">New folder</string>
+    <string name="notes_folder_ui_delete_folder">Delete folder?</string>
+    <string name="notes_folder_ui_delete_folder_2">Delete folder</string>
 </resources>

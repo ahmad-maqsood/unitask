@@ -581,4 +581,7 @@
     <string name="reminder_check_fix_this">Fix this</string>
     <string name="reminder_check_check_again">Check again</string>
     <string name="reminder_check_send_test_reminder">Send test reminder</string>
+    <!-- ReminderChipGrid.kt -->
+    <string name="reminder_chip_grid_alert_me_before_the_deadline">Alert me before the deadline:</string>
+    <string name="reminder_chip_grid_remind_me">Remind me</string>
 </resources>

@@ -27,14 +27,10 @@ object QrCodeUtil {
     /** Where the join page lives. It is on the app's own website, so it does not depend on the GitHub owner name. */
     private const val INVITE_WEB_BASE = "https://gen-lang-client-0196140574.firebaseapp.com/join/"
 
-    /**
-     * Hosts whose invite links the app still reads. The older GitHub Pages addresses stay so links
-     * shared before the move keep working.
-     */
+    /** Hosts whose invite links the app reads. Both belong to the app's own website. */
     private val INVITE_WEB_HOSTS = listOf(
         "gen-lang-client-0196140574.firebaseapp.com",
-        "gen-lang-client-0196140574.web.app",
-        "condalabs.github.io"
+        "gen-lang-client-0196140574.web.app"
     )
     
     /**

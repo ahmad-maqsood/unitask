@@ -89,6 +89,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-3.1-flash-lite
           NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
         run: |
           if [ "${{ inputs.prepare_release }}" = "true" ]; then
             TAG="v$NAME"
@@ -116,6 +117,18 @@ jobs:
             fi
           fi
           BASE_TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$NAME")
+          # Android refuses to install an update whose versionCode is lower than the installed one,
+          # and the in-app update check only reads the tag. So a forgotten bump must stop the release.
+          BASE_CODE=$(gh api "repos/$GITHUB_REPOSITORY/contents/app/build.gradle.kts?ref=$BASE_TAG" --jq .content 2>/dev/null \
+            | base64 -d 2>/dev/null | grep -oP 'versionCode\s*=\s*\K[0-9]+' | head -1 || true)
+          if [ -z "$BASE_CODE" ]; then
+            echo "::warning::Could not read versionCode at $BASE_TAG, so the versionCode check was skipped."
+          elif [ "$CODE" -lt "$BASE_CODE" ]; then
+            echo "::error::versionCode $CODE is lower than $BASE_CODE in $BASE_TAG. Phones will refuse this update. Raise versionCode in app/build.gradle.kts."
+            exit 1
+          elif [ "$CODE" -eq "$BASE_CODE" ]; then
+            echo "::warning::versionCode $CODE is the same as in $BASE_TAG. Raise it unless this is meant to replace that build."
+          fi
           if [ "${{ inputs.test_release_notes }}" = "true" ]; then
             echo "### AI release-notes test" >> "$GITHUB_STEP_SUMMARY"
             echo "Comparing current workflow branch ($GITHUB_SHA) against latest published release $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"

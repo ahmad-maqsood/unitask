@@ -699,4 +699,18 @@
     <string name="timer_less">Less %1$s</string>
     <string name="timer_more">More %1$s</string>
     <string name="timer_start">Start</string>
+    <!-- TimetableTab.kt -->
+    <string name="timetable_which_week_is_this_week">Which week is this week?</string>
+    <string name="timetable_set_your_schedule_parity_so">Set your schedule parity so bi-weekly classes and reminders appear on the right weeks.</string>
+    <string name="timetable_week_a">Week A</string>
+    <string name="timetable_week_b">Week B</string>
+    <string name="timetable_weekly_lecture_schedule">Weekly Lecture Schedule</string>
+    <string name="timetable_add_full_timetable_to_calendar">Add full timetable to calendar</string>
+    <string name="timetable_exports_every_class_from_all">Exports every class from all days and weeks, not only the day shown above.</string>
+    <string name="timetable_until_next_class">%1$s until next class</string>
+    <string name="timetable_slot_actions">Slot actions</string>
+    <string name="timetable_edit_class_slot">Edit Class Slot</string>
+    <string name="timetable_delete_slot">Delete Slot</string>
+    <string name="timetable_will_be_moved_to_recently">%1$s will be moved to Recently deleted. You can restore it from there.</string>
+    <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
 </resources>

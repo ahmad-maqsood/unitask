@@ -53,6 +53,8 @@ class UniTaskWidget : GlanceAppWidget() {
         // Read everything first, then draw. A failure shows a short message instead of crashing.
         val overview = try {
             TodayOverviewLoader.load(context)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -64,6 +66,8 @@ class UniTaskWidget : GlanceAppWidget() {
         suspend fun refresh(context: Context) {
             try {
                 UniTaskWidget().updateAll(context.applicationContext)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (_: Exception) {
             }
         }

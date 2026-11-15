@@ -351,6 +351,8 @@ class AppRepository(
     private suspend fun refreshClassAlarms() {
         try {
             ClassReminderScheduler(context).rescheduleAll((database as? AppDatabase) ?: AppDatabase.getDatabase(context))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w("AppRepository", "Could not refresh class alarms: ${e.message}")
         }

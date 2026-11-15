@@ -143,6 +143,8 @@ class GroupCacheRepository(context: Context) {
         return try {
             val entities = dao.getForUser(userId)
             if (entities.isEmpty()) null else toState(userId, entities)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w("GroupCacheRepository", "Failed to read cached group state: ${e.message}")
             null
@@ -208,6 +210,8 @@ class GroupCacheRepository(context: Context) {
             if (changed.isNotEmpty()) {
                 dao.insertOrReplace(changed)
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w("GroupCacheRepository", "Failed to save group cache: ${e.message}")
         }
@@ -220,6 +224,8 @@ class GroupCacheRepository(context: Context) {
             } else {
                 dao.clearAll()
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w("GroupCacheRepository", "Failed to clear group cache: ${e.message}")
         }
@@ -236,6 +242,8 @@ class GroupCacheRepository(context: Context) {
             }
             if (isDone) currentDone.add(taskId) else currentDone.remove(taskId)
             dao.updateDone(userId, groupId, cacheJson.encodeToString(currentDone.toList()))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w("GroupCacheRepository", "Failed to update done in cache: ${e.message}")
         }

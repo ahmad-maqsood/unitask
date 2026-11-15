@@ -30,9 +30,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.ArchiveCourseItem
 
 /**
@@ -84,7 +86,7 @@ fun ArchiveCoursesSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Archive courses",
+                    text = stringResource(R.string.archive_courses_archive_courses),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -100,13 +102,13 @@ fun ArchiveCoursesSheet(
                             }
                         }
                     ) {
-                        Text(if (allSelected) "Select none" else "Select all")
+                        Text(stringResource(if (allSelected) R.string.archive_courses_select_none else R.string.archive_courses_select_all))
                     }
                 }
             }
 
             Text(
-                text = "Pick the courses you finished this semester. Archived courses, their tasks, classes and notes are hidden and their reminders stop.",
+                text = stringResource(R.string.archive_courses_pick_the_courses_you_finished),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -114,7 +116,7 @@ fun ArchiveCoursesSheet(
             // Checklist of courses
             if (courses.isEmpty()) {
                 Text(
-                    text = "No active courses to archive.",
+                    text = stringResource(R.string.archive_courses_no_active_courses_to_archive),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -187,8 +189,8 @@ fun ArchiveCoursesSheet(
                         semesterName = it
                     }
                 },
-                label = { Text("Semester name") },
-                placeholder = { Text("e.g. Fall 2026") },
+                label = { Text(stringResource(R.string.archive_courses_semester_name)) },
+                placeholder = { Text(stringResource(R.string.archive_courses_e_g_fall_2026)) },
                 singleLine = true,
                 isError = semesterName.isNotBlank() && !validation.isValid,
                 supportingText = {
@@ -220,7 +222,7 @@ fun ArchiveCoursesSheet(
                     onClick = onDismiss,
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
                 Button(
                     onClick = {
@@ -232,7 +234,7 @@ fun ArchiveCoursesSheet(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.testTag("archive_confirm_button")
                 ) {
-                    Text("Archive")
+                    Text(stringResource(R.string.archive_courses_archive))
                 }
             }
         }

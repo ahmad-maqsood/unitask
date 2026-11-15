@@ -119,4 +119,13 @@
     <string name="announcement_host_clear_all">Clear all</string>
     <string name="announcement_host_remove_notification">Remove notification</string>
     <string name="announcement_host_remove_announcement">Remove announcement</string>
+    <!-- ArchiveCoursesSheet.kt -->
+    <string name="archive_courses_archive_courses">Archive courses</string>
+    <string name="archive_courses_select_none">Select none</string>
+    <string name="archive_courses_select_all">Select all</string>
+    <string name="archive_courses_pick_the_courses_you_finished">Pick the courses you finished this semester. Archived courses, their tasks, classes and notes are hidden and their reminders stop.</string>
+    <string name="archive_courses_no_active_courses_to_archive">No active courses to archive.</string>
+    <string name="archive_courses_semester_name">Semester name</string>
+    <string name="archive_courses_e_g_fall_2026">e.g. Fall 2026</string>
+    <string name="archive_courses_archive">Archive</string>
 </resources>

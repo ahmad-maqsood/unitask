@@ -717,6 +717,7 @@
     <!-- ToolsSheet.kt -->
     <string name="tools_more">More</string>
     <!-- UpdatePrompt.kt -->
+    <string name="update_prompt_download_apk">Download APK</string>
     <string name="update_prompt_what_s_new">What\'s new</string>
     <!-- Toast messages -->
     <string name="toast_end_time_must_be_after">End time must be after the start time</string>

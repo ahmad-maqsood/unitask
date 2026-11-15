@@ -31,9 +31,17 @@ import com.example.util.UpdateResult
 private const val PREFS = "update_prompt"
 private const val KEY_LAST_PROMPTED = "last_prompted_version"
 
+private fun openLink(context: Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (_: Exception) {
+    }
+}
+
 /**
  * Checks GitHub once when the app opens. If a newer release exists, shows a pop-up with what's new
- * (the release description) and a button that opens the release page. Each version is announced only once, so "Later" is respected.
+ * (the release description), a "Download APK" button that starts the APK download, and a link to the release page.
+ * Each version is announced only once, so "Later" is respected.
  * The Settings sheet still shows the update dot and the "Open GitHub to download" button.
  */
 @Composable
@@ -77,21 +85,26 @@ fun UpdatePrompt() {
                             modifier = Modifier.testTag("update_prompt_notes")
                         )
                     }
+                    // Secondary action: the release page, for people who want to see everything first.
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(
+                        onClick = {
+                            update = null
+                            openLink(context, available.pageUrl)
+                        },
+                        modifier = Modifier.testTag("update_prompt_open_button")
+                    ) { Text(stringResource(R.string.announcement_host_open_release_page)) }
                 }
             },
             confirmButton = {
+                // Opens the APK link; the browser starts the download and the person taps the file to install.
                 TextButton(
                     onClick = {
                         update = null
-                        try {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl))
-                            )
-                        } catch (_: Exception) {
-                        }
+                        openLink(context, available.apkUrl)
                     },
-                    modifier = Modifier.testTag("update_prompt_open_button")
-                ) { Text(stringResource(R.string.announcement_host_open_release_page)) }
+                    modifier = Modifier.testTag("update_prompt_download_button")
+                ) { Text(stringResource(R.string.update_prompt_download_apk)) }
             },
             dismissButton = {
                 TextButton(onClick = { update = null }) { Text(stringResource(R.string.backup_reminder_card_later)) }

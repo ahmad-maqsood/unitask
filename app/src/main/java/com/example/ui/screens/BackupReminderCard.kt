@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.BackupReminder
 
 /**
@@ -59,7 +61,7 @@ fun BackupReminderCard(
                     tint = MaterialTheme.colorScheme.tertiary
                 )
                 Text(
-                    text = "Back up your data",
+                    text = stringResource(R.string.backup_reminder_card_back_up_your_data),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -82,13 +84,13 @@ fun BackupReminderCard(
                     onClick = onLater,
                     modifier = Modifier.testTag("backup_reminder_later")
                 ) {
-                    Text("Later")
+                    Text(stringResource(R.string.backup_reminder_card_later))
                 }
                 Button(
                     onClick = onBackUp,
                     modifier = Modifier.testTag("backup_reminder_back_up")
                 ) {
-                    Text("Back up now")
+                    Text(stringResource(R.string.backup_reminder_card_back_up_now))
                 }
             }
         }

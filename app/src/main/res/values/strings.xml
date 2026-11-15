@@ -147,4 +147,8 @@
     <string name="background_setup_not_now">Not now</string>
     <string name="background_setup_allow_auto_start">Allow auto-start</string>
     <string name="background_setup_steps_for_my_phone">Steps for my phone</string>
+    <!-- BackupReminderCard.kt -->
+    <string name="backup_reminder_card_back_up_your_data">Back up your data</string>
+    <string name="backup_reminder_card_later">Later</string>
+    <string name="backup_reminder_card_back_up_now">Back up now</string>
 </resources>

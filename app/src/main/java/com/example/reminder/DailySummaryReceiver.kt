@@ -96,7 +96,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
         }.timeInMillis
 
         val personalTasks = db.taskDao().getAllActiveTasksSync()
-            .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED }
+            .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED && it.isEnabled }
             .map {
                 val course = courses[it.courseId]
                 val label = if (course?.isMyTasksCourse() == true) "My task" else course?.code.orEmpty()

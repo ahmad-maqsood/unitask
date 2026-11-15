@@ -297,6 +297,28 @@ fun MyTasksTab(
                 }
             }
 
+            // Turned off section
+            if (sections.turnedOff.isNotEmpty()) {
+                item(key = "header_turned_off") {
+                    SectionHeader(
+                        title = stringResource(R.string.deadlines_turned_off),
+                        count = sections.turnedOff.size
+                    )
+                }
+                items(sections.turnedOff, key = { it.task.id }) { taskWithCourse ->
+                    SwipeableTaskItem(
+                        taskWithCourse = taskWithCourse,
+                        onStatusCycle = onStatusCycle,
+                        onEditClick = onEditTask,
+                        onDeleteClick = handleSwipeDelete,
+                        onSwipeTickDone = handleSwipeTickDone,
+                        onSwipeDelete = handleSwipeDelete,
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
+                    )
+                }
+            }
+
             // Done section
             if (sections.done.isNotEmpty()) {
                 item(key = "header_done") {

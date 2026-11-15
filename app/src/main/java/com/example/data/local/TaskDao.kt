@@ -112,4 +112,8 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET description = :description, isSynced = 0 WHERE id = :taskId")
     suspend fun updateDescription(taskId: Long, description: String)
+
+    // Turns a task on or off. The stored reminder time is passed in, because a task that is off has none.
+    @Query("UPDATE tasks SET isEnabled = :enabled, reminderEpochMillis = :reminderEpochMillis, isSynced = 0 WHERE id = :taskId")
+    suspend fun updateEnabled(taskId: Long, enabled: Boolean, reminderEpochMillis: Long?)
 }

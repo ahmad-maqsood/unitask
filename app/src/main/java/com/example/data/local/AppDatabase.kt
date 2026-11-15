@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Course::class, TaskItem::class, TaskAttachment::class, LectureSlot::class, GroupCacheEntity::class, Note::class, NoteFolder::class],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -151,10 +151,19 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Every existing task and class stays turned on.
+                db.execSQL("ALTER TABLE tasks ADD COLUMN isEnabled INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE lecture_slots ADD COLUMN isEnabled INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         /** Every migration, in one place. getDatabase() and the migration test both use this list. */
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
+            MIGRATION_17_18
         )
         
         fun getDatabase(context: Context): AppDatabase {

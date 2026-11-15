@@ -962,6 +962,33 @@ fun DeadlinesTab(
                 }
             }
 
+            if (sections.turnedOff.isNotEmpty()) {
+                item(key = "section_header_turned_off") {
+                    SectionHeader(
+                        title = stringResource(R.string.deadlines_turned_off),
+                        count = sections.turnedOff.size
+                    )
+                }
+                items(sections.turnedOff, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                    SelectableTaskCard(
+                        taskWithCourse = taskWithCourse,
+                        isBatchMode = isBatchMode,
+                        isSelected = taskWithCourse.task.id in selectedTaskIds,
+                        onToggleSelect = {
+                            if (taskWithCourse.task.id in selectedTaskIds) selectedTaskIds.remove(taskWithCourse.task.id)
+                            else selectedTaskIds.add(taskWithCourse.task.id)
+                        },
+                        onStatusCycle = onStatusCycle,
+                        onEditTask = onEditTask,
+                        onDeleteTask = handleCardDelete,
+                        onSwipeToggleDone = handleSwipeToggleDone,
+                        modifier = Modifier.animateItem(),
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
+                    )
+                }
+            }
+
             if (sections.done.isNotEmpty()) {
                 item(key = "section_header_done") {
                     SectionHeader(

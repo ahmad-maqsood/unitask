@@ -428,6 +428,26 @@ class AppRepository(
         }
     }
 
+    /**
+     * Turns a task off or on without deleting it. Off: its alarms and any snooze are removed and it
+     * stops counting as overdue. On: the reminders that are still in the future are set again.
+     */
+    suspend fun setTaskEnabled(taskId: Long, enabled: Boolean) = withContext(Dispatchers.IO) {
+        val task = taskDao.getTaskById(taskId) ?: return@withContext
+        if (task.isEnabled == enabled) return@withContext
+        val updated = task.copy(isEnabled = enabled)
+        // calculateReminderMillis gives null for a task that is off.
+        taskDao.updateEnabled(taskId, enabled, reminderScheduler.calculateReminderMillis(updated))
+        if (!enabled) {
+            reminderScheduler.cancelReminder(taskId)
+            SnoozeStore.clear(context, taskId, cancelAlarm = true)
+        } else if (updated.status != TaskStatus.COMPLETED) {
+            val course = courseDao.getCourseByIdSync(updated.courseId)
+            reminderScheduler.scheduleReminder(updated, course?.code ?: "Course")
+        }
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
     suspend fun toggleChecklistItem(taskId: Long, lineIndex: Int) = withContext(Dispatchers.IO) {
         val task = taskDao.getTaskById(taskId) ?: return@withContext
         val newDescription = toggleChecklistLine(task.description, lineIndex)
@@ -451,6 +471,9 @@ class AppRepository(
 
         var changed = false
         for (task in taskDao.getAllActiveTasksSync()) {
+            // A task that is turned off stays exactly as it is: no moving to the next date, no
+            // "Missed task" entry. It catches up the next time this runs after it is turned on.
+            if (!task.isEnabled) continue
             if (task.repeat == RepeatRule.NONE) {
                 // "Delete when done": a finished one-time task goes away once the day it was finished is over.
                 if (task.autoDeleteWhenDone && task.status == TaskStatus.COMPLETED) {
@@ -611,6 +634,20 @@ class AppRepository(
     suspend fun updateLectureSlot(slot: LectureSlot) = withContext(Dispatchers.IO) {
         lectureSlotDao.updateSlot(slot.copy(isSynced = false))
         refreshClassAlarms()
+    }
+
+    /** Turns a class off or on without deleting it. Its start-of-class reminders follow. */
+    suspend fun setLectureSlotEnabled(slotId: Long, enabled: Boolean) = withContext(Dispatchers.IO) {
+        lectureSlotDao.updateEnabled(slotId, enabled)
+        if (!enabled) {
+            try {
+                ClassReminderScheduler(context).cancelSlot(slotId)
+            } catch (e: Exception) {
+                Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+            }
+        }
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
     }
 
     fun observeDeletedLectureSlots(): Flow<List<LectureSlotWithCourse>> {

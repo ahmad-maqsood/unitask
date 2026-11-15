@@ -276,6 +276,9 @@
     <string name="deadlines_due_tomorrow">Due Tomorrow</string>
     <string name="deadlines_upcoming">Upcoming</string>
     <string name="deadlines_completed">Completed</string>
+    <string name="deadlines_turned_off">Turned off</string>
+    <string name="timetable_turn_off_class">Turn off class</string>
+    <string name="timetable_turn_on_class">Turn on class</string>
     <!-- DiscardChangesDialog.kt -->
     <string name="discard_changes_discard_changes">Discard changes?</string>
     <string name="discard_changes_what_you_entered_has_not">What you entered has not been saved yet.</string>
@@ -635,6 +638,10 @@
     <!-- TaskCard.kt -->
     <string name="task_card_change_snooze">Change snooze</string>
     <string name="task_card_open_group">Open group</string>
+    <string name="task_card_turn_off">Turn off task</string>
+    <string name="task_card_turn_on">Turn on task</string>
+    <string name="task_card_turned_off">Off</string>
+    <string name="task_card_turned_off_description">Turned off: no reminders</string>
     <string name="task_card_subtasks">☑ %1$s/%2$s subtasks</string>
     <string name="task_card_more_open_edit">+%1$s more, open Edit</string>
     <string name="task_card_repeats">Repeats: %1$s</string>

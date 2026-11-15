@@ -57,7 +57,7 @@ object ReminderGuard {
 
             val option = ReminderOption.entries.firstOrNull { it.name == late.optionName } ?: continue
             val task = database.taskDao().getTaskById(late.taskId) ?: continue
-            if (task.status == TaskStatus.COMPLETED) continue
+            if (task.status == TaskStatus.COMPLETED || !task.isEnabled) continue
             val courseCode = database.courseDao().getCourseByIdSync(task.courseId)?.code.orEmpty()
             scheduler.deliverLate(task, courseCode, option, late.triggerAt)
         }

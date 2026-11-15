@@ -31,5 +31,8 @@ data class LectureSlot(
     val isSynced: Boolean = false,
     val cloudId: String = "",
     val isDeleted: Boolean = false,
-    val deletedAt: Long = 0L
+    val deletedAt: Long = 0L,
+    // "Turned off": the class stays in the timetable but gives no reminders and is left out of
+    // today's classes, the daily summary, the widget and time-conflict warnings.
+    val isEnabled: Boolean = true
 )

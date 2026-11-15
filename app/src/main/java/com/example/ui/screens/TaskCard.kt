@@ -28,6 +28,9 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.ToggleOff
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Checkbox
@@ -51,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -110,19 +114,22 @@ fun TaskCard(
     val leftStripColor = courseColor
 
     val isCompleted = task.status == TaskStatus.COMPLETED
+    // Turned off: kept in the list, but no reminders, no alarm and never shown as overdue.
+    val isEnabled = task.isEnabled
+    val toggleEnabled = rememberTaskEnabledToggle(groupEntry)
 
     // Calculate relative due text
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
         formatDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
     }
 
-    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status) {
-        task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
+    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status, isEnabled) {
+        isEnabled && task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
     }
     // In-app snooze (see SnoozeStore): one extra reminder at a time the user picks.
     var showSnooze by remember { mutableStateOf(false) }
     val snoozes by SnoozeStore.untilByTask(context).collectAsStateWithLifecycle()
-    val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted }
+    val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted && isEnabled }
     if (showSnooze) {
         SnoozeDialog(
             taskWithCourse = taskWithCourse,
@@ -143,6 +150,7 @@ fun TaskCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (isEnabled) 1f else 0.6f)
             .testTag("task_item_${task.id}")
             .clickable { onEditClick(task) },
         shape = RoundedCornerShape(16.dp),
@@ -258,7 +266,7 @@ fun TaskCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            if (!isCompleted) {
+                            if (!isCompleted && isEnabled) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(if (snoozedUntil != null) R.string.task_card_change_snooze else R.string.snooze_snooze_reminder)) },
                                     onClick = {
@@ -270,6 +278,22 @@ fun TaskCard(
                                     }
                                 )
                             }
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (isEnabled) R.string.task_card_turn_off else R.string.task_card_turn_on))
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    toggleEnabled(task)
+                                },
+                                modifier = Modifier.testTag("task_toggle_enabled_menu_item"),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
                             if (groupEntry != null) {
                                 // Group tasks are edited or deleted inside the group.
                                 DropdownMenuItem(
@@ -498,12 +522,16 @@ fun TaskCard(
                 // Repeat and reminders on one line with the due info. It wraps instead of squeezing
                 // the top row. Attachments already show as file chips above, so no count here.
                 // The alarm only rings at a reminder time, so the chip needs a reminder and an open task.
-                val showAlarmChip = task.ringsAlarm && !isCompleted && task.reminderOptions.isNotEmpty()
-                if (task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty() || showAlarmChip) {
+                val showAlarmChip = isEnabled && task.ringsAlarm && !isCompleted && task.reminderOptions.isNotEmpty()
+                if (!isEnabled || task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty() || showAlarmChip) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        if (!isEnabled) {
+                            TurnedOffChip(modifier = Modifier.testTag("task_off_chip_${task.id}"))
+                        }
+
                         if (showAlarmChip) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -563,7 +591,7 @@ fun TaskCard(
                             }
                         }
 
-                        if (task.reminderOptions.isNotEmpty()) {
+                        if (task.reminderOptions.isNotEmpty() && isEnabled) {
                             Row(
                                 modifier = Modifier.defaultMinSize(minHeight = 22.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -651,6 +679,34 @@ fun TaskCard(
                     )
                 }
             }
+        }
+    }
+}
+
+/** "Off" label shown on tasks that are turned off (and on group tasks the person turned off). */
+@Composable
+fun TurnedOffChip(modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.NotificationsOff,
+                contentDescription = stringResource(R.string.task_card_turned_off_description),
+                modifier = Modifier.size(13.dp)
+            )
+            Text(
+                text = stringResource(R.string.task_card_turned_off),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

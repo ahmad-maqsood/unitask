@@ -32,6 +32,11 @@ import android.content.Context
 import android.content.Intent
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.ToggleOff
+import androidx.compose.material.icons.filled.ToggleOn
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.alpha
+import com.example.Repositories
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -638,6 +643,9 @@ fun TimetableSlotCard(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
+    // Turned off: the class stays in the timetable but has no reminders (saved in the database).
+    val isSlotEnabled = slot.isEnabled
+    val slotScope = rememberCoroutineScope()
 
     val courseColor = rememberCourseColor(course?.colorHex)
 
@@ -648,6 +656,7 @@ fun TimetableSlotCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (isSlotEnabled) 1f else 0.6f)
             .testTag("timetable_slot_${slot.id}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -688,6 +697,10 @@ fun TimetableSlotCard(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
+                        }
+
+                        if (!isSlotEnabled) {
+                            TurnedOffChip(modifier = Modifier.testTag("timetable_slot_off_chip_${slot.id}"))
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -748,6 +761,24 @@ fun TimetableSlotCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (isSlotEnabled) R.string.timetable_turn_off_class else R.string.timetable_turn_on_class))
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    slotScope.launch {
+                                        Repositories.app(context).setLectureSlotEnabled(slot.id, !isSlotEnabled)
+                                    }
+                                },
+                                modifier = Modifier.testTag("timetable_slot_toggle_enabled_${slot.id}"),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isSlotEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.timetable_edit_class_slot)) },
                                 onClick = {

@@ -39,6 +39,9 @@ interface LectureSlotDao {
     @Update
     suspend fun updateSlot(slot: LectureSlot)
 
+    @Query("UPDATE lecture_slots SET isEnabled = :enabled, isSynced = 0 WHERE id = :id")
+    suspend fun updateEnabled(id: Long, enabled: Boolean)
+
     @Delete
     suspend fun deleteSlot(slot: LectureSlot)
 

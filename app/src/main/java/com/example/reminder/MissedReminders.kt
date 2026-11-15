@@ -158,8 +158,8 @@ object MissedReminders {
         val lines = mutableListOf<String>()
         for (taskId in missed.map { it.taskId }.distinct()) {
             val task = database.taskDao().getTaskById(taskId) ?: continue
-            if (task.status == TaskStatus.COMPLETED) continue
-            lines += "${task.title}: due ${DateFormats.shortDateAtClock(task.deadlineMillis)}"
+            if (task.status == TaskStatus.COMPLETED || !task.isEnabled) continue
+            lines +="${task.title}: due ${DateFormats.shortDateAtClock(task.deadlineMillis)}"
         }
         if (lines.isEmpty()) return
 

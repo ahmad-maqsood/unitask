@@ -86,5 +86,8 @@ data class GroupTaskEntry(
     val task: GroupTask,
     val groupName: String,
     val isDone: Boolean,
-    val groupCourses: List<GroupCourse> = emptyList()
+    val groupCourses: List<GroupCourse> = emptyList(),
+    // False when this member turned the task off on this phone (no reminders, not shown as overdue).
+    // Personal to this phone: other members and the server know nothing about it.
+    val isEnabled: Boolean = true
 )

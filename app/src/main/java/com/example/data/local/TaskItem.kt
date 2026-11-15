@@ -89,7 +89,10 @@ data class TaskItem(
     // "Delete when done": a one-time task with this on is removed after the day it was finished.
     // Saved on the phone and in the local backup only.
     val autoDeleteWhenDone: Boolean = false,
-    val deletedAt: Long = 0L
+    val deletedAt: Long = 0L,
+    // "Turned off": the task stays in the list but has no reminders, no alarm, no snooze and is not
+    // counted as overdue or due today. Turning it back on restores everything.
+    val isEnabled: Boolean = true
 )
 /**
  * The real deadline in milliseconds. `dueDateEpochMillis` keeps whatever clock time the date was

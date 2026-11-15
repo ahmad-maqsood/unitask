@@ -164,7 +164,7 @@ internal fun DeadlinesCalendarView(
                                 )
                                 val isSelected = cellEpoch == selectedDayEpoch
                                 val tasksOnDay = tasksByDay[cellEpoch] ?: emptyList()
-                                val hasOverdue = tasksOnDay.any { it.task.deadlineMillis < System.currentTimeMillis() && it.task.status != com.example.data.local.TaskStatus.COMPLETED }
+                                val hasOverdue = tasksOnDay.any { it.task.isEnabled && it.task.deadlineMillis < System.currentTimeMillis() && it.task.status != com.example.data.local.TaskStatus.COMPLETED }
 
                                 Surface(
                                     shape = CircleShape,

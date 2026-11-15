@@ -381,7 +381,7 @@ fun AnnouncementBell(
                                 } catch (_: Exception) {
                                     android.widget.Toast.makeText(
                                         context,
-                                        "No app can open this link",
+                                        context.getString(R.string.toast_no_app_can_open_this),
                                         android.widget.Toast.LENGTH_SHORT
                                     ).show()
                                 }

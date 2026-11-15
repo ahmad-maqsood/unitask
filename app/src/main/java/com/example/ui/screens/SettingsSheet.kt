@@ -569,7 +569,7 @@ fun SettingsButton(
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -590,7 +590,7 @@ fun SettingsButton(
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -615,7 +615,7 @@ fun SettingsButton(
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -640,7 +640,7 @@ fun SettingsButton(
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -683,7 +683,7 @@ fun SettingsButton(
                                                 try {
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
                                                 } catch (_: Exception) {
-                                                    Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                                 }
                                             },
                                             modifier = Modifier

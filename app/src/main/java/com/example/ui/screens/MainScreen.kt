@@ -434,7 +434,7 @@ fun MainScreen(
                     (context as? ComponentActivity)?.finish() ?: activity?.finish()
                 } else {
                     lastBackPressTime = now
-                    Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_press_back_again_to_exit), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -679,7 +679,7 @@ fun MainScreen(
                                         )
                                     )
                                 } catch (_: Exception) {
-                                    Toast.makeText(context, "No app can open this setting", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this_2), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }

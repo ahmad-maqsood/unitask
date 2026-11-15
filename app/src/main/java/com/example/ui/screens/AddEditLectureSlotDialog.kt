@@ -390,7 +390,7 @@ fun AddEditLectureSlotDialog(
                     if (endTotal <= startTotal) {
                         android.widget.Toast.makeText(
                             context,
-                            "End time must be after the start time",
+                            context.getString(R.string.toast_end_time_must_be_after),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button
@@ -398,7 +398,7 @@ fun AddEditLectureSlotDialog(
                     if (selectedCourseId <= 0) {
                         android.widget.Toast.makeText(
                             context,
-                            "Add a course first, then choose it for this class",
+                            context.getString(R.string.toast_add_a_course_first_then),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button

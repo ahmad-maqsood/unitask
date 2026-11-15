@@ -157,7 +157,7 @@ fun OnboardingScreen(
                 if (!started) {
                     Toast.makeText(
                         context,
-                        "Could not open that screen. Find UniTask in your phone's battery settings.",
+                        context.getString(R.string.toast_could_not_open_that_screen_2),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -172,7 +172,7 @@ fun OnboardingScreen(
                 if (!started) {
                     Toast.makeText(
                         context,
-                        "Could not open that screen. Find UniTask in your phone's app settings.",
+                        context.getString(R.string.toast_could_not_open_that_screen),
                         Toast.LENGTH_LONG
                     ).show()
                 }

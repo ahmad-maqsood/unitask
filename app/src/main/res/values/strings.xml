@@ -717,4 +717,21 @@
     <string name="tools_more">More</string>
     <!-- UpdatePrompt.kt -->
     <string name="update_prompt_what_s_new">What\'s new</string>
+    <!-- Toast messages -->
+    <string name="toast_end_time_must_be_after">End time must be after the start time</string>
+    <string name="toast_add_a_course_first_then">Add a course first, then choose it for this class</string>
+    <string name="toast_couldn_t_attach_that_file">Couldn\'t attach that file. The limit is 25 MB.</string>
+    <string name="toast_no_app_can_open_this">No app can open this link</string>
+    <string name="toast_could_not_open_that_screen">Could not open that screen. Find UniTask in your phone\'s app settings.</string>
+    <string name="toast_qr_code_detected_filled">QR code detected &amp; filled!</string>
+    <string name="toast_invite_filled_from_clipboard">Invite filled from clipboard!</string>
+    <string name="toast_no_valid_group_invite_in">No valid group invite in clipboard</string>
+    <string name="toast_clipboard_is_empty">Clipboard is empty</string>
+    <string name="toast_code_copied">Code copied!</string>
+    <string name="toast_join_code_copied">Join code copied!</string>
+    <string name="toast_press_back_again_to_exit">Press back again to exit</string>
+    <string name="toast_no_app_can_open_this_2">No app can open this setting</string>
+    <string name="toast_could_not_open_that_screen_2">Could not open that screen. Find UniTask in your phone\'s battery settings.</string>
+    <string name="toast_attachment_file_not_found_locally">Attachment file not found locally</string>
+    <string name="toast_no_app_available_to_open">No app available to open this file</string>
 </resources>

@@ -264,7 +264,7 @@ fun AddEditTaskDialog(
                 } else {
                     android.widget.Toast.makeText(
                         context,
-                        "Couldn't attach that file. The limit is 25 MB.",
+                        context.getString(R.string.toast_couldn_t_attach_that_file),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }

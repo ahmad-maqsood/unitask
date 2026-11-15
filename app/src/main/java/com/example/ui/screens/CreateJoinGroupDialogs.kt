@@ -213,7 +213,7 @@ fun JoinGroupDialog(
                     username = parsed.first
                     joinCode = parsed.second
                     errorMessage = null
-                    Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                 } else {
                     errorMessage = "QR code found, but invalid invite format."
                 }
@@ -234,7 +234,7 @@ fun JoinGroupDialog(
                         if (parsed != null) {
                             username = parsed.first
                             joinCode = parsed.second
-                            Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                         } else {
                             errorMessage = "QR code found, but invalid invite format."
                         }
@@ -302,12 +302,12 @@ fun JoinGroupDialog(
                             if (parsed != null) {
                                 username = parsed.first
                                 joinCode = parsed.second
-                                Toast.makeText(context, "Invite filled from clipboard!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.toast_invite_filled_from_clipboard), Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "No valid group invite in clipboard", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.toast_no_valid_group_invite_in), Toast.LENGTH_SHORT).show()
                             }
                         } else {
-                            Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_clipboard_is_empty), Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = !isLoading,
@@ -510,7 +510,7 @@ fun GroupQrCodeDialog(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Join Code", joinCode)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Code copied!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.toast_code_copied), Toast.LENGTH_SHORT).show()
                             }
                         ) {
                             Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.create_join_group_copy_join_code))
@@ -597,7 +597,7 @@ fun GroupCreatedSuccessDialog(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Join Code", joinCode)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.testTag("copy_created_join_code_button")
                         ) {
@@ -751,7 +751,7 @@ fun EditGroupDialog(
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         val clip = ClipData.newPlainText("Join Code", currentJoinCode)
                                         clipboard.setPrimaryClip(clip)
-                                        Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 enabled = currentJoinCode.isNotBlank() && !isLoading,

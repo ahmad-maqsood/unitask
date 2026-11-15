@@ -403,4 +403,15 @@
     <string name="group_task_row_tagged">Tagged: %1$s</string>
     <string name="group_task_row_not_on_your_deadlines">Not on your Deadlines</string>
     <string name="group_task_row_due_time">Due time</string>
+    <!-- GroupsTab.kt -->
+    <string name="groups_reconnecting">Reconnecting...</string>
+    <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
+    <string name="groups_collaborate_with_classmates_share">Collaborate with classmates, share assignments, and track group deadlines in real time.</string>
+    <string name="groups_create_a_group">Create a group</string>
+    <string name="groups_join_a_group">Join a group</string>
+    <string name="groups_no_groups_yet">No groups yet</string>
+    <string name="groups_create_a_new_group_for">Create a new group for your study team or join an existing group with a join code.</string>
+    <string name="groups_owner">Owner</string>
+    <string name="groups_member">Member</string>
+    <string name="groups_you_re_offline_showing_saved">You\'re offline. Showing saved data. Changes need internet.</string>
 </resources>

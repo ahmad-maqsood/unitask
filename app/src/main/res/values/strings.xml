@@ -252,4 +252,34 @@
     <string name="deadlines_calendar_view_next_month">Next month</string>
     <string name="deadlines_calendar_view_due_on">Due on %1$s (%2$s)</string>
     <string name="deadlines_calendar_view_no_deadlines_due_on_this">No deadlines due on this day.</string>
+    <!-- DeadlinesTab.kt -->
+    <string name="deadlines_class_schedule">Class Schedule</string>
+    <string name="deadlines_pending_tasks">Pending Tasks</string>
+    <string name="deadlines_due_today">Due today</string>
+    <string name="deadlines_showing">Showing: %1$s</string>
+    <string name="deadlines_clear_search">Clear search</string>
+    <string name="deadlines_group">Group</string>
+    <string name="deadlines_personal">Personal</string>
+    <string name="deadlines_all_courses">All Courses</string>
+    <string name="deadlines_deadlines_calendar">Deadlines Calendar</string>
+    <string name="deadlines_upcoming_deadlines">Upcoming Deadlines</string>
+    <string name="deadlines_switch_to_list_view">Switch to List View</string>
+    <string name="deadlines_switch_to_calendar_view">Switch to Calendar View</string>
+    <string name="deadlines_sort_tasks_currently">Sort tasks, currently %1$s</string>
+    <string name="deadlines_batch_select">Batch select</string>
+    <string name="deadlines_selected">%1$s selected</string>
+    <string name="deadlines_deselect">Deselect</string>
+    <string name="deadlines_all">All</string>
+    <string name="deadlines_close_batch_mode">Close batch mode</string>
+    <string name="deadlines_no_assignments_match_your_filters">No assignments match your filters</string>
+    <string name="deadlines_add_your_first_assignment">Add your first assignment</string>
+    <string name="deadlines_try_resetting_search_or_filters">Try resetting search or filters to see more assignments.</string>
+    <string name="deadlines_stay_on_top_of_your">Stay on top of your studies by adding your first assignment.</string>
+    <string name="deadlines_add_assignment">+ Add Assignment</string>
+    <string name="deadlines_add_your_first_assignment_2">+ Add Your First Assignment</string>
+    <string name="deadlines_overdue">Overdue</string>
+    <string name="deadlines_due_today_2">Due Today</string>
+    <string name="deadlines_due_tomorrow">Due Tomorrow</string>
+    <string name="deadlines_upcoming">Upcoming</string>
+    <string name="deadlines_completed">Completed</string>
 </resources>

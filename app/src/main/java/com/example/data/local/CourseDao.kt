@@ -91,9 +91,6 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE isDeleted = 0 AND archivedSemester != '' ORDER BY archivedSemester ASC, code ASC")
     suspend fun getArchivedCoursesSync(): List<Course>
 
-    @Query("SELECT * FROM courses WHERE isDeleted = 0 AND archivedSemester != '' ORDER BY archivedSemester ASC, code ASC")
-    fun observeArchivedCourses(): Flow<List<Course>>
-
     @Query("SELECT * FROM courses WHERE UPPER(TRIM(archivedSemester)) = UPPER(TRIM(:semesterName)) AND isDeleted = 0")
     suspend fun getCoursesForSemester(semesterName: String): List<Course>
 

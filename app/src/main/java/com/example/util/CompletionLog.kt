@@ -76,18 +76,6 @@ object CompletionLog {
         }
     }
 
-    /** Forgets the newest tick of a task, because the user marked it not done. Never throws. */
-    fun removeLatest(context: Context, taskId: Long) {
-        try {
-            synchronized(LOCK) {
-                val current = load(context)
-                val updated = withoutLatest(current, taskId)
-                if (updated.size != current.size) save(context, updated)
-            }
-        } catch (_: Exception) {
-        }
-    }
-
     /**
      * Forgets the tick of a task that was just marked not done. When the tick time is known, every
      * entry with that time goes (so a restored entry with no task goes too); otherwise the newest

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -522,7 +523,14 @@ private fun SearchOptionsDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = includeArchived,
+                            role = Role.Switch,
+                            onValueChange = onIncludeArchivedChange
+                        )
+                        .testTag("search_archived_switch"),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -531,14 +539,17 @@ private fun SearchOptionsDialog(
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
-                    Switch(
-                        checked = includeArchived,
-                        onCheckedChange = onIncludeArchivedChange,
-                        modifier = Modifier.testTag("search_archived_switch")
-                    )
+                    Switch(checked = includeArchived, onCheckedChange = null)
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = includeGuides,
+                            role = Role.Switch,
+                            onValueChange = onIncludeGuidesChange
+                        )
+                        .testTag("search_guides_switch"),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -547,11 +558,7 @@ private fun SearchOptionsDialog(
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
-                    Switch(
-                        checked = includeGuides,
-                        onCheckedChange = onIncludeGuidesChange,
-                        modifier = Modifier.testTag("search_guides_switch")
-                    )
+                    Switch(checked = includeGuides, onCheckedChange = null)
                 }
             }
         },

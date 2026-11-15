@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -715,7 +717,11 @@ fun MyTaskDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { autoDeleteWhenDone = !autoDeleteWhenDone }
+                            .toggleable(
+                                value = autoDeleteWhenDone,
+                                role = Role.Switch,
+                                onValueChange = { autoDeleteWhenDone = it }
+                            )
                             .testTag("my_task_auto_delete_row"),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -732,10 +738,7 @@ fun MyTaskDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Switch(
-                            checked = autoDeleteWhenDone,
-                            onCheckedChange = { autoDeleteWhenDone = it }
-                        )
+                        Switch(checked = autoDeleteWhenDone, onCheckedChange = null)
                     }
                 }
 

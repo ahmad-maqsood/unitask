@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import com.example.R
@@ -514,12 +516,7 @@ fun SettingsButton(
                                         title = stringResource(R.string.settings_class_start_notifications),
                                         subtitle = stringResource(if (classStartEnabled) R.string.settings_you_get_an_alert_10 else R.string.settings_off),
                                         onClick = { setClassStartEnabled(!classStartEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = classStartEnabled,
-                                                onCheckedChange = { setClassStartEnabled(it) }
-                                            )
-                                        },
+                                        switchChecked = classStartEnabled,
                                         testTag = "settings_class_start_row"
                                     )
                                     SettingsRow(
@@ -531,12 +528,7 @@ fun SettingsButton(
                                             "Off. Get one alert with today's classes and tasks"
                                         },
                                         onClick = { setSummaryEnabled(!summaryEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = summaryEnabled,
-                                                onCheckedChange = { setSummaryEnabled(it) }
-                                            )
-                                        },
+                                        switchChecked = summaryEnabled,
                                         testTag = "settings_daily_summary_row"
                                     )
                                     if (summaryEnabled) {
@@ -747,13 +739,21 @@ private fun SettingsRow(
     onClick: () -> Unit,
     testTag: String,
     trailing: (@Composable () -> Unit)? = null,
-    subtitleMaxLines: Int = Int.MAX_VALUE
+    subtitleMaxLines: Int = Int.MAX_VALUE,
+    // Set for an on/off row: the whole row is the switch and onClick flips it.
+    switchChecked: Boolean? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick, role = Role.Button)
+            .then(
+                if (switchChecked != null) {
+                    Modifier.toggleable(value = switchChecked, role = Role.Switch, onValueChange = { onClick() })
+                } else {
+                    Modifier.clickable(onClick = onClick, role = Role.Button)
+                }
+            )
             .padding(horizontal = 4.dp, vertical = 10.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically,
@@ -770,6 +770,7 @@ private fun SettingsRow(
                 overflow = if (subtitleMaxLines != Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
             )
         }
+        if (switchChecked != null) Switch(checked = switchChecked, onCheckedChange = null)
         if (trailing != null) trailing()
     }
 }
@@ -875,12 +876,12 @@ private fun SoundOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelect)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .padding(vertical = 2.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(selected = selected, onClick = onSelect)
+        RadioButton(selected = selected, onClick = null)
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         if (onPlay != null) {
             IconButton(onClick = onPlay) {

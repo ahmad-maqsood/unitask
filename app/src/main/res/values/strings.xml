@@ -287,4 +287,23 @@
     <string name="discard_changes_what_you_entered_has_not">What you entered has not been saved yet.</string>
     <string name="discard_changes_discard">Discard</string>
     <string name="discard_changes_keep_editing">Keep editing</string>
+    <!-- DriveBackupSection.kt -->
+    <string name="drive_backup_google_drive_backup">Google Drive backup</string>
+    <string name="drive_backup_unitask_saves_one_backup_in">UniTask saves one backup in a hidden folder of your Google Drive that only this app can see. It cannot see your other files. It includes courses, timetable, assignments with their attachments, My tasks, notes with pictures and your app settings.</string>
+    <string name="drive_backup_google_will_ask_you_to">Google will ask you to allow UniTask to use its own data in your Drive. That is only the hidden backup folder, nothing else.</string>
+    <string name="drive_backup_connect_google_drive">Connect Google Drive</string>
+    <string name="drive_backup_google_drive_access_was_lost">Google Drive access was lost.</string>
+    <string name="drive_backup_reconnect">Reconnect</string>
+    <string name="drive_backup_account">Account</string>
+    <string name="drive_backup_last_backup">Last backup</string>
+    <string name="drive_backup_restore_from_google_drive">Restore from Google Drive</string>
+    <string name="drive_backup_back_up_automatically">Back up automatically</string>
+    <string name="drive_backup_backs_up_shortly_after_you">Backs up shortly after you change something. Also checks once a day in the background.</string>
+    <string name="drive_backup_wi_fi_only">Wi-Fi only</string>
+    <string name="drive_backup_include_attachments">Include attachments</string>
+    <string name="drive_backup_attached_files_can_be_large">Attached files can be large. Pictures and documents of your assignments.</string>
+    <string name="drive_backup_disconnect">Disconnect</string>
+    <string name="drive_backup_your_app_has_no_data">Your app has no data. Backing up now would replace your Drive backup with an empty one.</string>
+    <string name="drive_backup_back_up_anyway">Back up anyway</string>
+    <string name="drive_backup_your_backup_stays_in_your">Your backup stays in your Google Drive. To delete it: Google Drive settings, Manage apps, UniTask, Delete hidden app data.</string>
 </resources>

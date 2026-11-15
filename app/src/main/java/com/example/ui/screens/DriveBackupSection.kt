@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -76,7 +78,7 @@ fun DriveBackupSection(
     ) {
         if (showHeading) {
             Text(
-                text = "Google Drive backup",
+                text = stringResource(R.string.drive_backup_google_drive_backup),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -84,9 +86,7 @@ fun DriveBackupSection(
         }
 
         Text(
-            text = "UniTask saves one backup in a hidden folder of your Google Drive that only this app can see. " +
-                "It cannot see your other files. It includes courses, timetable, assignments with their attachments, " +
-                "My tasks, notes with pictures and your app settings.",
+            text = stringResource(R.string.drive_backup_unitask_saves_one_backup_in),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -94,8 +94,7 @@ fun DriveBackupSection(
         when (val conn = state.connection) {
             is DriveConnectionState.NotConnected -> {
                 Text(
-                    text = "Google will ask you to allow UniTask to use its own data in your Drive. " +
-                        "That is only the hidden backup folder, nothing else.",
+                    text = stringResource(R.string.drive_backup_google_will_ask_you_to),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -106,14 +105,14 @@ fun DriveBackupSection(
                         .fillMaxWidth()
                         .testTag("drive_connect_button")
                 ) {
-                    Text("Connect Google Drive")
+                    Text(stringResource(R.string.drive_backup_connect_google_drive))
                 }
             }
 
             is DriveConnectionState.NeedsReconnect -> {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Google Drive access was lost.",
+                        text = stringResource(R.string.drive_backup_google_drive_access_was_lost),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -122,7 +121,7 @@ fun DriveBackupSection(
                         enabled = isNotBusy,
                         modifier = Modifier.testTag("drive_connect_button")
                     ) {
-                        Text("Reconnect")
+                        Text(stringResource(R.string.drive_backup_reconnect))
                     }
                 }
             }
@@ -143,7 +142,7 @@ fun DriveBackupSection(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Account",
+                            text = stringResource(R.string.drive_backup_account),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -179,7 +178,7 @@ fun DriveBackupSection(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Last backup",
+                            text = stringResource(R.string.drive_backup_last_backup),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -211,7 +210,7 @@ fun DriveBackupSection(
                             .fillMaxWidth()
                             .testTag("drive_backup_now_button")
                     ) {
-                        Text("Back up now")
+                        Text(stringResource(R.string.backup_reminder_card_back_up_now))
                     }
 
                     OutlinedButton(
@@ -221,7 +220,7 @@ fun DriveBackupSection(
                             .fillMaxWidth()
                             .testTag("drive_restore_button")
                     ) {
-                        Text("Restore from Google Drive")
+                        Text(stringResource(R.string.drive_backup_restore_from_google_drive))
                     }
                 }
 
@@ -229,8 +228,8 @@ fun DriveBackupSection(
 
                 // Switches
                 SettingsSwitchRow(
-                    title = "Back up automatically",
-                    subtitle = "Backs up shortly after you change something. Also checks once a day in the background.",
+                    title = stringResource(R.string.drive_backup_back_up_automatically),
+                    subtitle = stringResource(R.string.drive_backup_backs_up_shortly_after_you),
                     checked = state.autoEnabled,
                     enabled = isNotBusy,
                     onCheckedChange = { viewModel.setAuto(it) },
@@ -238,7 +237,7 @@ fun DriveBackupSection(
                 )
 
                 SettingsSwitchRow(
-                    title = "Wi-Fi only",
+                    title = stringResource(R.string.drive_backup_wi_fi_only),
                     subtitle = null,
                     checked = state.wifiOnly,
                     enabled = isNotBusy,
@@ -247,8 +246,8 @@ fun DriveBackupSection(
                 )
 
                 SettingsSwitchRow(
-                    title = "Include attachments",
-                    subtitle = "Attached files can be large. Pictures and documents of your assignments.",
+                    title = stringResource(R.string.drive_backup_include_attachments),
+                    subtitle = stringResource(R.string.drive_backup_attached_files_can_be_large),
                     checked = state.includeAttachments,
                     enabled = isNotBusy,
                     onCheckedChange = { viewModel.setIncludeAttachments(it) },
@@ -260,7 +259,7 @@ fun DriveBackupSection(
                     enabled = isNotBusy,
                     modifier = Modifier.testTag("drive_disconnect_button")
                 ) {
-                    Text("Disconnect")
+                    Text(stringResource(R.string.drive_backup_disconnect))
                 }
             }
         }
@@ -295,8 +294,8 @@ fun DriveBackupSection(
     if (showEmptyWarningDialog) {
         AlertDialog(
             onDismissRequest = { showEmptyWarningDialog = false },
-            title = { Text("Back up now") },
-            text = { Text("Your app has no data. Backing up now would replace your Drive backup with an empty one.") },
+            title = { Text(stringResource(R.string.backup_reminder_card_back_up_now)) },
+            text = { Text(stringResource(R.string.drive_backup_your_app_has_no_data)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -304,12 +303,12 @@ fun DriveBackupSection(
                         viewModel.backUpNow(allowEmpty = true)
                     }
                 ) {
-                    Text("Back up anyway")
+                    Text(stringResource(R.string.drive_backup_back_up_anyway))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEmptyWarningDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -320,9 +319,9 @@ fun DriveBackupSection(
     if (showDisconnectDialog) {
         AlertDialog(
             onDismissRequest = { showDisconnectDialog = false },
-            title = { Text("Disconnect") },
+            title = { Text(stringResource(R.string.drive_backup_disconnect)) },
             text = {
-                Text("Your backup stays in your Google Drive. To delete it: Google Drive settings, Manage apps, UniTask, Delete hidden app data.")
+                Text(stringResource(R.string.drive_backup_your_backup_stays_in_your))
             },
             confirmButton = {
                 TextButton(
@@ -331,12 +330,12 @@ fun DriveBackupSection(
                         viewModel.disconnect()
                     }
                 ) {
-                    Text("Disconnect")
+                    Text(stringResource(R.string.drive_backup_disconnect))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDisconnectDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )

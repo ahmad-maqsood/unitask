@@ -9,6 +9,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.stringResource
+import com.example.R
 
 /** "Discard your changes?" question, shown when a full-screen add or edit screen is closed with unsaved input. */
 @Composable
@@ -18,15 +20,15 @@ fun DiscardChangesDialog(
 ) {
     AlertDialog(
         onDismissRequest = onKeepEditing,
-        title = { Text("Discard changes?") },
-        text = { Text("What you entered has not been saved yet.") },
+        title = { Text(stringResource(R.string.discard_changes_discard_changes)) },
+        text = { Text(stringResource(R.string.discard_changes_what_you_entered_has_not)) },
         confirmButton = {
             TextButton(onClick = onDiscard) {
-                Text("Discard", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.discard_changes_discard), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
-            TextButton(onClick = onKeepEditing) { Text("Keep editing") }
+            TextButton(onClick = onKeepEditing) { Text(stringResource(R.string.discard_changes_keep_editing)) }
         }
     )
 }

@@ -282,4 +282,9 @@
     <string name="deadlines_due_tomorrow">Due Tomorrow</string>
     <string name="deadlines_upcoming">Upcoming</string>
     <string name="deadlines_completed">Completed</string>
+    <!-- DiscardChangesDialog.kt -->
+    <string name="discard_changes_discard_changes">Discard changes?</string>
+    <string name="discard_changes_what_you_entered_has_not">What you entered has not been saved yet.</string>
+    <string name="discard_changes_discard">Discard</string>
+    <string name="discard_changes_keep_editing">Keep editing</string>
 </resources>

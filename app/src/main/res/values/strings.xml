@@ -339,4 +339,13 @@
     <string name="get_started_card_show_all_steps">Show all steps</string>
     <string name="get_started_card_dismiss_get_started">Dismiss Get started</string>
     <string name="get_started_card_not_done_yet">Not done yet</string>
+    <!-- GroupCoursesSection.kt -->
+    <string name="group_courses_delete_course">Delete Course?</string>
+    <string name="group_courses_remove_from_group_courses_existing">Remove %1$s (%2$s) from group courses? Existing assignments will keep their label.</string>
+    <string name="group_courses_group_courses">Group Courses</string>
+    <string name="group_courses_no_courses_added_yet">No courses added yet</string>
+    <string name="group_courses_add_courses_for_your_class">Add courses for your class group (e.g. CS-503, MATH-240) so members can select them when creating assignments.</string>
+    <string name="group_courses_add_first_course">+ Add First Course</string>
+    <string name="group_courses_course_options">Course options</string>
+    <string name="group_courses_assignment">%1$s assignment%2$s</string>
 </resources>

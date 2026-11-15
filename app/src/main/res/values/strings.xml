@@ -446,4 +446,6 @@
     <string name="main_allow_exact_reminders">Allow exact reminders</string>
     <string name="main_tap_to_open_the_setting">Tap to open the setting. Without it, deadline alerts can arrive late.</string>
     <string name="main_overdue_tasks">%1$s, overdue tasks</string>
+    <!-- MarkdownPreview.kt -->
+    <string name="markdown_preview_image">Image: %1$s</string>
 </resources>

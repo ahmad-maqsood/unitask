@@ -109,4 +109,14 @@
     <string name="add_edit_task_attach_file">Attach file</string>
     <string name="add_edit_task_attached">%1$s attached</string>
     <string name="add_edit_task_remove_attachment">Remove attachment</string>
+    <!-- AnnouncementHost.kt -->
+    <string name="announcement_host_got_it">Got it</string>
+    <string name="announcement_host_notifications_and_announcements">Notifications and announcements</string>
+    <string name="announcement_host_update_available">Update available</string>
+    <string name="announcement_host_a_new_version_of_unitask">A new version (%1$s) of UniTask is available. You have %2$s.</string>
+    <string name="announcement_host_hide">Hide</string>
+    <string name="announcement_host_open_release_page">Open release page</string>
+    <string name="announcement_host_clear_all">Clear all</string>
+    <string name="announcement_host_remove_notification">Remove notification</string>
+    <string name="announcement_host_remove_announcement">Remove announcement</string>
 </resources>

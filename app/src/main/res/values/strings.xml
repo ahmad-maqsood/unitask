@@ -479,4 +479,35 @@
     <string name="my_tasks_save_task">Save task</string>
     <string name="my_tasks_collapse_done_section">Collapse Done section</string>
     <string name="my_tasks_expand_done_section">Expand Done section</string>
+    <!-- NoteEditorScreen.kt -->
+    <string name="common_undo">Undo</string>
+    <string name="note_editor_redo">Redo</string>
+    <string name="common_edit">Edit</string>
+    <string name="note_editor_preview">Preview</string>
+    <string name="note_editor_options">Options</string>
+    <string name="note_editor_unpin">Unpin</string>
+    <string name="note_editor_pin">Pin</string>
+    <string name="common_share">Share</string>
+    <string name="note_editor_save_to_device">Save to device</string>
+    <string name="note_editor_show_less">Show less</string>
+    <string name="note_editor_show_full_title">Show full title</string>
+    <string name="note_editor_linked_from">Linked from</string>
+    <string name="note_editor_title">Title</string>
+    <string name="note_editor_start_writing">Start writing</string>
+    <string name="note_editor_characters_left">%1$s characters left</string>
+    <string name="note_editor_heading">Heading</string>
+    <string name="note_editor_bold">Bold</string>
+    <string name="note_editor_italic">Italic</string>
+    <string name="note_editor_strikethrough">Strikethrough</string>
+    <string name="note_editor_bullet_list">Bullet list</string>
+    <string name="note_editor_numbered_list">Numbered list</string>
+    <string name="note_editor_quote">Quote</string>
+    <string name="note_editor_inline_code">Inline code</string>
+    <string name="note_editor_link">Link</string>
+    <string name="note_editor_table">Table</string>
+    <string name="note_editor_image">Image</string>
+    <string name="note_editor_share_as">Share as</string>
+    <string name="note_editor_save_as">Save as</string>
+    <string name="note_editor_creating_pdf">Creating PDF...</string>
+    <string name="note_editor_keep_screen_on">Keep screen on</string>
 </resources>

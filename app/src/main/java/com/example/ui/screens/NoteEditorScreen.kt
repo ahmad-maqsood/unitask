@@ -30,9 +30,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.layout.onSizeChanged
+import com.example.R
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import com.example.util.markdown.lineIndexAtOffset
@@ -492,7 +494,7 @@ fun NoteEditorScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = stringResource(R.string.common_back)
                     )
                 }
             },
@@ -505,7 +507,7 @@ fun NoteEditorScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "Undo"
+                            contentDescription = stringResource(R.string.common_undo)
                         )
                     }
                     IconButton(
@@ -515,7 +517,7 @@ fun NoteEditorScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Redo,
-                            contentDescription = "Redo"
+                            contentDescription = stringResource(R.string.note_editor_redo)
                         )
                     }
                 }
@@ -527,7 +529,7 @@ fun NoteEditorScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
+                        contentDescription = stringResource(R.string.common_edit),
                         tint = if (!isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
@@ -539,7 +541,7 @@ fun NoteEditorScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Visibility,
-                        contentDescription = "Preview",
+                        contentDescription = stringResource(R.string.note_editor_preview),
                         tint = if (isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
@@ -551,7 +553,7 @@ fun NoteEditorScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options"
+                            contentDescription = stringResource(R.string.note_editor_options)
                         )
                     }
 
@@ -560,7 +562,7 @@ fun NoteEditorScreen(
                         onDismissRequest = { showOverflowMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Find in note") },
+                            text = { Text(stringResource(R.string.find_in_note_find_in_note)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Search,
@@ -574,7 +576,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(if (viewModel.isPinned) "Unpin" else "Pin") },
+                            text = { Text(stringResource(if (viewModel.isPinned) R.string.note_editor_unpin else R.string.note_editor_pin)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.PushPin,
@@ -588,7 +590,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Share") },
+                            text = { Text(stringResource(R.string.common_share)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Share,
@@ -603,7 +605,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Save to device") },
+                            text = { Text(stringResource(R.string.note_editor_save_to_device)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Save,
@@ -618,7 +620,7 @@ fun NoteEditorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete") },
+                            text = { Text(stringResource(R.string.common_delete)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
@@ -746,7 +748,7 @@ fun NoteEditorScreen(
                                 )
                                 if (titleOverflows || titleExpanded) {
                                     Text(
-                                        text = if (titleExpanded) "Show less" else "Show full title",
+                                        text = stringResource(if (titleExpanded) R.string.note_editor_show_less else R.string.note_editor_show_full_title),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier
@@ -786,7 +788,7 @@ fun NoteEditorScreen(
                 if (backlinks.isNotEmpty()) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                         Text(
-                            text = "Linked from",
+                            text = stringResource(R.string.note_editor_linked_from),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -820,7 +822,7 @@ fun NoteEditorScreen(
                 onValueChange = { viewModel.updateTitle(it) },
                 placeholder = {
                     Text(
-                        text = "Title",
+                        text = stringResource(R.string.note_editor_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
@@ -876,7 +878,7 @@ fun NoteEditorScreen(
                                 Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                                     if (viewModel.bodyValue.text.isEmpty()) {
                                         Text(
-                                            text = "Start writing",
+                                            text = stringResource(R.string.note_editor_start_writing),
                                             style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                         )
@@ -958,7 +960,7 @@ fun NoteEditorScreen(
 
                 if (remainingBodyChars < 1000) {
                     Text(
-                        text = "$remainingBodyChars characters left",
+                        text = stringResource(R.string.note_editor_characters_left, remainingBodyChars),
                         style = MaterialTheme.typography.labelSmall,
                         color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -983,67 +985,67 @@ fun NoteEditorScreen(
                         onClick = { applyEditing { toggleLinePrefix(it, "## ") } },
                         modifier = Modifier.testTag("toolbar_heading")
                     ) {
-                        Icon(Icons.Default.Title, contentDescription = "Heading")
+                        Icon(Icons.Default.Title, contentDescription = stringResource(R.string.note_editor_heading))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleWrap(it, "**") } },
                         modifier = Modifier.testTag("toolbar_bold")
                     ) {
-                        Icon(Icons.Default.FormatBold, contentDescription = "Bold")
+                        Icon(Icons.Default.FormatBold, contentDescription = stringResource(R.string.note_editor_bold))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleWrap(it, "*") } },
                         modifier = Modifier.testTag("toolbar_italic")
                     ) {
-                        Icon(Icons.Default.FormatItalic, contentDescription = "Italic")
+                        Icon(Icons.Default.FormatItalic, contentDescription = stringResource(R.string.note_editor_italic))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleWrap(it, "~~") } },
                         modifier = Modifier.testTag("toolbar_strikethrough")
                     ) {
-                        Icon(Icons.Default.FormatStrikethrough, contentDescription = "Strikethrough")
+                        Icon(Icons.Default.FormatStrikethrough, contentDescription = stringResource(R.string.note_editor_strikethrough))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
                         modifier = Modifier.testTag("toolbar_bullet")
                     ) {
-                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Bullet list")
+                        Icon(Icons.Default.FormatListBulleted, contentDescription = stringResource(R.string.note_editor_bullet_list))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },
                         modifier = Modifier.testTag("toolbar_numbered")
                     ) {
-                        Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered list")
+                        Icon(Icons.Default.FormatListNumbered, contentDescription = stringResource(R.string.note_editor_numbered_list))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleLinePrefix(it, "- [ ] ") } },
                         modifier = Modifier.testTag("toolbar_checklist")
                     ) {
-                        Icon(Icons.Default.Checklist, contentDescription = "Checklist")
+                        Icon(Icons.Default.Checklist, contentDescription = stringResource(R.string.add_edit_task_checklist))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleLinePrefix(it, "> ") } },
                         modifier = Modifier.testTag("toolbar_quote")
                     ) {
-                        Icon(Icons.Default.FormatQuote, contentDescription = "Quote")
+                        Icon(Icons.Default.FormatQuote, contentDescription = stringResource(R.string.note_editor_quote))
                     }
                     IconButton(
                         onClick = { applyEditing { toggleWrap(it, "`") } },
                         modifier = Modifier.testTag("toolbar_code")
                     ) {
-                        Icon(Icons.Default.Code, contentDescription = "Inline code")
+                        Icon(Icons.Default.Code, contentDescription = stringResource(R.string.note_editor_inline_code))
                     }
                     IconButton(
                         onClick = { applyEditing { insertLink(it) } },
                         modifier = Modifier.testTag("toolbar_link")
                     ) {
-                        Icon(Icons.Default.Link, contentDescription = "Link")
+                        Icon(Icons.Default.Link, contentDescription = stringResource(R.string.note_editor_link))
                     }
                     IconButton(
                         onClick = { applyEditing { insertTable(it) } },
                         modifier = Modifier.testTag("toolbar_table")
                     ) {
-                        Icon(Icons.Default.TableChart, contentDescription = "Table")
+                        Icon(Icons.Default.TableChart, contentDescription = stringResource(R.string.note_editor_table))
                     }
                     IconButton(
                         onClick = {
@@ -1058,7 +1060,7 @@ fun NoteEditorScreen(
                         },
                         modifier = Modifier.testTag("toolbar_image")
                     ) {
-                        Icon(Icons.Default.Image, contentDescription = "Image")
+                        Icon(Icons.Default.Image, contentDescription = stringResource(R.string.note_editor_image))
                     }
                     if (isImportingImage) {
                         CircularProgressIndicator(
@@ -1075,7 +1077,7 @@ fun NoteEditorScreen(
 
     if (showShareDialog) {
         NoteExportDialog(
-            title = "Share as",
+            title = stringResource(R.string.note_editor_share_as),
             onPick = { format ->
                 showShareDialog = false
                 val currentTitle = viewModel.title
@@ -1103,7 +1105,7 @@ fun NoteEditorScreen(
 
     if (showSaveDialog) {
         NoteExportDialog(
-            title = "Save as",
+            title = stringResource(R.string.note_editor_save_as),
             onPick = { format ->
                 showSaveDialog = false
                 pendingSaveFormat = format.name
@@ -1118,14 +1120,14 @@ fun NoteEditorScreen(
         AlertDialog(
             onDismissRequest = {},
             confirmButton = {},
-            title = { Text("Please wait") },
+            title = { Text(stringResource(R.string.local_backup_please_wait)) },
             text = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    Text("Creating PDF...")
+                    Text(stringResource(R.string.note_editor_creating_pdf))
                 }
             }
         )
@@ -1153,7 +1155,7 @@ private fun KeepScreenOnRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Keep screen on",
+            text = stringResource(R.string.note_editor_keep_screen_on),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

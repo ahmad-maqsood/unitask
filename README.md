@@ -222,6 +222,8 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Fenced code blocks (for example ` ```kotlin `) get syntax highlighting.
   - Pinch with two fingers to change the text size. The size is remembered between notes.
   - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
+  - **Folders.** Group notes in coloured folders, move several notes at once, and share or save a folder as a zip of `.md` files. Deleting a folder keeps its notes.
+  - **Note links.** Type `[[` to link to another note. Tap a link in Preview to open it, and a Linked from row lists the notes that point to the one you are reading.
   - Autosave as you type with full undo and redo history in the editor.
   - Recently deleted notes are kept in the trash for 30 days before permanent deletion, with instant restore.
   - Share notes as plain text or export as `.md` or PDF files, and import `.md` or `.txt` files directly into Notes.

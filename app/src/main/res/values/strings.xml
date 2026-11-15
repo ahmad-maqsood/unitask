@@ -601,4 +601,37 @@
     <string name="search_include_app_guides">Include app guides</string>
     <string name="search_folder">Folder</string>
     <string name="search_learn_to_use_the_app">Learn to use the app</string>
+    <!-- SettingsSheet.kt -->
+    <string name="settings_settings">Settings</string>
+    <string name="settings_daily_summary_time">Daily summary time</string>
+    <string name="settings_sign_in_for_groups">Sign in for groups</string>
+    <string name="settings_general">General</string>
+    <string name="settings_notifications_reminders">Notifications &amp; reminders</string>
+    <string name="settings_backup_data">Backup &amp; data</string>
+    <string name="settings_google_drive_backup_and_backup">Google Drive backup and backup file</string>
+    <string name="settings_about_help">About &amp; help</string>
+    <string name="settings_accent_colour">Accent colour</string>
+    <string name="settings_this_week_is">This week is</string>
+    <string name="settings_choose_which_schedule_week_applies">Choose which schedule week applies to the current week.</string>
+    <string name="settings_notification_sound">Notification sound</string>
+    <string name="settings_background_alerts">Background alerts</string>
+    <string name="settings_battery_restrictions_are_off_tap">Battery restrictions are off. Tap to review.</string>
+    <string name="settings_tap_to_keep_alerts_reliable">Tap to keep alerts reliable</string>
+    <string name="settings_make_sure_reminders_reach_this">Make sure reminders reach this phone. Send a test.</string>
+    <string name="settings_class_start_notifications">Class start notifications</string>
+    <string name="settings_you_get_an_alert_10">You get an alert 10 minutes before and when each class starts</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_daily_summary">Daily summary</string>
+    <string name="settings_summary_time">Summary time</string>
+    <string name="settings_step_by_step_help_for">Step by step help for every feature</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_latest_release">Latest release</string>
+    <string name="settings_open_the_newest_version_on">Open the newest version on GitHub</string>
+    <string name="settings_opens_a_short_form_no">Opens a short form. No GitHub account needed</string>
+    <string name="settings_request_a_feature">Request a feature</string>
+    <string name="settings_tell_us_what_you_would">Tell us what you would like to see. Opens a short form</string>
+    <string name="settings_check_for_updates">Check for updates</string>
+    <string name="settings_open_github_to_download">Open GitHub to download</string>
+    <string name="settings_phone_default">Phone default</string>
+    <string name="settings_play">Play %1$s</string>
 </resources>

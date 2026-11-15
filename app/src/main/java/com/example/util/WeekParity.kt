@@ -114,6 +114,8 @@ fun isSlotActive(
     anchorMillis: Long? = WeekParity.inMemoryAnchorMillis,
     timeZone: TimeZone = TimeZone.getDefault()
 ): Boolean {
+    // A class that is turned off never counts: no reminders, not in today's classes, summary or widget.
+    if (!slot.isEnabled) return false
     if (anchorMillis == null || anchorMillis <= 0L) return true
     val slotType = weekTypeOf(slot)
     if (slotType == WeekType.ALL) return true

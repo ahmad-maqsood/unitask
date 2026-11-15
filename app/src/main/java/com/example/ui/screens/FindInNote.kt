@@ -27,11 +27,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.example.R
 
 /** Pure search logic for "Find in note", kept apart from the screen so it can be tested. */
 object NoteFind {
@@ -109,7 +111,7 @@ fun NoteFindBar(
             TextField(
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text("Find in note") },
+                placeholder = { Text(stringResource(R.string.find_in_note_find_in_note)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onNext() }),
@@ -137,17 +139,17 @@ fun NoteFindBar(
                 enabled = totalMatches > 0,
                 modifier = Modifier.testTag("note_find_previous")
             ) {
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Previous match")
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = stringResource(R.string.find_in_note_previous_match))
             }
             IconButton(
                 onClick = onNext,
                 enabled = totalMatches > 0,
                 modifier = Modifier.testTag("note_find_next")
             ) {
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Next match")
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.find_in_note_next_match))
             }
             IconButton(onClick = onClose, modifier = Modifier.testTag("note_find_close")) {
-                Icon(Icons.Default.Close, contentDescription = "Close find")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.find_in_note_close_find))
             }
         }
     }

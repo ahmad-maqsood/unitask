@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import java.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -179,8 +181,6 @@ fun DeadlinesTab(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val needsAutostart = remember { BackgroundAccess.needsAutostartStep() }
-    val getStartedSteps = remember(needsAutostart) { GetStartedLogic.requiredSteps(needsAutostart) }
     val hasCourse = remember(activeCourses) { activeCourses.any { !it.isDeleted && !it.isMyTasksCourse() } }
     val hasDeadline = remember(activeTasks) {
         activeTasks.any { !it.task.isDeleted && it.course?.isMyTasksCourse() != true }
@@ -202,7 +202,6 @@ fun DeadlinesTab(
         batteryOptimizationOff = remember(settingsRefresh) {
             BackgroundAccess.isIgnoringBatteryOptimizations(context)
         },
-        autostartDone = remember(settingsRefresh) { BackgroundAccess.isAutostartStepDone(context) },
         driveConnected = remember(settingsRefresh) {
             com.example.util.drive.DrivePrefs(context).isConnected
         }
@@ -216,7 +215,7 @@ fun DeadlinesTab(
     }
     val getStartedShown = getStartedDone.filterNot { it.isSystem }.toSet() +
         getStartedDetected.filter { it.isSystem }
-    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown, getStartedSteps)
+    val showGetStarted = !getStartedDismissed && !GetStartedLogic.isFinished(getStartedShown)
 
     // Reminder that the backup is old. Needs somewhere to send the person, so it is off when
     // the screen has no way to open the backup settings.
@@ -337,7 +336,6 @@ fun DeadlinesTab(
             item(key = "get_started_card") {
                 GetStartedCard(
                     done = getStartedShown,
-                    steps = getStartedSteps,
                     onStepClick = onGetStartedStepClick,
                     onDismiss = {
                         getStartedDismissed = true
@@ -352,7 +350,7 @@ fun DeadlinesTab(
         if (highlightedClassInfo.isNotEmpty()) {
             item(key = "highlighted_classes_header") {
                 Text(
-                    text = "Class Schedule",
+                    text = stringResource(R.string.deadlines_class_schedule),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -401,7 +399,7 @@ fun DeadlinesTab(
                 ) {
                     StatItem(
                         count = pendingCountStr,
-                        label = "Pending Tasks",
+                        label = stringResource(R.string.deadlines_pending_tasks),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
@@ -412,7 +410,7 @@ fun DeadlinesTab(
                     )
                     StatItem(
                         count = completedCountStr,
-                        label = "Done",
+                        label = stringResource(R.string.common_done),
                         color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.weight(1f)
                     )
@@ -423,7 +421,7 @@ fun DeadlinesTab(
                     )
                     StatItem(
                         count = dueTodayCountStr,
-                        label = "Due today",
+                        label = stringResource(R.string.deadlines_due_today),
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.weight(1f)
                     )
@@ -448,7 +446,7 @@ fun DeadlinesTab(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Showing: $searchQuery",
+                            text = stringResource(R.string.deadlines_showing, searchQuery),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             maxLines = 1,
@@ -461,7 +459,7 @@ fun DeadlinesTab(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear search",
+                                contentDescription = stringResource(R.string.deadlines_clear_search),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
@@ -511,7 +509,7 @@ fun DeadlinesTab(
                                 modifier = Modifier.size(16.dp)
                             )
                         },
-                        label = { Text("Group") },
+                        label = { Text(stringResource(R.string.deadlines_group)) },
                         modifier = Modifier.testTag("filter_source_group")
                     )
                 }
@@ -526,7 +524,7 @@ fun DeadlinesTab(
                                 modifier = Modifier.size(16.dp)
                             )
                         },
-                        label = { Text("Personal") },
+                        label = { Text(stringResource(R.string.deadlines_personal)) },
                         modifier = Modifier.testTag("filter_source_personal")
                     )
                 }
@@ -551,7 +549,7 @@ fun DeadlinesTab(
                                 .testTag("filter_course_all")
                         ) {
                             Text(
-                                text = "All Courses",
+                                text = stringResource(R.string.deadlines_all_courses),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -604,7 +602,7 @@ fun DeadlinesTab(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = if (isCalendarView) "Deadlines Calendar" else "Upcoming Deadlines",
+                        text = stringResource(if (isCalendarView) R.string.deadlines_deadlines_calendar else R.string.deadlines_upcoming_deadlines),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -624,7 +622,7 @@ fun DeadlinesTab(
                         ) {
                             Icon(
                                 imageVector = if (isCalendarView) Icons.Default.ViewList else Icons.Default.CalendarMonth,
-                                contentDescription = if (isCalendarView) "Switch to List View" else "Switch to Calendar View",
+                                contentDescription = stringResource(if (isCalendarView) R.string.deadlines_switch_to_list_view else R.string.deadlines_switch_to_calendar_view),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -640,7 +638,7 @@ fun DeadlinesTab(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Sort,
-                                        contentDescription = "Sort tasks, currently ${sortOption.label}",
+                                        contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, sortOption.label),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -678,7 +676,7 @@ fun DeadlinesTab(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Checklist,
-                                    contentDescription = "Batch select",
+                                    contentDescription = stringResource(R.string.deadlines_batch_select),
                                     tint = if (isBatchMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -702,7 +700,7 @@ fun DeadlinesTab(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "${selectedTaskIds.size} selected",
+                                text = stringResource(R.string.deadlines_selected, selectedTaskIds.size),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -721,7 +719,7 @@ fun DeadlinesTab(
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        if (selectedTaskIds.size == tasks.size) "Deselect" else "All",
+                                        stringResource(if (selectedTaskIds.size == tasks.size) R.string.deadlines_deselect else R.string.deadlines_all),
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
@@ -737,7 +735,7 @@ fun DeadlinesTab(
                                     enabled = selectedTaskIds.isNotEmpty(),
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Done", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.common_done), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 }
 
                                 TextButton(
@@ -748,7 +746,7 @@ fun DeadlinesTab(
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        "Delete",
+                                        stringResource(R.string.common_delete),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.error
                                     )
@@ -761,7 +759,7 @@ fun DeadlinesTab(
                                     },
                                     modifier = Modifier.size(48.dp)
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Close batch mode", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.deadlines_close_batch_mode), modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -828,10 +826,7 @@ fun DeadlinesTab(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null)
-                                "No assignments match your filters"
-                            else
-                                "Add your first assignment",
+                            text = stringResource(if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null) R.string.deadlines_no_assignments_match_your_filters else R.string.deadlines_add_your_first_assignment),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -840,10 +835,7 @@ fun DeadlinesTab(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null)
-                                "Try resetting search or filters to see more assignments."
-                            else
-                                "Stay on top of your studies by adding your first assignment.",
+                            text = stringResource(if (searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null) R.string.deadlines_try_resetting_search_or_filters else R.string.deadlines_stay_on_top_of_your),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -855,7 +847,7 @@ fun DeadlinesTab(
                             modifier = Modifier.testTag("empty_state_add_task_button")
                         ) {
                             val isFiltered = searchQuery.isNotEmpty() || statusFilter != null || courseFilter != null || sourceFilter != null
-                            Text(if (isFiltered) "+ Add Assignment" else "+ Add Your First Assignment")
+                            Text(stringResource(if (isFiltered) R.string.deadlines_add_assignment else R.string.deadlines_add_your_first_assignment_2))
                         }
                     }
                 }
@@ -864,7 +856,7 @@ fun DeadlinesTab(
             if (sections.overdue.isNotEmpty()) {
                 item(key = "section_header_overdue") {
                     SectionHeader(
-                        title = "Overdue",
+                        title = stringResource(R.string.deadlines_overdue),
                         count = sections.overdue.size,
                         isOverdue = true
                     )
@@ -892,7 +884,7 @@ fun DeadlinesTab(
             if (sections.today.isNotEmpty()) {
                 item(key = "section_header_today") {
                     SectionHeader(
-                        title = "Due Today",
+                        title = stringResource(R.string.deadlines_due_today_2),
                         count = sections.today.size
                     )
                 }
@@ -919,7 +911,7 @@ fun DeadlinesTab(
             if (sections.tomorrow.isNotEmpty()) {
                 item(key = "section_header_tomorrow") {
                     SectionHeader(
-                        title = "Due Tomorrow",
+                        title = stringResource(R.string.deadlines_due_tomorrow),
                         count = sections.tomorrow.size
                     )
                 }
@@ -946,7 +938,7 @@ fun DeadlinesTab(
             if (sections.later.isNotEmpty()) {
                 item(key = "section_header_later") {
                     SectionHeader(
-                        title = "Upcoming",
+                        title = stringResource(R.string.deadlines_upcoming),
                         count = sections.later.size
                     )
                 }
@@ -970,10 +962,37 @@ fun DeadlinesTab(
                 }
             }
 
+            if (sections.turnedOff.isNotEmpty()) {
+                item(key = "section_header_turned_off") {
+                    SectionHeader(
+                        title = stringResource(R.string.deadlines_turned_off),
+                        count = sections.turnedOff.size
+                    )
+                }
+                items(sections.turnedOff, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                    SelectableTaskCard(
+                        taskWithCourse = taskWithCourse,
+                        isBatchMode = isBatchMode,
+                        isSelected = taskWithCourse.task.id in selectedTaskIds,
+                        onToggleSelect = {
+                            if (taskWithCourse.task.id in selectedTaskIds) selectedTaskIds.remove(taskWithCourse.task.id)
+                            else selectedTaskIds.add(taskWithCourse.task.id)
+                        },
+                        onStatusCycle = onStatusCycle,
+                        onEditTask = onEditTask,
+                        onDeleteTask = handleCardDelete,
+                        onSwipeToggleDone = handleSwipeToggleDone,
+                        modifier = Modifier.animateItem(),
+                        groupEntry = groupEntries[taskWithCourse.task.id],
+                        onChecklistToggle = onChecklistToggle
+                    )
+                }
+            }
+
             if (sections.done.isNotEmpty()) {
                 item(key = "section_header_done") {
                     SectionHeader(
-                        title = "Completed",
+                        title = stringResource(R.string.deadlines_completed),
                         count = sections.done.size
                     )
                 }
@@ -1036,12 +1055,12 @@ fun DeadlinesTab(
                         showBatchDeleteConfirmDialog = false
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBatchDeleteConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )

@@ -21,8 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupTaskEntry
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
@@ -105,6 +107,14 @@ internal fun SelectableTaskCard(
         }
     }
 }
+
+/**
+ * Background of a task card while it is swiped to the right: green to mark it done, amber to take a
+ * finished task back. Deadlines and My tasks both use it, so the two always match.
+ */
+internal fun swipeToDoneColor(isDone: Boolean): Color =
+    if (isDone) Color(0xFFD97706) else Color(0xFF16A34A)
+
 /**
  * A task card you can swipe to the right to mark done (or not done).
  * Swiping left does nothing here: deleting stays behind the card's own delete button.
@@ -144,7 +154,7 @@ internal fun SwipeDoneTaskCard(
         backgroundContent = {
             val color by animateColorAsState(
                 targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
-                    if (isDone) Color(0xFFD97706) else Color(0xFF16A34A)
+                    swipeToDoneColor(isDone)
                 } else {
                     Color.Transparent
                 },
@@ -165,11 +175,11 @@ internal fun SwipeDoneTaskCard(
                     ) {
                         Icon(
                             imageVector = if (isDone) Icons.AutoMirrored.Filled.Undo else Icons.Default.Check,
-                            contentDescription = if (isDone) "Mark not done" else "Mark done",
+                            contentDescription = stringResource(if (isDone) R.string.deadline_task_cards_mark_not_done else R.string.deadline_task_cards_mark_done),
                             tint = Color.White
                         )
                         Text(
-                            text = if (isDone) "Not done" else "Done",
+                            text = stringResource(if (isDone) R.string.deadline_task_cards_not_done else R.string.common_done),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

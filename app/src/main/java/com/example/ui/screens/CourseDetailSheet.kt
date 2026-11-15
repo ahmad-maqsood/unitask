@@ -40,6 +40,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -124,7 +126,7 @@ fun CourseDetailSheet(
 
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
-            title = "Delete course?",
+            title = stringResource(R.string.course_card_delete_course),
             message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
             onConfirm = { onDeleteCourse(course) },
             onDismiss = { showDeleteConfirm = false }
@@ -136,8 +138,8 @@ fun CourseDetailSheet(
 
     slotPendingDelete?.let { slotToDelete ->
         ConfirmDeleteDialog(
-            title = "Delete class?",
-            message = "This class will be moved to Recently deleted. You can restore it from there.",
+            title = stringResource(R.string.course_detail_delete_class),
+            message = stringResource(R.string.course_detail_this_class_will_be_moved),
             onConfirm = {
                 onDeleteSlot(slotToDelete)
                 scope.launch {
@@ -168,7 +170,7 @@ fun CourseDetailSheet(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back to courses"
+                            contentDescription = stringResource(R.string.course_detail_back_to_courses)
                         )
                     }
                 },
@@ -177,7 +179,7 @@ fun CourseDetailSheet(
                         onClick = { onEditCourse(course) },
                         modifier = Modifier.testTag("course_detail_edit_button")
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Course")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.add_edit_course_edit_course))
                     }
                     IconButton(
                         onClick = { showDeleteConfirm = true },
@@ -185,7 +187,7 @@ fun CourseDetailSheet(
                     ) {
                         Icon(
                             Icons.Default.DeleteOutline,
-                            contentDescription = "Delete Course",
+                            contentDescription = stringResource(R.string.course_card_delete_course_2),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
@@ -297,7 +299,7 @@ fun CourseDetailSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "${courseWithCount.pendingTasksCount} pending tasks",
+                                    text = stringResource(R.string.course_detail_pending_tasks, courseWithCount.pendingTasksCount),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (courseWithCount.pendingTasksCount > 0) courseColor else MaterialTheme.colorScheme.onSurfaceVariant
@@ -332,7 +334,7 @@ fun CourseDetailSheet(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.size(8.dp))
-                                Text("Add Assignment to ${course.code}")
+                                Text(stringResource(R.string.course_detail_add_assignment_to, course.code))
                             }
                         }
                     }
@@ -368,7 +370,7 @@ fun CourseDetailSheet(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "Class Schedule (${slots.size})",
+                                    text = stringResource(R.string.course_detail_class_schedule, slots.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -381,14 +383,14 @@ fun CourseDetailSheet(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.size(4.dp))
-                                Text("+ Add Slot", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.course_detail_add_slot), style = MaterialTheme.typography.labelMedium)
                             }
                         }
 
                         if (slots.isEmpty()) {
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "No weekly lecture hours set for this course yet.",
+                                text = stringResource(R.string.course_detail_no_weekly_lecture_hours_set),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -477,7 +479,7 @@ fun CourseDetailSheet(
                                                 ) {
                                                     Icon(
                                                         Icons.Default.Edit,
-                                                        contentDescription = "Edit slot",
+                                                        contentDescription = stringResource(R.string.course_detail_edit_slot),
                                                         modifier = Modifier.size(16.dp),
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
@@ -485,7 +487,7 @@ fun CourseDetailSheet(
                                                 IconButton(onClick = { slotPendingDelete = slot }) {
                                                     Icon(
                                                         Icons.Default.DeleteOutline,
-                                                        contentDescription = "Delete slot",
+                                                        contentDescription = stringResource(R.string.course_detail_delete_slot),
                                                         modifier = Modifier.size(16.dp),
                                                         tint = MaterialTheme.colorScheme.error
                                                     )
@@ -503,7 +505,7 @@ fun CourseDetailSheet(
             // Section Header
             item(key = "assignments_header") {
                 Text(
-                    text = "Assignments (${tasks.size})",
+                    text = stringResource(R.string.course_detail_assignments, tasks.size),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -526,14 +528,14 @@ fun CourseDetailSheet(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "No assignments for ${course.code} yet!",
+                                text = stringResource(R.string.course_detail_no_assignments_for_yet, course.code),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Tap the button above to add homework, lab reports, or exams.",
+                                text = stringResource(R.string.course_detail_tap_the_button_above_to),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

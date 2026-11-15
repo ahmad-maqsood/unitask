@@ -12,6 +12,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Deploy to Firebase Hosting
@@ -19,7 +20,8 @@ jobs:
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
+          # Delete the key file when this step ends, even if the deploy fails.
+          trap 'rm -f "$RUNNER_TEMP/key.json"' EXIT
           printf '%s' "$FIREBASE_KEY" > "$RUNNER_TEMP/key.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/key.json"
           npx --yes firebase-tools@14 deploy --only hosting --project gen-lang-client-0196140574
-          rm -f "$RUNNER_TEMP/key.json"

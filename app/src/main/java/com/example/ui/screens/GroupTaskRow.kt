@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ToggleOff
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -37,15 +39,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupTask
+import com.example.reminder.GroupTaskOffStore
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.util.Calendar
 
 /**
@@ -69,10 +77,15 @@ fun GroupTaskRow(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    // "Turned off" is personal to this phone (see GroupTaskOffStore): no reminders for this member,
+    // nothing changes for the others, so every member can use it, not only those who may edit.
+    val context = LocalContext.current
+    val offKeys by GroupTaskOffStore.keysFlow(context).collectAsStateWithLifecycle()
+    val isEnabled = GroupTaskOffStore.keyOf(task.groupId, task.id) !in offKeys
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
-            title = "Delete task?",
-            message = "\"${task.title}\" will be deleted for everyone in the group.",
+            title = stringResource(R.string.group_task_row_delete_task),
+            message = stringResource(R.string.group_task_row_will_be_deleted_for_everyone, task.title),
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false }
         )
@@ -81,8 +94,8 @@ fun GroupTaskRow(
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
         formatDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
     }
-    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, isDone) {
-        if (isDone) {
+    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, isDone, isEnabled) {
+        if (isDone || !isEnabled) {
             false
         } else {
             val due = Calendar.getInstance().apply {
@@ -95,7 +108,7 @@ fun GroupTaskRow(
     }
 
     // The alarm only rings at a reminder time, so it needs a reminder and a task that is not done yet.
-    val showAlarmChip = task.priority == "HIGH" && !isDone &&
+    val showAlarmChip = isEnabled && task.priority == "HIGH" && !isDone &&
         com.example.reminder.GroupReminderScheduler.optionsFor(task).isNotEmpty()
     val hasBadge = !task.courseLabel.isNullOrBlank()
 
@@ -121,6 +134,7 @@ fun GroupTaskRow(
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDone) 0.dp else 2.dp),
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (isEnabled) 1f else 0.6f)
             .testTag("group_task_card_${task.id}")
     ) {
         Row(
@@ -170,7 +184,7 @@ fun GroupTaskRow(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Groups,
-                                        contentDescription = "Group task",
+                                        contentDescription = stringResource(R.string.current_next_class_card_group_task),
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Text(
@@ -188,27 +202,43 @@ fun GroupTaskRow(
                         }
                     }
 
-                    if (canModify) {
-                        Box {
-                            IconButton(
-                                onClick = { showMenu = true },
-                                modifier = Modifier
-                                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                                    .testTag("group_task_menu_${task.id}")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Task options",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                            ) {
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                .testTag("group_task_menu_${task.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.group_task_row_task_options),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (isEnabled) R.string.task_card_turn_off else R.string.task_card_turn_on))
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    GroupTaskOffStore.setOff(context, task.groupId, task.id, off = isEnabled)
+                                },
+                                modifier = Modifier.testTag("group_task_toggle_enabled_${task.id}"),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                            if (canModify) {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Task") },
+                                    text = { Text(stringResource(R.string.group_task_row_edit_task)) },
                                     onClick = {
                                         showMenu = false
                                         onEdit()
@@ -217,7 +247,7 @@ fun GroupTaskRow(
                                     leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.group_task_row_delete_task_2), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         showDeleteConfirm = true
@@ -258,6 +288,10 @@ fun GroupTaskRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    if (!isEnabled) {
+                        TurnedOffChip(modifier = Modifier.testTag("group_task_off_chip_${task.id}"))
+                    }
+
                     if (showAlarmChip) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -271,11 +305,11 @@ fun GroupTaskRow(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Alarm,
-                                    contentDescription = "Rings like an alarm",
+                                    contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "Alarm",
+                                    text = stringResource(R.string.group_task_row_alarm),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -300,7 +334,7 @@ fun GroupTaskRow(
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "Added by ${task.createdByName}",
+                                    text = stringResource(R.string.group_task_row_added_by, task.createdByName),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
@@ -316,7 +350,7 @@ fun GroupTaskRow(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                     ) {
                         Text(
-                            text = "Tagged: $tagText",
+                            text = stringResource(R.string.group_task_row_tagged, tagText),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             maxLines = 2,
@@ -329,7 +363,7 @@ fun GroupTaskRow(
                 if (notOnMyDeadlines) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Not on your Deadlines",
+                        text = stringResource(R.string.group_task_row_not_on_your_deadlines),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -350,7 +384,7 @@ fun GroupTaskRow(
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccessTime,
-                            contentDescription = "Due time",
+                            contentDescription = stringResource(R.string.group_task_row_due_time),
                             tint = if (isOverdue) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)

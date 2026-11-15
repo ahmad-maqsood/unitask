@@ -21,8 +21,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
 
@@ -53,19 +55,18 @@ fun UpdatePrompt() {
     update?.let { available ->
         AlertDialog(
             onDismissRequest = { update = null },
-            title = { Text("Update available") },
+            title = { Text(stringResource(R.string.announcement_host_update_available)) },
             text = {
                 val notes = available.notes
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(
-                        text = "A new version (${available.latestVersion}) of UniTask is available. " +
-                            "You have ${UpdateChecker.currentVersion(context)}."
+                        text = stringResource(R.string.announcement_host_a_new_version_of_unitask, available.latestVersion, UpdateChecker.currentVersion(context))
                     )
                     // The release description from GitHub. Missing when it could not be loaded.
                     if (!notes.isNullOrBlank()) {
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            text = "What's new",
+                            text = stringResource(R.string.update_prompt_what_s_new),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -90,10 +91,10 @@ fun UpdatePrompt() {
                         }
                     },
                     modifier = Modifier.testTag("update_prompt_open_button")
-                ) { Text("Open release page") }
+                ) { Text(stringResource(R.string.announcement_host_open_release_page)) }
             },
             dismissButton = {
-                TextButton(onClick = { update = null }) { Text("Later") }
+                TextButton(onClick = { update = null }) { Text(stringResource(R.string.backup_reminder_card_later)) }
             }
         )
     }

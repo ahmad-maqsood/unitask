@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.util.drive.DrivePrefs
 
 /**
@@ -88,7 +90,7 @@ fun DriveRestoreOfferCard(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Had UniTask on another phone?",
+                    text = stringResource(R.string.drive_restore_offer_card_had_unitask_on_another_phone),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -97,14 +99,13 @@ fun DriveRestoreOfferCard(
             }
 
             Text(
-                text = "Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.",
+                text = stringResource(R.string.drive_restore_offer_card_restore_your_courses_tasks_notes),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Text(
-                text = "UniTask can only open its own hidden backup folder. " +
-                    "It cannot see or change any of your other Google Drive files.",
+                text = stringResource(R.string.drive_migration_unitask_can_only_open_its),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -143,7 +144,7 @@ fun DriveRestoreOfferCard(
                         .fillMaxWidth()
                         .testTag("drive_offer_restore_button")
                 ) {
-                    Text("Restore from Google Drive")
+                    Text(stringResource(R.string.drive_backup_restore_from_google_drive))
                 }
 
                 TextButton(
@@ -156,7 +157,7 @@ fun DriveRestoreOfferCard(
                         .align(Alignment.End)
                         .testTag("drive_offer_dismiss_button")
                 ) {
-                    Text("Not now")
+                    Text(stringResource(R.string.background_setup_not_now))
                 }
             }
         }

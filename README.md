@@ -205,7 +205,8 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Each task can have multiple reminders and offline file attachments of up to 25 MB.
 - **Courses.** Modules, credit hours, instructors and colour tags, which timetable slots and assignments inherit.
 - **Repeating tasks.** Tasks can repeat daily, on weekdays, weekly, every two weeks, monthly or yearly. A completed repeating task moves to its next due date and its checklist is reset.
-- **Get started card.** A checklist on the Deadlines tab for new users: allow notifications, turn off battery optimization, enable auto-start, then add a course, a deadline, a reminder and a class, try the timer and back up. The three phone-setting steps are read live from the phone, so they un-tick if you turn the setting off again.
+- **Welcome screens.** On a first install, a short welcome and a setup page ask for notifications and battery optimization, with a Skip button. People who already use the app go straight to it.
+- **Get started card.** A checklist on the Deadlines tab for new users: allow notifications, turn off battery optimization, then add a course, a deadline, a reminder and a class, try the timer and back up. The two phone-setting steps are read live from the phone, so they un-tick if you turn the setting off again.
 - **My tasks.** A separate to-do list for items that are not coursework, with quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. One-time tasks can use **Delete when done**, which removes them the day after they are finished.
 
 ### Progress
@@ -221,6 +222,8 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Fenced code blocks (for example ` ```kotlin `) get syntax highlighting.
   - Pinch with two fingers to change the text size. The size is remembered between notes.
   - Fast search by title and content, filter by course, pin important notes and sort by updated date, created date or title.
+  - **Folders.** Group notes in coloured folders, move several notes at once, and share or save a folder as a zip of `.md` files. Deleting a folder keeps its notes.
+  - **Note links.** Type `[[` to link to another note. Tap a link in Preview to open it, and a Linked from row lists the notes that point to the one you are reading.
   - Autosave as you type with full undo and redo history in the editor.
   - Recently deleted notes are kept in the trash for 30 days before permanent deletion, with instant restore.
   - Share notes as plain text or export as `.md` or PDF files, and import `.md` or `.txt` files directly into Notes.
@@ -231,7 +234,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 
 ### Study timer
 
-- **Stopwatch, countdown and Pomodoro.** Track study sessions with a stopwatch, a 15, 25, 45 or 60-minute countdown (or a custom duration), or Pomodoro mode with focus rounds and short and long breaks you can adjust. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
+- **Stopwatch, countdown and Pomodoro.** Track study sessions with a stopwatch, a 15, 25, 45 or 60-minute countdown (or a custom duration), or Pomodoro mode with focus rounds and short and long breaks you can adjust. Pause and resume whenever needed, use a fullscreen landscape display, and keep the screen awake. In Pomodoro mode, toggles on the timer page choose whether each round ends with an alarm or a vibration only, and whether the next break or round starts by itself after 10 seconds. A notification alerts you when a countdown ends, even if UniTask is closed. The timer can keep running when you leave its screen, with an active indicator on the More button.
 
 ### Timetable
 
@@ -300,11 +303,12 @@ flowchart LR
 | UI | Kotlin, Jetpack Compose, Material 3 |
 | Home-screen widget | Jetpack Glance |
 | Local data | Room 2.8.5 with explicit migrations |
-| Cloud | Supabase (`supabase-kt` 3.8.0): Auth with Google sign-in, PostgREST and Realtime |
+| Cloud | Supabase (`supabase-kt` 3.9.0): Auth with Google sign-in, PostgREST and Realtime |
 | Networking | Ktor 3.6.1 |
 | Background work | `AlarmManager` for exact reminders, `WorkManager` for periodic sync and announcement polling |
-| Build | Android Gradle Plugin 9.5.0, Gradle 9.8.2 (Kotlin DSL), version catalog, KSP, minimum SDK 24, target SDK 36 |
-| Continuous integration | GitHub Actions builds the signed release APK, runs tests and lint, and scans the code with CodeQL |
+| Build | Android Gradle Plugin 9.5.1, Gradle 9.9.0 (Kotlin DSL), version catalog, KSP, minimum SDK 24, target SDK 36 |
+| Website | Firebase Hosting serves the privacy policy, terms and the group invite page (`unitask-site/`), deployed by GitHub Actions |
+| Continuous integration | GitHub Actions builds the signed release APK, runs unit tests, lint and instrumented UI tests, and scans the code with CodeQL, mobsfscan and OpenSSF Scorecard |
 
 ### Synchronisation
 
@@ -337,8 +341,10 @@ app/src/main/java/com/example/
     markdown/      Markdown helpers and code highlighter
     timer/         Stopwatch, countdown and Pomodoro timer
 app/schemas/       Room database schema files, one per version, read by the migration test
+unitask-site/      Website on Firebase Hosting: privacy, terms and the group invite page
 supabase/          schema.sql, a reference copy of the live database
-.github/workflows/ Release APK build, tests, CodeQL and a Supabase keep-alive ping
+.github/workflows/ Release APK build, unit and UI tests, CodeQL, mobsfscan, Scorecard,
+                   website deploy, docs and screenshot refresh, Supabase keep-alive ping
 ```
 
 </details>
@@ -347,14 +353,14 @@ supabase/          schema.sql, a reference copy of the live database
 
 Some phone manufacturers aggressively stop background applications. If reminders arrive late or not at all:
 
-1. Allow **Autostart** for UniTask, if your phone offers the option.
-2. Set battery usage to **No restrictions**.
-3. Allow background activity and exact alarms if Android asks.
-4. Confirm that notifications are enabled for UniTask.
-5. Open **Settings, Check reminders**. It shows what is wrong, fixes it with one tap and can send a test reminder.
+1. Set battery usage to **No restrictions**.
+2. Allow background activity and exact alarms if Android asks.
+3. Confirm that notifications are enabled for UniTask.
+4. Open **Settings, Check reminders**. It shows what is wrong, fixes it with one tap and can send a test reminder.
+5. If reminders still arrive late, try turning on **Autostart** (some phones call it Auto-launch) for UniTask in your phone's settings, if your phone has that option. Many phones do not, and UniTask does not ask for it.
 
 > [!TIP]
-> The in-app **Background setup** guide in Settings walks through these steps. Menu names differ between manufacturers.
+> The in-app **Background setup** in Settings opens the battery setting for you. Menu names differ between manufacturers.
 
 ## Privacy and permissions
 

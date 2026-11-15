@@ -41,10 +41,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.local.ringsAlarm
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.TaskWithCourse
@@ -126,7 +128,7 @@ fun CurrentNextClassCard(
                             modifier = Modifier.size(8.dp)
                         ) {}
                         ShrinkToFitText(
-                            text = if (classInfo.isActiveNow) "CURRENT CLASS IN PROGRESS" else "NEXT UPCOMING CLASS",
+                            text = stringResource(if (classInfo.isActiveNow) R.string.current_next_class_card_current_class_in_progress else R.string.current_next_class_card_next_upcoming_class),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
@@ -344,7 +346,7 @@ fun CurrentNextClassCard(
                                                 if (isGroupTaskItem(taskWithCourse.task)) {
                                                     Icon(
                                                         imageVector = Icons.Default.Groups,
-                                                        contentDescription = "Group task",
+                                                        contentDescription = stringResource(R.string.current_next_class_card_group_task),
                                                         tint = courseColor,
                                                         modifier = Modifier
                                                             .size(22.dp)
@@ -389,7 +391,7 @@ fun CurrentNextClassCard(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 ShrinkToFitText(
-                                    text = "No pending assignments",
+                                    text = stringResource(R.string.current_next_class_card_no_pending_assignments),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,

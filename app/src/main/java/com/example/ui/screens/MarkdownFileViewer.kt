@@ -35,10 +35,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.repository.NoteRepository
 import com.example.util.NoteShare
 import kotlinx.coroutines.launch
@@ -90,7 +92,7 @@ fun MarkdownFileViewer(
                     IconButton(onClick = onClose) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 },
@@ -176,7 +178,7 @@ fun MarkdownFileViewer(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = onClose) {
-                            Text("Close")
+                            Text(stringResource(R.string.common_close))
                         }
                     }
                 }

@@ -39,6 +39,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Surface
@@ -254,7 +256,7 @@ fun GroupsTab(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Reconnecting...",
+                                    text = stringResource(R.string.groups_reconnecting),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -382,14 +384,14 @@ fun NotSignedInState(onOpenCloudSheet: () -> Unit) {
                 }
 
                 Text(
-                    text = "Sign in with Google to use groups",
+                    text = stringResource(R.string.groups_sign_in_with_google_to),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
-                    text = "Collaborate with classmates, share assignments, and track group deadlines in real time.",
+                    text = stringResource(R.string.groups_collaborate_with_classmates_share),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -403,7 +405,7 @@ fun NotSignedInState(onOpenCloudSheet: () -> Unit) {
                 ) {
                     Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(8.dp))
-                    Text("Sign in with Google")
+                    Text(stringResource(R.string.cloud_backup_sign_in_with_google))
                 }
             }
         }
@@ -441,7 +443,7 @@ fun GroupsListScreen(
             ) {
                 Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Create a group", maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(stringResource(R.string.groups_create_a_group), maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
 
             FilledTonalButton(
@@ -454,7 +456,7 @@ fun GroupsListScreen(
             ) {
                 Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Join a group", maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(stringResource(R.string.groups_join_a_group), maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
 
@@ -483,13 +485,13 @@ fun GroupsListScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                     Text(
-                        text = "No groups yet",
+                        text = stringResource(R.string.groups_no_groups_yet),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Create a new group for your study team or join an existing group with a join code.",
+                        text = stringResource(R.string.groups_create_a_new_group_for),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -578,7 +580,7 @@ fun GroupCardItem(
                     color = if (isOwner) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Text(
-                        text = if (isOwner) "Owner" else "Member",
+                        text = stringResource(if (isOwner) R.string.groups_owner else R.string.groups_member),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isOwner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -598,7 +600,7 @@ private fun OfflineBanner() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "You're offline. Showing saved data. Changes need internet.",
+            text = stringResource(R.string.groups_you_re_offline_showing_saved),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)

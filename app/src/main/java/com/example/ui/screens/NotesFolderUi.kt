@@ -10,9 +10,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.example.R
 import com.example.ui.theme.CourseColors
 import com.example.ui.theme.courseColorName
 import com.example.ui.theme.parseCourseColorOrNull
@@ -75,7 +77,7 @@ fun FolderNameDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(NoteRepository.MAX_FOLDER_NAME) },
-                    label = { Text("Folder name") },
+                    label = { Text(stringResource(R.string.notes_folder_ui_folder_name)) },
                     singleLine = true,
                     isError = error != null,
                     supportingText = { if (error != null) Text(error) },
@@ -84,7 +86,7 @@ fun FolderNameDialog(
                         .testTag("folder_name_input")
                 )
                 Text(
-                    text = "Colour",
+                    text = stringResource(R.string.notes_folder_ui_colour),
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -104,7 +106,7 @@ fun FolderNameDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -190,7 +192,7 @@ fun MoveToFolderDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 FolderPickRow(
-                    label = "No folder",
+                    label = stringResource(R.string.notes_folder_ui_no_folder),
                     colorHex = "",
                     count = folderCounts[null] ?: 0,
                     modifier = Modifier.testTag("move_to_no_folder"),
@@ -208,7 +210,7 @@ fun MoveToFolderDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onNewFolder)
+                        .clickable(onClick = onNewFolder, role = Role.Button)
                         .padding(vertical = 12.dp)
                         .testTag("move_to_new_folder"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -221,7 +223,7 @@ fun MoveToFolderDialog(
                         modifier = Modifier.size(22.dp)
                     )
                     Text(
-                        text = "New folder",
+                        text = stringResource(R.string.notes_folder_ui_new_folder),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
@@ -231,7 +233,7 @@ fun MoveToFolderDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -247,7 +249,7 @@ private fun FolderPickRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, role = Role.Button)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -283,7 +285,7 @@ fun DeleteFolderDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete folder?") },
+        title = { Text(stringResource(R.string.notes_folder_ui_delete_folder)) },
         text = {
             Text(
                 if (noteCount == 0) {
@@ -300,11 +302,11 @@ fun DeleteFolderDialog(
                 onClick = onConfirm,
                 modifier = Modifier.testTag("delete_folder_confirm")
             ) {
-                Text("Delete folder", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.notes_folder_ui_delete_folder_2), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

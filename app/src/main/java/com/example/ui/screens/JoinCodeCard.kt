@@ -24,10 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 
 @Composable
 internal fun JoinCodeCard(
@@ -51,7 +53,7 @@ internal fun JoinCodeCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Group Join Code",
+                    text = stringResource(R.string.join_code_card_group_join_code),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                 )
@@ -75,7 +77,7 @@ internal fun JoinCodeCard(
                     },
                     modifier = Modifier.testTag("copy_join_code_button")
                 ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy join code")
+                    Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.create_join_group_copy_join_code))
                 }
 
                 IconButton(
@@ -91,7 +93,7 @@ internal fun JoinCodeCard(
                     },
                     modifier = Modifier.testTag("share_join_code_button")
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = "Share join code")
+                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.join_code_card_share_join_code))
                 }
             }
         }

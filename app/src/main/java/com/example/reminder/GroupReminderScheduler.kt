@@ -57,9 +57,12 @@ class GroupReminderScheduler(private val context: Context) {
     fun sync(groupId: String, groupLabel: String, tasks: List<GroupTask>, doneIds: Set<String>) {
         val now = System.currentTimeMillis()
         val wanted = HashSet<String>()
+        // Tasks the person turned off on this phone get no alarms, like a task that is done.
+        val turnedOff = GroupTaskOffStore.keys(context)
 
         for (task in tasks) {
             if (task.id in doneIds) continue
+            if (GroupTaskOffStore.keyOf(groupId, task.id) in turnedOff) continue
             val deadline = deadlineMillis(task)
             // With the date, like personal reminders: "1 day before" fires on another day.
             val dueInfo = "Due " + com.example.util.DateFormats.shortDateAtClock(deadline)
@@ -85,7 +88,10 @@ class GroupReminderScheduler(private val context: Context) {
         }
 
         // A snoozed reminder must not outlive its task (deleted, or done on another phone).
-        val openTaskIds = tasks.filter { it.id !in doneIds }.map { it.id }.toSet()
+        val openTaskIds = tasks
+            .filter { it.id !in doneIds && GroupTaskOffStore.keyOf(groupId, it.id) !in turnedOff }
+            .map { it.id }
+            .toSet()
         SnoozeStore.entries(context)
             .filter { it.groupId == groupId && it.groupTaskId !in openTaskIds }
             .forEach { SnoozeStore.clear(context, it.key, cancelAlarm = true) }

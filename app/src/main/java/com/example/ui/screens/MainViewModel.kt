@@ -34,6 +34,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
 import com.example.reminder.GroupReminderScheduler
+import com.example.reminder.GroupTaskOffStore
 import com.example.reminder.GroupTaskProcessor
 import com.example.reminder.ReminderScheduler
 import com.example.reminder.ClassReminderScheduler
@@ -478,7 +479,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         // 1) Alarms always follow the saved data, also after a done tick made offline.
         viewModelScope.launch(Dispatchers.IO) {
-            groupsState.filterNotNull().collect { state ->
+            // Also follows the group tasks the person turns off or on, so their alarms go or come back at once.
+            combine(groupsState.filterNotNull(), GroupTaskOffStore.keysFlow(application)) { state, _ -> state }.collect { state ->
                 val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(application)
                 if (uid == null) groupTaskProcessor.clearAll()
                 else groupTaskProcessor.process(uid, state, isFromCache = true)
@@ -513,9 +515,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val groupEntries: StateFlow<List<GroupTaskEntry>> = groupsState.map { state ->
+    private val groupEntries: StateFlow<List<GroupTaskEntry>> = combine(
+        groupsState,
+        GroupTaskOffStore.keysFlow(application)
+    ) { state, turnedOff ->
         state?.loaded.orEmpty().flatMap { snapshot ->
-            snapshot.tasks.map { GroupTaskEntry(it, snapshot.groupName, it.id in snapshot.done, snapshot.courses) }
+            snapshot.tasks.map {
+                GroupTaskEntry(
+                    task = it,
+                    groupName = snapshot.groupName,
+                    isDone = it.id in snapshot.done,
+                    groupCourses = snapshot.courses,
+                    isEnabled = GroupTaskOffStore.keyOf(snapshot.groupId, it.id) !in turnedOff
+                )
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -760,7 +773,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Quick stats
     val pendingCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->
-        tasks.count { it.task.status != TaskStatus.COMPLETED }
+        tasks.count { it.task.status != TaskStatus.COMPLETED && it.task.isEnabled }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val completedCount: StateFlow<Int> = allDeadlineTasks.map { tasks ->

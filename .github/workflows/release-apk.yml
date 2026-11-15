@@ -17,11 +17,13 @@ on:
         default: false
 
 # Keep workflow-wide permissions read-only. Grant write access only to the build job.
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     permissions:
       contents: write
       pull-requests: write
@@ -87,6 +89,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-3.1-flash-lite
           NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
         run: |
           if [ "${{ inputs.prepare_release }}" = "true" ]; then
             TAG="v$NAME"
@@ -114,6 +117,18 @@ jobs:
             fi
           fi
           BASE_TAG=$(python3 .github/scripts/release_notes.py select-base --repo "$GITHUB_REPOSITORY" --version "$NAME")
+          # Android refuses to install an update whose versionCode is lower than the installed one,
+          # and the in-app update check only reads the tag. So a forgotten bump must stop the release.
+          BASE_CODE=$(gh api "repos/$GITHUB_REPOSITORY/contents/app/build.gradle.kts?ref=$BASE_TAG" --jq .content 2>/dev/null \
+            | base64 -d 2>/dev/null | grep -oP 'versionCode\s*=\s*\K[0-9]+' | head -1 || true)
+          if [ -z "$BASE_CODE" ]; then
+            echo "::warning::Could not read versionCode at $BASE_TAG, so the versionCode check was skipped."
+          elif [ "$CODE" -lt "$BASE_CODE" ]; then
+            echo "::error::versionCode $CODE is lower than $BASE_CODE in $BASE_TAG. Phones will refuse this update. Raise versionCode in app/build.gradle.kts."
+            exit 1
+          elif [ "$CODE" -eq "$BASE_CODE" ]; then
+            echo "::warning::versionCode $CODE is the same as in $BASE_TAG. Raise it unless this is meant to replace that build."
+          fi
           if [ "${{ inputs.test_release_notes }}" = "true" ]; then
             echo "### AI release-notes test" >> "$GITHUB_STEP_SUMMARY"
             echo "Comparing current workflow branch ($GITHUB_SHA) against latest published release $BASE_TAG." >> "$GITHUB_STEP_SUMMARY"
@@ -147,7 +162,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle 9.8.2
+      - name: Set up Gradle
         if: ${{ !inputs.test_release_notes }}
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
@@ -194,6 +209,30 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      # Phones only accept an update that is signed with the same key as the installed app. If the
+      # KEYSTORE_BASE64 secret ever holds a different keystore, stop here instead of publishing an
+      # APK nobody can update to. The value below is the public SHA-256 fingerprint of the signing
+      # certificate (the "certificate SHA-256 digest" line printed by apksigner verify --print-certs).
+      # Change it only if you deliberately switch to a new signing key.
+      - name: Check the APK is signed with the expected key
+        if: ${{ !inputs.test_release_notes }}
+        env:
+          EXPECTED_CERT_SHA256: f000bcf3c12e6ed4764b30765f6d58e083f163b1c2ba997f35f6a03e3468b818
+        run: |
+          APKSIGNER=$(ls -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found in the Android SDK on this runner, so the signing key could not be checked."
+            exit 1
+          fi
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          "$APKSIGNER" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-certs.txt"
+          ACTUAL=$(grep -m1 'certificate SHA-256 digest' "$RUNNER_TEMP/apk-certs.txt" | sed 's/.*: *//' | tr -d ': ' | tr 'A-F' 'a-f')
+          if [ "$ACTUAL" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::The APK is signed with a different key (SHA-256 ${ACTUAL:-unknown}) than expected ($EXPECTED_CERT_SHA256). Existing installs would refuse this update. Check the KEYSTORE_BASE64, STORE_PASSWORD and KEY_PASSWORD secrets."
+            exit 1
+          fi
+          echo "Signing certificate SHA-256: $ACTUAL (matches the expected key)." >> "$GITHUB_STEP_SUMMARY"
+
       # Generate signed SLSA build provenance for the exact APK produced above.
       - name: Attest release APK
         if: ${{ !inputs.test_release_notes }}
@@ -227,6 +266,7 @@ jobs:
           name: unitask-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
           path: |
             app/build/outputs/apk/release/*.apk
+            app/build/outputs/mapping/release/mapping.txt
             ${{ runner.temp }}/UniTask-${{ steps.version.outputs.name }}.apk.intoto.jsonl
           retention-days: 14
 
@@ -240,12 +280,21 @@ jobs:
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           PROVENANCE="$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
           cp "$APK" "$RUNNER_TEMP/UniTask-$NAME.apk"
+          # The R8 mapping file turns the obfuscated names in a crash log back into readable ones
+          # (retrace mapping.txt crash.txt). It is attached to the release so it is never lost.
+          MAPPING_SRC="app/build/outputs/mapping/release/mapping.txt"
+          if [ ! -s "$MAPPING_SRC" ]; then
+            echo "::error::The R8 mapping file was not produced at $MAPPING_SRC."
+            exit 1
+          fi
+          MAPPING="$RUNNER_TEMP/UniTask-$NAME-mapping.txt"
+          cp "$MAPPING_SRC" "$MAPPING"
           FLAGS="--draft"
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
-          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" \
+          gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" "$MAPPING" \
             --target "$GITHUB_SHA" --title "UniTask $NAME" \
             --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
-          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance and the R8 mapping file." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create CHANGELOG pull request
         if: ${{ inputs.prepare_release }}

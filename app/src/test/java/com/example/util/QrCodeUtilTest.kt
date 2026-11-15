@@ -44,25 +44,6 @@ class QrCodeUtilTest {
         assertEquals("ABCD1234", parsed?.second)
     }
 
-    @Test
-    fun testParseGroupInvite_acceptsLinksMadeBeforeTheMove() {
-        val parsed = QrCodeUtil.parseGroupInvite(
-            "https://ahmad-maqsood.github.io/unitask/join/?username=alice&code=ABCD1234"
-        )
-        assertNotNull(parsed)
-        assertEquals("alice", parsed?.first)
-        assertEquals("ABCD1234", parsed?.second)
-    }
-    
-    @Test
-    fun testParseGroupInvite_acceptsGitHubPagesLinksFromTheOrganization() {
-        val parsed = QrCodeUtil.parseGroupInvite(
-            "https://condalabs.github.io/unitask/join/?username=alice&code=ABCD1234"
-        )
-        assertNotNull(parsed)
-        assertEquals("alice", parsed?.first)
-        assertEquals("ABCD1234", parsed?.second)
-    }
     
     @Test
     fun testParseGroupInvite_fallbackRegex() {

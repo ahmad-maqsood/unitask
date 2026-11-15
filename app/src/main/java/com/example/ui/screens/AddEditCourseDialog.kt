@@ -22,9 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.example.R
 import com.example.ui.theme.courseColorName
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -105,7 +107,7 @@ fun AddEditCourseDialog(
         onDismissRequest = { discardGuard.request() },
         title = {
             Text(
-                text = if (courseToEdit != null) "Edit Course" else "Add New Course",
+                text = stringResource(if (courseToEdit != null) R.string.add_edit_course_edit_course else R.string.add_edit_course_add_new_course),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -127,18 +129,18 @@ fun AddEditCourseDialog(
                         onClearDuplicateError()
                     },
 
-                    label = { Text("Course Code *") },
-                    placeholder = { Text("e.g. CS 301, MATH 240") },
+                    label = { Text(stringResource(R.string.add_edit_course_course_code)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_course_e_g_cs_301_math)) },
                     isError = codeError || reservedCodeError || duplicateError != null || activeArchivedConflict != null,
                     supportingText = when {
-                        codeError -> { { Text("Course code is required") } }
-                        reservedCodeError -> { { Text("This code is reserved") } }
+                        codeError -> { { Text(stringResource(R.string.add_edit_course_course_code_is_required)) } }
+                        reservedCodeError -> { { Text(stringResource(R.string.add_edit_course_this_code_is_reserved)) } }
                         duplicateError != null -> { { Text(duplicateError) } }
                         activeArchivedConflict != null -> {
                             {
                                 Column(modifier = Modifier.padding(top = 4.dp)) {
                                     Text(
-                                        text = "${activeArchivedConflict.code} is archived in ${activeArchivedConflict.semesterName}.",
+                                        text = stringResource(R.string.add_edit_course_is_archived_in, activeArchivedConflict.code, activeArchivedConflict.semesterName),
                                         color = MaterialTheme.colorScheme.error,
                                         style = MaterialTheme.typography.bodySmall
                                     )
@@ -148,7 +150,7 @@ fun AddEditCourseDialog(
                                         },
                                         modifier = Modifier.padding(top = 2.dp)
                                     ) {
-                                        Text("Restore ${activeArchivedConflict.semesterName}")
+                                        Text(stringResource(R.string.add_edit_course_restore, activeArchivedConflict.semesterName))
                                     }
                                 }
                             }
@@ -169,11 +171,11 @@ fun AddEditCourseDialog(
                         name = it.take(100)
                         if (it.isNotBlank()) nameError = false
                     },
-                    label = { Text("Course Name *") },
-                    placeholder = { Text("e.g. Data Structures & Algorithms") },
+                    label = { Text(stringResource(R.string.add_edit_course_course_name)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_course_e_g_data_structures_algorithms)) },
                     isError = nameError,
                     supportingText = if (nameError) {
-                        { Text("Course name is required") }
+                        { Text(stringResource(R.string.add_edit_course_course_name_is_required)) }
                     } else null,
                     singleLine = true,
                     modifier = Modifier
@@ -185,8 +187,8 @@ fun AddEditCourseDialog(
                 OutlinedTextField(
                     value = instructor,
                     onValueChange = { instructor = it },
-                    label = { Text("Instructor / Professor") },
-                    placeholder = { Text("e.g. Dr. Jane Doe") },
+                    label = { Text(stringResource(R.string.add_edit_course_instructor_professor)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_course_e_g_dr_jane_doe)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -197,8 +199,8 @@ fun AddEditCourseDialog(
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Classroom / Location") },
-                    placeholder = { Text("e.g. Science Bldg Rm 102") },
+                    label = { Text(stringResource(R.string.add_edit_course_classroom_location)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_course_e_g_science_bldg_rm)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -208,7 +210,7 @@ fun AddEditCourseDialog(
                 // Color Tag Picker
                 Column {
                     Text(
-                        text = "Course Color Tag",
+                        text = stringResource(R.string.add_edit_course_course_color_tag),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -277,7 +279,7 @@ FlowRow(
                 },
                 modifier = Modifier.testTag("course_save_button")
             ) {
-                Text(if (courseToEdit != null) "Update" else "Add Course")
+                Text(stringResource(if (courseToEdit != null) R.string.add_edit_course_update else R.string.add_edit_course_add_course))
             }
         },
         dismissButton = {
@@ -285,7 +287,7 @@ FlowRow(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("course_cancel_button")
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

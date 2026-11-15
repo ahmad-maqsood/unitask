@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.util.runLogged
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -30,6 +32,11 @@ import android.content.Context
 import android.content.Intent
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.ToggleOff
+import androidx.compose.material.icons.filled.ToggleOn
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.alpha
+import com.example.Repositories
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -198,7 +205,7 @@ fun TimetableTab(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Which week is this week?",
+                                text = stringResource(R.string.timetable_which_week_is_this_week),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -210,7 +217,7 @@ fun TimetableTab(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Dismiss",
+                                    contentDescription = stringResource(R.string.common_dismiss),
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -218,7 +225,7 @@ fun TimetableTab(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Set your schedule parity so bi-weekly classes and reminders appear on the right weeks.",
+                            text = stringResource(R.string.timetable_set_your_schedule_parity_so),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                         )
@@ -240,7 +247,7 @@ fun TimetableTab(
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Week A")
+                                Text(stringResource(R.string.timetable_week_a))
                             }
                             Button(
                                 onClick = {
@@ -256,7 +263,7 @@ fun TimetableTab(
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Week B")
+                                Text(stringResource(R.string.timetable_week_b))
                             }
                         }
                     }
@@ -278,7 +285,7 @@ fun TimetableTab(
                             .padding(end = 8.dp)
                     ) {
                         Text(
-                            text = "Weekly Lecture Schedule",
+                            text = stringResource(R.string.timetable_weekly_lecture_schedule),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -330,7 +337,7 @@ fun TimetableTab(
                                 )
                                 if (isToday) {
                                     Text(
-                                        text = "Today",
+                                        text = stringResource(R.string.my_tasks_today),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.85f
                                     )
@@ -494,12 +501,12 @@ fun TimetableTab(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Add full timetable to calendar",
+                            text = stringResource(R.string.timetable_add_full_timetable_to_calendar),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Exports every class from all days and weeks, not only the day shown above.",
+                            text = stringResource(R.string.timetable_exports_every_class_from_all),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -537,7 +544,7 @@ private fun TimetableBreakIndicator(gapMinutes: Int) {
             ) {
                 Text(text = "☕", style = MaterialTheme.typography.labelSmall)
                 Text(
-                    text = "$durationText until next class",
+                    text = stringResource(R.string.timetable_until_next_class, durationText),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
@@ -636,6 +643,9 @@ fun TimetableSlotCard(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
+    // Turned off: the class stays in the timetable but has no reminders (saved in the database).
+    val isSlotEnabled = slot.isEnabled
+    val slotScope = rememberCoroutineScope()
 
     val courseColor = rememberCourseColor(course?.colorHex)
 
@@ -646,6 +656,7 @@ fun TimetableSlotCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (isSlotEnabled) 1f else 0.6f)
             .testTag("timetable_slot_${slot.id}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -686,6 +697,10 @@ fun TimetableSlotCard(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
+                        }
+
+                        if (!isSlotEnabled) {
+                            TurnedOffChip(modifier = Modifier.testTag("timetable_slot_off_chip_${slot.id}"))
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -739,7 +754,7 @@ fun TimetableSlotCard(
                             onClick = { showMenu = true },
                             modifier = Modifier.testTag("timetable_slot_menu_${slot.id}")
                         ) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Slot actions")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.timetable_slot_actions))
                         }
 
                         DropdownMenu(
@@ -747,7 +762,25 @@ fun TimetableSlotCard(
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit Class Slot") },
+                                text = {
+                                    Text(stringResource(if (isSlotEnabled) R.string.timetable_turn_off_class else R.string.timetable_turn_on_class))
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    slotScope.launch {
+                                        Repositories.app(context).setLectureSlotEnabled(slot.id, !isSlotEnabled)
+                                    }
+                                },
+                                modifier = Modifier.testTag("timetable_slot_toggle_enabled_${slot.id}"),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isSlotEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.timetable_edit_class_slot)) },
                                 onClick = {
                                     showMenu = false
                                     onEditClick()
@@ -755,7 +788,7 @@ fun TimetableSlotCard(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete Slot", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(R.string.timetable_delete_slot), color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteConfirm = true
@@ -772,8 +805,8 @@ fun TimetableSlotCard(
                         }
                         if (showDeleteConfirm) {
                             ConfirmDeleteDialog(
-                                title = "Delete class?",
-                                message = "${course?.code ?: "This class"} will be moved to Recently deleted. You can restore it from there.",
+                                title = stringResource(R.string.course_detail_delete_class),
+                                message = stringResource(R.string.timetable_will_be_moved_to_recently, course?.code ?: "This class"),
                                 onConfirm = onDeleteClick,
                                 onDismiss = { showDeleteConfirm = false }
                             )
@@ -857,7 +890,7 @@ fun TimetableSlotCard(
                                 ) {
                                     Icon(Icons.Default.Assignment, contentDescription = null, tint = courseColor, modifier = Modifier.size(14.dp))
                                     Text(
-                                        text = "${pendingCourseTasks.size} pending assignment${if (pendingCourseTasks.size > 1) "s" else ""}",
+                                        text = stringResource(R.string.timetable_pending_assignment, pendingCourseTasks.size, if (pendingCourseTasks.size > 1) "s" else ""),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )

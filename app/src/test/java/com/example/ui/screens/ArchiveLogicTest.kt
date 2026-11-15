@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import com.example.data.local.Course
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -104,30 +103,5 @@ class ArchiveLogicTest {
             "Permanently delete Fall 2026 including 2 courses, 6 tasks, 3 classes, 1 note? This cannot be undone.",
             message
         )
-    }
-
-    @Test
-    fun groupCoursesBySemesterGroupsCaseInsensitivelyAndFiltersActiveAndDeleted() {
-        val courses = listOf(
-            Course(id = 1, name = "Data Structures", code = "CS 202", archivedSemester = "Fall 2026"),
-            Course(id = 2, name = "Algorithms", code = "CS 203", archivedSemester = "fall 2026"),
-            Course(id = 3, name = "Calculus", code = "MATH 101", archivedSemester = "Spring 2027"),
-            Course(id = 4, name = "Active Course", code = "PHYS 101", archivedSemester = ""),
-            Course(id = 5, name = "Deleted Course", code = "BIO 101", archivedSemester = "Fall 2026", isDeleted = true)
-        )
-
-        val grouped = groupCoursesBySemester(courses)
-
-        assertEquals(2, grouped.size)
-        assertTrue(grouped.containsKey("Fall 2026"))
-        assertTrue(grouped.containsKey("Spring 2027"))
-
-        val fallCourses = grouped["Fall 2026"]!!
-        assertEquals(2, fallCourses.size)
-        assertEquals(listOf(1L, 2L), fallCourses.map { it.id })
-
-        val springCourses = grouped["Spring 2027"]!!
-        assertEquals(1, springCourses.size)
-        assertEquals(3L, springCourses.first().id)
     }
 }

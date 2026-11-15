@@ -98,7 +98,7 @@ class CompletionLogTest {
             CompletionLog.entries(context)
         )
 
-        CompletionLog.removeLatest(context, 1L)
+        CompletionLog.forget(context, taskId = 1L, completedAt = now)
         assertEquals(
             listOf(CompletionEntry(2L, now - 5_000L), CompletionEntry(1L, now - day)),
             CompletionLog.entries(context)

@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.util.drive.DriveMigrationPrompt
 import com.example.util.drive.DrivePrefs
 
@@ -103,7 +105,7 @@ fun DriveMigrationDialog(
         },
         modifier = modifier.testTag("drive_migration_dialog"),
         title = {
-            Text(text = "Back up to Google Drive")
+            Text(text = stringResource(R.string.drive_migration_back_up_to_google_drive))
         },
         text = {
             Column(
@@ -114,13 +116,12 @@ fun DriveMigrationDialog(
             ) {
                 if (!backupSucceeded) {
                     Text(
-                        text = "UniTask no longer syncs your courses, tasks and notes to the online account. They stay on this phone. Back up to your own Google Drive so a lost or reset phone cannot take them with it.",
+                        text = stringResource(R.string.drive_migration_unitask_no_longer_syncs_your),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
                     Text(
-                        text = "UniTask can only open its own hidden backup folder. " +
-                            "It cannot see or change any of your other Google Drive files.",
+                        text = stringResource(R.string.drive_migration_unitask_can_only_open_its),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -158,7 +159,7 @@ fun DriveMigrationDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Also back up automatically",
+                            text = stringResource(R.string.drive_migration_also_back_up_automatically),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )
@@ -179,7 +180,7 @@ fun DriveMigrationDialog(
                         onClick = onDone,
                         modifier = Modifier.testTag("drive_migration_done_button")
                     ) {
-                        Text("Done")
+                        Text(stringResource(R.string.common_done))
                     }
                 }
                 state.busy != null -> {
@@ -190,7 +191,7 @@ fun DriveMigrationDialog(
                         onClick = { viewModel.startMigrationBackup() },
                         modifier = Modifier.testTag("drive_migration_backup_button")
                     ) {
-                        Text("Try again")
+                        Text(stringResource(R.string.drive_migration_try_again))
                     }
                 }
                 else -> {
@@ -201,7 +202,7 @@ fun DriveMigrationDialog(
                         },
                         modifier = Modifier.testTag("drive_migration_backup_button")
                     ) {
-                        Text("Back up now")
+                        Text(stringResource(R.string.backup_reminder_card_back_up_now))
                     }
                 }
             }
@@ -213,18 +214,18 @@ fun DriveMigrationDialog(
                         onClick = onLater,
                         modifier = Modifier.testTag("drive_migration_later_button")
                     ) {
-                        Text("Remind me later")
+                        Text(stringResource(R.string.drive_migration_remind_me_later))
                     }
                 } else {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onNever) {
-                            Text("Don't ask again")
+                            Text(stringResource(R.string.drive_migration_don_t_ask_again))
                         }
                         TextButton(
                             onClick = onLater,
                             modifier = Modifier.testTag("drive_migration_later_button")
                         ) {
-                            Text("Remind me later")
+                            Text(stringResource(R.string.drive_migration_remind_me_later))
                         }
                     }
                 }

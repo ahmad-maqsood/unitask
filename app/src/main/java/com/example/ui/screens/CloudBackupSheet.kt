@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import java.io.File
 import com.example.util.DateFormats
@@ -131,14 +132,14 @@ fun CloudBackupSheet(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (currentUser != null) "Online account" else "Sign in with Google",
+                    text = stringResource(if (currentUser != null) R.string.cloud_backup_online_account else R.string.cloud_backup_sign_in_with_google),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "UniTask works fully offline. Your account is used for study groups and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.",
+                    text = stringResource(R.string.cloud_backup_unitask_works_fully_offline_your),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -230,7 +231,7 @@ fun CloudBackupSheet(
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export My Data (JSON)")
+                    Text(stringResource(R.string.cloud_backup_export_my_data_json))
                 }
 
                 // Sign Out Button
@@ -252,7 +253,7 @@ fun CloudBackupSheet(
                         .fillMaxWidth()
                         .testTag("backup_sign_out_button")
                 ) {
-                    Text("Sign Out (Keep Offline)")
+                    Text(stringResource(R.string.cloud_backup_sign_out_keep_offline))
                 }
 
                 // Delete Account Button (GDPR)
@@ -268,7 +269,7 @@ fun CloudBackupSheet(
                 ) {
                     Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Account")
+                    Text(stringResource(R.string.cloud_backup_delete_account))
                 }
             } else {
                 // Not logged in: Show Google Sign-In Button labeled "Sign in to back up data"
@@ -316,7 +317,7 @@ fun CloudBackupSheet(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Sign in with Google",
+                                text = stringResource(R.string.cloud_backup_sign_in_with_google),
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -347,7 +348,7 @@ fun CloudBackupSheet(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("backup_sheet_close_button")
             ) {
-                Text("Close")
+                Text(stringResource(R.string.common_close))
             }
         }
     }
@@ -365,14 +366,14 @@ fun CloudBackupSheet(
             },
             title = {
                 Text(
-                    text = "Delete Account?",
+                    text = stringResource(R.string.cloud_backup_delete_account_2),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "This permanently deletes your online account. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks and group courses you created are removed for everyone in those groups. Your courses, tasks and notes on this phone are not touched. This action cannot be undone.",
+                    text = stringResource(R.string.cloud_backup_this_permanently_deletes_your),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -402,7 +403,7 @@ fun CloudBackupSheet(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete Account", color = MaterialTheme.colorScheme.onError)
+                    Text(stringResource(R.string.cloud_backup_delete_account), color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
@@ -410,7 +411,7 @@ fun CloudBackupSheet(
                     onClick = { showDeleteConfirmDialog = false },
                     enabled = !isLoading
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )

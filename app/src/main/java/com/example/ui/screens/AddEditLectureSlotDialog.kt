@@ -40,10 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
 
@@ -77,6 +80,7 @@ fun AddEditLectureSlotDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var conflictWarningMessage by remember { mutableStateOf<String?>(null) }
 
     var selectedCourseId by rememberSaveable {
@@ -106,7 +110,7 @@ fun AddEditLectureSlotDialog(
 
     if (showStartTimePicker) {
         Material3TimePickerDialog(
-            title = "Select Class Start Time",
+            title = stringResource(R.string.add_edit_lecture_slot_select_class_start_time),
             initialHour = startHour,
             initialMinute = startMinute,
             onDismiss = { showStartTimePicker = false },
@@ -120,7 +124,7 @@ fun AddEditLectureSlotDialog(
 
     if (showEndTimePicker) {
         Material3TimePickerDialog(
-            title = "Select Class End Time",
+            title = stringResource(R.string.add_edit_lecture_slot_select_class_end_time),
             initialHour = endHour,
             initialMinute = endMinute,
             onDismiss = { showEndTimePicker = false },
@@ -146,7 +150,7 @@ fun AddEditLectureSlotDialog(
         onDismissRequest = { discardGuard.request() },
         title = {
             Text(
-                text = if (slotToEdit != null) "Edit Lecture Slot" else "Add Lecture Slot",
+                text = stringResource(if (slotToEdit != null) R.string.add_edit_lecture_slot_edit_lecture_slot else R.string.add_edit_lecture_slot_add_lecture_slot),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -161,7 +165,7 @@ fun AddEditLectureSlotDialog(
                 // Course Dropdown
                 Column {
                     Text(
-                        text = "Course",
+                        text = stringResource(R.string.add_edit_lecture_slot_course),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -225,7 +229,7 @@ fun AddEditLectureSlotDialog(
                 // Day of Week Chips
                 Column {
                     Text(
-                        text = "Day of the Week",
+                        text = stringResource(R.string.add_edit_lecture_slot_day_of_the_week),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -264,7 +268,7 @@ fun AddEditLectureSlotDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            Text("Start Time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.add_edit_lecture_slot_start_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
@@ -289,7 +293,7 @@ fun AddEditLectureSlotDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            Text("End Time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.add_edit_lecture_slot_end_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
@@ -307,7 +311,7 @@ fun AddEditLectureSlotDialog(
                 // Schedule Frequency (Weekly, Week A, Week B)
                 Column {
                     Text(
-                        text = "Schedule Frequency",
+                        text = stringResource(R.string.add_edit_lecture_slot_schedule_frequency),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -344,8 +348,8 @@ fun AddEditLectureSlotDialog(
                 OutlinedTextField(
                     value = classroom,
                     onValueChange = { classroom = it },
-                    label = { Text("Classroom / Hall") },
-                    placeholder = { Text("e.g. Faraday Hall, Room 102") },
+                    label = { Text(stringResource(R.string.add_edit_lecture_slot_classroom_hall)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_lecture_slot_e_g_faraday_hall_room)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -356,8 +360,8 @@ fun AddEditLectureSlotDialog(
                 OutlinedTextField(
                     value = instructor,
                     onValueChange = { instructor = it },
-                    label = { Text("Instructor / Lecturer") },
-                    placeholder = { Text("e.g. Prof. Feynman") },
+                    label = { Text(stringResource(R.string.add_edit_lecture_slot_instructor_lecturer)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_lecture_slot_e_g_prof_feynman)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -388,7 +392,7 @@ fun AddEditLectureSlotDialog(
                     if (endTotal <= startTotal) {
                         android.widget.Toast.makeText(
                             context,
-                            "End time must be after the start time",
+                            resources.getString(R.string.toast_end_time_must_be_after),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button
@@ -396,7 +400,7 @@ fun AddEditLectureSlotDialog(
                     if (selectedCourseId <= 0) {
                         android.widget.Toast.makeText(
                             context,
-                            "Add a course first, then choose it for this class",
+                            resources.getString(R.string.toast_add_a_course_first_then),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button
@@ -435,7 +439,7 @@ fun AddEditLectureSlotDialog(
                 },
                 modifier = Modifier.testTag("slot_save_button")
             ) {
-                Text(if (slotToEdit != null) "Update Slot" else "Save Slot")
+                Text(stringResource(if (slotToEdit != null) R.string.add_edit_lecture_slot_update_slot else R.string.add_edit_lecture_slot_save_slot))
             }
         },
         dismissButton = {
@@ -443,7 +447,7 @@ fun AddEditLectureSlotDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("slot_cancel_button")
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

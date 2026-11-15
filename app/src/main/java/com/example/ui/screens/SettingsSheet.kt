@@ -2,6 +2,11 @@ package com.example.ui.screens
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import com.example.R
 import com.example.util.runLogged
 import android.app.Activity
 import android.content.Intent
@@ -79,6 +84,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -138,6 +144,7 @@ fun SettingsButton(
     onUpdateAvailableChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
@@ -202,7 +209,7 @@ fun SettingsButton(
             modifier = Modifier.testTag("top_bar_settings_button")
         ) {
             BadgedBox(badge = { if (available != null) Badge() }) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_settings))
             }
         }
     }
@@ -225,7 +232,7 @@ fun SettingsButton(
     }
     if (showSummaryTimePicker) {
         Material3TimePickerDialog(
-            title = "Daily summary time",
+            title = stringResource(R.string.settings_daily_summary_time),
             initialHour = summaryHour,
             initialMinute = summaryMinute,
             onDismiss = { showSummaryTimePicker = false },
@@ -267,14 +274,14 @@ fun SettingsButton(
                     if (currentPage == null) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Settings",
+                                text = stringResource(R.string.settings_settings),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
                             SettingsRow(
                                 icon = Icons.Default.AccountCircle,
-                                title = if (currentUser == null) "Sign in for groups" else "Online account",
+                                title = stringResource(if (currentUser == null) R.string.settings_sign_in_for_groups else R.string.cloud_backup_online_account),
                                 subtitle = currentUser?.email ?: "Needed for study groups",
                                 onClick = {
                                     showSheet = false
@@ -291,7 +298,7 @@ fun SettingsButton(
                             }
                             SettingsSectionRow(
                                 icon = Icons.Default.Tune,
-                                title = "General",
+                                title = stringResource(R.string.settings_general),
                                 summary = "${ThemePreference.mode.label}, $weekSummary",
                                 onClick = { page = SettingsPage.General },
                                 testTag = "settings_section_general"
@@ -303,21 +310,21 @@ fun SettingsButton(
                             }
                             SettingsSectionRow(
                                 icon = Icons.Default.NotificationsActive,
-                                title = "Notifications & reminders",
+                                title = stringResource(R.string.settings_notifications_reminders),
                                 summary = notificationsSummary,
                                 onClick = { page = SettingsPage.Notifications },
                                 testTag = "settings_section_notifications"
                             )
                             SettingsSectionRow(
                                 icon = Icons.Default.Backup,
-                                title = "Backup & data",
-                                summary = "Google Drive backup and backup file",
+                                title = stringResource(R.string.settings_backup_data),
+                                summary = stringResource(R.string.settings_google_drive_backup_and_backup),
                                 onClick = { page = SettingsPage.Backup },
                                 testTag = "settings_section_backup"
                             )
                             SettingsSectionRow(
                                 icon = Icons.Default.Info,
-                                title = "About & help",
+                                title = stringResource(R.string.settings_about_help),
                                 summary = if (available != null) "Update available" else "Version $currentVersion",
                                 onClick = { page = SettingsPage.About },
                                 testTag = "settings_section_about",
@@ -338,7 +345,7 @@ fun SettingsButton(
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
+                                        contentDescription = stringResource(R.string.common_back)
                                     )
                                 }
                                 Text(
@@ -370,7 +377,7 @@ fun SettingsButton(
                                         }
                                     }
                                     Text(
-                                        "Accent colour",
+                                        stringResource(R.string.settings_accent_colour),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -408,7 +415,7 @@ fun SettingsButton(
                                     Spacer(Modifier.height(4.dp))
                                     SettingsRow(
                                         icon = Icons.Default.Schedule,
-                                        title = "This week is",
+                                        title = stringResource(R.string.settings_this_week_is),
                                         subtitle = when (weekParityType) {
                                             com.example.util.WeekType.A -> "Week A"
                                             com.example.util.WeekType.B -> "Week B"
@@ -420,11 +427,11 @@ fun SettingsButton(
                                     if (showWeekParityDialog) {
                                         AlertDialog(
                                             onDismissRequest = { showWeekParityDialog = false },
-                                            title = { Text("This week is") },
+                                            title = { Text(stringResource(R.string.settings_this_week_is)) },
                                             text = {
                                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                                     Text(
-                                                        text = "Choose which schedule week applies to the current week.",
+                                                        text = stringResource(R.string.settings_choose_which_schedule_week_applies),
                                                         style = MaterialTheme.typography.bodyMedium
                                                     )
                                                     Spacer(modifier = Modifier.height(4.dp))
@@ -475,7 +482,7 @@ fun SettingsButton(
                                             },
                                             confirmButton = {
                                                 TextButton(onClick = { showWeekParityDialog = false }) {
-                                                    Text("Close")
+                                                    Text(stringResource(R.string.common_close))
                                                 }
                                             }
                                         )
@@ -484,60 +491,50 @@ fun SettingsButton(
                                 SettingsPage.Notifications -> {
                                     SettingsRow(
                                         icon = Icons.Default.NotificationsActive,
-                                        title = "Notification sound",
+                                        title = stringResource(R.string.settings_notification_sound),
                                         subtitle = soundLabel,
                                         onClick = { showSoundDialog = true },
                                         testTag = "settings_sound_row"
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.BatteryChargingFull,
-                                        title = "Background alerts",
-                                        subtitle = if (isBatteryIgnoring) "Battery restrictions are off. Tap to review." else "Tap to keep alerts reliable",
+                                        title = stringResource(R.string.settings_background_alerts),
+                                        subtitle = stringResource(if (isBatteryIgnoring) R.string.settings_battery_restrictions_are_off_tap else R.string.settings_tap_to_keep_alerts_reliable),
                                         onClick = { showBackgroundSetupDialog = true },
                                         testTag = "settings_background_row"
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.NotificationsActive,
-                                        title = "Check reminders",
-                                        subtitle = "Make sure reminders reach this phone. Send a test.",
+                                        title = stringResource(R.string.reminder_check_check_reminders),
+                                        subtitle = stringResource(R.string.settings_make_sure_reminders_reach_this),
                                         onClick = { showReminderCheck = true },
                                         testTag = "settings_reminder_check_row"
                                     )
                                     if (showReminderCheck) ReminderCheckDialog(onDismiss = { showReminderCheck = false })
                                     SettingsRow(
                                         icon = Icons.Default.School,
-                                        title = "Class start notifications",
-                                        subtitle = if (classStartEnabled) "You get an alert 10 minutes before and when each class starts" else "Off",
+                                        title = stringResource(R.string.settings_class_start_notifications),
+                                        subtitle = stringResource(if (classStartEnabled) R.string.settings_you_get_an_alert_10 else R.string.settings_off),
                                         onClick = { setClassStartEnabled(!classStartEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = classStartEnabled,
-                                                onCheckedChange = { setClassStartEnabled(it) }
-                                            )
-                                        },
+                                        switchChecked = classStartEnabled,
                                         testTag = "settings_class_start_row"
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.WbSunny,
-                                        title = "Daily summary",
+                                        title = stringResource(R.string.settings_daily_summary),
                                         subtitle = if (summaryEnabled) {
                                             "Every day at ${TimeFormatter.format(summaryHour, summaryMinute)}"
                                         } else {
                                             "Off. Get one alert with today's classes and tasks"
                                         },
                                         onClick = { setSummaryEnabled(!summaryEnabled) },
-                                        trailing = {
-                                            Switch(
-                                                checked = summaryEnabled,
-                                                onCheckedChange = { setSummaryEnabled(it) }
-                                            )
-                                        },
+                                        switchChecked = summaryEnabled,
                                         testTag = "settings_daily_summary_row"
                                     )
                                     if (summaryEnabled) {
                                         SettingsRow(
                                             icon = Icons.Default.Schedule,
-                                            title = "Summary time",
+                                            title = stringResource(R.string.settings_summary_time),
                                             subtitle = TimeFormatter.format(summaryHour, summaryMinute),
                                             onClick = { showSummaryTimePicker = true },
                                             testTag = "settings_daily_summary_time_row"
@@ -552,21 +549,21 @@ fun SettingsButton(
                                 SettingsPage.About -> {
                                     SettingsRow(
                                         icon = Icons.Default.Info,
-                                        title = "Learn to use the app",
-                                        subtitle = "Step by step help for every feature",
+                                        title = stringResource(R.string.search_learn_to_use_the_app),
+                                        subtitle = stringResource(R.string.settings_step_by_step_help_for),
                                         onClick = { showFeatureGuide = true },
                                         testTag = "settings_features_row"
                                     )
                                     if (showFeatureGuide) FeatureGuideDialog(onDismiss = { showFeatureGuide = false })
                                     SettingsRow(
                                         icon = Icons.Default.Code,
-                                        title = "Source code",
+                                        title = stringResource(R.string.settings_source_code),
                                         subtitle = "github.com/CondaLabs/unitask",
                                         onClick = {
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -581,13 +578,13 @@ fun SettingsButton(
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.NewReleases,
-                                        title = "Latest release",
-                                        subtitle = "Open the newest version on GitHub",
+                                        title = stringResource(R.string.settings_latest_release),
+                                        subtitle = stringResource(R.string.settings_open_the_newest_version_on),
                                         onClick = {
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -602,8 +599,8 @@ fun SettingsButton(
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.BugReport,
-                                        title = "Report a problem",
-                                        subtitle = "Opens a short form. No GitHub account needed",
+                                        title = stringResource(R.string.crash_report_report_a_problem),
+                                        subtitle = stringResource(R.string.settings_opens_a_short_form_no),
                                         onClick = {
                                             try {
                                                 val info = "UniTask $currentVersion | " +
@@ -612,7 +609,7 @@ fun SettingsButton(
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -627,8 +624,8 @@ fun SettingsButton(
                                     )
                                     SettingsRow(
                                         icon = Icons.Default.Lightbulb,
-                                        title = "Request a feature",
-                                        subtitle = "Tell us what you would like to see. Opens a short form",
+                                        title = stringResource(R.string.settings_request_a_feature),
+                                        subtitle = stringResource(R.string.settings_tell_us_what_you_would),
                                         onClick = {
                                             try {
                                                 val info = "UniTask $currentVersion | " +
@@ -637,7 +634,7 @@ fun SettingsButton(
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -658,7 +655,7 @@ fun SettingsButton(
                                     }
                                     SettingsRow(
                                         icon = Icons.Default.SystemUpdate,
-                                        title = "Check for updates",
+                                        title = stringResource(R.string.settings_check_for_updates),
                                         subtitle = statusText,
                                         onClick = {
                                             if (!isChecking) {
@@ -680,14 +677,14 @@ fun SettingsButton(
                                                 try {
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
                                                 } catch (_: Exception) {
-                                                    Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                                 }
                                             },
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .testTag("settings_open_github_button")
                                         ) {
-                                            Text("Open GitHub to download")
+                                            Text(stringResource(R.string.settings_open_github_to_download))
                                         }
                                     }
                                 }
@@ -742,13 +739,21 @@ private fun SettingsRow(
     onClick: () -> Unit,
     testTag: String,
     trailing: (@Composable () -> Unit)? = null,
-    subtitleMaxLines: Int = Int.MAX_VALUE
+    subtitleMaxLines: Int = Int.MAX_VALUE,
+    // Set for an on/off row: the whole row is the switch and onClick flips it.
+    switchChecked: Boolean? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
+            .then(
+                if (switchChecked != null) {
+                    Modifier.toggleable(value = switchChecked, role = Role.Switch, onValueChange = { onClick() })
+                } else {
+                    Modifier.clickable(onClick = onClick, role = Role.Button)
+                }
+            )
             .padding(horizontal = 4.dp, vertical = 10.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically,
@@ -765,6 +770,7 @@ private fun SettingsRow(
                 overflow = if (subtitleMaxLines != Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
             )
         }
+        if (switchChecked != null) Switch(checked = switchChecked, onCheckedChange = null)
         if (trailing != null) trailing()
     }
 }
@@ -802,11 +808,11 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Notification sound") },
+        title = { Text(stringResource(R.string.settings_notification_sound)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 SoundOptionRow(
-                    label = "Phone default",
+                    label = stringResource(R.string.settings_phone_default),
                     selected = selected == NotificationSound.CHOICE_SYSTEM,
                     onSelect = {
                         NotificationSound.setChoice(context, NotificationSound.CHOICE_SYSTEM)
@@ -855,7 +861,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_done)) } }
     )
 }
 
@@ -870,16 +876,16 @@ private fun SoundOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelect)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .padding(vertical = 2.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(selected = selected, onClick = onSelect)
+        RadioButton(selected = selected, onClick = null)
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         if (onPlay != null) {
             IconButton(onClick = onPlay) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play $label")
+                Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.settings_play, label))
             }
         }
     }

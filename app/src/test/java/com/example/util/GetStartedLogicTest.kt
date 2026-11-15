@@ -28,13 +28,12 @@ class GetStartedLogicTest {
     fun phoneSettingFlagsTickTheirOwnSteps() {
         assertEquals(setOf(GetStartedStep.NOTIFICATIONS), GetStartedLogic.detect(false, false, false, false, false, notificationsOn = true))
         assertEquals(setOf(GetStartedStep.BATTERY), GetStartedLogic.detect(false, false, false, false, false, batteryOptimizationOff = true))
-        assertEquals(setOf(GetStartedStep.AUTOSTART), GetStartedLogic.detect(false, false, false, false, false, autostartDone = true))
     }
 
     @Test
-    fun allNineStepsFinishTheChecklist() {
-        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, true, true)
-        assertEquals(9, done.size)
+    fun allEightStepsFinishTheChecklist() {
+        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, true)
+        assertEquals(8, done.size)
         assertTrue(GetStartedLogic.isFinished(done))
     }
 
@@ -44,19 +43,17 @@ class GetStartedLogicTest {
     }
 
     @Test
-    fun backupStepIsRequiredEvenWithoutAutostart() {
-        val required = GetStartedLogic.requiredSteps(needsAutostart = false)
-        assertTrue(GetStartedStep.BACKUP in required)
+    fun backupStepIsRequired() {
+        assertTrue(GetStartedStep.BACKUP in GetStartedStep.entries)
         val withoutBackup = GetStartedLogic.detect(true, true, true, true, true, true, true, false)
-        assertFalse(GetStartedLogic.isFinished(withoutBackup, required))
+        assertFalse(GetStartedLogic.isFinished(withoutBackup))
     }
 
     @Test
-    fun autostartIsNotRequiredOnPhonesWithoutIt() {
-        val required = GetStartedLogic.requiredSteps(needsAutostart = false)
-        assertFalse(GetStartedStep.AUTOSTART in required)
-        val done = GetStartedLogic.detect(true, true, true, true, true, true, true, false, true)
-        assertTrue(GetStartedLogic.isFinished(done, required))
-        assertFalse(GetStartedLogic.isFinished(done, GetStartedLogic.requiredSteps(needsAutostart = true)))
+    fun onlyNotificationsAndBatteryAreFollowedFromThePhone() {
+        assertEquals(
+            listOf(GetStartedStep.NOTIFICATIONS, GetStartedStep.BATTERY),
+            GetStartedStep.entries.filter { it.isSystem }
+        )
     }
 }

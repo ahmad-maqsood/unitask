@@ -27,6 +27,20 @@ gh attestation verify UniTask-VERSION.apk \
   --signer-workflow CondaLabs/unitask/.github/workflows/release-apk.yml
 ```
 
+## Check the signing key
+
+Every UniTask release is signed with the same key, and the release workflow refuses to publish an APK signed with any other key. You can check this yourself with `apksigner`, which is part of the Android SDK build-tools:
+
+```bash
+apksigner verify --print-certs UniTask-VERSION.apk
+```
+
+The `certificate SHA-256 digest` line should read:
+
+```
+f000bcf3c12e6ed4764b30765f6d58e083f163b1c2ba997f35f6a03e3468b818
+```
+
 ## Important notes
 
 - Download APKs and provenance files from the same official GitHub Release.

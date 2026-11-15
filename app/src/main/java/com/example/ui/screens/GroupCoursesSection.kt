@@ -41,9 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupTask
 import androidx.compose.material.icons.filled.School
@@ -64,8 +66,8 @@ internal fun GroupCoursesSection(
     var courseToDelete by remember { mutableStateOf<GroupCourse?>(null) }
     courseToDelete?.let { c ->
         ConfirmDeleteDialog(
-            title = "Delete Course?",
-            message = "Remove ${c.code} (${c.name}) from group courses? Existing assignments will keep their label.",
+            title = stringResource(R.string.group_courses_delete_course),
+            message = stringResource(R.string.group_courses_remove_from_group_courses_existing, c.code, c.name),
             onConfirm = {
                 onDeleteCourse(c)
                 courseToDelete = null
@@ -96,7 +98,7 @@ internal fun GroupCoursesSection(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Group Courses",
+                    text = stringResource(R.string.group_courses_group_courses),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -108,7 +110,7 @@ internal fun GroupCoursesSection(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.size(4.dp))
-                    Text("Add Course", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.add_edit_course_add_course), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -148,7 +150,7 @@ internal fun GroupCoursesSection(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = "No courses added yet",
+                            text = stringResource(R.string.group_courses_no_courses_added_yet),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -157,7 +159,7 @@ internal fun GroupCoursesSection(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Add courses for your class group (e.g. CS-503, MATH-240) so members can select them when creating assignments.",
+                            text = stringResource(R.string.group_courses_add_courses_for_your_class),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -169,7 +171,7 @@ internal fun GroupCoursesSection(
                             onClick = onAddCourse,
                             modifier = Modifier.testTag("group_empty_add_course_btn")
                         ) {
-                            Text("+ Add First Course")
+                            Text(stringResource(R.string.group_courses_add_first_course))
                         }
                     }
                 }
@@ -283,7 +285,7 @@ private fun GroupCourseCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Course options",
+                                    contentDescription = stringResource(R.string.group_courses_course_options),
                                     tint = Color.White
                                 )
                             }
@@ -292,7 +294,7 @@ private fun GroupCourseCard(
                                 onDismissRequest = { showMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Course") },
+                                    text = { Text(stringResource(R.string.add_edit_course_edit_course)) },
                                     onClick = {
                                         showMenu = false
                                         onEditClick()
@@ -302,7 +304,7 @@ private fun GroupCourseCard(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Course", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.course_card_delete_course_2), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         onDeleteClick()
@@ -342,7 +344,7 @@ private fun GroupCourseCard(
                     contentColor = courseColor
                 ) {
                     Text(
-                        text = "$taskCount assignment${if (taskCount != 1) "s" else ""}",
+                        text = stringResource(R.string.group_courses_assignment, taskCount, if (taskCount != 1) "s" else ""),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

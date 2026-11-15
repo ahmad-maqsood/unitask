@@ -40,7 +40,7 @@ internal fun MainViewModel.buildClassSchedule(
         val slotName = s.course?.name?.trim().orEmpty()
         return tasks
             .filter { twc ->
-                if (twc.task.status == TaskStatus.COMPLETED) return@filter false
+                if (twc.task.status == TaskStatus.COMPLETED || !twc.task.isEnabled) return@filter false
                 if (twc.task.courseId == s.slot.courseId) return@filter true
                 if (!isGroupTaskItem(twc.task)) return@filter false
                 val taskCode = twc.course?.code?.let { normalizeCourseKey(it) }.orEmpty()

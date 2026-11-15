@@ -28,10 +28,15 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.ToggleOff
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.util.parseChecklist
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -108,19 +114,22 @@ fun TaskCard(
     val leftStripColor = courseColor
 
     val isCompleted = task.status == TaskStatus.COMPLETED
+    // Turned off: kept in the list, but no reminders, no alarm and never shown as overdue.
+    val isEnabled = task.isEnabled
+    val toggleEnabled = rememberTaskEnabledToggle(groupEntry)
 
     // Calculate relative due text
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
         formatDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
     }
 
-    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status) {
-        task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
+    val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status, isEnabled) {
+        isEnabled && task.status != TaskStatus.COMPLETED && task.deadlineMillis < System.currentTimeMillis()
     }
     // In-app snooze (see SnoozeStore): one extra reminder at a time the user picks.
     var showSnooze by remember { mutableStateOf(false) }
     val snoozes by SnoozeStore.untilByTask(context).collectAsStateWithLifecycle()
-    val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted }
+    val snoozedUntil = snoozes[task.id]?.takeIf { it > System.currentTimeMillis() && !isCompleted && isEnabled }
     if (showSnooze) {
         SnoozeDialog(
             taskWithCourse = taskWithCourse,
@@ -141,6 +150,7 @@ fun TaskCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (isEnabled) 1f else 0.6f)
             .testTag("task_item_${task.id}")
             .clickable { onEditClick(task) },
         shape = RoundedCornerShape(16.dp),
@@ -212,7 +222,7 @@ fun TaskCard(
                             if (groupEntry != null) {
                                 Icon(
                                     imageVector = Icons.Default.Groups,
-                                    contentDescription = "Group task",
+                                    contentDescription = stringResource(R.string.current_next_class_card_group_task),
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -246,7 +256,7 @@ fun TaskCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Task options",
+                                contentDescription = stringResource(R.string.group_task_row_task_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -256,9 +266,9 @@ fun TaskCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            if (!isCompleted) {
+                            if (!isCompleted && isEnabled) {
                                 DropdownMenuItem(
-                                    text = { Text(if (snoozedUntil != null) "Change snooze" else "Snooze reminder") },
+                                    text = { Text(stringResource(if (snoozedUntil != null) R.string.task_card_change_snooze else R.string.snooze_snooze_reminder)) },
                                     onClick = {
                                         showMenu = false
                                         showSnooze = true
@@ -268,10 +278,26 @@ fun TaskCard(
                                     }
                                 )
                             }
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(if (isEnabled) R.string.task_card_turn_off else R.string.task_card_turn_on))
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    toggleEnabled(task)
+                                },
+                                modifier = Modifier.testTag("task_toggle_enabled_menu_item"),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
                             if (groupEntry != null) {
                                 // Group tasks are edited or deleted inside the group.
                                 DropdownMenuItem(
-                                    text = { Text("Open group") },
+                                    text = { Text(stringResource(R.string.task_card_open_group)) },
                                     onClick = {
                                         showMenu = false
                                         onEditClick(task)
@@ -282,7 +308,7 @@ fun TaskCard(
                                 )
                             } else {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Task") },
+                                    text = { Text(stringResource(R.string.group_task_row_edit_task)) },
                                     onClick = {
                                         showMenu = false
                                         onEditClick(task)
@@ -292,7 +318,7 @@ fun TaskCard(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.group_task_row_delete_task_2), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         // No confirm dialog: callers show an Undo bar instead.
@@ -320,7 +346,7 @@ fun TaskCard(
                 if (groupEntry != null) {
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Added by ${groupEntry.task.createdByName.ifBlank { "a member" }}",
+                        text = stringResource(R.string.group_task_row_added_by, groupEntry.task.createdByName.ifBlank { "a member" }),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary,
@@ -358,7 +384,7 @@ fun TaskCard(
                                 modifier = chipModifier
                             ) {
                                 Text(
-                                    text = "☑ $doneCount/${checklistItems.size} subtasks",
+                                    text = stringResource(R.string.task_card_subtasks, doneCount, checklistItems.size),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (doneCount == checklistItems.size) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -428,7 +454,7 @@ fun TaskCard(
                                 }
                                 if (overflowCount > 0) {
                                     Text(
-                                        text = "+$overflowCount more, open Edit",
+                                        text = stringResource(R.string.task_card_more_open_edit, overflowCount),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier
@@ -496,12 +522,16 @@ fun TaskCard(
                 // Repeat and reminders on one line with the due info. It wraps instead of squeezing
                 // the top row. Attachments already show as file chips above, so no count here.
                 // The alarm only rings at a reminder time, so the chip needs a reminder and an open task.
-                val showAlarmChip = task.ringsAlarm && !isCompleted && task.reminderOptions.isNotEmpty()
-                if (task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty() || showAlarmChip) {
+                val showAlarmChip = isEnabled && task.ringsAlarm && !isCompleted && task.reminderOptions.isNotEmpty()
+                if (!isEnabled || task.repeat != RepeatRule.NONE || task.reminderOptions.isNotEmpty() || showAlarmChip) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        if (!isEnabled) {
+                            TurnedOffChip(modifier = Modifier.testTag("task_off_chip_${task.id}"))
+                        }
+
                         if (showAlarmChip) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -515,11 +545,11 @@ fun TaskCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Alarm,
-                                        contentDescription = "Rings like an alarm",
+                                        contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
-                                        text = "Alarm",
+                                        text = stringResource(R.string.group_task_row_alarm),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -549,7 +579,7 @@ fun TaskCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Repeat,
-                                        contentDescription = "Repeats: $repeatShortLabel",
+                                        contentDescription = stringResource(R.string.task_card_repeats, repeatShortLabel),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
@@ -561,7 +591,7 @@ fun TaskCard(
                             }
                         }
 
-                        if (task.reminderOptions.isNotEmpty()) {
+                        if (task.reminderOptions.isNotEmpty() && isEnabled) {
                             Row(
                                 modifier = Modifier.defaultMinSize(minHeight = 22.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -569,7 +599,7 @@ fun TaskCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = "Reminders: ${task.reminderOptions.joinToString { it.label }}",
+                                    contentDescription = stringResource(R.string.task_card_reminders, task.reminderOptions.joinToString { it.label }),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -596,12 +626,12 @@ fun TaskCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Snooze,
-                            contentDescription = "Snoozed",
+                            contentDescription = stringResource(R.string.task_card_snoozed),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Snoozed until ${formatSnoozeTime(snoozedUntil)}",
+                            text = stringResource(R.string.task_card_snoozed_until, formatSnoozeTime(snoozedUntil)),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,
@@ -625,7 +655,7 @@ fun TaskCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccessTime,
-                            contentDescription = "Due time",
+                            contentDescription = stringResource(R.string.group_task_row_due_time),
                             tint = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -653,6 +683,34 @@ fun TaskCard(
     }
 }
 
+/** "Off" label shown on tasks that are turned off (and on group tasks the person turned off). */
+@Composable
+fun TurnedOffChip(modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.NotificationsOff,
+                contentDescription = stringResource(R.string.task_card_turned_off_description),
+                modifier = Modifier.size(13.dp)
+            )
+            Text(
+                text = stringResource(R.string.task_card_turned_off),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
 /** A small alarm icon for compact task rows. Shown only for tasks that ring an alarm. */
 @Composable
 fun AlarmBadge() {
@@ -663,7 +721,7 @@ fun AlarmBadge() {
     ) {
         Icon(
             imageVector = Icons.Default.Alarm,
-            contentDescription = "Rings like an alarm",
+            contentDescription = stringResource(R.string.group_task_row_rings_like_an_alarm),
             modifier = Modifier
                 .padding(horizontal = 5.dp, vertical = 2.dp)
                 .size(14.dp)

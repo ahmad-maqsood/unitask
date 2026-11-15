@@ -53,6 +53,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -73,6 +74,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.util.AppFeature
 import com.example.util.FeatureGuide
 
@@ -140,11 +142,11 @@ fun FeatureGuideDialog(onDismiss: () -> Unit, initialFeatureTitle: String? = nul
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Learn to use UniTask") },
+        title = { Text(stringResource(R.string.feature_guide_learn_to_use_unitask)) },
         text = {
             Column {
                 Text(
-                    text = "Tap a feature to see how to use it.",
+                    text = stringResource(R.string.feature_guide_tap_a_feature_to_see),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 10.dp)
@@ -190,7 +192,7 @@ fun FeatureGuideDialog(onDismiss: () -> Unit, initialFeatureTitle: String? = nul
                                 )
                                 if (expanded && feature.howTo.isNotBlank()) {
                                     Text(
-                                        "How to use",
+                                        stringResource(R.string.feature_guide_how_to_use),
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.primary,
@@ -205,7 +207,7 @@ fun FeatureGuideDialog(onDismiss: () -> Unit, initialFeatureTitle: String? = nul
                             }
                             Icon(
                                 imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (expanded) "Collapse" else "Expand",
+                                contentDescription = stringResource(if (expanded) R.string.feature_guide_collapse else R.string.feature_guide_expand),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -213,6 +215,6 @@ fun FeatureGuideDialog(onDismiss: () -> Unit, initialFeatureTitle: String? = nul
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } }
     )
 }

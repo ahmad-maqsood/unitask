@@ -8,7 +8,6 @@ enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boo
     // un-ticks again if the person turns the setting back off.
     NOTIFICATIONS("Allow notifications", "So reminders and group alerts can reach you", isSystem = true),
     BATTERY("Turn off battery optimization", "Lets reminders ring on time in the background", isSystem = true),
-    AUTOSTART("Enable auto-start", "Keeps reminders working after your phone restarts", isSystem = true),
 
     COURSE("Add a course", "Courses tab, then tap +"),
     DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
@@ -29,7 +28,6 @@ object GetStartedLogic {
         timerTried: Boolean,
         notificationsOn: Boolean = false,
         batteryOptimizationOff: Boolean = false,
-        autostartDone: Boolean = false,
         driveConnected: Boolean = false
     ): Set<GetStartedStep> = buildSet {
         if (hasCourse) add(GetStartedStep.COURSE)
@@ -40,12 +38,7 @@ object GetStartedLogic {
         if (driveConnected) add(GetStartedStep.BACKUP)
         if (notificationsOn) add(GetStartedStep.NOTIFICATIONS)
         if (batteryOptimizationOff) add(GetStartedStep.BATTERY)
-        if (autostartDone) add(GetStartedStep.AUTOSTART)
     }
-
-    /** The steps shown on this phone. Auto-start only exists on some brands, so it is left out elsewhere. */
-    fun requiredSteps(needsAutostart: Boolean): List<GetStartedStep> =
-        GetStartedStep.entries.filter { needsAutostart || it != GetStartedStep.AUTOSTART }
 
     fun isFinished(
         done: Set<GetStartedStep>,

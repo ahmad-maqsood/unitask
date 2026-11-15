@@ -5,8 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.util.BackupCounts
 import com.example.util.BackupResult
@@ -630,18 +628,6 @@ class DriveBackupViewModel(
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
                     now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> "Yesterday $timeStr"
                 else -> DateFormats.monthDayClock24(millis)
-            }
-        }
-
-        fun provideFactory(
-            application: Application,
-            auth: DriveAuthApi = GoogleDriveAuth(application),
-            storeFactory: ((suspend (forceRefresh: Boolean) -> String) -> DriveStore) = { DriveRestClient(tokenProvider = it) },
-            prefs: DrivePrefs = DrivePrefs(application)
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return DriveBackupViewModel(application, auth, storeFactory, prefs) as T
             }
         }
     }

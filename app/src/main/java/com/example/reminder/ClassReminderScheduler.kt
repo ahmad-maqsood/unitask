@@ -87,7 +87,7 @@ class ClassReminderScheduler(context: Context) {
     suspend fun rescheduleAll(database: AppDatabase) {
         val activeCourseIds = database.courseDao().getAllCoursesList().filter { !it.isArchived }.map { it.id }.toSet()
         val wanted = database.lectureSlotDao().getAllSlotsSync()
-            .filter { !it.isDeleted && it.deletedAt <= 0L && it.courseId in activeCourseIds }
+            .filter { !it.isDeleted && it.deletedAt <= 0L && it.isEnabled && it.courseId in activeCourseIds }
         val enabled = isEnabled(appContext)
 
         synchronized(LOCK) {
@@ -209,4 +209,4 @@ class ClassReminderScheduler(context: Context) {
             putExtra(ClassStartReceiver.EXTRA_SLOT_ID, slotId)
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, startMillis)
         }
-}
+}

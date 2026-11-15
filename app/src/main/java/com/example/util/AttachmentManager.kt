@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.example.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -107,7 +108,7 @@ object AttachmentManager {
         try {
             val file = File(context.filesDir, relativePath)
             if (!file.exists()) {
-                Toast.makeText(context, "Attachment file not found locally", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.toast_attachment_file_not_found_locally), Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -123,7 +124,7 @@ object AttachmentManager {
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Cannot open attachment: ${e.message}", e)
-            Toast.makeText(context, "No app available to open this file", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_no_app_available_to_open), Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -10,6 +10,8 @@ internal data class DeadlineSections(
     val today: List<TaskWithCourse>,
     val tomorrow: List<TaskWithCourse>,
     val later: List<TaskWithCourse>,
+    // Open tasks that are turned off. They are not overdue and not due today, whatever their date.
+    val turnedOff: List<TaskWithCourse>,
     val done: List<TaskWithCourse>
 )
 
@@ -26,6 +28,7 @@ internal fun groupDeadlines(tasks: List<TaskWithCourse>, nowMillis: Long = Syste
     val today = mutableListOf<Pair<TaskWithCourse, Long>>()
     val tomorrow = mutableListOf<Pair<TaskWithCourse, Long>>()
     val later = mutableListOf<Pair<TaskWithCourse, Long>>()
+    val turnedOff = mutableListOf<Pair<TaskWithCourse, Long>>()
     val done = mutableListOf<Pair<TaskWithCourse, Long>>()
 
     for (item in tasks) {
@@ -35,6 +38,11 @@ internal fun groupDeadlines(tasks: List<TaskWithCourse>, nowMillis: Long = Syste
 
         if (task.status == TaskStatus.COMPLETED) {
             done.add(paired)
+            continue
+        }
+
+        if (!task.isEnabled) {
+            turnedOff.add(paired)
             continue
         }
 
@@ -60,6 +68,7 @@ internal fun groupDeadlines(tasks: List<TaskWithCourse>, nowMillis: Long = Syste
         today = today.sortedBy { it.second }.map { it.first },
         tomorrow = tomorrow.sortedBy { it.second }.map { it.first },
         later = later.sortedBy { it.second }.map { it.first },
+        turnedOff = turnedOff.sortedBy { it.second }.map { it.first },
         done = done.sortedByDescending { it.second }.map { it.first }
     )
 }

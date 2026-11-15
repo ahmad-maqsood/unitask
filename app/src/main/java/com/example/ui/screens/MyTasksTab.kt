@@ -61,11 +61,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.TaskItem
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
@@ -180,14 +182,14 @@ fun MyTasksTab(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "No personal tasks yet",
+                                text = stringResource(R.string.my_tasks_no_personal_tasks_yet),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Add tasks, to-dos, or habits that aren't tied to any university course.",
+                                text = stringResource(R.string.my_tasks_add_tasks_to_dos_or),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -199,7 +201,7 @@ fun MyTasksTab(
                                     .defaultMinSize(minHeight = 48.dp)
                                     .testTag("empty_state_add_my_task_button")
                             ) {
-                                Text("+ Add task")
+                                Text(stringResource(R.string.my_tasks_add_task))
                             }
                         }
                     }
@@ -210,7 +212,7 @@ fun MyTasksTab(
             if (sections.overdue.isNotEmpty()) {
                 item(key = "header_overdue") {
                     SectionHeader(
-                        title = "Overdue",
+                        title = stringResource(R.string.deadlines_overdue),
                         count = sections.overdue.size,
                         isOverdue = true
                     )
@@ -233,7 +235,7 @@ fun MyTasksTab(
             if (sections.today.isNotEmpty()) {
                 item(key = "header_today") {
                     SectionHeader(
-                        title = "Today",
+                        title = stringResource(R.string.my_tasks_today),
                         count = sections.today.size
                     )
                 }
@@ -255,7 +257,7 @@ fun MyTasksTab(
             if (sections.tomorrow.isNotEmpty()) {
                 item(key = "header_tomorrow") {
                     SectionHeader(
-                        title = "Tomorrow",
+                        title = stringResource(R.string.my_tasks_tomorrow),
                         count = sections.tomorrow.size
                     )
                 }
@@ -277,7 +279,7 @@ fun MyTasksTab(
             if (sections.later.isNotEmpty()) {
                 item(key = "header_later") {
                     SectionHeader(
-                        title = "Later",
+                        title = stringResource(R.string.backup_reminder_card_later),
                         count = sections.later.size
                     )
                 }
@@ -295,11 +297,33 @@ fun MyTasksTab(
                 }
             }
 
+            // Turned off section
+            if (sections.turnedOff.isNotEmpty()) {
+                item(key = "header_turned_off") {
+                    SectionHeader(
+                        title = stringResource(R.string.deadlines_turned_off),
+                        count = sections.turnedOff.size
+                    )
+                }
+                items(sections.turnedOff, key = { it.task.id }) { taskWithCourse ->
+                    SwipeableTaskItem(
+                        taskWithCourse = taskWithCourse,
+                        onStatusCycle = onStatusCycle,
+                        onEditClick = onEditTask,
+                        onDeleteClick = handleSwipeDelete,
+                        onSwipeTickDone = handleSwipeTickDone,
+                        onSwipeDelete = handleSwipeDelete,
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
+                    )
+                }
+            }
+
             // Done section
             if (sections.done.isNotEmpty()) {
                 item(key = "header_done") {
                     SectionHeader(
-                        title = "Done",
+                        title = stringResource(R.string.common_done),
                         count = sections.done.size,
                         collapsible = true,
                         isExpanded = isDoneExpanded,
@@ -357,7 +381,7 @@ fun QuickAddTaskField(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add quick task",
+                contentDescription = stringResource(R.string.my_tasks_add_quick_task),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
@@ -384,7 +408,7 @@ fun QuickAddTaskField(
                     ) {
                         if (title.isEmpty()) {
                             Text(
-                                text = "Add a task...",
+                                text = stringResource(R.string.my_tasks_add_a_task),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -406,7 +430,7 @@ fun QuickAddTaskField(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Save task",
+                        contentDescription = stringResource(R.string.my_tasks_save_task),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -471,7 +495,7 @@ private fun SectionHeader(
             ) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Collapse Done section" else "Expand Done section",
+                    contentDescription = stringResource(if (isExpanded) R.string.my_tasks_collapse_done_section else R.string.my_tasks_expand_done_section),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -518,7 +542,7 @@ private fun SwipeableTaskItem(
             val direction = dismissState.dismissDirection
             val color by animateColorAsState(
                 targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> if (task.status == TaskStatus.COMPLETED) Color(0xFFD97706) else Color(0xFF16A34A)
+                    SwipeToDismissBoxValue.StartToEnd -> swipeToDoneColor(task.status == TaskStatus.COMPLETED)
                     SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
                     SwipeToDismissBoxValue.Settled -> Color.Transparent
                 },
@@ -548,11 +572,11 @@ private fun SwipeableTaskItem(
                         ) {
                             Icon(
                                 imageVector = if (isDone) Icons.AutoMirrored.Filled.Undo else Icons.Default.Check,
-                                contentDescription = if (isDone) "Mark not done" else "Mark done",
+                                contentDescription = stringResource(if (isDone) R.string.deadline_task_cards_mark_not_done else R.string.deadline_task_cards_mark_done),
                                 tint = Color.White
                             )
                             Text(
-                                text = if (isDone) "Not done" else "Done",
+                                text = stringResource(if (isDone) R.string.deadline_task_cards_not_done else R.string.common_done),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -565,14 +589,14 @@ private fun SwipeableTaskItem(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Delete",
+                                text = stringResource(R.string.common_delete),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.common_delete),
                                 tint = Color.White
                             )
                         }
@@ -597,6 +621,8 @@ private data class TaskSections(
     val today: List<TaskWithCourse>,
     val tomorrow: List<TaskWithCourse>,
     val later: List<TaskWithCourse>,
+    // Open tasks that are turned off: never overdue or due today, whatever their date.
+    val turnedOff: List<TaskWithCourse>,
     val done: List<TaskWithCourse>
 )
 
@@ -616,12 +642,18 @@ private fun groupTasks(tasks: List<TaskWithCourse>, nowMillis: Long = System.cur
     val today = mutableListOf<TaskWithCourse>()
     val tomorrow = mutableListOf<TaskWithCourse>()
     val later = mutableListOf<TaskWithCourse>()
+    val turnedOff = mutableListOf<TaskWithCourse>()
     val done = mutableListOf<TaskWithCourse>()
 
     for (item in tasks) {
         val task = item.task
         if (task.status == TaskStatus.COMPLETED) {
             done.add(item)
+            continue
+        }
+
+        if (!task.isEnabled) {
+            turnedOff.add(item)
             continue
         }
 
@@ -648,6 +680,7 @@ private fun groupTasks(tasks: List<TaskWithCourse>, nowMillis: Long = System.cur
         today = today.sortedBy { it.task.deadlineMillis },
         tomorrow = tomorrow.sortedBy { it.task.deadlineMillis },
         later = later.sortedBy { it.task.deadlineMillis },
+        turnedOff = turnedOff.sortedBy { it.task.deadlineMillis },
         done = done.sortedByDescending { it.task.deadlineMillis }
     )
 }

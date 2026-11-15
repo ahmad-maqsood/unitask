@@ -17,6 +17,7 @@ import com.example.data.local.LectureSlotWithCourse
 fun findConflicts(slots: List<LectureSlotWithCourse>): Map<Long, List<String>> {
     val validSlots = slots.filter {
         !it.slot.isDeleted &&
+        it.slot.isEnabled &&
         it.slot.dayOfWeek in 1..7 &&
         (it.slot.endHour * 60 + it.slot.endMinute) > (it.slot.startHour * 60 + it.slot.startMinute)
     }

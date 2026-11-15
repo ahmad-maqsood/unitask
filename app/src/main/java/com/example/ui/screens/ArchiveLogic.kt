@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import com.example.data.local.Course
 
 /**
  * Details of a course code conflict where a code is already used in an archived semester.
@@ -105,14 +104,4 @@ fun deleteSemesterConfirmationMessage(
 ): String {
     val counts = formatSemesterCounts(courseCount, taskCount, classCount, noteCount)
     return "Permanently delete $semesterName including $counts? This cannot be undone."
-}
-
-/**
- * Groups archived courses by semester name ignoring case, preserving original spelling.
- */
-fun groupCoursesBySemester(courses: List<Course>): Map<String, List<Course>> {
-    return courses
-        .filter { !it.isDeleted && it.archivedSemester.isNotBlank() }
-        .groupBy { it.archivedSemester.trim().uppercase() }
-        .mapKeys { (_, list) -> list.first().archivedSemester.trim() }
 }

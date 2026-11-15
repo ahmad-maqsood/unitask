@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.GetStartedStep
 
 /** One line of the card: a normal step, or the phone settings joined into one line. */
@@ -58,7 +60,7 @@ private fun buildRows(steps: List<GetStartedStep>, done: Set<GetStartedStep>): L
         )
     }.toMutableList()
 
-    // Notifications, battery and auto-start are shown as one "Make reminders reliable" line at the
+    // Notifications and battery optimization are shown as one "Make reminders reliable" line at the
     // bottom. Tapping it walks through the settings one at a time.
     val system = steps.filter { it.isSystem }
     if (system.isNotEmpty()) {
@@ -110,12 +112,12 @@ fun GetStartedCard(
                         .testTag("get_started_toggle")
                 ) {
                     Text(
-                        text = "Get started",
+                        text = stringResource(R.string.onboarding_get_started),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "$doneCount of ${rows.size} done",
+                        text = stringResource(R.string.get_started_card_of_done, doneCount, rows.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -123,7 +125,7 @@ fun GetStartedCard(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) "Show fewer steps" else "Show all steps",
+                        contentDescription = stringResource(if (expanded) R.string.get_started_card_show_fewer_steps else R.string.get_started_card_show_all_steps),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -133,7 +135,7 @@ fun GetStartedCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss Get started",
+                        contentDescription = stringResource(R.string.get_started_card_dismiss_get_started),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -166,7 +168,7 @@ fun GetStartedCard(
                     ) {
                         Icon(
                             imageVector = if (row.isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                            contentDescription = if (row.isDone) "Done" else "Not done yet",
+                            contentDescription = stringResource(if (row.isDone) R.string.common_done else R.string.get_started_card_not_done_yet),
                             tint = if (row.isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp)
                         )

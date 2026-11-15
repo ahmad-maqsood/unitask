@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.data.local.LectureSlotWithCourse
 import com.example.data.local.NoteListItem
 import com.example.data.local.TaskWithCourse
@@ -109,7 +111,7 @@ fun RecentlyDeletedScreen(
                 title = {
                     // Shrinks a little on narrow screens so it still fits beside "Empty trash".
                     ShrinkToFitText(
-                        text = "Recently deleted",
+                        text = stringResource(R.string.recently_deleted_recently_deleted),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         minFontSize = 16.sp
@@ -122,7 +124,7 @@ fun RecentlyDeletedScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 },
@@ -133,7 +135,7 @@ fun RecentlyDeletedScreen(
                             modifier = Modifier.testTag("recently_deleted_empty_button")
                         ) {
                             Text(
-                                text = "Empty trash",
+                                text = stringResource(R.string.recently_deleted_empty_trash),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -176,7 +178,7 @@ fun RecentlyDeletedScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Items are removed for good 30 days after deleting.",
+                    text = stringResource(R.string.recently_deleted_items_are_removed_for_good),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
@@ -189,8 +191,8 @@ fun RecentlyDeletedScreen(
                 0 -> {
                     if (deletedTasks.isEmpty()) {
                         TrashEmptyState(
-                            title = "No deleted tasks",
-                            subtitle = "Deleted tasks will appear here."
+                            title = stringResource(R.string.recently_deleted_no_deleted_tasks),
+                            subtitle = stringResource(R.string.recently_deleted_deleted_tasks_will_appear_here)
                         )
                     } else {
                         LazyColumn(
@@ -220,8 +222,8 @@ fun RecentlyDeletedScreen(
                 1 -> {
                     if (deletedNotes.isEmpty()) {
                         TrashEmptyState(
-                            title = "No deleted notes",
-                            subtitle = "Deleted notes will appear here."
+                            title = stringResource(R.string.recently_deleted_no_deleted_notes),
+                            subtitle = stringResource(R.string.recently_deleted_deleted_notes_will_appear_here)
                         )
                     } else {
                         LazyColumn(
@@ -250,8 +252,8 @@ fun RecentlyDeletedScreen(
                 else -> {
                     if (validDeletedClasses.isEmpty()) {
                         TrashEmptyState(
-                            title = "No deleted classes",
-                            subtitle = "Deleted classes will appear here."
+                            title = stringResource(R.string.recently_deleted_no_deleted_classes),
+                            subtitle = stringResource(R.string.recently_deleted_deleted_classes_will_appear_here)
                         )
                     } else {
                         LazyColumn(
@@ -284,8 +286,8 @@ fun RecentlyDeletedScreen(
 
     if (taskToDeleteForever != null) {
         ConfirmDeleteDialog(
-            title = "Delete forever?",
-            message = "This task will be permanently deleted. This cannot be undone.",
+            title = stringResource(R.string.recently_deleted_delete_forever),
+            message = stringResource(R.string.recently_deleted_this_task_will_be_permanently),
             onConfirm = {
                 taskToDeleteForever?.let { viewModel.deleteTaskForever(it.task.id) }
                 taskToDeleteForever = null
@@ -296,8 +298,8 @@ fun RecentlyDeletedScreen(
 
     if (noteToDeleteForever != null) {
         ConfirmDeleteDialog(
-            title = "Delete forever?",
-            message = "This note will be permanently deleted. This cannot be undone.",
+            title = stringResource(R.string.recently_deleted_delete_forever),
+            message = stringResource(R.string.recently_deleted_this_note_will_be_permanently),
             onConfirm = {
                 noteToDeleteForever?.let { viewModel.deleteNoteForever(it.note.id) }
                 noteToDeleteForever = null
@@ -308,8 +310,8 @@ fun RecentlyDeletedScreen(
 
     if (classToDeleteForever != null) {
         ConfirmDeleteDialog(
-            title = "Delete forever?",
-            message = "This class will be permanently deleted. This cannot be undone.",
+            title = stringResource(R.string.recently_deleted_delete_forever),
+            message = stringResource(R.string.recently_deleted_this_class_will_be_permanently),
             onConfirm = {
                 classToDeleteForever?.let { viewModel.deleteClassForever(it.slot.id) }
                 classToDeleteForever = null
@@ -325,7 +327,7 @@ fun RecentlyDeletedScreen(
             else -> "All classes in the trash will be permanently deleted. This cannot be undone."
         }
         ConfirmDeleteDialog(
-            title = "Empty trash?",
+            title = stringResource(R.string.recently_deleted_empty_trash_2),
             message = emptyMessage,
             onConfirm = {
                 when (selectedTab) {
@@ -520,7 +522,7 @@ private fun DeletedTaskCard(
                     modifier = Modifier.testTag("trash_delete_forever_task_${task.id}")
                 ) {
                     Text(
-                        text = "Delete forever",
+                        text = stringResource(R.string.archived_semesters_delete_forever_2),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -626,7 +628,7 @@ private fun DeletedNoteCard(
                     onClick = onRestore,
                     modifier = Modifier.testTag("trash_restore_button_${item.note.id}")
                 ) {
-                    Text("Restore")
+                    Text(stringResource(R.string.common_restore))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(
@@ -634,7 +636,7 @@ private fun DeletedNoteCard(
                     modifier = Modifier.testTag("trash_delete_forever_button_${item.note.id}")
                 ) {
                     Text(
-                        text = "Delete forever",
+                        text = stringResource(R.string.archived_semesters_delete_forever_2),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -770,7 +772,7 @@ private fun DeletedClassCard(
                     modifier = Modifier.testTag("trash_delete_forever_class_${slot.id}")
                 ) {
                     Text(
-                        text = "Delete forever",
+                        text = stringResource(R.string.archived_semesters_delete_forever_2),
                         color = MaterialTheme.colorScheme.error
                     )
                 }

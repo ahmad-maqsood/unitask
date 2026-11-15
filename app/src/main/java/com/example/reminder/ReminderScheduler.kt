@@ -24,6 +24,9 @@ class ReminderScheduler(private val context: Context) {
 
     /** Trigger time for each selected reminder that is still in the future. */
     private fun upcomingTriggers(task: TaskItem): Map<ReminderOption, Long> {
+        // A task that is turned off has no reminders. This one check covers scheduling, re-arming
+        // after a reboot and the stored "next reminder" time.
+        if (!task.isEnabled) return emptyMap()
         val deadlineMillis = calculateDeadlineMillis(task)
         val now = System.currentTimeMillis()
         return task.reminderOptions

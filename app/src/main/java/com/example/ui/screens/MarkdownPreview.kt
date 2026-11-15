@@ -47,6 +47,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.widthIn
+import com.example.R
 import com.example.util.markdown.CodeHighlighter
 import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
@@ -703,7 +705,7 @@ fun MarkdownImageFallback(
                 tint = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Image: $alt",
+                text = stringResource(R.string.markdown_preview_image, alt),
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isSafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 textDecoration = if (isSafe) TextDecoration.Underline else TextDecoration.None

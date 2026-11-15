@@ -38,8 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.Course
 import com.example.data.local.CourseWithTaskCount
 
@@ -73,13 +75,13 @@ fun CoursesTab(
                         .padding(end = 8.dp)
                 ) {
                     Text(
-                        text = "Enrolled Courses",
+                        text = stringResource(R.string.courses_enrolled_courses),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "${coursesWithCounts.size} courses this semester",
+                        text = stringResource(R.string.courses_courses_this_semester, coursesWithCounts.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -95,14 +97,14 @@ fun CoursesTab(
                             onClick = { showMenu = true },
                             modifier = Modifier.testTag("courses_more_button")
                         ) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More course options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.courses_more_course_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Archive courses...") },
+                                text = { Text(stringResource(R.string.courses_archive_courses)) },
                                 onClick = {
                                     showMenu = false
                                     onArchiveCoursesClick()
@@ -162,7 +164,7 @@ fun CoursesTab(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = "Add your first course",
+                            text = stringResource(R.string.courses_add_your_first_course),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -171,7 +173,7 @@ fun CoursesTab(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Add your university courses to organize your homework and assignments.",
+                            text = stringResource(R.string.courses_add_your_university_courses_to),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -182,7 +184,7 @@ fun CoursesTab(
                             onClick = onAddCourseClick,
                             modifier = Modifier.testTag("empty_state_add_course_btn")
                         ) {
-                            Text("+ Add Your First Course")
+                            Text(stringResource(R.string.courses_add_your_first_course_2))
                         }
                     }
                 }
@@ -228,7 +230,7 @@ fun CoursesTab(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Archived semesters ($archivedSemestersCount)",
+                                text = stringResource(R.string.courses_archived_semesters, archivedSemestersCount),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -236,7 +238,7 @@ fun CoursesTab(
                         }
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "View archived semesters",
+                            contentDescription = stringResource(R.string.courses_view_archived_semesters),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )

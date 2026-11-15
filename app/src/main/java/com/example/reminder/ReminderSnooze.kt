@@ -110,11 +110,13 @@ suspend fun isStillNeeded(context: Context, taskId: Long, groupId: String?, grou
                 withTimeout(3000L) {
                     if (!groupId.isNullOrBlank() && !groupTaskId.isNullOrBlank()) {
                         val uid = currentSupabaseUid() ?: AuthStorage.getLastUid(context).orEmpty()
-                        if (uid.isBlank()) true
+                        // Turned off on this phone: the snoozed reminder must not come back.
+                        if (GroupTaskOffStore.isOff(context, groupId, groupTaskId)) false
+                        else if (uid.isBlank()) true
                         else groupTaskId !in Repositories.group(context).getDoneTaskIdsOnce(uid, groupId)
                     } else if (taskId > 0L) {
                         val task = AppDatabase.getDatabase(context).taskDao().getTaskById(taskId)
-                        task != null && task.status != TaskStatus.COMPLETED
+                        task != null && task.status != TaskStatus.COMPLETED && task.isEnabled
                     } else {
                         true
                     }

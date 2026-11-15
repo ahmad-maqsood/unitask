@@ -181,6 +181,7 @@ object LocalBackupManager {
                         .put("endMinute", s.endMinute)
                         .put("classroom", s.classroom)
                         .put("instructor", s.instructor)
+                        .put("isEnabled", s.isEnabled)
                 )
             }
             val taskArray = JSONArray()
@@ -201,6 +202,7 @@ object LocalBackupManager {
                         .put("completedAtMillis", t.completedAtMillis)
                         .put("repeatAnchorDay", t.repeatAnchorDay)
                         .put("autoDeleteWhenDone", t.autoDeleteWhenDone)
+                        .put("isEnabled", t.isEnabled)
                 )
             }
             val noteArray = JSONArray()
@@ -564,6 +566,8 @@ object LocalBackupManager {
                 if (endHour * 60 + endMinute <= startHour * 60 + startMinute) continue
                 val classroom = o.optString("classroom").trim()
                 val instructor = o.optString("instructor").trim()
+                // Older backups have no such field: those classes were all turned on.
+                val slotEnabled = o.optBoolean("isEnabled", true)
 
                 val existing = slotDao.findMatchingSlot(courseId, day, startHour, startMinute)
                 if (existing == null) {
@@ -576,6 +580,7 @@ object LocalBackupManager {
                         endMinute = endMinute,
                         classroom = classroom,
                         instructor = instructor,
+                        isEnabled = slotEnabled,
                         isSynced = false
                     )
 
@@ -589,6 +594,7 @@ object LocalBackupManager {
                             endMinute = endMinute,
                             classroom = classroom,
                             instructor = instructor,
+                            isEnabled = slotEnabled,
                             isDeleted = false,
                             deletedAt = 0L,
                             isSynced = false
@@ -632,6 +638,8 @@ object LocalBackupManager {
                 val completedAtMillis = o.optLong("completedAtMillis", 0L)
                 val repeatAnchorDay = o.optInt("repeatAnchorDay", 0).coerceIn(0, 31)
                 val autoDeleteWhenDone = o.optBoolean("autoDeleteWhenDone", false)
+                // Older backups have no such field: those tasks were all turned on.
+                val isEnabled = o.optBoolean("isEnabled", true)
                 val isMyTask = norm == MY_TASKS_COURSE_CODE
 
                 val known = knownByCourse.getOrPut(courseId) { taskDao.getAnyTasksForCourseSync(courseId) }
@@ -659,6 +667,7 @@ object LocalBackupManager {
                         completedAtMillis = completedAtMillis,
                         repeatAnchorDay = repeatAnchorDay,
                         autoDeleteWhenDone = autoDeleteWhenDone,
+                        isEnabled = isEnabled,
                         isSynced = false,
                         createdAt = createdAt
                     )
@@ -677,6 +686,7 @@ object LocalBackupManager {
                         completedAtMillis = completedAtMillis,
                         repeatAnchorDay = repeatAnchorDay,
                         autoDeleteWhenDone = autoDeleteWhenDone,
+                        isEnabled = isEnabled,
                         isDeleted = false,
                         deletedAt = 0L,
                         isSynced = false

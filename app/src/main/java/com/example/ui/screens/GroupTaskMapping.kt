@@ -44,7 +44,8 @@ fun GroupTaskEntry.toTaskWithCourse(): TaskWithCourse {
         status = if (isDone) TaskStatus.COMPLETED else TaskStatus.PENDING,
         reminderOptions = GroupReminderScheduler.optionsFor(t),
         isSynced = true,
-        createdAt = t.createdAt?.toDate()?.time ?: 0L
+        createdAt = t.createdAt?.toDate()?.time ?: 0L,
+        isEnabled = isEnabled
     )
     val cleanLabel = t.courseLabel?.trim()
     val matchedCourse = if (!cleanLabel.isNullOrBlank()) {

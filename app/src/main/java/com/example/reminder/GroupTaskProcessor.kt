@@ -118,6 +118,7 @@ class GroupTaskProcessor(context: Context) {
             for (key in summaryStore.all.keys.toList()) {
                 if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
             }
+            GroupTaskOffStore.retainGroups(appContext, state.groupIds)
         }
         for (raw in state.loaded) {
             // New tasks now get their real id on the phone, so "local-" ids no longer occur for tasks.
@@ -126,6 +127,11 @@ class GroupTaskProcessor(context: Context) {
                 tasks = raw.tasks.filterNot { it.id.startsWith("local-") },
                 allTasks = raw.allTasks.filterNot { it.id.startsWith("local-") }
             )
+            // Forget "turned off" for tasks a member deleted. Only with fresh data that has tasks in it:
+            // an empty or cached answer must never look like "everything was deleted".
+            if (!isFromCache && snapshot.allTasks.isNotEmpty()) {
+                GroupTaskOffStore.retainTasks(appContext, snapshot.groupId, snapshot.allTasks.map { it.id }.toSet())
+            }
             scheduler.sync(snapshot.groupId, snapshot.groupName, snapshot.tasks, snapshot.done)
             storeSummary(snapshot)
 
@@ -154,6 +160,7 @@ class GroupTaskProcessor(context: Context) {
     /** Signed out: no alarms and no memory of seen tasks. */
     fun clearAll() = synchronized(LOCK) {
         scheduler.cancelGroupsNotIn(emptySet())
+        GroupTaskOffStore.clearAll(appContext)
         seenPrefs.edit().clear().apply()
         stateStore.edit().clear().apply()
         summaryStore.edit().clear().apply()
@@ -165,8 +172,9 @@ class GroupTaskProcessor(context: Context) {
      * not marked done), so the daily summary can list them even when the app is closed.
      */
     private fun storeSummary(snapshot: GroupSnapshot) {
+        val turnedOff = GroupTaskOffStore.keys(appContext)
         val pending = snapshot.tasks
-            .filter { it.id !in snapshot.done }
+            .filter { it.id !in snapshot.done && GroupTaskOffStore.keyOf(snapshot.groupId, it.id) !in turnedOff }
             .map { t ->
                 listOf(
                     computeDeadlineMillis(t.dueDateEpochMillis, t.dueTimeHour, t.dueTimeMinute).toString(),

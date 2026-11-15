@@ -40,11 +40,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.example.R
 import com.example.reminder.AnnouncementNotifier
 import com.example.util.Announcement
 import com.example.util.Announcements
@@ -245,7 +248,7 @@ fun AnnouncementHost(state: AnnouncementsState) {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { state.dismissPopup() }) { Text("Got it") } }
+            confirmButton = { TextButton(onClick = { state.dismissPopup() }) { Text(stringResource(R.string.announcement_host_got_it)) } }
         )
     }
 }
@@ -267,6 +270,7 @@ fun AnnouncementBell(
     onOpenTarget: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var showSheet by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(TAB_NOTIFICATIONS) }
     // Notifications that were unread when the bell was opened, so they can be marked "New".
@@ -293,7 +297,7 @@ fun AnnouncementBell(
                 }
             }
         ) {
-            Icon(Icons.Default.Notifications, contentDescription = "Notifications and announcements")
+            Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.announcement_host_notifications_and_announcements))
         }
     }
 
@@ -377,6 +381,11 @@ fun AnnouncementBell(
                                 try {
                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(found.pageUrl)))
                                 } catch (_: Exception) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.toast_no_app_can_open_this),
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             },
                             onDismiss = { state.dismissUpdate() }
@@ -457,23 +466,23 @@ private fun UpdateCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "Update available",
+                stringResource(R.string.announcement_host_update_available),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "A new version (${update.latestVersion}) of UniTask is available. You have $currentVersion.",
+                stringResource(R.string.announcement_host_a_new_version_of_unitask, update.latestVersion, currentVersion),
                 style = MaterialTheme.typography.bodyMedium
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = onDismiss) { Text("Hide") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.announcement_host_hide)) }
                 Button(
                     onClick = onOpen,
                     modifier = Modifier.testTag("bell_update_open_button")
-                ) { Text("Open release page") }
+                ) { Text(stringResource(R.string.announcement_host_open_release_page)) }
             }
         }
     }
@@ -484,7 +493,7 @@ private fun ClearAllRow(onClear: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
-        TextButton(onClick = onClear) { Text("Clear all") }
+        TextButton(onClick = onClear) { Text(stringResource(R.string.announcement_host_clear_all)) }
     }
 }
 
@@ -544,7 +553,7 @@ private fun NotificationRow(
                 )
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove notification")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.announcement_host_remove_notification))
             }
         }
     }
@@ -576,7 +585,7 @@ private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove announcement")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.announcement_host_remove_announcement))
             }
         }
     }

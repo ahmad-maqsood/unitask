@@ -51,6 +51,8 @@ class PeriodicSyncWorker(
                 GroupTaskProcessor(context).process(sbUid, state)
 
                 Result.success()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Group sync error: ${e.message}", e)
                 Result.retry()
@@ -79,6 +81,8 @@ class PeriodicSyncWorker(
                     }
                 }
                 Result.success()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Announcement sync error: ${e.message}", e)
                 Result.retry()
@@ -89,6 +93,8 @@ class PeriodicSyncWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val groupResult = try {
             syncGroups(applicationContext)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Group sync unexpected error: ${e.message}", e)
             Result.retry()
@@ -96,6 +102,8 @@ class PeriodicSyncWorker(
 
         val announcementResult = try {
             syncAnnouncements(applicationContext)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Announcement sync unexpected error: ${e.message}", e)
             Result.retry()

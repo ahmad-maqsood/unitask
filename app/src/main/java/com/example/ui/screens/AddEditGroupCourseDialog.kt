@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.example.R
 import com.example.ui.theme.courseColorName
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -65,7 +67,7 @@ fun AddEditGroupCourseDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (courseToEdit != null) "Edit Group Course" else "Add Group Course",
+                text = stringResource(if (courseToEdit != null) R.string.add_edit_group_course_edit_group_course else R.string.add_edit_group_course_add_group_course),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -85,15 +87,15 @@ fun AddEditGroupCourseDialog(
                         if (it.isNotBlank()) codeError = false
                         onClearError()
                     },
-                    label = { Text("Course Code *") },
-                    placeholder = { Text("e.g. CS-503, MATH-240") },
+                    label = { Text(stringResource(R.string.add_edit_course_course_code)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_group_course_e_g_cs_503_math)) },
                     isError = codeError || courseSaveError != null,
                     supportingText = when {
                         courseSaveError != null -> {
                             { Text(courseSaveError, color = MaterialTheme.colorScheme.error) }
                         }
                         codeError -> {
-                            { Text("Course code is required") }
+                            { Text(stringResource(R.string.add_edit_course_course_code_is_required)) }
                         }
                         else -> null
                     },
@@ -111,11 +113,11 @@ fun AddEditGroupCourseDialog(
                         if (it.isNotBlank()) nameError = false
                         onClearError()
                     },
-                    label = { Text("Course Name *") },
-                    placeholder = { Text("e.g. Theory of Automata") },
+                    label = { Text(stringResource(R.string.add_edit_course_course_name)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_group_course_e_g_theory_of_automata)) },
                     isError = nameError,
                     supportingText = if (nameError) {
-                        { Text("Course name is required") }
+                        { Text(stringResource(R.string.add_edit_course_course_name_is_required)) }
                     } else null,
                     singleLine = true,
                     modifier = Modifier
@@ -127,8 +129,8 @@ fun AddEditGroupCourseDialog(
                 OutlinedTextField(
                     value = instructor,
                     onValueChange = { instructor = it.take(60) },
-                    label = { Text("Instructor / Professor") },
-                    placeholder = { Text("e.g. Dr. Turing") },
+                    label = { Text(stringResource(R.string.add_edit_course_instructor_professor)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_group_course_e_g_dr_turing)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -138,7 +140,7 @@ fun AddEditGroupCourseDialog(
                 // Color Tag Picker
                 Column {
                     Text(
-                        text = "Course Color Tag",
+                        text = stringResource(R.string.add_edit_course_course_color_tag),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -202,7 +204,7 @@ FlowRow(
                 },
                 modifier = Modifier.testTag("group_course_save_button")
             ) {
-                Text(if (courseToEdit != null) "Update" else "Add Course")
+                Text(stringResource(if (courseToEdit != null) R.string.add_edit_course_update else R.string.add_edit_course_add_course))
             }
         },
         dismissButton = {
@@ -210,7 +212,7 @@ FlowRow(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("group_course_cancel_button")
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

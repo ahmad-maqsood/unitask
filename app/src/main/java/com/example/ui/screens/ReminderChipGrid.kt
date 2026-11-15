@@ -19,10 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.local.ReminderOption
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -67,7 +69,7 @@ fun ReminderChipGrid(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Alert me before the deadline:",
+            text = stringResource(R.string.reminder_chip_grid_alert_me_before_the_deadline),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -168,7 +170,7 @@ fun ReminderPickerRow(
             )
             // The label is measured first and never wraps; the summary takes the rest and shortens with "..."
             Text(
-                text = "Remind me",
+                text = stringResource(R.string.reminder_chip_grid_remind_me),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -198,7 +200,7 @@ fun ReminderPickerRow(
     if (showPicker) {
         AlertDialog(
             onDismissRequest = { showPicker = false },
-            title = { Text("Remind me", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.reminder_chip_grid_remind_me), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     ReminderChipGrid(
@@ -221,7 +223,7 @@ fun ReminderPickerRow(
                     onClick = { showPicker = false },
                     modifier = Modifier.testTag(doneTestTag)
                 ) {
-                    Text("Done")
+                    Text(stringResource(R.string.common_done))
                 }
             },
             dismissButton = {
@@ -230,7 +232,7 @@ fun ReminderPickerRow(
                         onClick = { onSelectedChange(emptySet()) },
                         modifier = Modifier.testTag(clearTestTag)
                     ) {
-                        Text("Clear all")
+                        Text(stringResource(R.string.announcement_host_clear_all))
                     }
                 }
             }

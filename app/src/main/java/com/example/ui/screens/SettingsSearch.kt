@@ -71,10 +71,10 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(
         id = "background_alerts",
         title = "Background alerts",
-        summary = "Keep reminders reliable (battery and autostart)",
+        summary = "Keep reminders reliable (battery optimization)",
         pageLabel = "Notifications & reminders",
         page = SettingsPage.Notifications,
-        keywords = listOf("battery", "optimization", "optimisation", "autostart", "background", "restrict", "reliable")
+        keywords = listOf("battery", "optimization", "optimisation", "autostart", "auto-start", "background", "restrict", "reliable")
     ),
     SettingsSearchEntry(
         id = "check_reminders",

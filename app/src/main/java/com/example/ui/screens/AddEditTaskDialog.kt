@@ -62,6 +62,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -131,6 +134,7 @@ fun AddEditTaskDialog(
     onNeedCreateCourse: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val focusManager = LocalFocusManager.current
 
     var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
@@ -221,14 +225,14 @@ fun AddEditTaskDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDatePicker = false }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         ) {
@@ -238,7 +242,7 @@ fun AddEditTaskDialog(
 
     if (showTimePicker) {
         Material3TimePickerDialog(
-            title = "Select Due Time",
+            title = stringResource(R.string.add_edit_task_select_due_time),
             initialHour = dueHour,
             initialMinute = dueMinute,
             onDismiss = { showTimePicker = false },
@@ -262,7 +266,7 @@ fun AddEditTaskDialog(
                 } else {
                     android.widget.Toast.makeText(
                         context,
-                        "Couldn't attach that file. The limit is 25 MB.",
+                        resources.getString(R.string.toast_couldn_t_attach_that_file),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -322,10 +326,10 @@ fun AddEditTaskDialog(
                             .size(48.dp)
                             .testTag("task_cancel_button")
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel))
                     }
                     Text(
-                        text = if (taskToEdit != null) "Edit Assignment" else "New Assignment",
+                        text = stringResource(if (taskToEdit != null) R.string.add_edit_task_edit_assignment else R.string.add_edit_task_new_assignment),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -360,7 +364,7 @@ fun AddEditTaskDialog(
                             .padding(end = 8.dp)
                             .testTag("task_save_button")
                     ) {
-                        Text(if (taskToEdit != null) "Save" else "Add Task")
+                        Text(stringResource(if (taskToEdit != null) R.string.common_save else R.string.add_edit_task_add_task))
                     }
                 }
                 HorizontalDivider()
@@ -376,7 +380,7 @@ fun AddEditTaskDialog(
                 // Course Picker
                 Column {
                     Text(
-                        text = "Course *",
+                        text = stringResource(R.string.add_edit_task_course),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -389,7 +393,7 @@ fun AddEditTaskDialog(
                                 .clickable { onNeedCreateCourse() }
                         ) {
                             Text(
-                                text = "+ Add a course first to link tasks",
+                                text = stringResource(R.string.add_edit_task_add_a_course_first_to),
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
@@ -434,12 +438,12 @@ fun AddEditTaskDialog(
                                             )
                                         }
                                     } else {
-                                        Text("Select Course", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(stringResource(R.string.add_edit_task_select_course), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
 
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowDown,
-                                        contentDescription = "Expand courses",
+                                        contentDescription = stringResource(R.string.add_edit_task_expand_courses),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -479,7 +483,7 @@ fun AddEditTaskDialog(
 
                     if (courseError) {
                         Text(
-                            text = "Please select or create a course",
+                            text = stringResource(R.string.add_edit_task_please_select_or_create_a),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -494,11 +498,11 @@ fun AddEditTaskDialog(
                         title = it.take(200)
                         if (it.isNotBlank()) titleError = false
                     },
-                    label = { Text("Assignment Title *") },
-                    placeholder = { Text("e.g. Midterm Lab Report, HW 3") },
+                    label = { Text(stringResource(R.string.add_edit_task_assignment_title)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_task_e_g_midterm_lab_report)) },
                     isError = titleError,
                     supportingText = if (titleError) {
-                        { Text("Title is required") }
+                        { Text(stringResource(R.string.add_edit_task_title_is_required)) }
                     } else null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -512,8 +516,8 @@ fun AddEditTaskDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description & Notes (optional)") },
-                    placeholder = { Text("e.g. 5 pages, cover chapters 1-4") },
+                    label = { Text(stringResource(R.string.add_edit_task_description_notes_optional)) },
+                    placeholder = { Text(stringResource(R.string.add_edit_task_e_g_5_pages_cover)) },
                     maxLines = 4,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -527,7 +531,7 @@ fun AddEditTaskDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Checklist",
+                            text = stringResource(R.string.add_edit_task_checklist),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -542,13 +546,13 @@ fun AddEditTaskDialog(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Add item", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.add_edit_task_add_item), style = MaterialTheme.typography.labelMedium)
                         }
                     }
 
                     if (checklist.isEmpty()) {
                         Text(
-                            text = "Break the assignment into small steps you can tick off.",
+                            text = stringResource(R.string.add_edit_task_break_the_assignment_into_small),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -580,7 +584,7 @@ fun AddEditTaskDialog(
                                             if (it.id == item.id) it.copy(text = clean) else it
                                         }
                                     },
-                                    placeholder = { Text("Checklist item") },
+                                    placeholder = { Text(stringResource(R.string.add_edit_task_checklist_item)) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                                     keyboardActions = KeyboardActions(
@@ -603,7 +607,7 @@ fun AddEditTaskDialog(
                                 IconButton(
                                     onClick = { checklist = checklist.filter { it.id != item.id } }
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove item")
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.add_edit_task_remove_item))
                                 }
                             }
                         }
@@ -613,7 +617,7 @@ fun AddEditTaskDialog(
                 // Due Date & Time Section
                 Column {
                     Text(
-                        text = "Due Date & Time",
+                        text = stringResource(R.string.add_edit_task_due_date_time),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -727,7 +731,7 @@ fun AddEditTaskDialog(
                 if (taskToEdit != null) {
                     Column {
                         Text(
-                            text = "Status",
+                            text = stringResource(R.string.add_edit_task_status),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -816,14 +820,14 @@ fun AddEditTaskDialog(
                                 )
                             }
                             Text(
-                                text = if (isAttachingFile) "Importing..." else "Attach file",
+                                text = stringResource(if (isAttachingFile) R.string.add_edit_task_importing else R.string.add_edit_task_attach_file),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.weight(1f)
                             )
                             if (attachedCount > 0 && !isAttachingFile) {
                                 Text(
-                                    text = "$attachedCount attached",
+                                    text = stringResource(R.string.add_edit_task_attached, attachedCount),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -920,7 +924,7 @@ fun AttachmentChip(
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Remove attachment",
+                        contentDescription = stringResource(R.string.add_edit_task_remove_attachment),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.error
                     )

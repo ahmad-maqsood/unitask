@@ -7,6 +7,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.produceState
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.widget.Toast
@@ -66,6 +68,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -91,7 +94,7 @@ fun CreateGroupDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Default.GroupAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Create a Group", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.create_join_group_create_a_group), fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -107,8 +110,8 @@ fun CreateGroupDialog(
                         name = it.take(60)
                         errorMessage = null
                     },
-                    label = { Text("Group Name *") },
-                    placeholder = { Text("e.g. CS 301 Study Group") },
+                    label = { Text(stringResource(R.string.create_join_group_group_name)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_cs_301_study)) },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier
@@ -123,10 +126,10 @@ fun CreateGroupDialog(
                         username = sanitized
                         errorMessage = null
                     },
-                    label = { Text("Unique Username (@handle) *") },
-                    placeholder = { Text("e.g. cs301_team") },
+                    label = { Text(stringResource(R.string.create_join_group_unique_username_handle)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_cs301_team)) },
                     prefix = { Text("@") },
-                    supportingText = { Text("3-30 chars: lowercase letters, digits, and _") },
+                    supportingText = { Text(stringResource(R.string.create_join_group_3_30_chars_lowercase_letters)) },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier
@@ -167,7 +170,7 @@ fun CreateGroupDialog(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Create")
+                    Text(stringResource(R.string.common_create))
                 }
             }
         },
@@ -176,7 +179,7 @@ fun CreateGroupDialog(
                 onClick = onDismiss,
                 enabled = !isLoading
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -191,6 +194,7 @@ fun JoinGroupDialog(
     initialJoinCode: String = ""
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     var username by rememberSaveable { mutableStateOf(initialUsername) }
     var joinCode by rememberSaveable { mutableStateOf(initialJoinCode) }
@@ -211,7 +215,7 @@ fun JoinGroupDialog(
                     username = parsed.first
                     joinCode = parsed.second
                     errorMessage = null
-                    Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resources.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                 } else {
                     errorMessage = "QR code found, but invalid invite format."
                 }
@@ -232,7 +236,7 @@ fun JoinGroupDialog(
                         if (parsed != null) {
                             username = parsed.first
                             joinCode = parsed.second
-                            Toast.makeText(context, "QR code detected & filled!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, resources.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                         } else {
                             errorMessage = "QR code found, but invalid invite format."
                         }
@@ -255,7 +259,7 @@ fun JoinGroupDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Join a Group", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.create_join_group_join_a_group), fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -277,7 +281,7 @@ fun JoinGroupDialog(
                     ) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Scan with camera", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.create_join_group_scan_with_camera), style = MaterialTheme.typography.labelSmall)
                     }
 
                     OutlinedButton(
@@ -287,7 +291,7 @@ fun JoinGroupDialog(
                     ) {
                         Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("From image", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.create_join_group_from_image), style = MaterialTheme.typography.labelSmall)
                     }
                 }
 
@@ -300,12 +304,12 @@ fun JoinGroupDialog(
                             if (parsed != null) {
                                 username = parsed.first
                                 joinCode = parsed.second
-                                Toast.makeText(context, "Invite filled from clipboard!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, resources.getString(R.string.toast_invite_filled_from_clipboard), Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "No valid group invite in clipboard", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, resources.getString(R.string.toast_no_valid_group_invite_in), Toast.LENGTH_SHORT).show()
                             }
                         } else {
-                            Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, resources.getString(R.string.toast_clipboard_is_empty), Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = !isLoading,
@@ -313,7 +317,7 @@ fun JoinGroupDialog(
                 ) {
                     Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Paste Link", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.create_join_group_paste_link), style = MaterialTheme.typography.labelSmall)
                 }
 
                 OutlinedTextField(
@@ -323,8 +327,8 @@ fun JoinGroupDialog(
                         username = sanitized
                         errorMessage = null
                     },
-                    label = { Text("Group Username *") },
-                    placeholder = { Text("e.g. cs301_team") },
+                    label = { Text(stringResource(R.string.create_join_group_group_username)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_cs301_team)) },
                     prefix = { Text("@") },
                     singleLine = true,
                     enabled = !isLoading,
@@ -339,8 +343,8 @@ fun JoinGroupDialog(
                         joinCode = input.trim().uppercase().take(16)
                         errorMessage = null
                     },
-                    label = { Text("8-Character Join Code *") },
-                    placeholder = { Text("e.g. ABC23XYZ") },
+                    label = { Text(stringResource(R.string.create_join_group_8_character_join_code)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_abc23xyz)) },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier
@@ -382,7 +386,7 @@ fun JoinGroupDialog(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Join")
+                    Text(stringResource(R.string.common_join))
                 }
             }
         },
@@ -391,7 +395,7 @@ fun JoinGroupDialog(
                 onClick = onDismiss,
                 enabled = !isLoading
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -405,6 +409,7 @@ fun GroupQrCodeDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val inviteUri = remember(username, joinCode) {
         com.example.util.QrCodeUtil.buildGroupInviteUri(username, joinCode)
     }
@@ -425,7 +430,7 @@ fun GroupQrCodeDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Default.QrCode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Group QR Code", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.create_join_group_group_qr_code), fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -462,14 +467,14 @@ fun GroupQrCodeDialog(
                         if (currentQr != null) {
                             Image(
                                 bitmap = currentQr.asImageBitmap(),
-                                contentDescription = "Group QR Code",
+                                contentDescription = stringResource(R.string.create_join_group_group_qr_code),
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else if (!hasGenerated) {
                             CircularProgressIndicator(modifier = Modifier.size(36.dp))
                         } else {
                             Text(
-                                text = "Could not generate QR code",
+                                text = stringResource(R.string.create_join_group_could_not_generate_qr_code),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center
@@ -492,7 +497,7 @@ fun GroupQrCodeDialog(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Join Code",
+                                text = stringResource(R.string.create_join_group_join_code),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -508,10 +513,10 @@ fun GroupQrCodeDialog(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Join Code", joinCode)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Code copied!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, resources.getString(R.string.toast_code_copied), Toast.LENGTH_SHORT).show()
                             }
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy join code")
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.create_join_group_copy_join_code))
                         }
                     }
                 }
@@ -532,13 +537,13 @@ fun GroupQrCodeDialog(
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Share Invite")
+                    Text(stringResource(R.string.create_join_group_share_invite))
                 }
             }
         },
         confirmButton = {
             Button(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.common_close))
             }
         }
     )
@@ -552,11 +557,12 @@ fun GroupCreatedSuccessDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Group Created!", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.create_join_group_group_created), fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
@@ -565,7 +571,7 @@ fun GroupCreatedSuccessDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Your group \"$groupName\" (@$username) is ready. Share this join code with your classmates:")
+                Text(stringResource(R.string.create_join_group_your_group_is_ready_share, groupName, username))
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -595,13 +601,13 @@ fun GroupCreatedSuccessDialog(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Join Code", joinCode)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.testTag("copy_created_join_code_button")
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy code", modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.create_join_group_copy_code), modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Copy")
+                            Text(stringResource(R.string.create_join_group_copy))
                         }
                     }
                 }
@@ -612,7 +618,7 @@ fun GroupCreatedSuccessDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("close_group_created_dialog_button")
             ) {
-                Text("Open Group")
+                Text(stringResource(R.string.create_join_group_open_group))
             }
         }
     )
@@ -629,6 +635,7 @@ fun EditGroupDialog(
     onRegenerateCode: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var name by rememberSaveable { mutableStateOf(initialName) }
     var username by rememberSaveable { mutableStateOf(initialUsername) }
     var showRegenConfirm by remember { mutableStateOf(false) }
@@ -637,9 +644,9 @@ fun EditGroupDialog(
     if (showRegenConfirm) {
         AlertDialog(
             onDismissRequest = { showRegenConfirm = false },
-            title = { Text("Regenerate Join Code?") },
+            title = { Text(stringResource(R.string.create_join_group_regenerate_join_code)) },
             text = {
-                Text("The current join code ($currentJoinCode) will immediately stop working. Anyone trying to join with the old code will be rejected.")
+                Text(stringResource(R.string.create_join_group_the_current_join_code_will, currentJoinCode))
             },
             confirmButton = {
                 Button(
@@ -648,12 +655,12 @@ fun EditGroupDialog(
                         onRegenerateCode()
                     }
                 ) {
-                    Text("Regenerate")
+                    Text(stringResource(R.string.create_join_group_regenerate))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRegenConfirm = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -667,7 +674,7 @@ fun EditGroupDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Group Settings", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.create_join_group_group_settings), fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -683,8 +690,8 @@ fun EditGroupDialog(
                         name = it.take(60)
                         errorMessage = null
                     },
-                    label = { Text("Group Name *") },
-                    placeholder = { Text("e.g. CS 301 Study Group") },
+                    label = { Text(stringResource(R.string.create_join_group_group_name)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_cs_301_study)) },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier
@@ -699,10 +706,10 @@ fun EditGroupDialog(
                         username = sanitized
                         errorMessage = null
                     },
-                    label = { Text("Unique Username (@handle) *") },
-                    placeholder = { Text("e.g. cs301_team") },
+                    label = { Text(stringResource(R.string.create_join_group_unique_username_handle)) },
+                    placeholder = { Text(stringResource(R.string.create_join_group_e_g_cs301_team)) },
                     prefix = { Text("@") },
-                    supportingText = { Text("3-30 chars: lowercase letters, digits, and _") },
+                    supportingText = { Text(stringResource(R.string.create_join_group_3_30_chars_lowercase_letters)) },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier
@@ -720,7 +727,7 @@ fun EditGroupDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Group Join Code / Password",
+                            text = stringResource(R.string.create_join_group_group_join_code_password),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -749,7 +756,7 @@ fun EditGroupDialog(
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         val clip = ClipData.newPlainText("Join Code", currentJoinCode)
                                         clipboard.setPrimaryClip(clip)
-                                        Toast.makeText(context, "Join code copied!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 enabled = currentJoinCode.isNotBlank() && !isLoading,
@@ -760,7 +767,7 @@ fun EditGroupDialog(
                                 Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Copy code",
+                                    text = stringResource(R.string.create_join_group_copy_code),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -775,14 +782,14 @@ fun EditGroupDialog(
                                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "New code",
+                                    text = stringResource(R.string.create_join_group_new_code),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
                         Text(
-                            text = "Regenerating creates a new 8-character code and invalidates the old one immediately.",
+                            text = stringResource(R.string.create_join_group_regenerating_creates_a_new_8),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -822,7 +829,7 @@ fun EditGroupDialog(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Save Changes")
+                    Text(stringResource(R.string.create_join_group_save_changes))
                 }
             }
         },
@@ -831,7 +838,7 @@ fun EditGroupDialog(
                 onClick = onDismiss,
                 enabled = !isLoading
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

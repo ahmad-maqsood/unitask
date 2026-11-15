@@ -8,14 +8,10 @@ import org.junit.Test
 class OnboardingLogicTest {
 
     @Test
-    fun autostartIsShownOnlyOnPhonesThatHaveIt() {
-        assertEquals(
-            listOf(OnboardingSetting.NOTIFICATIONS, OnboardingSetting.BATTERY, OnboardingSetting.AUTOSTART),
-            OnboardingLogic.settingsFor(needsAutostart = true)
-        )
+    fun onlyNotificationsAndBatteryAreAskedFor() {
         assertEquals(
             listOf(OnboardingSetting.NOTIFICATIONS, OnboardingSetting.BATTERY),
-            OnboardingLogic.settingsFor(needsAutostart = false)
+            OnboardingSetting.entries
         )
     }
 
@@ -36,20 +32,10 @@ class OnboardingLogicTest {
     }
 
     @Test
-    fun allOnNeedsEverySettingThatIsShown() {
-        val shown = OnboardingLogic.settingsFor(needsAutostart = true)
-        assertFalse(OnboardingLogic.allOn(emptySet(), shown))
-        assertFalse(
-            OnboardingLogic.allOn(setOf(OnboardingSetting.NOTIFICATIONS, OnboardingSetting.BATTERY), shown)
-        )
-        assertTrue(OnboardingLogic.allOn(OnboardingSetting.entries.toSet(), shown))
-    }
-
-    @Test
-    fun autostartDoesNotCountWhenThePhoneHasNone() {
-        val shown = OnboardingLogic.settingsFor(needsAutostart = false)
-        assertTrue(
-            OnboardingLogic.allOn(setOf(OnboardingSetting.NOTIFICATIONS, OnboardingSetting.BATTERY), shown)
-        )
+    fun allOnNeedsEverySetting() {
+        assertFalse(OnboardingLogic.allOn(emptySet()))
+        assertFalse(OnboardingLogic.allOn(setOf(OnboardingSetting.NOTIFICATIONS)))
+        assertFalse(OnboardingLogic.allOn(setOf(OnboardingSetting.BATTERY)))
+        assertTrue(OnboardingLogic.allOn(setOf(OnboardingSetting.NOTIFICATIONS, OnboardingSetting.BATTERY)))
     }
 }

@@ -89,7 +89,7 @@ object TodayOverviewLoader {
         }.timeInMillis
 
         val personal = db.taskDao().getAllActiveTasksSync()
-            .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED }
+            .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED && it.isEnabled }
             .map {
                 val course = courses[it.courseId]
                 val isMy = course?.isMyTasksCourse() == true

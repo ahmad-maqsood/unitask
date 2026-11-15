@@ -73,6 +73,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -96,6 +97,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -185,6 +187,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = context as? Activity
 
     // Request notification permission for Android 13+
@@ -220,19 +223,15 @@ fun MainScreen(
 
     val checkAndShowBackgroundSetup: () -> Unit = {
         if (!BackgroundAccess.isBackgroundSetupPrompted(context)) {
-            val needsBattery = !BackgroundAccess.isIgnoringBatteryOptimizations(context)
-            val needsAutostart = BackgroundAccess.needsAutostartStep() && !BackgroundAccess.isAutostartStepDone(context)
-            if (needsBattery || needsAutostart) {
-                BackgroundAccess.setBackgroundSetupPrompted(context, true)
+            BackgroundAccess.setBackgroundSetupPrompted(context, true)
+            if (!BackgroundAccess.isIgnoringBatteryOptimizations(context)) {
                 showBackgroundSetupDialog = true
-            } else {
-                BackgroundAccess.setBackgroundSetupPrompted(context, true)
             }
         }
     }
 
-    // True once Android's notification dialog was answered in this session. The battery and
-    // auto-start dialog never follows it in the same session, so a new user sees one request at a time.
+    // True once Android's notification dialog was answered in this session. The battery
+    // dialog never follows it in the same session, so a new user sees one request at a time.
     var askedNotificationThisSession by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -243,7 +242,7 @@ fun MainScreen(
 
     // No permission dialog at launch. A new person is first asked for notifications when they save
     // their first task with a reminder (see onReminderSaved below), and the notification banner stays
-    // available as a gentle fallback. The battery and auto-start dialog comes on a later visit, once
+    // available as a gentle fallback. The battery dialog comes on a later visit, once
     // a reminder has been saved and notifications were already dealt with.
     LaunchedEffect(Unit) {
         val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
@@ -433,7 +432,7 @@ fun MainScreen(
                     (context as? ComponentActivity)?.finish() ?: activity?.finish()
                 } else {
                     lastBackPressTime = now
-                    Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resources.getString(R.string.toast_press_back_again_to_exit), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -465,7 +464,7 @@ fun MainScreen(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_stat_unitask),
-                                    contentDescription = "UniTask logo",
+                                    contentDescription = stringResource(R.string.main_unitask_logo),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(28.dp)
                                 )
@@ -473,7 +472,7 @@ fun MainScreen(
                         }
 
                         Text(
-                            text = "UniTask",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -488,7 +487,7 @@ fun MainScreen(
                         onClick = { showSearch = true },
                         modifier = Modifier.testTag("top_bar_search_button")
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.common_search))
                     }
                     AnnouncementBell(
                         announcements,
@@ -532,7 +531,7 @@ fun MainScreen(
                     MainNavBarItem(
                         selected = currentTab == MainTab.DEADLINES,
                         onClick = { viewModel.setTab(MainTab.DEADLINES) },
-                        label = "Deadlines",
+                        label = stringResource(R.string.main_deadlines),
                         icon = Icons.Default.Flag,
                         // Only overdue work is flagged, because that is what needs attention.
                         // A glowing dot is enough; the numbers are on the tab itself.
@@ -542,28 +541,28 @@ fun MainScreen(
                     MainNavBarItem(
                         selected = currentTab == MainTab.TIMETABLE,
                         onClick = { viewModel.setTab(MainTab.TIMETABLE) },
-                        label = "Timetable",
+                        label = stringResource(R.string.main_timetable),
                         icon = Icons.Default.Schedule,
                         testTag = "tab_timetable"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.COURSES,
                         onClick = { viewModel.setTab(MainTab.COURSES) },
-                        label = "Courses",
+                        label = stringResource(R.string.main_courses),
                         icon = Icons.Default.School,
                         testTag = "tab_courses"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.GROUPS,
                         onClick = { viewModel.setTab(MainTab.GROUPS) },
-                        label = "Groups",
+                        label = stringResource(R.string.main_groups),
                         icon = Icons.Default.Groups,
                         testTag = "tab_groups"
                     )
                     MainNavBarItem(
                         selected = currentTab == MainTab.MYTASKS,
                         onClick = { viewModel.setTab(MainTab.MYTASKS) },
-                        label = "My tasks",
+                        label = stringResource(R.string.main_my_tasks),
                         icon = Icons.Default.TaskAlt,
                         showDot = myTasksOverdueCount > 0,
                         testTag = "tab_mytasks"
@@ -638,12 +637,12 @@ fun MainScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Enable Deadline Reminders",
+                                text = stringResource(R.string.main_enable_deadline_reminders),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Tap here to receive deadline alerts even when the app is closed.",
+                                text = stringResource(R.string.main_tap_here_to_receive_deadline),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -653,14 +652,14 @@ fun MainScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Dismiss",
+                                contentDescription = stringResource(R.string.common_dismiss),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
             }
-                        if (needsExactAlarmAccess) {
+            if (needsExactAlarmAccess) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -670,12 +669,16 @@ fun MainScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                context.startActivity(
-                                    android.content.Intent(
-                                        android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                        android.net.Uri.parse("package:${context.packageName}")
+                                try {
+                                    context.startActivity(
+                                        android.content.Intent(
+                                            android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                            android.net.Uri.parse("package:${context.packageName}")
+                                        )
                                     )
-                                )
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this_2), Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                         .testTag("exact_alarm_banner")
@@ -692,12 +695,12 @@ fun MainScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Allow exact reminders",
+                                text = stringResource(R.string.main_allow_exact_reminders),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Tap to open the setting. Without it, deadline alerts can arrive late.",
+                                text = stringResource(R.string.main_tap_to_open_the_setting),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -795,18 +798,6 @@ fun MainScreen(
                                         }
                                     }
                                     GetStartedStep.BATTERY -> BackgroundAccess.requestIgnoreBatteryOptimizations(context)
-                                    GetStartedStep.AUTOSTART -> {
-                                        val started = BackgroundAccess.openAutostartSettings(context)
-                                        // Android cannot tell us if auto-start is on, so the step is ticked once
-                                        // the settings screen was opened.
-                                        BackgroundAccess.setAutostartStepDone(context, true)
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            if (started) BackgroundAccess.brandHint()
-                                            else "Could not open that screen. Find UniTask in your phone's app settings.",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    }
                                 }
                             }
                         )
@@ -1245,7 +1236,7 @@ private fun androidx.compose.foundation.layout.RowScope.MainNavBarItem(
                 Box {
                     Icon(
                         imageVector = icon,
-                        contentDescription = "$label, overdue tasks",
+                        contentDescription = stringResource(R.string.main_overdue_tasks, label),
                         modifier = Modifier.size(24.dp)
                     )
                     OverdueGlowDot(

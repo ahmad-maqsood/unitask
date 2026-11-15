@@ -49,10 +49,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.timer.TimerHistoryLogic
 import com.example.util.timer.TimerMode
 import com.example.util.timer.TimerSession
@@ -88,13 +90,13 @@ fun TimerHistoryScreen(
             .testTag("timer_history_screen"),
         topBar = {
             TopAppBar(
-                title = { Text("Study history", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.timer_history_study_history), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(
                         onClick = onClose,
                         modifier = Modifier.testTag("timer_history_back")
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -103,7 +105,7 @@ fun TimerHistoryScreen(
                             onClick = { showClearConfirm = true },
                             modifier = Modifier.testTag("timer_history_clear")
                         ) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "Clear all history")
+                            Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.timer_history_clear_all_history))
                         }
                     }
                 },
@@ -162,9 +164,9 @@ fun TimerHistoryScreen(
     sessionToDelete?.let { session ->
         AlertDialog(
             onDismissRequest = { sessionToDelete = null },
-            title = { Text("Delete this session?") },
+            title = { Text(stringResource(R.string.timer_history_delete_this_session)) },
             text = {
-                Text("${TimerHistoryLogic.formatTotal(session.durationMillis)} will be removed from your history.")
+                Text(stringResource(R.string.timer_history_will_be_removed_from_your, TimerHistoryLogic.formatTotal(session.durationMillis)))
             },
             confirmButton = {
                 TextButton(
@@ -173,10 +175,10 @@ fun TimerHistoryScreen(
                         sessionToDelete = null
                     },
                     modifier = Modifier.testTag("timer_history_delete_confirm")
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.common_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { sessionToDelete = null }) { Text("Cancel") }
+                TextButton(onClick = { sessionToDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -184,8 +186,8 @@ fun TimerHistoryScreen(
     if (showClearConfirm) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            title = { Text("Clear all history?") },
-            text = { Text("Every saved study session will be removed. This cannot be undone.") },
+            title = { Text(stringResource(R.string.timer_history_clear_all_history_2)) },
+            text = { Text(stringResource(R.string.timer_history_every_saved_study_session_will)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -193,10 +195,10 @@ fun TimerHistoryScreen(
                         showClearConfirm = false
                     },
                     modifier = Modifier.testTag("timer_history_clear_confirm")
-                ) { Text("Clear all") }
+                ) { Text(stringResource(R.string.announcement_host_clear_all)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -221,7 +223,7 @@ private fun SummaryCard(
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                text = "Studied today",
+                text = stringResource(R.string.timer_history_studied_today),
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
@@ -233,17 +235,17 @@ private fun SummaryCard(
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 SummaryStat(
-                    label = "Last 7 days",
+                    label = stringResource(R.string.timer_history_last_7_days),
                     value = if (weekMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(weekMillis),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryStat(
-                    label = "Sessions",
+                    label = stringResource(R.string.timer_history_sessions),
                     value = sessionCount.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryStat(
-                    label = "Average",
+                    label = stringResource(R.string.timer_history_average),
                     value = if (sessionCount == 0) "-" else TimerHistoryLogic.formatTotal(averageMillis),
                     modifier = Modifier.weight(1f)
                 )
@@ -285,7 +287,7 @@ private fun WeekChartCard(days: List<Pair<LocalDate, Long>>, today: LocalDate) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Last 7 days",
+                text = stringResource(R.string.timer_history_last_7_days),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -448,7 +450,7 @@ private fun SessionRow(session: TimerSession, zone: ZoneId, onDelete: () -> Unit
             if (session.completed) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Completed",
+                    contentDescription = stringResource(R.string.deadlines_completed),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -456,7 +458,7 @@ private fun SessionRow(session: TimerSession, zone: ZoneId, onDelete: () -> Unit
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete session",
+                    contentDescription = stringResource(R.string.timer_history_delete_session),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -481,13 +483,13 @@ private fun EmptyHistory() {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "No study sessions yet",
+            text = stringResource(R.string.timer_history_no_study_sessions_yet),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Run the timer for at least 10 seconds, then tap Reset or let a countdown finish. The session will show up here.",
+            text = stringResource(R.string.timer_history_run_the_timer_for_at),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

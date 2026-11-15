@@ -652,4 +652,18 @@
     <string name="common_reset">Reset</string>
     <string name="timer_fullscreen_start_focus">Start focus</string>
     <string name="timer_fullscreen_start_break">Start break</string>
+    <!-- TimerHistoryScreen.kt -->
+    <string name="timer_history_study_history">Study history</string>
+    <string name="timer_history_clear_all_history">Clear all history</string>
+    <string name="timer_history_delete_this_session">Delete this session?</string>
+    <string name="timer_history_will_be_removed_from_your">%1$s will be removed from your history.</string>
+    <string name="timer_history_clear_all_history_2">Clear all history?</string>
+    <string name="timer_history_every_saved_study_session_will">Every saved study session will be removed. This cannot be undone.</string>
+    <string name="timer_history_studied_today">Studied today</string>
+    <string name="timer_history_last_7_days">Last 7 days</string>
+    <string name="timer_history_sessions">Sessions</string>
+    <string name="timer_history_average">Average</string>
+    <string name="timer_history_delete_session">Delete session</string>
+    <string name="timer_history_no_study_sessions_yet">No study sessions yet</string>
+    <string name="timer_history_run_the_timer_for_at">Run the timer for at least 10 seconds, then tap Reset or let a countdown finish. The session will show up here.</string>
 </resources>

@@ -414,4 +414,7 @@
     <string name="groups_owner">Owner</string>
     <string name="groups_member">Member</string>
     <string name="groups_you_re_offline_showing_saved">You\'re offline. Showing saved data. Changes need internet.</string>
+    <!-- JoinCodeCard.kt -->
+    <string name="join_code_card_group_join_code">Group Join Code</string>
+    <string name="join_code_card_share_join_code">Share join code</string>
 </resources>

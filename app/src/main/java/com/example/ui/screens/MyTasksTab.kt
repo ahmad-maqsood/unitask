@@ -621,6 +621,8 @@ private data class TaskSections(
     val today: List<TaskWithCourse>,
     val tomorrow: List<TaskWithCourse>,
     val later: List<TaskWithCourse>,
+    // Open tasks that are turned off: never overdue or due today, whatever their date.
+    val turnedOff: List<TaskWithCourse>,
     val done: List<TaskWithCourse>
 )
 
@@ -640,12 +642,18 @@ private fun groupTasks(tasks: List<TaskWithCourse>, nowMillis: Long = System.cur
     val today = mutableListOf<TaskWithCourse>()
     val tomorrow = mutableListOf<TaskWithCourse>()
     val later = mutableListOf<TaskWithCourse>()
+    val turnedOff = mutableListOf<TaskWithCourse>()
     val done = mutableListOf<TaskWithCourse>()
 
     for (item in tasks) {
         val task = item.task
         if (task.status == TaskStatus.COMPLETED) {
             done.add(item)
+            continue
+        }
+
+        if (!task.isEnabled) {
+            turnedOff.add(item)
             continue
         }
 
@@ -672,6 +680,7 @@ private fun groupTasks(tasks: List<TaskWithCourse>, nowMillis: Long = System.cur
         today = today.sortedBy { it.task.deadlineMillis },
         tomorrow = tomorrow.sortedBy { it.task.deadlineMillis },
         later = later.sortedBy { it.task.deadlineMillis },
+        turnedOff = turnedOff.sortedBy { it.task.deadlineMillis },
         done = done.sortedByDescending { it.task.deadlineMillis }
     )
 }

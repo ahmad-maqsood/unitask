@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +52,7 @@ fun CrashReportScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
 
     BackHandler { onDismiss() }
@@ -119,7 +121,7 @@ fun CrashReportScreen(
                     val url = REPORT_FORM_URL + Uri.encode(info)
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 } catch (_: Exception) {
-                    Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth()

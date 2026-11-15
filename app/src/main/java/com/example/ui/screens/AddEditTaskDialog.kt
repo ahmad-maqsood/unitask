@@ -71,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -133,6 +134,7 @@ fun AddEditTaskDialog(
     onNeedCreateCourse: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val focusManager = LocalFocusManager.current
 
     var title by rememberSaveable { mutableStateOf(taskToEdit?.title ?: "") }
@@ -264,7 +266,7 @@ fun AddEditTaskDialog(
                 } else {
                     android.widget.Toast.makeText(
                         context,
-                        context.getString(R.string.toast_couldn_t_attach_that_file),
+                        resources.getString(R.string.toast_couldn_t_attach_that_file),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }

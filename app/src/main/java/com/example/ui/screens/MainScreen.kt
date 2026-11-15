@@ -97,6 +97,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -186,6 +187,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = context as? Activity
 
     // Request notification permission for Android 13+
@@ -430,7 +432,7 @@ fun MainScreen(
                     (context as? ComponentActivity)?.finish() ?: activity?.finish()
                 } else {
                     lastBackPressTime = now
-                    Toast.makeText(context, context.getString(R.string.toast_press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resources.getString(R.string.toast_press_back_again_to_exit), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -675,7 +677,7 @@ fun MainScreen(
                                         )
                                     )
                                 } catch (_: Exception) {
-                                    Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this_2), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this_2), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }

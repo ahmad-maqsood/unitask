@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -141,6 +142,7 @@ fun SettingsButton(
     onUpdateAvailableChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
@@ -569,7 +571,7 @@ fun SettingsButton(
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -590,7 +592,7 @@ fun SettingsButton(
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -615,7 +617,7 @@ fun SettingsButton(
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -640,7 +642,7 @@ fun SettingsButton(
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                                             } catch (_: Exception) {
-                                                Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         trailing = {
@@ -683,7 +685,7 @@ fun SettingsButton(
                                                 try {
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
                                                 } catch (_: Exception) {
-                                                    Toast.makeText(context, context.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                                 }
                                             },
                                             modifier = Modifier

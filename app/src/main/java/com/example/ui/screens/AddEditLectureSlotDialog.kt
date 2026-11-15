@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +80,7 @@ fun AddEditLectureSlotDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var conflictWarningMessage by remember { mutableStateOf<String?>(null) }
 
     var selectedCourseId by rememberSaveable {
@@ -390,7 +392,7 @@ fun AddEditLectureSlotDialog(
                     if (endTotal <= startTotal) {
                         android.widget.Toast.makeText(
                             context,
-                            context.getString(R.string.toast_end_time_must_be_after),
+                            resources.getString(R.string.toast_end_time_must_be_after),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button
@@ -398,7 +400,7 @@ fun AddEditLectureSlotDialog(
                     if (selectedCourseId <= 0) {
                         android.widget.Toast.makeText(
                             context,
-                            context.getString(R.string.toast_add_a_course_first_then),
+                            resources.getString(R.string.toast_add_a_course_first_then),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         return@Button

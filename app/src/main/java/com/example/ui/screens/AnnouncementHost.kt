@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -269,6 +270,7 @@ fun AnnouncementBell(
     onOpenTarget: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var showSheet by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(TAB_NOTIFICATIONS) }
     // Notifications that were unread when the bell was opened, so they can be marked "New".
@@ -381,7 +383,7 @@ fun AnnouncementBell(
                                 } catch (_: Exception) {
                                     android.widget.Toast.makeText(
                                         context,
-                                        context.getString(R.string.toast_no_app_can_open_this),
+                                        resources.getString(R.string.toast_no_app_can_open_this),
                                         android.widget.Toast.LENGTH_SHORT
                                     ).show()
                                 }

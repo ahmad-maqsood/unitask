@@ -58,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +99,7 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(pageCount = { PAGE_COUNT })
     val lastPage = PAGE_COUNT - 1
@@ -153,7 +155,7 @@ fun OnboardingScreen(
                 if (!started) {
                     Toast.makeText(
                         context,
-                        context.getString(R.string.toast_could_not_open_that_screen_2),
+                        resources.getString(R.string.toast_could_not_open_that_screen_2),
                         Toast.LENGTH_LONG
                     ).show()
                 }

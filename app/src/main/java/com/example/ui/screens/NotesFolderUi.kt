@@ -208,7 +208,7 @@ fun MoveToFolderDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onNewFolder)
+                        .clickable(onClick = onNewFolder, role = Role.Button)
                         .padding(vertical = 12.dp)
                         .testTag("move_to_new_folder"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -247,7 +247,7 @@ private fun FolderPickRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, role = Role.Button)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)

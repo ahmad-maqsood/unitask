@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.ui.semantics.Role
 import com.example.util.runLogged
 import android.app.Activity
 import android.content.Intent
@@ -748,7 +749,7 @@ private fun SettingsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, role = Role.Button)
             .padding(horizontal = 4.dp, vertical = 10.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically,

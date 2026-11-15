@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import com.example.data.local.AppDatabase
 import com.example.util.formatCourseDeleteWarning
 import com.example.util.queryCourseDeleteLoss
@@ -99,7 +100,7 @@ fun CourseCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("course_card_${course.id}")
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick, role = Role.Button),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

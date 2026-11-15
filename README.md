@@ -205,7 +205,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
   - Each task can have multiple reminders and offline file attachments of up to 25 MB.
 - **Courses.** Modules, credit hours, instructors and colour tags, which timetable slots and assignments inherit.
 - **Repeating tasks.** Tasks can repeat daily, on weekdays, weekly, every two weeks, monthly or yearly. A completed repeating task moves to its next due date and its checklist is reset.
-- **Get started card.** A checklist on the Deadlines tab for new users: allow notifications, turn off battery optimization, enable auto-start, then add a course, a deadline, a reminder and a class, try the timer and back up. The three phone-setting steps are read live from the phone, so they un-tick if you turn the setting off again.
+- **Get started card.** A checklist on the Deadlines tab for new users: allow notifications, turn off battery optimization, then add a course, a deadline, a reminder and a class, try the timer and back up. The two phone-setting steps are read live from the phone, so they un-tick if you turn the setting off again.
 - **My tasks.** A separate to-do list for items that are not coursework, with quick add, swipe to complete or delete with undo, and sections for overdue, today, tomorrow, later and done. One-time tasks can use **Delete when done**, which removes them the day after they are finished.
 
 ### Progress
@@ -347,14 +347,14 @@ supabase/          schema.sql, a reference copy of the live database
 
 Some phone manufacturers aggressively stop background applications. If reminders arrive late or not at all:
 
-1. Allow **Autostart** for UniTask, if your phone offers the option.
-2. Set battery usage to **No restrictions**.
-3. Allow background activity and exact alarms if Android asks.
-4. Confirm that notifications are enabled for UniTask.
-5. Open **Settings, Check reminders**. It shows what is wrong, fixes it with one tap and can send a test reminder.
+1. Set battery usage to **No restrictions**.
+2. Allow background activity and exact alarms if Android asks.
+3. Confirm that notifications are enabled for UniTask.
+4. Open **Settings, Check reminders**. It shows what is wrong, fixes it with one tap and can send a test reminder.
+5. If reminders still arrive late, try turning on **Autostart** (some phones call it Auto-launch) for UniTask in your phone's settings, if your phone has that option. Many phones do not, and UniTask does not ask for it.
 
 > [!TIP]
-> The in-app **Background setup** guide in Settings walks through these steps. Menu names differ between manufacturers.
+> The in-app **Background setup** in Settings opens the battery setting for you. Menu names differ between manufacturers.
 
 ## Privacy and permissions
 

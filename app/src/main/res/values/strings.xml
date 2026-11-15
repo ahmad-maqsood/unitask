@@ -510,4 +510,6 @@
     <string name="note_editor_save_as">Save as</string>
     <string name="note_editor_creating_pdf">Creating PDF...</string>
     <string name="note_editor_keep_screen_on">Keep screen on</string>
+    <!-- NoteImagePreview.kt -->
+    <string name="note_image_preview_image_not_available_on_this">Image not available on this phone</string>
 </resources>

@@ -38,11 +38,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.util.BackupCounts
 import com.example.util.BackupResult
 import com.example.util.LocalBackupManager
@@ -198,7 +200,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (showHeading) {
             Text(
-                text = "Backup file",
+                text = stringResource(R.string.local_backup_backup_file),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -206,8 +208,8 @@ fun LocalBackupSection(showHeading: Boolean = true) {
         }
         BackupRow(
             icon = Icons.Default.Backup,
-            title = "Back up to a file",
-            subtitle = "Courses, timetable and assignments in one .json file",
+            title = stringResource(R.string.local_backup_back_up_to_a_file),
+            subtitle = stringResource(R.string.local_backup_courses_timetable_and_assignments),
             onClick = {
                 exportPasswordInput = ""
                 showExportDialog = true
@@ -216,8 +218,8 @@ fun LocalBackupSection(showHeading: Boolean = true) {
         )
         BackupRow(
             icon = Icons.Default.Restore,
-            title = "Restore from a file",
-            subtitle = "Works on any phone, no sign-in needed",
+            title = stringResource(R.string.local_backup_restore_from_a_file),
+            subtitle = stringResource(R.string.local_backup_works_on_any_phone_no),
             onClick = { restoreLauncher.launch(arrayOf("*/*")) },
             testTag = "settings_local_restore_row"
         )
@@ -227,25 +229,24 @@ fun LocalBackupSection(showHeading: Boolean = true) {
         val tooShort = exportPasswordInput.isNotEmpty() && exportPasswordInput.length < MIN_PASSWORD_LENGTH
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text("Back up to a file") },
+            title = { Text(stringResource(R.string.local_backup_back_up_to_a_file)) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Optional: set a password to encrypt the file. Leave it empty for a plain " +
-                            "file. If you forget the password, the backup cannot be opened.",
+                        text = stringResource(R.string.local_backup_optional_set_a_password_to),
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
                         value = exportPasswordInput,
                         onValueChange = { exportPasswordInput = it },
-                        label = { Text("Password (optional)") },
+                        label = { Text(stringResource(R.string.local_backup_password_optional)) },
                         singleLine = true,
                         isError = tooShort,
                         supportingText = if (tooShort) {
-                            { Text("Use at least $MIN_PASSWORD_LENGTH characters") }
+                            { Text(stringResource(R.string.local_backup_use_at_least_characters, MIN_PASSWORD_LENGTH)) }
                         } else null,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -266,11 +267,11 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                         exportLauncher.launch("unitask-backup-$stamp.json")
                     }
                 ) {
-                    Text("Choose location")
+                    Text(stringResource(R.string.local_backup_choose_location))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showExportDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -283,14 +284,14 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 restorePasswordInput = ""
                 restorePasswordError = null
             },
-            title = { Text("Password needed") },
+            title = { Text(stringResource(R.string.local_backup_password_needed)) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "This backup is encrypted. Enter the password you set when you saved it.",
+                        text = stringResource(R.string.local_backup_this_backup_is_encrypted_enter),
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
@@ -299,7 +300,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                             restorePasswordInput = it
                             restorePasswordError = null
                         },
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.local_backup_password)) },
                         singleLine = true,
                         isError = restorePasswordError != null,
                         supportingText = restorePasswordError?.let { message -> { Text(message) } },
@@ -316,7 +317,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     enabled = restorePasswordInput.isNotEmpty() && !isWorking,
                     onClick = { runRestore(pendingRestoreUri, restorePasswordInput) }
                 ) {
-                    Text("Restore")
+                    Text(stringResource(R.string.common_restore))
                 }
             },
             dismissButton = {
@@ -327,7 +328,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                         restorePasswordError = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -337,14 +338,14 @@ fun LocalBackupSection(showHeading: Boolean = true) {
         AlertDialog(
             onDismissRequest = {},
             confirmButton = {},
-            title = { Text("Please wait") },
+            title = { Text(stringResource(R.string.local_backup_please_wait)) },
             text = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    Text("Working on your backup...", modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.local_backup_working_on_your_backup), modifier = Modifier.weight(1f))
                 }
             }
         )
@@ -357,7 +358,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
             title = { Text(title) },
             text = { Text(resultMessage) },
             confirmButton = {
-                TextButton(onClick = { resultTitle = null }) { Text("OK") }
+                TextButton(onClick = { resultTitle = null }) { Text(stringResource(R.string.common_ok)) }
             }
         )
     }

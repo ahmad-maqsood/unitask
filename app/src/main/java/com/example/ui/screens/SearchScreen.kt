@@ -52,6 +52,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.data.local.TaskStatus
 import com.example.data.local.TaskWithCourse
 import com.example.data.local.isMyTasksCourse
@@ -165,9 +167,9 @@ fun SearchScreen(
         val semesterName = archivedDialogSemester ?: ""
         AlertDialog(
             onDismissRequest = { archivedDialogSemester = null },
-            title = { Text("Archived in $semesterName") },
+            title = { Text(stringResource(R.string.search_archived_in, semesterName)) },
             text = {
-                Text("This item is part of $semesterName. Restore the semester to view and edit its contents.")
+                Text(stringResource(R.string.search_this_item_is_part_of, semesterName))
             },
             confirmButton = {
                 TextButton(
@@ -176,12 +178,12 @@ fun SearchScreen(
                         onRestoreSemester(semesterName)
                     }
                 ) {
-                    Text("Restore semester")
+                    Text(stringResource(R.string.search_restore_semester))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { archivedDialogSemester = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -207,7 +209,7 @@ fun SearchScreen(
                         .focusRequester(focusRequester)
                         .onFocusChanged { isSearchFocused = it.isFocused }
                         .testTag("search_input"),
-                    placeholder = { Text("Search tasks, notes, courses, settings...") },
+                    placeholder = { Text(stringResource(R.string.search_search_tasks_notes_courses)) },
                     leadingIcon = {
                         IconButton(
                             onClick = onClose,
@@ -215,7 +217,7 @@ fun SearchScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.common_back)
                             )
                         }
                     },
@@ -225,7 +227,7 @@ fun SearchScreen(
                                 IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear search"
+                                        contentDescription = stringResource(R.string.deadlines_clear_search)
                                     )
                                 }
                             }
@@ -237,7 +239,7 @@ fun SearchScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Tune,
-                                    contentDescription = "Search options",
+                                    contentDescription = stringResource(R.string.search_search_options),
                                     tint = if (includeArchived || includeGuides) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
@@ -267,7 +269,7 @@ fun SearchScreen(
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
-                            text = "Type to search tasks, notes, courses and settings",
+                            text = stringResource(R.string.search_type_to_search_tasks_notes),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -282,7 +284,7 @@ fun SearchScreen(
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
-                            text = "Nothing found for '$searchQuery'",
+                            text = stringResource(R.string.search_nothing_found_for, searchQuery),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -299,7 +301,7 @@ fun SearchScreen(
                         if (results.tasks.isNotEmpty()) {
                             item(key = "header_tasks") {
                                 Text(
-                                    text = "Tasks (${results.tasks.size})",
+                                    text = stringResource(R.string.group_detail_tasks, results.tasks.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -344,7 +346,7 @@ fun SearchScreen(
                         if (results.notes.isNotEmpty()) {
                             item(key = "header_notes") {
                                 Text(
-                                    text = "Notes (${results.notes.size})",
+                                    text = stringResource(R.string.search_notes, results.notes.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
@@ -387,7 +389,7 @@ fun SearchScreen(
                         if (results.courses.isNotEmpty()) {
                             item(key = "header_courses") {
                                 Text(
-                                    text = "Courses (${results.courses.size})",
+                                    text = stringResource(R.string.group_detail_courses, results.courses.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
@@ -429,7 +431,7 @@ fun SearchScreen(
                         if (results.settings.isNotEmpty()) {
                             item(key = "header_settings") {
                                 Text(
-                                    text = "Settings (${results.settings.size})",
+                                    text = stringResource(R.string.search_settings, results.settings.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
@@ -466,7 +468,7 @@ fun SearchScreen(
                         if (results.guides.isNotEmpty()) {
                             item(key = "header_guides") {
                                 Text(
-                                    text = "App guides (${results.guides.size})",
+                                    text = stringResource(R.string.search_app_guides, results.guides.size),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
@@ -516,7 +518,7 @@ private fun SearchOptionsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Search options") },
+        title = { Text(stringResource(R.string.search_search_options)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
@@ -525,7 +527,7 @@ private fun SearchOptionsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Include archived",
+                        text = stringResource(R.string.search_include_archived),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
@@ -541,7 +543,7 @@ private fun SearchOptionsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Include app guides",
+                        text = stringResource(R.string.search_include_app_guides),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
@@ -558,7 +560,7 @@ private fun SearchOptionsDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("search_options_done_button")
             ) {
-                Text("Done")
+                Text(stringResource(R.string.common_done))
             }
         }
     )
@@ -732,7 +734,7 @@ private fun SearchNoteRow(
                     if (folderName != null) {
                         Icon(
                             imageVector = Icons.Default.Folder,
-                            contentDescription = "Folder",
+                            contentDescription = stringResource(R.string.search_folder),
                             tint = folderColorOrNull(result.folderColorHex) ?: MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
@@ -903,7 +905,7 @@ private fun SearchGuideRow(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Learn to use the app",
+                    text = stringResource(R.string.search_learn_to_use_the_app),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,

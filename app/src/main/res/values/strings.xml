@@ -586,4 +586,19 @@
     <string name="reminder_chip_grid_remind_me">Remind me</string>
     <!-- RingAlarmToggle.kt -->
     <string name="ring_alarm_toggle_ring_alarm">Ring alarm</string>
+    <!-- SearchScreen.kt -->
+    <string name="search_archived_in">Archived in %1$s</string>
+    <string name="search_this_item_is_part_of">This item is part of %1$s. Restore the semester to view and edit its contents.</string>
+    <string name="search_restore_semester">Restore semester</string>
+    <string name="search_search_tasks_notes_courses">Search tasks, notes, courses, settings...</string>
+    <string name="search_search_options">Search options</string>
+    <string name="search_type_to_search_tasks_notes">Type to search tasks, notes, courses and settings</string>
+    <string name="search_nothing_found_for">Nothing found for \'%1$s\'</string>
+    <string name="search_notes">Notes (%1$s)</string>
+    <string name="search_settings">Settings (%1$s)</string>
+    <string name="search_app_guides">App guides (%1$s)</string>
+    <string name="search_include_archived">Include archived</string>
+    <string name="search_include_app_guides">Include app guides</string>
+    <string name="search_folder">Folder</string>
+    <string name="search_learn_to_use_the_app">Learn to use the app</string>
 </resources>

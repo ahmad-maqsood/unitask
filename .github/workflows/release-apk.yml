@@ -209,6 +209,30 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      # Phones only accept an update that is signed with the same key as the installed app. If the
+      # KEYSTORE_BASE64 secret ever holds a different keystore, stop here instead of publishing an
+      # APK nobody can update to. The value below is the public SHA-256 fingerprint of the signing
+      # certificate (the "certificate SHA-256 digest" line printed by apksigner verify --print-certs).
+      # Change it only if you deliberately switch to a new signing key.
+      - name: Check the APK is signed with the expected key
+        if: ${{ !inputs.test_release_notes }}
+        env:
+          EXPECTED_CERT_SHA256: f000bcf3c12e6ed4764b30765f6d58e083f163b1c2ba997f35f6a03e3468b818
+        run: |
+          APKSIGNER=$(ls -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found in the Android SDK on this runner, so the signing key could not be checked."
+            exit 1
+          fi
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          "$APKSIGNER" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-certs.txt"
+          ACTUAL=$(grep -m1 'certificate SHA-256 digest' "$RUNNER_TEMP/apk-certs.txt" | sed 's/.*: *//' | tr -d ': ' | tr 'A-F' 'a-f')
+          if [ "$ACTUAL" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::The APK is signed with a different key (SHA-256 ${ACTUAL:-unknown}) than expected ($EXPECTED_CERT_SHA256). Existing installs would refuse this update. Check the KEYSTORE_BASE64, STORE_PASSWORD and KEY_PASSWORD secrets."
+            exit 1
+          fi
+          echo "Signing certificate SHA-256: $ACTUAL (matches the expected key)." >> "$GITHUB_STEP_SUMMARY"
+
       # Generate signed SLSA build provenance for the exact APK produced above.
       - name: Attest release APK
         if: ${{ !inputs.test_release_notes }}

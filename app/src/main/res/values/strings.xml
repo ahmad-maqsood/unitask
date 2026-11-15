@@ -187,4 +187,14 @@
     <!-- CoursePickerPill.kt -->
     <string name="course_picker_pill_no_course">No course</string>
     <string name="course_picker_pill_pick_course">Pick course</string>
+    <!-- CoursesTab.kt -->
+    <string name="courses_enrolled_courses">Enrolled Courses</string>
+    <string name="courses_courses_this_semester">%1$s courses this semester</string>
+    <string name="courses_more_course_options">More course options</string>
+    <string name="courses_archive_courses">Archive courses...</string>
+    <string name="courses_add_your_first_course">Add your first course</string>
+    <string name="courses_add_your_university_courses_to">Add your university courses to organize your homework and assignments.</string>
+    <string name="courses_add_your_first_course_2">+ Add Your First Course</string>
+    <string name="courses_archived_semesters">Archived semesters (%1$s)</string>
+    <string name="courses_view_archived_semesters">View archived semesters</string>
 </resources>

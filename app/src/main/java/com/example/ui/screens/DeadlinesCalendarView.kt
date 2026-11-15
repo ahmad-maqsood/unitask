@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import java.util.Calendar
 import com.example.util.DateFormats
 import androidx.compose.runtime.mutableIntStateOf
@@ -107,7 +109,7 @@ internal fun DeadlinesCalendarView(
                         currentMonth -= 1
                     }
                 }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous month")
+                    Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.deadlines_calendar_view_previous_month))
                 }
 
                 Text(
@@ -124,7 +126,7 @@ internal fun DeadlinesCalendarView(
                         currentMonth += 1
                     }
                 }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Next month")
+                    Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.deadlines_calendar_view_next_month))
                 }
             }
 
@@ -215,7 +217,7 @@ internal fun DeadlinesCalendarView(
         DateFormats.longWeekdayMonthDay(selectedDayEpoch)
     }
     Text(
-        text = "Due on $selectedDateStr (${tasksOnSelectedDay.size})",
+        text = stringResource(R.string.deadlines_calendar_view_due_on, selectedDateStr, tasksOnSelectedDay.size),
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurface
@@ -228,7 +230,7 @@ internal fun DeadlinesCalendarView(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
         ) {
             Text(
-                text = "No deadlines due on this day.",
+                text = stringResource(R.string.deadlines_calendar_view_no_deadlines_due_on_this),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),

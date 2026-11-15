@@ -247,4 +247,9 @@
     <string name="deadline_task_cards_mark_done">Mark done</string>
     <string name="deadline_task_cards_not_done">Not done</string>
     <string name="common_done">Done</string>
+    <!-- DeadlinesCalendarView.kt -->
+    <string name="deadlines_calendar_view_previous_month">Previous month</string>
+    <string name="deadlines_calendar_view_next_month">Next month</string>
+    <string name="deadlines_calendar_view_due_on">Due on %1$s (%2$s)</string>
+    <string name="deadlines_calendar_view_no_deadlines_due_on_this">No deadlines due on this day.</string>
 </resources>

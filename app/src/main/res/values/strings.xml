@@ -319,4 +319,7 @@
     <string name="drive_restore_use_the_latest_backup_instead">Use the latest backup instead</string>
     <string name="drive_restore_use_the_older_backup_instead">Use the older backup instead</string>
     <string name="drive_restore_older_backup">Older backup: %1$s</string>
+    <!-- DriveRestoreOfferCard.kt -->
+    <string name="drive_restore_offer_card_had_unitask_on_another_phone">Had UniTask on another phone?</string>
+    <string name="drive_restore_offer_card_restore_your_courses_tasks_notes">Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.</string>
 </resources>

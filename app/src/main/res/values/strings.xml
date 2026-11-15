@@ -59,4 +59,10 @@
     <string name="add_edit_course_update">Update</string>
     <string name="add_edit_course_add_course">Add Course</string>
     <string name="common_cancel">Cancel</string>
+    <!-- AddEditGroupCourseDialog.kt -->
+    <string name="add_edit_group_course_edit_group_course">Edit Group Course</string>
+    <string name="add_edit_group_course_add_group_course">Add Group Course</string>
+    <string name="add_edit_group_course_e_g_cs_503_math">e.g. CS-503, MATH-240</string>
+    <string name="add_edit_group_course_e_g_theory_of_automata">e.g. Theory of Automata</string>
+    <string name="add_edit_group_course_e_g_dr_turing">e.g. Dr. Turing</string>
 </resources>

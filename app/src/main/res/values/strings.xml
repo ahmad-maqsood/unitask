@@ -306,4 +306,12 @@
     <string name="drive_backup_your_app_has_no_data">Your app has no data. Backing up now would replace your Drive backup with an empty one.</string>
     <string name="drive_backup_back_up_anyway">Back up anyway</string>
     <string name="drive_backup_your_backup_stays_in_your">Your backup stays in your Google Drive. To delete it: Google Drive settings, Manage apps, UniTask, Delete hidden app data.</string>
+    <!-- DriveMigrationDialog.kt -->
+    <string name="drive_migration_back_up_to_google_drive">Back up to Google Drive</string>
+    <string name="drive_migration_unitask_no_longer_syncs_your">UniTask no longer syncs your courses, tasks and notes to the online account. They stay on this phone. Back up to your own Google Drive so a lost or reset phone cannot take them with it.</string>
+    <string name="drive_migration_unitask_can_only_open_its">UniTask can only open its own hidden backup folder. It cannot see or change any of your other Google Drive files.</string>
+    <string name="drive_migration_also_back_up_automatically">Also back up automatically</string>
+    <string name="drive_migration_try_again">Try again</string>
+    <string name="drive_migration_remind_me_later">Remind me later</string>
+    <string name="drive_migration_don_t_ask_again">Don\'t ask again</string>
 </resources>

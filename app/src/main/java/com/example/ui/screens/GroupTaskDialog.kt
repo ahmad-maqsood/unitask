@@ -49,10 +49,12 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.util.DateFormats
 import com.example.data.local.priorityNameForRingAlarm
 import com.example.data.groups.GroupCourse
@@ -167,14 +169,14 @@ fun GroupTaskDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDatePicker = false }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         ) {
@@ -184,7 +186,7 @@ fun GroupTaskDialog(
 
     if (showTimePicker) {
         Material3TimePickerDialog(
-            title = "Select Due Time",
+            title = stringResource(R.string.add_edit_task_select_due_time),
             initialHour = dueHour,
             initialMinute = dueMinute,
             onDismiss = { showTimePicker = false },
@@ -209,14 +211,14 @@ fun GroupTaskDialog(
     if (showTagPicker) {
         AlertDialog(
             onDismissRequest = { showTagPicker = false },
-            title = { Text("Tag members", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.group_task_tag_members), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Only tagged members see this task in their Deadlines. Everyone in the group can still see it in the group.",
+                        text = stringResource(R.string.group_task_only_tagged_members_see_this),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -235,7 +237,7 @@ fun GroupTaskDialog(
                     ) {
                         Checkbox(checked = tagAll, onCheckedChange = null)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("@all (everyone)", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.group_task_all_everyone), fontWeight = FontWeight.SemiBold)
                     }
                     sortedMembers.forEach { m ->
                         val isTagged = !tagAll && m.uid in taggedUids
@@ -273,7 +275,7 @@ fun GroupTaskDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showTagPicker = false }) { Text("Done") }
+                TextButton(onClick = { showTagPicker = false }) { Text(stringResource(R.string.common_done)) }
             }
         )
     }
@@ -313,10 +315,10 @@ fun GroupTaskDialog(
                             .size(48.dp)
                             .testTag("group_task_cancel_button")
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel))
                     }
                     Text(
-                        text = if (taskToEdit == null) "New Group Task" else "Edit Group Task",
+                        text = stringResource(if (taskToEdit == null) R.string.group_task_new_group_task else R.string.group_task_edit_group_task),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -351,7 +353,7 @@ fun GroupTaskDialog(
                             .padding(end = 8.dp)
                             .testTag("group_task_save_button")
                     ) {
-                        Text(if (taskToEdit == null) "Create Task" else "Save Changes")
+                        Text(stringResource(if (taskToEdit == null) R.string.group_task_create_task else R.string.create_join_group_save_changes))
                     }
                 }
                 HorizontalDivider()
@@ -371,11 +373,11 @@ fun GroupTaskDialog(
                             title = it.take(200)
                             if (it.isNotBlank()) titleError = false
                         },
-                        label = { Text("Task Title *") },
-                        placeholder = { Text("e.g. Project Milestone 1") },
+                        label = { Text(stringResource(R.string.group_task_task_title)) },
+                        placeholder = { Text(stringResource(R.string.group_task_e_g_project_milestone_1)) },
                         isError = titleError,
                         supportingText = if (titleError) {
-                            { Text("Title is required") }
+                            { Text(stringResource(R.string.add_edit_task_title_is_required)) }
                         } else null,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -405,7 +407,7 @@ fun GroupTaskDialog(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = "Course",
+                                            text = stringResource(R.string.add_edit_lecture_slot_course),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             maxLines = 1
@@ -431,7 +433,7 @@ fun GroupTaskDialog(
                                         )
                                         Icon(
                                             imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = "Choose course",
+                                            contentDescription = stringResource(R.string.group_task_choose_course),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -441,7 +443,7 @@ fun GroupTaskDialog(
                                     onDismissRequest = { courseMenuOpen = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("None") },
+                                        text = { Text(stringResource(R.string.group_task_none)) },
                                         onClick = {
                                             courseLabel = ""
                                             customCourse = false
@@ -470,7 +472,7 @@ fun GroupTaskDialog(
                                         )
                                     }
                                     DropdownMenuItem(
-                                        text = { Text("Other (type my own)") },
+                                        text = { Text(stringResource(R.string.group_task_other_type_my_own)) },
                                         onClick = {
                                             if (groupCourses.any { it.code.equals(courseLabel, ignoreCase = true) }) courseLabel = ""
                                             customCourse = true
@@ -487,8 +489,8 @@ fun GroupTaskDialog(
                             OutlinedTextField(
                                 value = courseLabel,
                                 onValueChange = { courseLabel = it.take(60) },
-                                label = { Text("Course Code / Name (optional)") },
-                                placeholder = { Text("e.g. CS 301, Physics Lab") },
+                                label = { Text(stringResource(R.string.group_task_course_code_name_optional)) },
+                                placeholder = { Text(stringResource(R.string.group_task_e_g_cs_301_physics)) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -503,8 +505,8 @@ fun GroupTaskDialog(
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it.take(2000) },
-                        label = { Text("Description & Notes (optional)") },
-                        placeholder = { Text("e.g. Prepare slides and code demo") },
+                        label = { Text(stringResource(R.string.add_edit_task_description_notes_optional)) },
+                        placeholder = { Text(stringResource(R.string.group_task_e_g_prepare_slides_and)) },
                         minLines = 2,
                         maxLines = 6,
                         modifier = Modifier
@@ -515,7 +517,7 @@ fun GroupTaskDialog(
                     // Due Date & Time Section
                     Column {
                         Text(
-                            text = "Due Date & Time",
+                            text = stringResource(R.string.add_edit_task_due_date_time),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -599,7 +601,7 @@ fun GroupTaskDialog(
                         rowTestTag = "group_reminder_row",
                         clearTestTag = "group_clear_reminders_button",
                         doneTestTag = "group_reminder_done_button",
-                        pickerNote = "Everyone tagged gets these alerts."
+                        pickerNote = stringResource(R.string.group_task_everyone_tagged_gets_these_alerts)
                     )
 
                     // Ring alarm: the reminders above ring like an alarm for the tagged members
@@ -632,7 +634,7 @@ fun GroupTaskDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = "Tag members",
+                                    text = stringResource(R.string.group_task_tag_members),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = 1

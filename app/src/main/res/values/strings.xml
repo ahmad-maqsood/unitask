@@ -375,4 +375,20 @@
     <string name="group_detail_transfer_group_ownership">Transfer Group Ownership?</string>
     <string name="group_detail_transfer_ownership_of_to_you">Transfer ownership of \"%1$s\" to %2$s? You will remain in the group as an admin.</string>
     <string name="group_detail_transfer">Transfer</string>
+    <!-- GroupTaskDialog.kt -->
+    <string name="group_task_tag_members">Tag members</string>
+    <string name="group_task_only_tagged_members_see_this">Only tagged members see this task in their Deadlines. Everyone in the group can still see it in the group.</string>
+    <string name="group_task_all_everyone">\@all (everyone)</string>
+    <string name="group_task_new_group_task">New Group Task</string>
+    <string name="group_task_edit_group_task">Edit Group Task</string>
+    <string name="group_task_create_task">Create Task</string>
+    <string name="group_task_task_title">Task Title *</string>
+    <string name="group_task_e_g_project_milestone_1">e.g. Project Milestone 1</string>
+    <string name="group_task_choose_course">Choose course</string>
+    <string name="group_task_none">None</string>
+    <string name="group_task_other_type_my_own">Other (type my own)</string>
+    <string name="group_task_course_code_name_optional">Course Code / Name (optional)</string>
+    <string name="group_task_e_g_cs_301_physics">e.g. CS 301, Physics Lab</string>
+    <string name="group_task_e_g_prepare_slides_and">e.g. Prepare slides and code demo</string>
+    <string name="group_task_everyone_tagged_gets_these_alerts">Everyone tagged gets these alerts.</string>
 </resources>

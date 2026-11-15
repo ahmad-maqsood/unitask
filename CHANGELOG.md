@@ -2,6 +2,20 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.5.0] - 15-11-2026
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.5.0)
+
+### Added
+- Added a "Turn off" / "Turn on" option to the three-dots menu of tasks, group tasks and timetable classes. A turned-off item stays in your lists but has no reminders, alarm or snooze, and is not counted as overdue, due today or in the widget and daily summary.
+- Turned-off tasks are shown in their own "Turned off" section on the My tasks and Deadlines tabs. Turning a group task off only affects your phone, so other members are not changed.
+
+### Improved
+- Local backups now keep which tasks and classes are turned off.
+- Updated database schema to version 18.
+
+### Developer & project maintenance
+- Fixed ReminderStillNeededTest, which ran database calls on the main thread, and added tests for turned-off tasks.
+
 ## [4.4.0] - 14-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.4.0)
 

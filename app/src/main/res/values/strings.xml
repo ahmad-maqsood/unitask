@@ -184,4 +184,7 @@
     <string name="course_detail_assignments">Assignments (%1$s)</string>
     <string name="course_detail_no_assignments_for_yet">No assignments for %1$s yet!</string>
     <string name="course_detail_tap_the_button_above_to">Tap the button above to add homework, lab reports, or exams.</string>
+    <!-- CoursePickerPill.kt -->
+    <string name="course_picker_pill_no_course">No course</string>
+    <string name="course_picker_pill_pick_course">Pick course</string>
 </resources>

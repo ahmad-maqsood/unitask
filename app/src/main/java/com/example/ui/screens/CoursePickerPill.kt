@@ -23,8 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.Course
 import com.example.ui.theme.rememberCourseColor
 
@@ -66,14 +68,14 @@ internal fun CoursePickerPill(
                     )
                 } else {
                     Text(
-                        text = "No course",
+                        text = stringResource(R.string.course_picker_pill_no_course),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Pick course",
+                    contentDescription = stringResource(R.string.course_picker_pill_pick_course),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
@@ -85,7 +87,7 @@ internal fun CoursePickerPill(
             onDismissRequest = { onExpandedChange(false) }
         ) {
             DropdownMenuItem(
-                text = { Text("No course") },
+                text = { Text(stringResource(R.string.course_picker_pill_no_course)) },
                 onClick = {
                     onSelectCourse(null)
                     onExpandedChange(false)

@@ -37,7 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.util.formatCourseDeleteWarning
 import com.example.util.queryCourseDeleteLoss
@@ -90,7 +92,7 @@ fun CourseCard(
 
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
-            title = "Delete course?",
+            title = stringResource(R.string.course_card_delete_course),
             message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
             onConfirm = { onDeleteClick(course) },
             onDismiss = { showDeleteConfirm = false }
@@ -157,7 +159,7 @@ fun CourseCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Course actions",
+                                contentDescription = stringResource(R.string.course_card_course_actions),
                                 tint = Color.White
                             )
                         }
@@ -167,7 +169,7 @@ fun CourseCard(
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit Course") },
+                                text = { Text(stringResource(R.string.add_edit_course_edit_course)) },
                                 onClick = {
                                     showMenu = false
                                     onEditClick(course)
@@ -177,7 +179,7 @@ fun CourseCard(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete Course", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(R.string.course_card_delete_course_2), color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteConfirm = true
@@ -223,7 +225,7 @@ fun CourseCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "Instructor",
+                            contentDescription = stringResource(R.string.course_card_instructor),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -248,7 +250,7 @@ fun CourseCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Place,
-                            contentDescription = "Location",
+                            contentDescription = stringResource(R.string.course_card_location),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -283,7 +285,7 @@ fun CourseCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "${courseWithCount.pendingTasksCount} pending",
+                            text = stringResource(R.string.course_card_pending, courseWithCount.pendingTasksCount),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (courseWithCount.pendingTasksCount > 0) courseColor else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -293,7 +295,7 @@ fun CourseCard(
                     }
 
                     Text(
-                        text = "${courseWithCount.completedTasksCount}/${courseWithCount.totalTasksCount} done",
+                        text = stringResource(R.string.course_card_done, courseWithCount.completedTasksCount, courseWithCount.totalTasksCount),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1

@@ -162,4 +162,12 @@
     <string name="cloud_backup_this_permanently_deletes_your">This permanently deletes your online account. Groups you own are handed to another member (or deleted if you are the only member). Messages, group tasks and group courses you created are removed for everyone in those groups. Your courses, tasks and notes on this phone are not touched. This action cannot be undone.</string>
     <!-- ConfirmDeleteDialog.kt -->
     <string name="common_delete">Delete</string>
+    <!-- CourseCard.kt -->
+    <string name="course_card_delete_course">Delete course?</string>
+    <string name="course_card_course_actions">Course actions</string>
+    <string name="course_card_delete_course_2">Delete Course</string>
+    <string name="course_card_instructor">Instructor</string>
+    <string name="course_card_location">Location</string>
+    <string name="course_card_pending">%1$s pending</string>
+    <string name="course_card_done">%1$s/%2$s done</string>
 </resources>

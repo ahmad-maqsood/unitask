@@ -666,4 +666,37 @@
     <string name="timer_history_delete_session">Delete session</string>
     <string name="timer_history_no_study_sessions_yet">No study sessions yet</string>
     <string name="timer_history_run_the_timer_for_at">Run the timer for at least 10 seconds, then tap Reset or let a countdown finish. The session will show up here.</string>
+    <!-- TimerScreen.kt -->
+    <string name="timer_keep_screen_on_on">Keep screen on: on</string>
+    <string name="timer_keep_screen_on_off">Keep screen on: off</string>
+    <string name="timer_exit_full_screen">Exit full screen</string>
+    <string name="timer_timer">Timer</string>
+    <string name="timer_pomodoro_options">Pomodoro options</string>
+    <string name="timer_full_screen">Full screen</string>
+    <string name="timer_stopwatch">Stopwatch</string>
+    <string name="timer_countdown">Countdown</string>
+    <string name="timer_pomodoro">Pomodoro</string>
+    <string name="timer_round_of">Round %1$s of %2$s</string>
+    <string name="timer_min">%1$s / %2$s / %3$s min</string>
+    <string name="timer_min_2">%1$s min</string>
+    <string name="timer_history">History</string>
+    <string name="timer_countdown_length">Countdown length</string>
+    <string name="timer_hours">Hours</string>
+    <string name="timer_minutes">Minutes</string>
+    <string name="timer_total">Total: %1$s</string>
+    <string name="timer_choose_between_1_minute_and">Choose between 1 minute and 10 hours</string>
+    <string name="timer_set">Set</string>
+    <string name="timer_ring_like_an_alarm">Ring like an alarm</string>
+    <string name="timer_auto_start_next_round">Auto-start next round</string>
+    <string name="timer_starts_the_next_break_or">Starts the next break or focus round %1$s seconds after one ends.</string>
+    <string name="timer_stop_after_the_long_break">Stop after the long break</string>
+    <string name="timer_wait_for_you_to_start">Wait for you to start the next cycle instead of starting it automatically.</string>
+    <string name="timer_focus_min">Focus (min)</string>
+    <string name="timer_short_break_min">Short break (min)</string>
+    <string name="timer_long_break_min">Long break (min)</string>
+    <string name="timer_rounds_before_long_break">Rounds before long break</string>
+    <string name="timer_focus_1_min_breaks_1">Focus 1–%1$s min, breaks 1–%2$s min, rounds %3$s–%4$s</string>
+    <string name="timer_less">Less %1$s</string>
+    <string name="timer_more">More %1$s</string>
+    <string name="timer_start">Start</string>
 </resources>

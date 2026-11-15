@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
@@ -90,6 +91,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
 import com.example.util.AppTip
 import com.example.util.timer.PomodoroAlertSettings
 import com.example.util.timer.PomodoroLogic
@@ -231,7 +233,7 @@ fun TimerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lightbulb,
-                        contentDescription = if (keepAwakeInFullscreen) "Keep screen on: on" else "Keep screen on: off",
+                        contentDescription = stringResource(if (keepAwakeInFullscreen) R.string.timer_keep_screen_on_on else R.string.timer_keep_screen_on_off),
                         tint = if (keepAwakeInFullscreen) {
                             MaterialTheme.colorScheme.primary
                         } else {
@@ -245,7 +247,7 @@ fun TimerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FullscreenExit,
-                        contentDescription = "Exit full screen"
+                        contentDescription = stringResource(R.string.timer_exit_full_screen)
                     )
                 }
             }
@@ -280,7 +282,7 @@ fun TimerScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Timer",
+                            text = stringResource(R.string.timer_timer),
                             fontWeight = FontWeight.Bold
                         )
                     },
@@ -291,7 +293,7 @@ fun TimerScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.common_back)
                             )
                         }
                     },
@@ -303,7 +305,7 @@ fun TimerScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
-                                    contentDescription = "Pomodoro options"
+                                    contentDescription = stringResource(R.string.timer_pomodoro_options)
                                 )
                             }
                         }
@@ -313,7 +315,7 @@ fun TimerScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.History,
-                                contentDescription = "Study history"
+                                contentDescription = stringResource(R.string.timer_history_study_history)
                             )
                         }
                         IconButton(
@@ -322,7 +324,7 @@ fun TimerScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
-                                contentDescription = "Full screen"
+                                contentDescription = stringResource(R.string.timer_full_screen)
                             )
                         }
                     },
@@ -361,7 +363,7 @@ fun TimerScreen(
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_stopwatch")
                     ) {
-                        ShrinkToFitText(text = "Stopwatch", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
+                        ShrinkToFitText(text = stringResource(R.string.timer_stopwatch), style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                     SegmentedButton(
                         selected = state.mode == TimerMode.COUNTDOWN && state.pomodoroPhase == null,
@@ -371,7 +373,7 @@ fun TimerScreen(
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_countdown")
                     ) {
-                        ShrinkToFitText(text = "Countdown", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
+                        ShrinkToFitText(text = stringResource(R.string.timer_countdown), style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                     SegmentedButton(
                         selected = state.pomodoroPhase != null,
@@ -381,7 +383,7 @@ fun TimerScreen(
                         enabled = isIdle,
                         modifier = Modifier.testTag("timer_mode_pomodoro")
                     ) {
-                        ShrinkToFitText(text = "Pomodoro", style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
+                        ShrinkToFitText(text = stringResource(R.string.timer_pomodoro), style = MaterialTheme.typography.labelLarge, minFontSize = 11.sp)
                     }
                 }
 
@@ -466,7 +468,7 @@ fun TimerScreen(
                             com.example.util.DateFormats.clock(endMillis)
                         }
                         Text(
-                            text = "Ends at $endText",
+                            text = stringResource(R.string.timer_fullscreen_ends_at, endText),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.testTag("timer_end_time")
@@ -490,7 +492,7 @@ fun TimerScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Round ${state.pomodoroRound} of ${pomodoroSettings.roundsBeforeLongBreak}",
+                            text = stringResource(R.string.timer_round_of, state.pomodoroRound, pomodoroSettings.roundsBeforeLongBreak),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.testTag("timer_pomodoro_round")
@@ -508,9 +510,7 @@ fun TimerScreen(
                                 onClick = { showPomodoroDialog = true },
                                 label = {
                                     Text(
-                                        "${pomodoroSettings.focusMinutes} / " +
-                                            "${pomodoroSettings.shortBreakMinutes} / " +
-                                            "${pomodoroSettings.longBreakMinutes} min"
+                                        stringResource(R.string.timer_min, pomodoroSettings.focusMinutes, pomodoroSettings.shortBreakMinutes, pomodoroSettings.longBreakMinutes)
                                     )
                                 },
                                 enabled = isIdle,
@@ -522,7 +522,7 @@ fun TimerScreen(
                                     CountdownNotifier.cancelFinished(context)
                                     controller.skipPomodoroPhase()
                                 },
-                                label = { Text("Skip") },
+                                label = { Text(stringResource(R.string.onboarding_skip)) },
                                 modifier = Modifier.testTag("timer_pomodoro_skip")
                             )
                         }
@@ -548,7 +548,7 @@ fun TimerScreen(
                             FilterChip(
                                 selected = state.countdownTotalMillis == minutes * 60_000L,
                                 onClick = { controller.setCountdownMinutes(minutes) },
-                                label = { Text("$minutes min") },
+                                label = { Text(stringResource(R.string.timer_min_2, minutes)) },
                                 enabled = isIdle,
                                 modifier = Modifier.testTag("timer_preset_$minutes")
                             )
@@ -613,7 +613,7 @@ fun TimerScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Studied today",
+                                text = stringResource(R.string.timer_history_studied_today),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -624,7 +624,7 @@ fun TimerScreen(
                             )
                         }
                         Text(
-                            text = "History",
+                            text = stringResource(R.string.timer_history),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -678,7 +678,7 @@ fun TimerScreen(
 
         AlertDialog(
             onDismissRequest = { showCustomDialog = false },
-            title = { Text("Countdown length") },
+            title = { Text(stringResource(R.string.timer_countdown_length)) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -695,7 +695,7 @@ fun TimerScreen(
                                     hoursText = newValue
                                 }
                             },
-                            label = { Text("Hours") },
+                            label = { Text(stringResource(R.string.timer_hours)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
@@ -712,7 +712,7 @@ fun TimerScreen(
                                     minutesText = newValue
                                 }
                             },
-                            label = { Text("Minutes") },
+                            label = { Text(stringResource(R.string.timer_minutes)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
@@ -734,13 +734,13 @@ fun TimerScreen(
                     }
 
                     Text(
-                        text = "Total: ${TimerLogic.formatDuration(totalMinutes)}",
+                        text = stringResource(R.string.timer_total, TimerLogic.formatDuration(totalMinutes)),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
                     if (!isValid) {
                         Text(
-                            text = "Choose between 1 minute and 10 hours",
+                            text = stringResource(R.string.timer_choose_between_1_minute_and),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -781,7 +781,7 @@ fun TimerScreen(
                     enabled = isValid,
                     modifier = Modifier.testTag("timer_custom_set_button")
                 ) {
-                    Text("Set")
+                    Text(stringResource(R.string.timer_set))
                 }
             },
             dismissButton = {
@@ -789,7 +789,7 @@ fun TimerScreen(
                     onClick = { showCustomDialog = false },
                     modifier = Modifier.testTag("timer_custom_cancel_button")
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -809,14 +809,14 @@ private fun PomodoroOptionsDialog(
     val seconds = PomodoroLogic.AUTO_START_DELAY_MILLIS / 1000L
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pomodoro options") },
+        title = { Text(stringResource(R.string.timer_pomodoro_options)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 PomodoroSwitchRow(
-                    title = "Ring like an alarm",
+                    title = stringResource(R.string.timer_ring_like_an_alarm),
                     description = if (settings.ringLikeAlarm) {
                         "Rings and vibrates when a round ends. Turn off to vibrate only."
                     } else {
@@ -827,15 +827,15 @@ private fun PomodoroOptionsDialog(
                     onCheckedChange = { onChange(settings.copy(ringLikeAlarm = it)) }
                 )
                 PomodoroSwitchRow(
-                    title = "Auto-start next round",
-                    description = "Starts the next break or focus round $seconds seconds after one ends.",
+                    title = stringResource(R.string.timer_auto_start_next_round),
+                    description = stringResource(R.string.timer_starts_the_next_break_or, seconds),
                     checked = settings.autoStartNext,
                     tag = "timer_option_auto_start",
                     onCheckedChange = { onChange(settings.copy(autoStartNext = it)) }
                 )
                 PomodoroSwitchRow(
-                    title = "Stop after the long break",
-                    description = "Wait for you to start the next cycle instead of starting it automatically.",
+                    title = stringResource(R.string.timer_stop_after_the_long_break),
+                    description = stringResource(R.string.timer_wait_for_you_to_start),
                     checked = settings.stopAfterLongBreak,
                     enabled = settings.autoStartNext,
                     tag = "timer_option_stop_after_long",
@@ -848,7 +848,7 @@ private fun PomodoroOptionsDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("timer_options_done_button")
             ) {
-                Text("Done")
+                Text(stringResource(R.string.common_done))
             }
         }
     )
@@ -924,7 +924,7 @@ internal fun AutoStartBanner(
                 onClick = onCancel,
                 modifier = Modifier.testTag("timer_auto_start_cancel")
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     }
@@ -985,14 +985,14 @@ private fun PomodoroSettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pomodoro") },
+        title = { Text(stringResource(R.string.timer_pomodoro)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 PomodoroStepperRow(
-                    label = "Focus (min)",
+                    label = stringResource(R.string.timer_focus_min),
                     text = focusText,
                     isValid = focus != null,
                     tag = "timer_pomodoro_focus",
@@ -1010,7 +1010,7 @@ private fun PomodoroSettingsDialog(
                     }
                 )
                 PomodoroStepperRow(
-                    label = "Short break (min)",
+                    label = stringResource(R.string.timer_short_break_min),
                     text = shortText,
                     isValid = shortBreak != null,
                     tag = "timer_pomodoro_short",
@@ -1028,7 +1028,7 @@ private fun PomodoroSettingsDialog(
                     }
                 )
                 PomodoroStepperRow(
-                    label = "Long break (min)",
+                    label = stringResource(R.string.timer_long_break_min),
                     text = longText,
                     isValid = longBreak != null,
                     tag = "timer_pomodoro_long",
@@ -1046,7 +1046,7 @@ private fun PomodoroSettingsDialog(
                     }
                 )
                 PomodoroStepperRow(
-                    label = "Rounds before long break",
+                    label = stringResource(R.string.timer_rounds_before_long_break),
                     text = roundsText,
                     isValid = rounds != null,
                     tag = "timer_pomodoro_rounds",
@@ -1065,9 +1065,7 @@ private fun PomodoroSettingsDialog(
                 )
                 if (!canSave) {
                     Text(
-                        text = "Focus 1–${PomodoroSettings.MAX_FOCUS_MINUTES} min, breaks " +
-                            "1–${PomodoroSettings.MAX_BREAK_MINUTES} min, rounds " +
-                            "${PomodoroSettings.MIN_ROUNDS}–${PomodoroSettings.MAX_ROUNDS}",
+                        text = stringResource(R.string.timer_focus_1_min_breaks_1, PomodoroSettings.MAX_FOCUS_MINUTES, PomodoroSettings.MAX_BREAK_MINUTES, PomodoroSettings.MIN_ROUNDS, PomodoroSettings.MAX_ROUNDS),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -1091,7 +1089,7 @@ private fun PomodoroSettingsDialog(
                 enabled = canSave,
                 modifier = Modifier.testTag("timer_pomodoro_save_button")
             ) {
-                Text("Save")
+                Text(stringResource(R.string.common_save))
             }
         },
         dismissButton = {
@@ -1099,7 +1097,7 @@ private fun PomodoroSettingsDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("timer_pomodoro_cancel_button")
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -1127,7 +1125,7 @@ private fun PomodoroStepperRow(
             modifier = Modifier.weight(1f)
         )
         IconButton(onClick = onMinus, modifier = Modifier.testTag(tag + "_minus")) {
-            Icon(Icons.Default.Remove, contentDescription = "Less $label")
+            Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.timer_less, label))
         }
         OutlinedTextField(
             value = text,
@@ -1150,7 +1148,7 @@ private fun PomodoroStepperRow(
                 .testTag(tag + "_value")
         )
         IconButton(onClick = onPlus, modifier = Modifier.testTag(tag + "_plus")) {
-            Icon(Icons.Default.Add, contentDescription = "More $label")
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.timer_more, label))
         }
     }
 }
@@ -1224,7 +1222,7 @@ private fun TimerControlButtons(
             ) {
                 Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(22.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                ShrinkToFitText(text = "Reset", style = labelStyle, minFontSize = 11.sp)
+                ShrinkToFitText(text = stringResource(R.string.common_reset), style = labelStyle, minFontSize = 11.sp)
             }
         }
 
@@ -1240,7 +1238,7 @@ private fun TimerControlButtons(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    ShrinkToFitText(text = "Start", style = labelStyle, minFontSize = 11.sp)
+                    ShrinkToFitText(text = stringResource(R.string.timer_start), style = labelStyle, minFontSize = 11.sp)
                 }
             }
             isRunning -> {
@@ -1254,7 +1252,7 @@ private fun TimerControlButtons(
                 ) {
                     Icon(Icons.Default.Pause, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    ShrinkToFitText(text = "Pause", style = labelStyle, minFontSize = 11.sp)
+                    ShrinkToFitText(text = stringResource(R.string.timer_notif_pause), style = labelStyle, minFontSize = 11.sp)
                 }
             }
             isPaused -> {
@@ -1268,7 +1266,7 @@ private fun TimerControlButtons(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    ShrinkToFitText(text = "Resume", style = labelStyle, minFontSize = 11.sp)
+                    ShrinkToFitText(text = stringResource(R.string.timer_notif_resume), style = labelStyle, minFontSize = 11.sp)
                 }
             }
             finishedLabel != null -> {

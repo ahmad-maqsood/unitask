@@ -143,10 +143,11 @@ fun TimerScreen(
     val context = LocalContext.current
     val view = LocalView.current
 
-    // Keep the screen awake while the timer is counting, and in full screen when the user
-    // left the "keep screen on" toggle on. Cleared again when this screen is left.
+    // In full screen the bulb toggle alone decides whether the screen stays awake, so turning it
+    // off lets the screen time out even while the timer runs. Outside full screen the screen stays
+    // awake while the timer is counting. Cleared again when this screen is left.
     val isRunning = TimerLogic.isRunning(state)
-    val keepScreenOn = isRunning || (fullscreen && keepAwakeInFullscreen)
+    val keepScreenOn = if (fullscreen) keepAwakeInFullscreen else isRunning
     DisposableEffect(keepScreenOn) {
         view.keepScreenOn = keepScreenOn
         onDispose {

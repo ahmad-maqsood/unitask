@@ -209,4 +209,31 @@ class TimerFlowTest {
             .assertContentDescriptionEquals("Keep screen on: off")
         org.junit.Assert.assertFalse(controller.keepScreenOnInFullscreen())
     }
+
+    // The Compose host view that TimerScreen sets keepScreenOn on.
+    private fun hostKeepsScreenOn(): Boolean {
+        val content = composeRule.activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+        return content.getChildAt(0).keepScreenOn
+    }
+
+    @Test
+    fun turningBulbOffInFullscreenLetsScreenSleepEvenWhileTimerRuns() {
+        composeRule.onNodeWithTag("timer_fullscreen_button").performClick()
+        composeRule.onNodeWithTag("timer_start_button").performClick()
+        composeRule.waitForIdle()
+
+        // Bulb is on by default, so the screen stays awake.
+        org.junit.Assert.assertTrue(hostKeepsScreenOn())
+
+        // Turning the bulb off must release the screen even though the timer is still running.
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
+        org.junit.Assert.assertFalse(hostKeepsScreenOn())
+
+        // Turning it back on keeps the screen awake again.
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.waitForIdle()
+        org.junit.Assert.assertTrue(hostKeepsScreenOn())
+    }
 }

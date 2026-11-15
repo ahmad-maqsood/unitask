@@ -65,4 +65,20 @@
     <string name="add_edit_group_course_e_g_cs_503_math">e.g. CS-503, MATH-240</string>
     <string name="add_edit_group_course_e_g_theory_of_automata">e.g. Theory of Automata</string>
     <string name="add_edit_group_course_e_g_dr_turing">e.g. Dr. Turing</string>
+    <!-- AddEditLectureSlotDialog.kt -->
+    <string name="add_edit_lecture_slot_select_class_start_time">Select Class Start Time</string>
+    <string name="add_edit_lecture_slot_select_class_end_time">Select Class End Time</string>
+    <string name="add_edit_lecture_slot_edit_lecture_slot">Edit Lecture Slot</string>
+    <string name="add_edit_lecture_slot_add_lecture_slot">Add Lecture Slot</string>
+    <string name="add_edit_lecture_slot_course">Course</string>
+    <string name="add_edit_lecture_slot_day_of_the_week">Day of the Week</string>
+    <string name="add_edit_lecture_slot_start_time">Start Time</string>
+    <string name="add_edit_lecture_slot_end_time">End Time</string>
+    <string name="add_edit_lecture_slot_schedule_frequency">Schedule Frequency</string>
+    <string name="add_edit_lecture_slot_classroom_hall">Classroom / Hall</string>
+    <string name="add_edit_lecture_slot_e_g_faraday_hall_room">e.g. Faraday Hall, Room 102</string>
+    <string name="add_edit_lecture_slot_instructor_lecturer">Instructor / Lecturer</string>
+    <string name="add_edit_lecture_slot_e_g_prof_feynman">e.g. Prof. Feynman</string>
+    <string name="add_edit_lecture_slot_update_slot">Update Slot</string>
+    <string name="add_edit_lecture_slot_save_slot">Save Slot</string>
 </resources>

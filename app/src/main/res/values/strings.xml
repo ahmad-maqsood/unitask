@@ -781,4 +781,11 @@
     <string name="widget_now">Now</string>
     <!-- DriveAutoBackup.kt -->
     <string name="drive_auto_backup_title">Google Drive backup</string>
+    <!-- Notification channels shown in the phone's settings -->
+    <string name="group_task_channel_name">Group updates</string>
+    <string name="group_task_channel_description">Tells you when someone adds a task to one of your groups</string>
+    <string name="announcement_channel_name">Announcements</string>
+    <string name="announcement_channel_description">Messages from the UniTask team</string>
+    <string name="missed_reminders_channel_name">Missed reminders</string>
+    <string name="missed_reminders_channel_description">Tells you about reminders that could not ring because the phone was off.</string>
 </resources>

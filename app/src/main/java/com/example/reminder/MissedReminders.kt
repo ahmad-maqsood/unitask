@@ -170,8 +170,12 @@ object MissedReminders {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Missed reminders", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "Tells you about reminders that could not ring because the phone was off."
+                NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.missed_reminders_channel_name),
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = context.getString(R.string.missed_reminders_channel_description)
                 }
             )
         }

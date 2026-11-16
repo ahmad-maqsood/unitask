@@ -45,7 +45,6 @@ class GroupTaskProcessor(context: Context) {
     private val summaryStore = appContext.getSharedPreferences(SUMMARY_PREFS, Context.MODE_PRIVATE)
     companion object {
         const val CHANNEL_ID = "unitask_group_updates_v2"
-        private const val CHANNEL_NAME = "Group updates"
         private const val BASELINE = "__baseline__"
         private const val MAX_INDIVIDUAL_NOTICES = 3
         private const val STATE_PREFS = "group_task_state"
@@ -372,10 +371,10 @@ class GroupTaskProcessor(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NotificationSound.channelId(appContext, CHANNEL_ID),
-                CHANNEL_NAME,
+                appContext.getString(R.string.group_task_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Tells you when someone adds a task to one of your groups"
+                description = appContext.getString(R.string.group_task_channel_description)
                 NotificationSound.uri(appContext)?.let { setSound(it, NotificationSound.audioAttributes()) }
 
             }

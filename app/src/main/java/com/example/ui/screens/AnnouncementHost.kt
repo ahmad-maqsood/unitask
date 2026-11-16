@@ -331,7 +331,7 @@ fun AnnouncementBell(
                         selected = selectedTab == TAB_NOTIFICATIONS,
                         onClick = { selectedTab = TAB_NOTIFICATIONS },
                         modifier = Modifier.testTag("bell_tab_notifications"),
-                        text = { TabLabel("Notifications", state.unreadNotifications) }
+                        text = { TabLabel(stringResource(R.string.announcement_host_tab_notifications), state.unreadNotifications) }
                     )
                     Tab(
                         selected = selectedTab == TAB_ANNOUNCEMENTS,
@@ -339,7 +339,7 @@ fun AnnouncementBell(
                         modifier = Modifier.testTag("bell_tab_announcements"),
                         text = {
                             TabLabel(
-                                "Announcements",
+                                stringResource(R.string.announcement_host_tab_announcements),
                                 state.unreadAnnouncements + (if (state.updateUnread) 1 else 0),
                                 urgent = state.unreadAnnouncements > 0
                             )

@@ -34,6 +34,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.example.MainActivity
+import com.example.R
 import com.example.ui.theme.AccentColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -151,7 +152,7 @@ private fun WidgetContent(context: Context, data: TodayOverview?) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Today",
+                text = context.getString(R.string.widget_today),
                 style = TextStyle(color = accentColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
@@ -205,7 +206,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
                 )
                 if (c.state == ClassState.NOW) {
                     Text(
-                        text = "NOW",
+                        text = context.getString(R.string.widget_now).uppercase(),
                         style = TextStyle(color = accentColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     )
                 }

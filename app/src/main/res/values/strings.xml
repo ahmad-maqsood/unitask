@@ -776,4 +776,7 @@
     <string name="group_task_changed_text">Open the Deadlines tab to see what changed.</string>
     <!-- AppRepository.kt -->
     <string name="app_repository_missed_task_title">Missed: %1$s</string>
+    <!-- UniTaskWidget.kt -->
+    <string name="widget_today">Today</string>
+    <string name="widget_now">Now</string>
 </resources>

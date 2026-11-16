@@ -215,7 +215,7 @@ class GroupTaskProcessor(context: Context) {
         if (fresh.size > MAX_INDIVIDUAL_NOTICES) {
             postNotification(
                 id = ("summary|" + snapshot.groupId).hashCode(),
-                title = "New tasks in ${snapshot.groupName}",
+                title = appContext.getString(R.string.group_task_new_tasks_title, snapshot.groupName),
                 text = "${fresh.size} tasks added. Open the Deadlines tab to view.",
                 groupId = snapshot.groupId
             )
@@ -235,7 +235,7 @@ class GroupTaskProcessor(context: Context) {
             }
             postNotification(
                 id = ("new|" + snapshot.groupId + "|" + task.id).hashCode(),
-                title = "New task in ${snapshot.groupName}",
+                title = appContext.getString(R.string.group_task_new_task_title, snapshot.groupName),
                 text = body,
                 groupId = snapshot.groupId
             )
@@ -295,7 +295,7 @@ class GroupTaskProcessor(context: Context) {
             postNotification(
                 id = ("changed|" + snapshot.groupId).hashCode(),
                 title = "${notices.size} tasks changed in ${snapshot.groupName}",
-                text = "Open the Deadlines tab to see what changed.",
+                text = appContext.getString(R.string.group_task_changed_text),
                 groupId = snapshot.groupId
             )
             return

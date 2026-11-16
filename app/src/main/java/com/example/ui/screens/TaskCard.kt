@@ -29,8 +29,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.filled.ToggleOff
-import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Checkbox
@@ -278,21 +276,15 @@ fun TaskCard(
                                     }
                                 )
                             }
-                            DropdownMenuItem(
-                                text = {
-                                    Text(stringResource(if (isEnabled) R.string.task_card_turn_off else R.string.task_card_turn_on))
-                                },
+                            TurnOnOffMenuItem(
+                                isEnabled = isEnabled,
+                                turnOffLabel = stringResource(R.string.task_card_turn_off),
+                                turnOnLabel = stringResource(R.string.task_card_turn_on),
                                 onClick = {
                                     showMenu = false
                                     toggleEnabled(task)
                                 },
-                                modifier = Modifier.testTag("task_toggle_enabled_menu_item"),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = if (isEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
-                                        contentDescription = null
-                                    )
-                                }
+                                modifier = Modifier.testTag("task_toggle_enabled_menu_item")
                             )
                             if (groupEntry != null) {
                                 // Group tasks are edited or deleted inside the group.

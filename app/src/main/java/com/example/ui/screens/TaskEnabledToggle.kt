@@ -1,10 +1,18 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.Repositories
 import com.example.data.groups.GroupTaskEntry
@@ -38,4 +46,37 @@ internal fun rememberTaskEnabledToggle(groupEntry: GroupTaskEntry?): (TaskItem) 
         }
         toggle
     }
+}
+
+/**
+ * The "Turn off" / "Turn on" row of a task, group task or class menu.
+ *
+ * It uses the same bell icons as the Off label on the card: a crossed-out bell for "Turn off", and
+ * a bell in the accent colour for "Turn on". The icons tell what the row will do, so the menu does
+ * not need a switch picture that would show the opposite of the state the person is looking at.
+ */
+@Composable
+internal fun TurnOnOffMenuItem(
+    isEnabled: Boolean,
+    turnOffLabel: String,
+    turnOnLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    DropdownMenuItem(
+        text = { Text(if (isEnabled) turnOffLabel else turnOnLabel) },
+        onClick = onClick,
+        modifier = modifier,
+        leadingIcon = {
+            if (isEnabled) {
+                Icon(imageVector = Icons.Default.NotificationsOff, contentDescription = null)
+            } else {
+                Icon(
+                    imageVector = Icons.Default.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    )
 }

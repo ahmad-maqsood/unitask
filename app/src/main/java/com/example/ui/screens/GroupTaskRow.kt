@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ToggleOff
-import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -220,21 +218,15 @@ fun GroupTaskRow(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(stringResource(if (isEnabled) R.string.task_card_turn_off else R.string.task_card_turn_on))
-                                },
+                            TurnOnOffMenuItem(
+                                isEnabled = isEnabled,
+                                turnOffLabel = stringResource(R.string.task_card_turn_off),
+                                turnOnLabel = stringResource(R.string.task_card_turn_on),
                                 onClick = {
                                     showMenu = false
                                     GroupTaskOffStore.setOff(context, task.groupId, task.id, off = isEnabled)
                                 },
-                                modifier = Modifier.testTag("group_task_toggle_enabled_${task.id}"),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = if (isEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
-                                        contentDescription = null
-                                    )
-                                }
+                                modifier = Modifier.testTag("group_task_toggle_enabled_${task.id}")
                             )
                             if (canModify) {
                                 DropdownMenuItem(

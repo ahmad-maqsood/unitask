@@ -784,6 +784,7 @@
     <!-- ClassStartReceiver.kt -->
     <string name="class_start_in_progress_title">Class in progress: %1$s</string>
     <string name="class_start_in_minutes_title">Class in %1$d min: %2$s</string>
+    <string name="class_start_room">Room: %1$s</string>
     <!-- GroupTaskProcessor.kt -->
     <string name="group_task_new_tasks_title">New tasks in %1$s</string>
     <string name="group_task_new_task_title">New task in %1$s</string>

@@ -157,7 +157,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         )
         val details = buildList {
             add(timeRange)
-            if (room.isNotBlank()) add("Room: $room")
+            if (room.isNotBlank()) add(context.getString(R.string.class_start_room, room))
             if (teacher.isNotBlank()) add(teacher)
         }.joinToString(" \u2022 ")
 
@@ -235,7 +235,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         )
         val details = buildList {
             add(timeRange)
-            if (room.isNotBlank()) add("Room: $room")
+            if (room.isNotBlank()) add(context.getString(R.string.class_start_room, room))
             if (teacher.isNotBlank()) add(teacher)
         }.joinToString(" • ")
 

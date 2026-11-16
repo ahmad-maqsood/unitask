@@ -140,14 +140,14 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val dueLines = dueToday.map { item ->
             val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
             val time = TimeFormatter.format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-            "Due $time \u2022 ${item.label}: ${item.title}"
+            context.getString(R.string.daily_summary_due_line, time, item.label, item.title)
         }
 
         // Keep the full text for the bell, even when notifications are switched off.
         NotificationHistory.add(
             context,
             kind = "Daily summary",
-            title = "Today in UniTask",
+            title = context.getString(R.string.daily_summary_title),
             body = (listOf(summary) + classLines + dueLines).joinToString("\n"),
             target = "tab:DEADLINES",
             key = "daily|$startOfToday"
@@ -158,11 +158,11 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val lines = ArrayList<String>()
         lines.addAll(classLines.take(MAX_LINES))
         if (classLines.size > MAX_LINES) {
-            lines.add("+${classLines.size - MAX_LINES} more classes \u2022 see the bell in UniTask")
+            lines.add(context.getString(R.string.daily_summary_more_classes, classLines.size - MAX_LINES))
         }
         lines.addAll(dueLines.take(MAX_LINES))
         if (dueLines.size > MAX_LINES) {
-            lines.add("+${dueLines.size - MAX_LINES} more tasks \u2022 see the bell in UniTask")
+            lines.add(context.getString(R.string.daily_summary_more_tasks, dueLines.size - MAX_LINES))
         }
 
         ensureChannel(context)
@@ -183,7 +183,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setContentTitle("Today in UniTask")
+            .setContentTitle(context.getString(R.string.daily_summary_title))
             .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

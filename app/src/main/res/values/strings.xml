@@ -762,4 +762,9 @@
     <string name="notification_summary_deadlines_and_reminders">Deadlines and reminders</string>
     <string name="notification_summary_announcements">Announcements</string>
     <string name="notification_summary_missed_reminders">Your phone was off or restarted</string>
+    <!-- DailySummaryReceiver.kt -->
+    <string name="daily_summary_title">Today in UniTask</string>
+    <string name="daily_summary_due_line">Due %1$s • %2$s: %3$s</string>
+    <string name="daily_summary_more_classes">+%1$d more classes • see the bell in UniTask</string>
+    <string name="daily_summary_more_tasks">+%1$d more tasks • see the bell in UniTask</string>
 </resources>

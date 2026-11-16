@@ -225,7 +225,7 @@ object CountdownNotifier {
             .setAutoCancel(true)
             .setContentIntent(openPending)
             .setDeleteIntent(stopPending)
-            .addAction(R.drawable.ic_timer_stop, "Stop", stopPending)
+            .addAction(R.drawable.ic_timer_stop, context.getString(R.string.countdown_stop_button), stopPending)
 
         if (vibrateOnly) {
             builder.setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -826,6 +826,10 @@
     <string name="drive_auto_backup_sign_in_expired">Google Drive backup stopped because the sign-in expired. Open Settings, Backup &amp; data and reconnect.</string>
     <string name="drive_auto_backup_drive_full">Google Drive backup stopped because your Google Drive is full. Free up space in Google Drive, then open Settings, Backup &amp; data and tap Back up now.</string>
     <string name="drive_auto_backup_not_working">Google Drive backup has not worked for 3 days. Open Settings, Backup &amp; data.</string>
+    <!-- Buttons on notifications -->
+    <string name="reminder_mark_as_done_button">Mark as Done</string>
+    <string name="reminder_snooze_button">Snooze %1$dm</string>
+    <string name="countdown_stop_button">Stop</string>
     <!-- Notification channels shown in the phone's settings -->
     <string name="group_task_channel_name">Group updates</string>
     <string name="group_task_channel_description">Tells you when someone adds a task to one of your groups</string>

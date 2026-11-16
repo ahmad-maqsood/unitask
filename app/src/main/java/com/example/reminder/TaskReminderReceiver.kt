@@ -357,7 +357,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 markDoneIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
+            builder.addAction(R.drawable.ic_stat_unitask, context.getString(R.string.reminder_mark_as_done_button), markDonePending)
         } else if (taskId > 0L) {
             val markDoneIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ACTION_MARK_TASK_DONE
@@ -370,11 +370,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 markDoneIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
+            builder.addAction(R.drawable.ic_stat_unitask, context.getString(R.string.reminder_mark_as_done_button), markDonePending)
         }
 
         // Snooze button: bring the same reminder back after 30 minutes.
-        for ((minutes, buttonText) in ReminderSnooze.CHOICES) {
+        for (minutes in ReminderSnooze.CHOICES) {
             val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ReminderSnooze.ACTION_SNOOZE
                 // Data makes each button's PendingIntent different from the others.
@@ -389,7 +389,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 snoozeIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, buttonText, snoozePending)
+            builder.addAction(
+                R.drawable.ic_stat_unitask,
+                context.getString(R.string.reminder_snooze_button, minutes),
+                snoozePending
+            )
         }
         if (isAlarm && !isSilence) {
             builder.setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)

@@ -303,11 +303,14 @@ fun SettingsButton(
                                 onClick = { page = SettingsPage.General },
                                 testTag = "settings_section_general"
                             )
-                            val notificationsSummary = buildString {
-                                append("Sound: $soundLabel")
-                                if (summaryEnabled) append(", Daily summary on")
-                                if (classStartEnabled) append(", Class alerts on")
-                            }
+                            val soundSummary = stringResource(R.string.settings_summary_sound, soundLabel)
+                            val dailySummaryOn = stringResource(R.string.settings_summary_daily_summary_on)
+                            val classAlertsOn = stringResource(R.string.settings_summary_class_alerts_on)
+                            val notificationsSummary = buildList {
+                                add(soundSummary)
+                                if (summaryEnabled) add(dailySummaryOn)
+                                if (classStartEnabled) add(classAlertsOn)
+                            }.joinToString(", ")
                             SettingsSectionRow(
                                 icon = Icons.Default.NotificationsActive,
                                 title = stringResource(R.string.settings_notifications_reminders),

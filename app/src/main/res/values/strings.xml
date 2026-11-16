@@ -606,6 +606,9 @@
     <string name="settings_sign_in_for_groups">Sign in for groups</string>
     <string name="settings_general">General</string>
     <string name="settings_notifications_reminders">Notifications &amp; reminders</string>
+    <string name="settings_summary_sound">Sound: %1$s</string>
+    <string name="settings_summary_daily_summary_on">Daily summary on</string>
+    <string name="settings_summary_class_alerts_on">Class alerts on</string>
     <string name="settings_backup_data">Backup &amp; data</string>
     <string name="settings_google_drive_backup_and_backup">Google Drive backup and backup file</string>
     <string name="settings_about_help">About &amp; help</string>

@@ -117,6 +117,10 @@
     <string name="announcement_host_clear_all">Clear all</string>
     <string name="announcement_host_remove_notification">Remove notification</string>
     <string name="announcement_host_remove_announcement">Remove announcement</string>
+    <string name="announcement_host_tab_notifications">Notifications</string>
+    <string name="announcement_host_tab_announcements">Announcements</string>
+    <string name="announcement_host_no_notifications_yet">No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.</string>
+    <string name="announcement_host_no_announcements_right_now">No announcements right now.</string>
     <!-- ArchiveCoursesSheet.kt -->
     <string name="archive_courses_archive_courses">Archive courses</string>
     <string name="archive_courses_select_none">Select none</string>
@@ -401,6 +405,9 @@
     <string name="group_task_row_not_on_your_deadlines">Not on your Deadlines</string>
     <string name="group_task_row_due_time">Due time</string>
     <!-- GroupsTab.kt -->
+    <string name="groups_failed_to_create_group">Failed to create group</string>
+    <string name="groups_failed_to_join_group">Failed to join group</string>
+    <string name="groups_task_deleted">Task deleted</string>
     <string name="groups_reconnecting">Reconnecting...</string>
     <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
     <string name="groups_collaborate_with_classmates_share">Collaborate with classmates, share assignments, and track group deadlines in real time.</string>
@@ -474,8 +481,8 @@
     <string name="my_tasks_add_quick_task">Add quick task</string>
     <string name="my_tasks_add_a_task">Add a task...</string>
     <string name="my_tasks_save_task">Save task</string>
-    <string name="my_tasks_collapse_done_section">Collapse Done section</string>
-    <string name="my_tasks_expand_done_section">Expand Done section</string>
+    <string name="section_collapse_description">Collapse %1$s section</string>
+    <string name="section_expand_description">Expand %1$s section</string>
     <!-- NoteEditorScreen.kt -->
     <string name="common_undo">Undo</string>
     <string name="note_editor_redo">Redo</string>
@@ -604,6 +611,11 @@
     <string name="settings_sign_in_for_groups">Sign in for groups</string>
     <string name="settings_general">General</string>
     <string name="settings_notifications_reminders">Notifications &amp; reminders</string>
+    <string name="settings_account_needed_for_study_groups">Needed for study groups</string>
+    <string name="settings_week_not_set">Week not set</string>
+    <string name="settings_summary_sound">Sound: %1$s</string>
+    <string name="settings_summary_daily_summary_on">Daily summary on</string>
+    <string name="settings_summary_class_alerts_on">Class alerts on</string>
     <string name="settings_backup_data">Backup &amp; data</string>
     <string name="settings_google_drive_backup_and_backup">Google Drive backup and backup file</string>
     <string name="settings_about_help">About &amp; help</string>
@@ -674,6 +686,8 @@
     <string name="timer_timer">Timer</string>
     <string name="timer_pomodoro_options">Pomodoro options</string>
     <string name="timer_full_screen">Full screen</string>
+    <string name="timer_change_pomodoro_lengths">Change Pomodoro lengths</string>
+    <string name="timer_change_countdown_length">Change countdown length</string>
     <string name="timer_stopwatch">Stopwatch</string>
     <string name="timer_countdown">Countdown</string>
     <string name="timer_pomodoro">Pomodoro</string>
@@ -716,7 +730,21 @@
     <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
     <!-- ToolsSheet.kt -->
     <string name="tools_more">More</string>
+    <string name="tools_more_timer_active">More, timer active</string>
+    <string name="tools_notes">Notes</string>
+    <string name="tools_notes_description">Lecture notes and summaries</string>
+    <string name="tools_timer">Timer</string>
+    <string name="tools_timer_description">Stopwatch and countdown</string>
+    <string name="tools_progress">Progress</string>
+    <string name="tools_progress_description">Tasks done and your streak</string>
+    <string name="tools_recently_deleted">Recently deleted</string>
+    <string name="tools_recently_deleted_description">Restore tasks and notes</string>
+    <string name="tools_help">Help</string>
+    <string name="tools_help_description">Learn how to use UniTask</string>
+    <string name="tools_settings">Settings</string>
+    <string name="tools_settings_description">Reminders, backup and account</string>
     <!-- UpdatePrompt.kt -->
+    <string name="update_prompt_download_apk">Download APK</string>
     <string name="update_prompt_what_s_new">What\'s new</string>
     <!-- Toast messages -->
     <string name="toast_end_time_must_be_after">End time must be after the start time</string>
@@ -734,4 +762,108 @@
     <string name="toast_could_not_open_that_screen_2">Could not open that screen. Find UniTask in your phone\'s battery settings.</string>
     <string name="toast_attachment_file_not_found_locally">Attachment file not found locally</string>
     <string name="toast_no_app_available_to_open">No app available to open this file</string>
+    <!-- Notification group summaries (reminder package) -->
+    <string name="notification_summary_group_updates">Group updates</string>
+    <string name="notification_summary_class_alerts">Class alerts</string>
+    <string name="notification_summary_deadlines_and_reminders">Deadlines and reminders</string>
+    <string name="notification_summary_announcements">Announcements</string>
+    <string name="notification_summary_missed_reminders">Your phone was off or restarted</string>
+    <!-- DailySummaryReceiver.kt -->
+    <string name="daily_summary_title">Today in UniTask</string>
+    <string name="daily_summary_due_line">Due %1$s • %2$s: %3$s</string>
+    <string name="daily_summary_more_classes">+%1$d more classes • see the bell in UniTask</string>
+    <string name="daily_summary_more_tasks">+%1$d more tasks • see the bell in UniTask</string>
+    <string name="daily_summary_my_task">My task</string>
+    <string name="daily_summary_overdue_short">%1$d overdue</string>
+    <plurals name="daily_summary_classes">
+        <item quantity="one">%1$d class</item>
+        <item quantity="other">%1$d classes</item>
+    </plurals>
+    <plurals name="daily_summary_tasks_due_today">
+        <item quantity="one">%1$d task due today</item>
+        <item quantity="other">%1$d tasks due today</item>
+    </plurals>
+    <plurals name="daily_summary_overdue_tasks">
+        <item quantity="one">%1$d overdue task</item>
+        <item quantity="other">%1$d overdue tasks</item>
+    </plurals>
+    <!-- ClassStartReceiver.kt -->
+    <string name="class_start_in_progress_title">Class in progress: %1$s</string>
+    <string name="class_start_in_minutes_title">Class in %1$d min: %2$s</string>
+    <string name="class_start_room">Room: %1$s</string>
+    <!-- GroupTaskProcessor.kt -->
+    <string name="group_task_new_tasks_title">New tasks in %1$s</string>
+    <string name="group_task_new_task_title">New task in %1$s</string>
+    <string name="group_task_changed_text">Open the Deadlines tab to see what changed.</string>
+    <string name="group_task_member_fallback">A member</string>
+    <string name="group_task_due">Due %1$s</string>
+    <string name="group_task_new_body_with_course">[%1$s] %2$s • %3$s (by %4$s)</string>
+    <string name="group_task_new_body">%1$s • %2$s (by %3$s)</string>
+    <string name="group_task_deadline_moved_title">Deadline moved in %1$s</string>
+    <string name="group_task_deadline_moved_text">%1$s is now due %2$s</string>
+    <string name="group_task_deleted_title">Task deleted in %1$s</string>
+    <string name="group_task_deleted_text">%1$s was removed</string>
+    <plurals name="group_task_tasks_added_text">
+        <item quantity="one">%1$d task added. Open the Deadlines tab to view.</item>
+        <item quantity="other">%1$d tasks added. Open the Deadlines tab to view.</item>
+    </plurals>
+    <plurals name="group_task_tasks_changed_title">
+        <item quantity="one">%1$d task changed in %2$s</item>
+        <item quantity="other">%1$d tasks changed in %2$s</item>
+    </plurals>
+    <!-- AppRepository.kt -->
+    <string name="app_repository_missed_task_title">Missed: %1$s</string>
+    <!-- UniTaskWidget.kt -->
+    <string name="widget_today">Today</string>
+    <string name="widget_now">Now</string>
+    <string name="widget_classes">Classes</string>
+    <string name="widget_tasks">Tasks</string>
+    <string name="widget_nothing_planned">Nothing planned today.</string>
+    <string name="widget_open_app">Open UniTask to load today.</string>
+    <plurals name="widget_overdue">
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
+    <plurals name="widget_more_classes">
+        <item quantity="one">+%1$d more class</item>
+        <item quantity="other">+%1$d more classes</item>
+    </plurals>
+    <plurals name="widget_more_tasks">
+        <item quantity="one">+%1$d more task</item>
+        <item quantity="other">+%1$d more tasks</item>
+    </plurals>
+    <!-- DriveAutoBackup.kt -->
+    <string name="drive_auto_backup_title">Google Drive backup</string>
+    <string name="drive_auto_backup_sign_in_expired">Google Drive backup stopped because the sign-in expired. Open Settings, Backup &amp; data and reconnect.</string>
+    <string name="drive_auto_backup_drive_full">Google Drive backup stopped because your Google Drive is full. Free up space in Google Drive, then open Settings, Backup &amp; data and tap Back up now.</string>
+    <string name="drive_auto_backup_not_working">Google Drive backup has not worked for 3 days. Open Settings, Backup &amp; data.</string>
+    <!-- Buttons on notifications -->
+    <string name="reminder_mark_as_done_button">Mark as Done</string>
+    <string name="reminder_snooze_button">Snooze %1$dm</string>
+    <string name="countdown_stop_button">Stop</string>
+    <!-- Notification channels shown in the phone's settings -->
+    <string name="group_task_channel_name">Group updates</string>
+    <string name="group_task_channel_description">Tells you when someone adds a task to one of your groups</string>
+    <string name="announcement_channel_name">Announcements</string>
+    <string name="announcement_channel_description">Messages from the UniTask team</string>
+    <string name="missed_reminders_channel_name">Missed reminders</string>
+    <string name="missed_reminders_channel_description">Tells you about reminders that could not ring because the phone was off.</string>
+    <string name="daily_summary_channel_name">Daily summary</string>
+    <string name="daily_summary_channel_description">One alert each day with your classes and deadlines</string>
+    <string name="class_start_channel_name">Class started</string>
+    <string name="class_start_channel_description">Tells you when one of your classes starts</string>
+    <string name="task_reminder_channel_name">Assignment Deadlines &amp; Reminders</string>
+    <string name="task_reminder_channel_description">Notifies students about upcoming assignments and homework deadlines</string>
+    <string name="countdown_vibrate_channel_name">Pomodoro round ended (vibrate only)</string>
+    <string name="countdown_vibrate_channel_description">Vibrates, without sound, when a Pomodoro focus or break round ends.</string>
+    <string name="countdown_channel_name">Countdown finished</string>
+    <string name="countdown_channel_description">Alerts when a timer or countdown finishes.</string>
+    <string name="countdown_silent_channel_name">Countdown finished (silent)</string>
+    <string name="countdown_silent_channel_description">Shown when a countdown ended while the phone was off or the alarm was very late.</string>
+    <string name="timer_ongoing_channel_name">Running timer</string>
+    <string name="timer_ongoing_channel_description">Shows the stopwatch or countdown while it is running.</string>
+    <string name="high_priority_alarm_channel_name">High priority alarms</string>
+    <string name="high_priority_alarm_channel_description">Rings like an alarm for reminders of high priority tasks</string>
+    <string name="high_priority_alarm_silenced_channel_name">High priority alarms (silenced)</string>
+    <string name="high_priority_alarm_silenced_channel_description">Keeps high priority alarm notifications visible after sound and vibration stop</string>
 </resources>

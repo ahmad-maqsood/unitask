@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
@@ -521,8 +522,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
         pendingDeletes[task.id] = PendingDelete(task, timer)
         com.example.ui.AppMessages.show(
-            message = "Task deleted",
-            actionLabel = "Undo",
+            message = getApplication<Application>().getString(R.string.groups_task_deleted),
+            actionLabel = getApplication<Application>().getString(R.string.common_undo),
             onAction = { undoDelete(task.id) }
         )
     }

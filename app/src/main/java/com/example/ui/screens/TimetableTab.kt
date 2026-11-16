@@ -32,8 +32,6 @@ import android.content.Context
 import android.content.Intent
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.ToggleOff
-import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.alpha
 import com.example.Repositories
@@ -761,23 +759,17 @@ fun TimetableSlotCard(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(stringResource(if (isSlotEnabled) R.string.timetable_turn_off_class else R.string.timetable_turn_on_class))
-                                },
+                            TurnOnOffMenuItem(
+                                isEnabled = isSlotEnabled,
+                                turnOffLabel = stringResource(R.string.timetable_turn_off_class),
+                                turnOnLabel = stringResource(R.string.timetable_turn_on_class),
                                 onClick = {
                                     showMenu = false
                                     slotScope.launch {
                                         Repositories.app(context).setLectureSlotEnabled(slot.id, !isSlotEnabled)
                                     }
                                 },
-                                modifier = Modifier.testTag("timetable_slot_toggle_enabled_${slot.id}"),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = if (isSlotEnabled) Icons.Default.ToggleOff else Icons.Default.ToggleOn,
-                                        contentDescription = null
-                                    )
-                                }
+                                modifier = Modifier.testTag("timetable_slot_toggle_enabled_${slot.id}")
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.timetable_edit_class_slot)) },

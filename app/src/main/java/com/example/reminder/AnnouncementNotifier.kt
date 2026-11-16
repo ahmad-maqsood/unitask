@@ -20,8 +20,6 @@ import com.example.util.NotificationSound
 object AnnouncementNotifier {
 
     private const val CHANNEL_BASE_ID = "unitask_announcements_v1"
-    private const val CHANNEL_NAME = "Announcements"
-    private const val CHANNEL_DESCRIPTION = "Messages from the UniTask team"
 
     /** If many are waiting at once (for example on a fresh install), only the newest few are shown. */
     private const val MAX_AT_ONCE = 3
@@ -89,7 +87,7 @@ object AnnouncementNotifier {
             val summary = NotificationCompat.Builder(appContext, channelId)
                 .setSmallIcon(R.drawable.ic_stat_unitask)
                 .setColor(AccentColors.notificationColor(appContext))
-                .setStyle(NotificationCompat.InboxStyle().setSummaryText("Announcements"))
+                .setStyle(NotificationCompat.InboxStyle().setSummaryText(appContext.getString(R.string.notification_summary_announcements)))
                 .setGroup(GROUP_KEY_ANNOUNCEMENTS)
                 .setGroupSummary(true)
                 .setAutoCancel(true)
@@ -123,10 +121,10 @@ object AnnouncementNotifier {
         if (manager.getNotificationChannel(targetChannelId) == null) {
             val channel = NotificationChannel(
                 targetChannelId,
-                CHANNEL_NAME,
+                context.getString(R.string.announcement_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION
+                description = context.getString(R.string.announcement_channel_description)
                 NotificationSound.uri(context)?.let {
                     setSound(it, NotificationSound.audioAttributes())
                 }

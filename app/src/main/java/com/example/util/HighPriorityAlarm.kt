@@ -7,6 +7,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import com.example.R
 
 /**
  * The "Ring alarm" switch on a task is saved as HIGH priority (see TaskItem.ringsAlarm). Reminders of
@@ -36,10 +37,10 @@ object HighPriorityAlarm {
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "High priority alarms",
+                context.getString(R.string.high_priority_alarm_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Rings like an alarm for reminders of high priority tasks"
+                description = context.getString(R.string.high_priority_alarm_channel_description)
                 enableVibration(true)
                 vibrationPattern = VIBRATION_PATTERN
                 setSound(
@@ -55,10 +56,10 @@ object HighPriorityAlarm {
         if (manager.getNotificationChannel(CHANNEL_ID_SILENCED) == null) {
             val silencedChannel = NotificationChannel(
                 CHANNEL_ID_SILENCED,
-                "High priority alarms (silenced)",
+                context.getString(R.string.high_priority_alarm_silenced_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Keeps high priority alarm notifications visible after sound and vibration stop"
+                description = context.getString(R.string.high_priority_alarm_silenced_channel_description)
                 enableVibration(false)
                 setSound(null, null)
             }

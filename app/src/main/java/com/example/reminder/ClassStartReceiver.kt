@@ -34,7 +34,6 @@ class ClassStartReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "ClassStartReceiver"
         const val CHANNEL_ID = "unitask_class_start_v1"
-        private const val CHANNEL_NAME = "Class started"
         const val EXTRA_SLOT_ID = "extra_class_slot_id"
         const val EXTRA_START_MILLIS = "extra_class_start_millis"
         const val GROUP_KEY_CLASSES = "com.example.CLASS_ALERTS"
@@ -157,14 +156,14 @@ class ClassStartReceiver : BroadcastReceiver() {
         )
         val details = buildList {
             add(timeRange)
-            if (room.isNotBlank()) add("Room: $room")
+            if (room.isNotBlank()) add(context.getString(R.string.class_start_room, room))
             if (teacher.isNotBlank()) add(teacher)
         }.joinToString(" \u2022 ")
 
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setContentTitle("Class in progress: ${course.code}")
+            .setContentTitle(context.getString(R.string.class_start_in_progress_title, course.code))
             .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -190,7 +189,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_class_alerts)))
             .setGroup(GROUP_KEY_CLASSES)
             .setGroupSummary(true)
             .setAutoCancel(true)
@@ -235,7 +234,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         )
         val details = buildList {
             add(timeRange)
-            if (room.isNotBlank()) add("Room: $room")
+            if (room.isNotBlank()) add(context.getString(R.string.class_start_room, room))
             if (teacher.isNotBlank()) add(teacher)
         }.joinToString(" • ")
 
@@ -245,7 +244,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setContentTitle("Class in $minutesLeft min: ${course.code}")
+            .setContentTitle(context.getString(R.string.class_start_in_minutes_title, minutesLeft, course.code))
             .setContentText("$timeRange • ${course.name}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("${course.name}\n$details"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -273,7 +272,7 @@ class ClassStartReceiver : BroadcastReceiver() {
         val summary = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Class alerts"))
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_class_alerts)))
             .setGroup(GROUP_KEY_CLASSES)
             .setGroupSummary(true)
             .setAutoCancel(true)
@@ -288,8 +287,12 @@ class ClassStartReceiver : BroadcastReceiver() {
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
         NotificationSound.deleteOtherChannels(context, manager, CHANNEL_ID)
         if (manager.getNotificationChannel(targetId) == null) {
-            val channel = NotificationChannel(targetId, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Tells you when one of your classes starts"
+            val channel = NotificationChannel(
+                targetId,
+                context.getString(R.string.class_start_channel_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = context.getString(R.string.class_start_channel_description)
                 enableVibration(true)
                 NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
             }

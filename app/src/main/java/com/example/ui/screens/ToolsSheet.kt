@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -45,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import com.example.R
 
 data class ToolEntry(
-    val label: String,
-    val description: String,
+    @StringRes val labelRes: Int,
+    @StringRes val descriptionRes: Int,
     val icon: ImageVector,
     val testTag: String,
     val showBadge: Boolean = false,
@@ -65,7 +66,7 @@ fun ToolsButton(
     modifier: Modifier = Modifier,
     updateAvailable: Boolean = false
 ) {
-    val description = if (timerActive) "More, timer active" else "More"
+    val description = stringResource(if (timerActive) R.string.tools_more_timer_active else R.string.tools_more)
     val showDot = timerActive || updateAvailable
     // A plain icon button, like Search, Notifications and Settings in the same bar.
     IconButton(
@@ -196,7 +197,7 @@ private fun ToolTile(
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = tool.label,
+                text = stringResource(tool.labelRes),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 // Long names like "Recently deleted" wrap to a second line instead of being cut.
@@ -205,7 +206,7 @@ private fun ToolTile(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = tool.description,
+                text = stringResource(tool.descriptionRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minLines = 2,

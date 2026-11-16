@@ -78,6 +78,8 @@ fun GroupsTab(
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val failedToCreateGroupMessage = stringResource(R.string.groups_failed_to_create_group)
+    val failedToJoinGroupMessage = stringResource(R.string.groups_failed_to_join_group)
     val snackbarHostState = remember { SnackbarHostState() }
     com.example.ui.RegisterMessageHost(snackbarHostState)
 
@@ -283,7 +285,7 @@ fun GroupsTab(
                             if (success && resultOrMessage != null) {
                                 createdGroupSuccessInfo = Triple(name, username, resultOrMessage)
                             } else {
-                                Toast.makeText(context, resultOrMessage ?: "Failed to create group", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, resultOrMessage ?: failedToCreateGroupMessage, Toast.LENGTH_LONG).show()
                             }
                         }
                     }
@@ -300,7 +302,7 @@ fun GroupsTab(
                     onJoin = { username, joinCode ->
                         viewModel.joinGroup(username, joinCode) { success, errorMessage ->
                             if (!success) {
-                                Toast.makeText(context, errorMessage ?: "Failed to join group", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, errorMessage ?: failedToJoinGroupMessage, Toast.LENGTH_LONG).show()
                             }
                         }
                     }

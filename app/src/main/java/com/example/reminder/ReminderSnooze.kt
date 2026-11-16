@@ -30,10 +30,8 @@ object ReminderSnooze {
     // Same action that ReminderScheduler uses for normal reminders.
     private const val ACTION_TASK_REMINDER = "com.example.ACTION_TASK_REMINDER"
 
-    /** The snooze buttons: minutes and the text on the button. Change this list to change them. */
-    val CHOICES: List<Pair<Int, String>> = listOf(
-        30 to "Snooze 30m"
-    )
+    /** The snooze buttons, in minutes. The text on each button is in strings.xml. Change this list to change them. */
+    val CHOICES: List<Int> = listOf(30)
 
     private fun requestCode(notificationId: Int) = notificationId * 37 + 55
 

@@ -282,7 +282,7 @@ fun SettingsButton(
                             SettingsRow(
                                 icon = Icons.Default.AccountCircle,
                                 title = stringResource(if (currentUser == null) R.string.settings_sign_in_for_groups else R.string.cloud_backup_online_account),
-                                subtitle = currentUser?.email ?: "Needed for study groups",
+                                subtitle = currentUser?.email ?: stringResource(R.string.settings_account_needed_for_study_groups),
                                 onClick = {
                                     showSheet = false
                                     page = null
@@ -292,9 +292,9 @@ fun SettingsButton(
                                 subtitleMaxLines = 1
                             )
                             val weekSummary = when (weekParityType) {
-                                com.example.util.WeekType.A -> "Week A"
-                                com.example.util.WeekType.B -> "Week B"
-                                else -> "Week not set"
+                                com.example.util.WeekType.A -> stringResource(R.string.timetable_week_a)
+                                com.example.util.WeekType.B -> stringResource(R.string.timetable_week_b)
+                                else -> stringResource(R.string.settings_week_not_set)
                             }
                             SettingsSectionRow(
                                 icon = Icons.Default.Tune,
@@ -303,11 +303,14 @@ fun SettingsButton(
                                 onClick = { page = SettingsPage.General },
                                 testTag = "settings_section_general"
                             )
-                            val notificationsSummary = buildString {
-                                append("Sound: $soundLabel")
-                                if (summaryEnabled) append(", Daily summary on")
-                                if (classStartEnabled) append(", Class alerts on")
-                            }
+                            val soundSummary = stringResource(R.string.settings_summary_sound, soundLabel)
+                            val dailySummaryOn = stringResource(R.string.settings_summary_daily_summary_on)
+                            val classAlertsOn = stringResource(R.string.settings_summary_class_alerts_on)
+                            val notificationsSummary = buildList {
+                                add(soundSummary)
+                                if (summaryEnabled) add(dailySummaryOn)
+                                if (classStartEnabled) add(classAlertsOn)
+                            }.joinToString(", ")
                             SettingsSectionRow(
                                 icon = Icons.Default.NotificationsActive,
                                 title = stringResource(R.string.settings_notifications_reminders),

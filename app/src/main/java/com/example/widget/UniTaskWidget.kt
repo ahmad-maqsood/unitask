@@ -34,6 +34,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.example.MainActivity
+import com.example.R
 import com.example.ui.theme.AccentColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -93,25 +94,27 @@ private sealed interface WidgetRow {
     data class Message(val text: String) : WidgetRow
 }
 
-private fun buildRows(data: TodayOverview?): List<WidgetRow> {
-    if (data == null) return listOf(WidgetRow.Message("Open UniTask to load today."))
+private fun buildRows(context: Context, data: TodayOverview?): List<WidgetRow> {
+    if (data == null) return listOf(WidgetRow.Message(context.getString(R.string.widget_open_app)))
     val rows = ArrayList<WidgetRow>()
     if (data.classes.isNotEmpty()) {
-        rows.add(WidgetRow.Section("Classes"))
+        rows.add(WidgetRow.Section(context.getString(R.string.widget_classes)))
         data.classes.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.ClassLine(it)) }
         if (data.classes.size > MAX_PER_SECTION) {
-            rows.add(WidgetRow.More("+${data.classes.size - MAX_PER_SECTION} more classes"))
+            val extra = data.classes.size - MAX_PER_SECTION
+            rows.add(WidgetRow.More(context.resources.getQuantityString(R.plurals.widget_more_classes, extra, extra)))
         }
     }
     if (data.tasks.isNotEmpty() || data.overdueCount > 0) {
-        rows.add(WidgetRow.Section("Tasks"))
+        rows.add(WidgetRow.Section(context.getString(R.string.widget_tasks)))
         data.tasks.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.TaskLine(it)) }
         if (data.tasks.size > MAX_PER_SECTION) {
-            rows.add(WidgetRow.More("+${data.tasks.size - MAX_PER_SECTION} more tasks"))
+            val extra = data.tasks.size - MAX_PER_SECTION
+            rows.add(WidgetRow.More(context.resources.getQuantityString(R.plurals.widget_more_tasks, extra, extra)))
         }
         if (data.overdueCount > 0) rows.add(WidgetRow.Overdue(data.overdueCount))
     }
-    if (rows.isEmpty()) rows.add(WidgetRow.Message("Nothing planned today."))
+    if (rows.isEmpty()) rows.add(WidgetRow.Message(context.getString(R.string.widget_nothing_planned)))
     return rows
 }
 
@@ -134,7 +137,7 @@ private fun openAppAction(context: Context, task: WidgetTask? = null): Action {
 
 @Composable
 private fun WidgetContent(context: Context, data: TodayOverview?) {
-    val rows = buildRows(data)
+    val rows = buildRows(context, data)
     val accentColor = ColorProvider(
         day = AccentColors.widgetLightColor(context),
         night = AccentColors.widgetDarkColor(context)
@@ -151,7 +154,7 @@ private fun WidgetContent(context: Context, data: TodayOverview?) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Today",
+                text = context.getString(R.string.widget_today),
                 style = TextStyle(color = accentColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
@@ -205,7 +208,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
                 )
                 if (c.state == ClassState.NOW) {
                     Text(
-                        text = "NOW",
+                        text = context.getString(R.string.widget_now).uppercase(),
                         style = TextStyle(color = accentColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     )
                 }
@@ -234,7 +237,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
         }
 
         is WidgetRow.Overdue -> Text(
-            text = "${row.count} overdue",
+            text = context.resources.getQuantityString(R.plurals.widget_overdue, row.count, row.count),
             modifier = GlanceModifier.fillMaxWidth().padding(vertical = 6.dp).clickable(openAppAction(context)),
             style = TextStyle(color = ColorDanger, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         )

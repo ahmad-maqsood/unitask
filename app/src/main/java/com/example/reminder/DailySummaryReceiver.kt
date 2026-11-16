@@ -34,7 +34,6 @@ class DailySummaryReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "DailySummaryReceiver"
         const val CHANNEL_ID = "unitask_daily_summary_v1"
-        private const val CHANNEL_NAME = "Daily summary"
         private const val NOTIFICATION_ID = 7702
         private const val MAX_LINES = 4
         const val GROUP_KEY_DAILY = "com.example.DAILY_SUMMARY"
@@ -99,7 +98,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED && it.isEnabled }
             .map {
                 val course = courses[it.courseId]
-                val label = if (course?.isMyTasksCourse() == true) "My task" else course?.code.orEmpty()
+                val label = if (course?.isMyTasksCourse() == true) context.getString(R.string.daily_summary_my_task) else course?.code.orEmpty()
                 DueItem(
                     computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute),
                     label,
@@ -119,15 +118,18 @@ class DailySummaryReceiver : BroadcastReceiver() {
         if (classes.isEmpty() && dueToday.isEmpty() && overdue == 0) return
 
         val parts = ArrayList<String>()
-        if (classes.isNotEmpty()) parts.add(if (classes.size == 1) "1 class" else "${classes.size} classes")
+        val res = context.resources
+        if (classes.isNotEmpty()) {
+            parts.add(res.getQuantityString(R.plurals.daily_summary_classes, classes.size, classes.size))
+        }
         if (dueToday.isNotEmpty()) {
-            parts.add(if (dueToday.size == 1) "1 task due today" else "${dueToday.size} tasks due today")
+            parts.add(res.getQuantityString(R.plurals.daily_summary_tasks_due_today, dueToday.size, dueToday.size))
         }
         if (overdue > 0) {
             if (classes.isEmpty() && dueToday.isEmpty()) {
-                parts.add(if (overdue == 1) "1 overdue task" else "$overdue overdue tasks")
+                parts.add(res.getQuantityString(R.plurals.daily_summary_overdue_tasks, overdue, overdue))
             } else {
-                parts.add("$overdue overdue")
+                parts.add(context.getString(R.string.daily_summary_overdue_short, overdue))
             }
         }
         val summary = parts.joinToString(" \u2022 ")
@@ -140,14 +142,14 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val dueLines = dueToday.map { item ->
             val cal = Calendar.getInstance().apply { timeInMillis = item.deadlineMillis }
             val time = TimeFormatter.format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-            "Due $time \u2022 ${item.label}: ${item.title}"
+            context.getString(R.string.daily_summary_due_line, time, item.label, item.title)
         }
 
         // Keep the full text for the bell, even when notifications are switched off.
         NotificationHistory.add(
             context,
             kind = "Daily summary",
-            title = "Today in UniTask",
+            title = context.getString(R.string.daily_summary_title),
             body = (listOf(summary) + classLines + dueLines).joinToString("\n"),
             target = "tab:DEADLINES",
             key = "daily|$startOfToday"
@@ -158,11 +160,11 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val lines = ArrayList<String>()
         lines.addAll(classLines.take(MAX_LINES))
         if (classLines.size > MAX_LINES) {
-            lines.add("+${classLines.size - MAX_LINES} more classes \u2022 see the bell in UniTask")
+            lines.add(context.getString(R.string.daily_summary_more_classes, classLines.size - MAX_LINES))
         }
         lines.addAll(dueLines.take(MAX_LINES))
         if (dueLines.size > MAX_LINES) {
-            lines.add("+${dueLines.size - MAX_LINES} more tasks \u2022 see the bell in UniTask")
+            lines.add(context.getString(R.string.daily_summary_more_tasks, dueLines.size - MAX_LINES))
         }
 
         ensureChannel(context)
@@ -183,7 +185,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, NotificationSound.channelId(context, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setContentTitle("Today in UniTask")
+            .setContentTitle(context.getString(R.string.daily_summary_title))
             .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -207,8 +209,12 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
         NotificationSound.deleteOtherChannels(context, manager, CHANNEL_ID)
         if (manager.getNotificationChannel(targetId) == null) {
-            val channel = NotificationChannel(targetId, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "One alert each day with your classes and deadlines"
+            val channel = NotificationChannel(
+                targetId,
+                context.getString(R.string.daily_summary_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = context.getString(R.string.daily_summary_channel_description)
                 NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
             }
             manager.createNotificationChannel(channel)

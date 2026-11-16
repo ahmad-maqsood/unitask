@@ -254,6 +254,31 @@ fun DeadlinesTab(
     // Re-sorted when the minute changes, so a task moves to Overdue (or Today) on its own.
     val now by rememberMinuteClock()
     val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
+    // Which sections are folded away. Every section starts open, as the list always showed them.
+    val sectionCollapse = rememberSectionCollapse()
+    val showsSections = sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()
+    // The tasks on screen. "All" selects only these, so a bulk action never reaches a task that is
+    // folded away.
+    val visibleTasks = remember(tasks, sections, showsSections, sectionCollapse.keys) {
+        if (!showsSections) {
+            tasks
+        } else {
+            sections.overdue.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.OVERDUE)) +
+                sections.today.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TODAY)) +
+                sections.tomorrow.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TOMORROW)) +
+                sections.later.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.LATER)) +
+                sections.turnedOff.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TURNED_OFF)) +
+                sections.done.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.DONE))
+        }
+    }
+    val allVisibleSelected = visibleTasks.isNotEmpty() && visibleTasks.all { it.task.id in selectedTaskIds }
+    // Folding a section also drops its tasks from the selection, because they are no longer visible.
+    val toggleSection: (String, List<TaskWithCourse>) -> Unit = { key, sectionTasks ->
+        if (!sectionCollapse.isCollapsed(key)) {
+            selectedTaskIds.removeAll(sectionTasks.map { it.task.id })
+        }
+        sectionCollapse.toggle(key)
+    }
     // Swipe right on a card = mark done (or not done), with an Undo bar like the My tasks tab.
     val coroutineScope = rememberCoroutineScope()
     var swipeSnackbarJob by remember { mutableStateOf<Job?>(null) }
@@ -709,17 +734,17 @@ fun DeadlinesTab(
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TextButton(
                                     onClick = {
-                                        if (selectedTaskIds.size == tasks.size) {
+                                        if (allVisibleSelected) {
                                             selectedTaskIds.clear()
                                         } else {
                                             selectedTaskIds.clear()
-                                            selectedTaskIds.addAll(tasks.map { it.task.id })
+                                            selectedTaskIds.addAll(visibleTasks.map { it.task.id })
                                         }
                                     },
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        stringResource(if (selectedTaskIds.size == tasks.size) R.string.deadlines_deselect else R.string.deadlines_all),
+                                        stringResource(if (allVisibleSelected) R.string.deadlines_deselect else R.string.deadlines_all),
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
@@ -855,13 +880,15 @@ fun DeadlinesTab(
         } else if (sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()) {
             if (sections.overdue.isNotEmpty()) {
                 item(key = "section_header_overdue") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_overdue),
                         count = sections.overdue.size,
-                        isOverdue = true
+                        isOverdue = true,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.OVERDUE),
+                        onToggle = { toggleSection(TaskSectionKey.OVERDUE, sections.overdue) }
                     )
                 }
-                items(sections.overdue, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.overdue.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.OVERDUE)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -883,12 +910,14 @@ fun DeadlinesTab(
 
             if (sections.today.isNotEmpty()) {
                 item(key = "section_header_today") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_due_today_2),
-                        count = sections.today.size
+                        count = sections.today.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TODAY),
+                        onToggle = { toggleSection(TaskSectionKey.TODAY, sections.today) }
                     )
                 }
-                items(sections.today, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.today.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TODAY)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -910,12 +939,14 @@ fun DeadlinesTab(
 
             if (sections.tomorrow.isNotEmpty()) {
                 item(key = "section_header_tomorrow") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_due_tomorrow),
-                        count = sections.tomorrow.size
+                        count = sections.tomorrow.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TOMORROW),
+                        onToggle = { toggleSection(TaskSectionKey.TOMORROW, sections.tomorrow) }
                     )
                 }
-                items(sections.tomorrow, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.tomorrow.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TOMORROW)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -937,12 +968,14 @@ fun DeadlinesTab(
 
             if (sections.later.isNotEmpty()) {
                 item(key = "section_header_later") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_upcoming),
-                        count = sections.later.size
+                        count = sections.later.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.LATER),
+                        onToggle = { toggleSection(TaskSectionKey.LATER, sections.later) }
                     )
                 }
-                items(sections.later, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.later.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.LATER)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -964,12 +997,14 @@ fun DeadlinesTab(
 
             if (sections.turnedOff.isNotEmpty()) {
                 item(key = "section_header_turned_off") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_turned_off),
-                        count = sections.turnedOff.size
+                        count = sections.turnedOff.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TURNED_OFF),
+                        onToggle = { toggleSection(TaskSectionKey.TURNED_OFF, sections.turnedOff) }
                     )
                 }
-                items(sections.turnedOff, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.turnedOff.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TURNED_OFF)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -991,12 +1026,14 @@ fun DeadlinesTab(
 
             if (sections.done.isNotEmpty()) {
                 item(key = "section_header_done") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_completed),
-                        count = sections.done.size
+                        count = sections.done.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.DONE),
+                        onToggle = { toggleSection(TaskSectionKey.DONE, sections.done) }
                     )
                 }
-                items(sections.done, key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
+                items(sections.done.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.DONE)), key = { it.task.id }, contentType = { "task" }) { taskWithCourse ->
                     SelectableTaskCard(
                         taskWithCourse = taskWithCourse,
                         isBatchMode = isBatchMode,
@@ -1064,41 +1101,6 @@ fun DeadlinesTab(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    count: Int,
-    isOverdue: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Surface(
-            shape = CircleShape,
-            color = if (isOverdue) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
-        ) {
-            Text(
-                text = "$count",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-            )
-        }
     }
 }
 

@@ -143,10 +143,12 @@ fun TimerScreen(
     val context = LocalContext.current
     val view = LocalView.current
 
-    // Keep the screen awake while the timer is counting, and in full screen when the user
-    // left the "keep screen on" toggle on. Cleared again when this screen is left.
+    // One bulb setting, shown both in full screen and in the normal top bar, so the two always
+    // match. In full screen it alone decides whether the screen stays awake, so turning it off lets
+    // the screen time out even while the timer runs. Outside full screen the screen also stays
+    // awake only while the timer is counting. Cleared again when this screen is left.
     val isRunning = TimerLogic.isRunning(state)
-    val keepScreenOn = isRunning || (fullscreen && keepAwakeInFullscreen)
+    val keepScreenOn = if (fullscreen) keepAwakeInFullscreen else (isRunning && keepAwakeInFullscreen)
     DisposableEffect(keepScreenOn) {
         view.keepScreenOn = keepScreenOn
         onDispose {
@@ -311,6 +313,23 @@ fun TimerScreen(
                             }
                         }
                         IconButton(
+                            onClick = {
+                                keepAwakeInFullscreen = !keepAwakeInFullscreen
+                                controller.setKeepScreenOnInFullscreen(keepAwakeInFullscreen)
+                            },
+                            modifier = Modifier.testTag("timer_keep_awake_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb,
+                                contentDescription = stringResource(if (keepAwakeInFullscreen) R.string.timer_keep_screen_on_on else R.string.timer_keep_screen_on_off),
+                                tint = if (keepAwakeInFullscreen) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                }
+                            )
+                        }
+                        IconButton(
                             onClick = { showHistory = true },
                             modifier = Modifier.testTag("timer_history_button")
                         ) {
@@ -409,7 +428,7 @@ fun TimerScreen(
                         Modifier
                             .testTag("timer_clock_edit")
                             .clickable(
-                                onClickLabel = if (isPomodoro) "Change Pomodoro lengths" else "Change countdown length",
+                                onClickLabel = stringResource(if (isPomodoro) R.string.timer_change_pomodoro_lengths else R.string.timer_change_countdown_length),
                                 role = Role.Button
                             ) {
                                 if (isPomodoro) showPomodoroDialog = true else showCustomDialog = true

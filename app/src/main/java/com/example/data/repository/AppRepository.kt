@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import android.content.Context
+import com.example.R
 import com.example.data.local.Course
 import com.example.data.local.CourseDao
 import com.example.data.local.ArchivedSemesterSummary
@@ -328,6 +329,7 @@ class AppRepository(
         // 3. Cancel reminders and remove attachment files for all tasks
         for (t in allTasks.distinctBy { it.id }) {
             reminderScheduler.cancelReminder(t.id)
+            SnoozeStore.clear(context, t.id, cancelAlarm = true)
             val attachments = taskAttachmentDao.getAttachmentsForTaskSync(t.id)
             for (att in attachments) {
                 AttachmentManager.deleteAttachmentFile(context, att.relativePath)
@@ -521,7 +523,7 @@ class AppRepository(
                 NotificationHistory.add(
                     context,
                     kind = "Missed task",
-                    title = "Missed: ${task.title}",
+                    title = context.getString(R.string.app_repository_missed_task_title, task.title),
                     body = "It was due ${"${DateFormats.shortDate(task.deadlineMillis)}, ${DateFormats.clock(task.deadlineMillis)}"} and was not marked done.",
                     target = "tab:MYTASKS",
                     key = "missed-task|${task.id}|${task.deadlineMillis}",

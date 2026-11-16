@@ -331,7 +331,7 @@ fun AnnouncementBell(
                         selected = selectedTab == TAB_NOTIFICATIONS,
                         onClick = { selectedTab = TAB_NOTIFICATIONS },
                         modifier = Modifier.testTag("bell_tab_notifications"),
-                        text = { TabLabel("Notifications", state.unreadNotifications) }
+                        text = { TabLabel(stringResource(R.string.announcement_host_tab_notifications), state.unreadNotifications) }
                     )
                     Tab(
                         selected = selectedTab == TAB_ANNOUNCEMENTS,
@@ -339,7 +339,7 @@ fun AnnouncementBell(
                         modifier = Modifier.testTag("bell_tab_announcements"),
                         text = {
                             TabLabel(
-                                "Announcements",
+                                stringResource(R.string.announcement_host_tab_announcements),
                                 state.unreadAnnouncements + (if (state.updateUnread) 1 else 0),
                                 urgent = state.unreadAnnouncements > 0
                             )
@@ -349,7 +349,7 @@ fun AnnouncementBell(
 
                 if (selectedTab == TAB_NOTIFICATIONS) {
                     if (state.notifications.isEmpty()) {
-                        EmptyText("No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.")
+                        EmptyText(stringResource(R.string.announcement_host_no_notifications_yet))
                     } else {
                         ClearAllRow { state.clearNotifications() }
                         Column(
@@ -392,7 +392,7 @@ fun AnnouncementBell(
                         )
                     }
                     if (state.items.isEmpty()) {
-                        if (state.update == null) EmptyText("No announcements right now.")
+                        if (state.update == null) EmptyText(stringResource(R.string.announcement_host_no_announcements_right_now))
                     } else {
                         ClearAllRow { state.removeAll() }
                         Column(

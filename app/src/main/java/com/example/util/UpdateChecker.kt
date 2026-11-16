@@ -18,7 +18,14 @@ sealed class UpdateResult {
         val latestVersion: String,
         val pageUrl: String,
         val notes: String? = null
-    ) : UpdateResult()
+    ) : UpdateResult() {
+        /**
+         * Direct link to the release APK. The release workflow publishes it as "UniTask-<version>.apk"
+         * under the release tag, so the link can be built from the tag without another request.
+         */
+        val apkUrl: String
+            get() = UpdateChecker.apkUrlForTag(latestVersion)
+    }
     data class UpToDate(val currentVersion: String) : UpdateResult()
     data class Failed(val message: String) : UpdateResult()
 }
@@ -35,6 +42,16 @@ object UpdateChecker {
 
     private const val RELEASE_BY_TAG_API =
         "https://api.github.com/repos/CondaLabs/unitask/releases/tags/"
+
+    private const val RELEASE_DOWNLOAD_BASE =
+        "https://github.com/CondaLabs/unitask/releases/download/"
+
+    /** "v4.5.0" becomes ".../releases/download/v4.5.0/UniTask-4.5.0.apk". */
+    fun apkUrlForTag(tag: String): String {
+        val encodedTag = URLEncoder.encode(tag, "UTF-8").replace("+", "%20")
+        val name = tag.trim().removePrefix("v").removePrefix("V")
+        return "$RELEASE_DOWNLOAD_BASE$encodedTag/UniTask-$name.apk"
+    }
 
     /** The notes of the newest release, kept so the 10 minute re-checks do not ask GitHub again. */
     @Volatile private var cachedNotes: Pair<String, String>? = null

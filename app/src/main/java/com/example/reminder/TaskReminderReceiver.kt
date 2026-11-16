@@ -38,7 +38,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val CHANNEL_ID = "unitask_assignment_reminders_v2"
-        const val CHANNEL_NAME = "Assignment Deadlines & Reminders"
         const val ACTION_MARK_TASK_DONE = "com.example.ACTION_MARK_TASK_DONE"
         const val ACTION_MARK_GROUP_TASK_DONE = "com.example.ACTION_MARK_GROUP_TASK_DONE"
         const val ACTION_SILENCE_ALARM = "com.example.ACTION_SILENCE_ALARM"
@@ -358,7 +357,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 markDoneIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
+            builder.addAction(R.drawable.ic_stat_unitask, context.getString(R.string.reminder_mark_as_done_button), markDonePending)
         } else if (taskId > 0L) {
             val markDoneIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ACTION_MARK_TASK_DONE
@@ -371,11 +370,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 markDoneIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, "Mark as Done", markDonePending)
+            builder.addAction(R.drawable.ic_stat_unitask, context.getString(R.string.reminder_mark_as_done_button), markDonePending)
         }
 
         // Snooze button: bring the same reminder back after 30 minutes.
-        for ((minutes, buttonText) in ReminderSnooze.CHOICES) {
+        for (minutes in ReminderSnooze.CHOICES) {
             val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ReminderSnooze.ACTION_SNOOZE
                 // Data makes each button's PendingIntent different from the others.
@@ -390,7 +389,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 snoozeIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(R.drawable.ic_stat_unitask, buttonText, snoozePending)
+            builder.addAction(
+                R.drawable.ic_stat_unitask,
+                context.getString(R.string.reminder_snooze_button, minutes),
+                snoozePending
+            )
         }
         if (isAlarm && !isSilence) {
             builder.setSound(HighPriorityAlarm.soundUri(), AudioManager.STREAM_ALARM)
@@ -438,7 +441,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         )
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Deadlines and reminders"))
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_deadlines_and_reminders)))
             .setGroup(GROUP_KEY_DEADLINES)
             .setGroupSummary(true)
             .setAutoCancel(true)
@@ -456,10 +459,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (notificationManager.getNotificationChannel(targetId) == null) {
             val channel = NotificationChannel(
                 targetId,
-                CHANNEL_NAME,
+                context.getString(R.string.task_reminder_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifies students about upcoming assignments and homework deadlines"
+                description = context.getString(R.string.task_reminder_channel_description)
                 enableVibration(true)
                 try {
                     NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }

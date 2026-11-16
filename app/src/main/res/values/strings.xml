@@ -725,6 +725,7 @@
     <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
     <!-- ToolsSheet.kt -->
     <string name="tools_more">More</string>
+    <string name="tools_more_timer_active">More, timer active</string>
     <string name="tools_notes">Notes</string>
     <string name="tools_notes_description">Lecture notes and summaries</string>
     <string name="tools_timer">Timer</string>

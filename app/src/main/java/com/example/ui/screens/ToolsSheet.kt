@@ -66,7 +66,7 @@ fun ToolsButton(
     modifier: Modifier = Modifier,
     updateAvailable: Boolean = false
 ) {
-    val description = if (timerActive) "More, timer active" else "More"
+    val description = stringResource(if (timerActive) R.string.tools_more_timer_active else R.string.tools_more)
     val showDot = timerActive || updateAvailable
     // A plain icon button, like Search, Notifications and Settings in the same bar.
     IconButton(

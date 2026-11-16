@@ -405,6 +405,9 @@
     <string name="group_task_row_not_on_your_deadlines">Not on your Deadlines</string>
     <string name="group_task_row_due_time">Due time</string>
     <!-- GroupsTab.kt -->
+    <string name="groups_failed_to_create_group">Failed to create group</string>
+    <string name="groups_failed_to_join_group">Failed to join group</string>
+    <string name="groups_task_deleted">Task deleted</string>
     <string name="groups_reconnecting">Reconnecting...</string>
     <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
     <string name="groups_collaborate_with_classmates_share">Collaborate with classmates, share assignments, and track group deadlines in real time.</string>

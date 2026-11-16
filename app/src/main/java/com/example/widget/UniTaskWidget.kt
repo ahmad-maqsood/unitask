@@ -95,10 +95,10 @@ private sealed interface WidgetRow {
 }
 
 private fun buildRows(context: Context, data: TodayOverview?): List<WidgetRow> {
-    if (data == null) return listOf(WidgetRow.Message("Open UniTask to load today."))
+    if (data == null) return listOf(WidgetRow.Message(context.getString(R.string.widget_open_app)))
     val rows = ArrayList<WidgetRow>()
     if (data.classes.isNotEmpty()) {
-        rows.add(WidgetRow.Section("Classes"))
+        rows.add(WidgetRow.Section(context.getString(R.string.widget_classes)))
         data.classes.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.ClassLine(it)) }
         if (data.classes.size > MAX_PER_SECTION) {
             val extra = data.classes.size - MAX_PER_SECTION
@@ -106,7 +106,7 @@ private fun buildRows(context: Context, data: TodayOverview?): List<WidgetRow> {
         }
     }
     if (data.tasks.isNotEmpty() || data.overdueCount > 0) {
-        rows.add(WidgetRow.Section("Tasks"))
+        rows.add(WidgetRow.Section(context.getString(R.string.widget_tasks)))
         data.tasks.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.TaskLine(it)) }
         if (data.tasks.size > MAX_PER_SECTION) {
             val extra = data.tasks.size - MAX_PER_SECTION
@@ -114,7 +114,7 @@ private fun buildRows(context: Context, data: TodayOverview?): List<WidgetRow> {
         }
         if (data.overdueCount > 0) rows.add(WidgetRow.Overdue(data.overdueCount))
     }
-    if (rows.isEmpty()) rows.add(WidgetRow.Message("Nothing planned today."))
+    if (rows.isEmpty()) rows.add(WidgetRow.Message(context.getString(R.string.widget_nothing_planned)))
     return rows
 }
 
@@ -237,7 +237,7 @@ private fun RowContent(context: Context, row: WidgetRow) {
         }
 
         is WidgetRow.Overdue -> Text(
-            text = "${row.count} overdue",
+            text = context.resources.getQuantityString(R.plurals.widget_overdue, row.count, row.count),
             modifier = GlanceModifier.fillMaxWidth().padding(vertical = 6.dp).clickable(openAppAction(context)),
             style = TextStyle(color = ColorDanger, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         )

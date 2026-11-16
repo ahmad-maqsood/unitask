@@ -329,6 +329,7 @@ class AppRepository(
         // 3. Cancel reminders and remove attachment files for all tasks
         for (t in allTasks.distinctBy { it.id }) {
             reminderScheduler.cancelReminder(t.id)
+            SnoozeStore.clear(context, t.id, cancelAlarm = true)
             val attachments = taskAttachmentDao.getAttachmentsForTaskSync(t.id)
             for (att in attachments) {
                 AttachmentManager.deleteAttachmentFile(context, att.relativePath)

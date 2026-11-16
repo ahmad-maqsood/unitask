@@ -816,6 +816,14 @@
     <!-- UniTaskWidget.kt -->
     <string name="widget_today">Today</string>
     <string name="widget_now">Now</string>
+    <string name="widget_classes">Classes</string>
+    <string name="widget_tasks">Tasks</string>
+    <string name="widget_nothing_planned">Nothing planned today.</string>
+    <string name="widget_open_app">Open UniTask to load today.</string>
+    <plurals name="widget_overdue">
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
     <plurals name="widget_more_classes">
         <item quantity="one">+%1$d more class</item>
         <item quantity="other">+%1$d more classes</item>

@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.R
 import com.example.sync.DriveBackupWorker
 import com.example.util.NotificationHistory
 import java.util.concurrent.TimeUnit
@@ -345,7 +346,7 @@ object DriveAutoBackup {
             NotificationHistory.add(
                 context = context,
                 kind = "Backup",
-                title = "Google Drive backup",
+                title = context.getString(R.string.drive_auto_backup_title),
                 body = "Google Drive backup stopped because the sign-in expired. Open Settings, Backup & data and reconnect."
             )
             prefs.failureNotified = true
@@ -353,7 +354,7 @@ object DriveAutoBackup {
             NotificationHistory.add(
                 context = context,
                 kind = "Backup",
-                title = "Google Drive backup",
+                title = context.getString(R.string.drive_auto_backup_title),
                 body = "Google Drive backup stopped because your Google Drive is full. Free up space in Google Drive, then open Settings, Backup & data and tap Back up now."
             )
             prefs.failureNotified = true
@@ -361,7 +362,7 @@ object DriveAutoBackup {
             NotificationHistory.add(
                 context = context,
                 kind = "Backup",
-                title = "Google Drive backup",
+                title = context.getString(R.string.drive_auto_backup_title),
                 body = "Google Drive backup has not worked for 3 days. Open Settings, Backup & data."
             )
             prefs.failureNotified = true

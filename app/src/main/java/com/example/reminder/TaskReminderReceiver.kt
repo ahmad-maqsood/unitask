@@ -38,7 +38,6 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val CHANNEL_ID = "unitask_assignment_reminders_v2"
-        const val CHANNEL_NAME = "Assignment Deadlines & Reminders"
         const val ACTION_MARK_TASK_DONE = "com.example.ACTION_MARK_TASK_DONE"
         const val ACTION_MARK_GROUP_TASK_DONE = "com.example.ACTION_MARK_GROUP_TASK_DONE"
         const val ACTION_SILENCE_ALARM = "com.example.ACTION_SILENCE_ALARM"
@@ -456,10 +455,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (notificationManager.getNotificationChannel(targetId) == null) {
             val channel = NotificationChannel(
                 targetId,
-                CHANNEL_NAME,
+                context.getString(R.string.task_reminder_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifies students about upcoming assignments and homework deadlines"
+                description = context.getString(R.string.task_reminder_channel_description)
                 enableVibration(true)
                 try {
                     NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }

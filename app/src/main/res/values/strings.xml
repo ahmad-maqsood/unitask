@@ -833,4 +833,10 @@
     <string name="announcement_channel_description">Messages from the UniTask team</string>
     <string name="missed_reminders_channel_name">Missed reminders</string>
     <string name="missed_reminders_channel_description">Tells you about reminders that could not ring because the phone was off.</string>
+    <string name="daily_summary_channel_name">Daily summary</string>
+    <string name="daily_summary_channel_description">One alert each day with your classes and deadlines</string>
+    <string name="class_start_channel_name">Class started</string>
+    <string name="class_start_channel_description">Tells you when one of your classes starts</string>
+    <string name="task_reminder_channel_name">Assignment Deadlines &amp; Reminders</string>
+    <string name="task_reminder_channel_description">Notifies students about upcoming assignments and homework deadlines</string>
 </resources>

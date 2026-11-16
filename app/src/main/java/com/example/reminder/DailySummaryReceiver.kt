@@ -34,7 +34,6 @@ class DailySummaryReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "DailySummaryReceiver"
         const val CHANNEL_ID = "unitask_daily_summary_v1"
-        private const val CHANNEL_NAME = "Daily summary"
         private const val NOTIFICATION_ID = 7702
         private const val MAX_LINES = 4
         const val GROUP_KEY_DAILY = "com.example.DAILY_SUMMARY"
@@ -210,8 +209,12 @@ class DailySummaryReceiver : BroadcastReceiver() {
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
         NotificationSound.deleteOtherChannels(context, manager, CHANNEL_ID)
         if (manager.getNotificationChannel(targetId) == null) {
-            val channel = NotificationChannel(targetId, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "One alert each day with your classes and deadlines"
+            val channel = NotificationChannel(
+                targetId,
+                context.getString(R.string.daily_summary_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = context.getString(R.string.daily_summary_channel_description)
                 NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
             }
             manager.createNotificationChannel(channel)

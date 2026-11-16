@@ -34,7 +34,6 @@ class ClassStartReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "ClassStartReceiver"
         const val CHANNEL_ID = "unitask_class_start_v1"
-        private const val CHANNEL_NAME = "Class started"
         const val EXTRA_SLOT_ID = "extra_class_slot_id"
         const val EXTRA_START_MILLIS = "extra_class_start_millis"
         const val GROUP_KEY_CLASSES = "com.example.CLASS_ALERTS"
@@ -288,8 +287,12 @@ class ClassStartReceiver : BroadcastReceiver() {
         val targetId = NotificationSound.channelId(context, CHANNEL_ID)
         NotificationSound.deleteOtherChannels(context, manager, CHANNEL_ID)
         if (manager.getNotificationChannel(targetId) == null) {
-            val channel = NotificationChannel(targetId, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Tells you when one of your classes starts"
+            val channel = NotificationChannel(
+                targetId,
+                context.getString(R.string.class_start_channel_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = context.getString(R.string.class_start_channel_description)
                 enableVibration(true)
                 NotificationSound.uri(context)?.let { setSound(it, NotificationSound.audioAttributes()) }
             }

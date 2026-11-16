@@ -99,7 +99,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             .filter { it.courseId in courses && it.status != TaskStatus.COMPLETED && it.isEnabled }
             .map {
                 val course = courses[it.courseId]
-                val label = if (course?.isMyTasksCourse() == true) "My task" else course?.code.orEmpty()
+                val label = if (course?.isMyTasksCourse() == true) context.getString(R.string.daily_summary_my_task) else course?.code.orEmpty()
                 DueItem(
                     computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute),
                     label,
@@ -119,15 +119,18 @@ class DailySummaryReceiver : BroadcastReceiver() {
         if (classes.isEmpty() && dueToday.isEmpty() && overdue == 0) return
 
         val parts = ArrayList<String>()
-        if (classes.isNotEmpty()) parts.add(if (classes.size == 1) "1 class" else "${classes.size} classes")
+        val res = context.resources
+        if (classes.isNotEmpty()) {
+            parts.add(res.getQuantityString(R.plurals.daily_summary_classes, classes.size, classes.size))
+        }
         if (dueToday.isNotEmpty()) {
-            parts.add(if (dueToday.size == 1) "1 task due today" else "${dueToday.size} tasks due today")
+            parts.add(res.getQuantityString(R.plurals.daily_summary_tasks_due_today, dueToday.size, dueToday.size))
         }
         if (overdue > 0) {
             if (classes.isEmpty() && dueToday.isEmpty()) {
-                parts.add(if (overdue == 1) "1 overdue task" else "$overdue overdue tasks")
+                parts.add(res.getQuantityString(R.plurals.daily_summary_overdue_tasks, overdue, overdue))
             } else {
-                parts.add("$overdue overdue")
+                parts.add(context.getString(R.string.daily_summary_overdue_short, overdue))
             }
         }
         val summary = parts.joinToString(" \u2022 ")

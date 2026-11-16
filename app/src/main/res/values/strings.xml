@@ -767,6 +767,20 @@
     <string name="daily_summary_due_line">Due %1$s • %2$s: %3$s</string>
     <string name="daily_summary_more_classes">+%1$d more classes • see the bell in UniTask</string>
     <string name="daily_summary_more_tasks">+%1$d more tasks • see the bell in UniTask</string>
+    <string name="daily_summary_my_task">My task</string>
+    <string name="daily_summary_overdue_short">%1$d overdue</string>
+    <plurals name="daily_summary_classes">
+        <item quantity="one">%1$d class</item>
+        <item quantity="other">%1$d classes</item>
+    </plurals>
+    <plurals name="daily_summary_tasks_due_today">
+        <item quantity="one">%1$d task due today</item>
+        <item quantity="other">%1$d tasks due today</item>
+    </plurals>
+    <plurals name="daily_summary_overdue_tasks">
+        <item quantity="one">%1$d overdue task</item>
+        <item quantity="other">%1$d overdue tasks</item>
+    </plurals>
     <!-- ClassStartReceiver.kt -->
     <string name="class_start_in_progress_title">Class in progress: %1$s</string>
     <string name="class_start_in_minutes_title">Class in %1$d min: %2$s</string>

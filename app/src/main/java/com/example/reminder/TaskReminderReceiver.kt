@@ -438,7 +438,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         )
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(context))
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Deadlines and reminders"))
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_deadlines_and_reminders)))
             .setGroup(GROUP_KEY_DEADLINES)
             .setGroupSummary(true)
             .setAutoCancel(true)

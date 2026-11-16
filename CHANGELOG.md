@@ -2,11 +2,6 @@
 
 All notable changes to UniTask are documented in this file.
 
-## [Unreleased]
-
-### Added
-- The timer now has a "Keep screen on" bulb button in the normal (not full screen) top bar, so the screen can be allowed to time out while the timer runs. It is the same setting as the bulb in full screen, so both buttons always match.
-
 ## [4.5.0] - 15-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.5.0)
 

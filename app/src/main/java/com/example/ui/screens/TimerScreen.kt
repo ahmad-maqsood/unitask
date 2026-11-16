@@ -428,7 +428,7 @@ fun TimerScreen(
                         Modifier
                             .testTag("timer_clock_edit")
                             .clickable(
-                                onClickLabel = if (isPomodoro) "Change Pomodoro lengths" else "Change countdown length",
+                                onClickLabel = stringResource(if (isPomodoro) R.string.timer_change_pomodoro_lengths else R.string.timer_change_countdown_length),
                                 role = Role.Button
                             ) {
                                 if (isPomodoro) showPomodoroDialog = true else showCustomDialog = true

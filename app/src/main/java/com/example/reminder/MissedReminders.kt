@@ -188,7 +188,7 @@ object MissedReminders {
         )
 
         val title = if (lines.size == 1) "Missed reminder" else "${lines.size} missed reminders"
-        val inbox = NotificationCompat.InboxStyle().setSummaryText("Your phone was off or restarted")
+        val inbox = NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_missed_reminders))
         lines.forEach { inbox.addLine(it) }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)

@@ -359,7 +359,7 @@ class GroupTaskProcessor(context: Context) {
         val summary = NotificationCompat.Builder(appContext, NotificationSound.channelId(appContext, CHANNEL_ID))
             .setSmallIcon(R.drawable.ic_stat_unitask)
             .setColor(AccentColors.notificationColor(appContext))
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Group updates"))
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText(appContext.getString(R.string.notification_summary_group_updates)))
             .setGroup(GROUP_KEY_UPDATES)
             .setGroupSummary(true)
             .setAutoCancel(true)

@@ -117,6 +117,8 @@
     <string name="announcement_host_clear_all">Clear all</string>
     <string name="announcement_host_remove_notification">Remove notification</string>
     <string name="announcement_host_remove_announcement">Remove announcement</string>
+    <string name="announcement_host_no_notifications_yet">No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.</string>
+    <string name="announcement_host_no_announcements_right_now">No announcements right now.</string>
     <!-- ArchiveCoursesSheet.kt -->
     <string name="archive_courses_archive_courses">Archive courses</string>
     <string name="archive_courses_select_none">Select none</string>
@@ -674,6 +676,8 @@
     <string name="timer_timer">Timer</string>
     <string name="timer_pomodoro_options">Pomodoro options</string>
     <string name="timer_full_screen">Full screen</string>
+    <string name="timer_change_pomodoro_lengths">Change Pomodoro lengths</string>
+    <string name="timer_change_countdown_length">Change countdown length</string>
     <string name="timer_stopwatch">Stopwatch</string>
     <string name="timer_countdown">Countdown</string>
     <string name="timer_pomodoro">Pomodoro</string>
@@ -735,4 +739,10 @@
     <string name="toast_could_not_open_that_screen_2">Could not open that screen. Find UniTask in your phone\'s battery settings.</string>
     <string name="toast_attachment_file_not_found_locally">Attachment file not found locally</string>
     <string name="toast_no_app_available_to_open">No app available to open this file</string>
+    <!-- Notification group summaries (reminder package) -->
+    <string name="notification_summary_group_updates">Group updates</string>
+    <string name="notification_summary_class_alerts">Class alerts</string>
+    <string name="notification_summary_deadlines_and_reminders">Deadlines and reminders</string>
+    <string name="notification_summary_announcements">Announcements</string>
+    <string name="notification_summary_missed_reminders">Your phone was off or restarted</string>
 </resources>

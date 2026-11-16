@@ -89,7 +89,7 @@ object AnnouncementNotifier {
             val summary = NotificationCompat.Builder(appContext, channelId)
                 .setSmallIcon(R.drawable.ic_stat_unitask)
                 .setColor(AccentColors.notificationColor(appContext))
-                .setStyle(NotificationCompat.InboxStyle().setSummaryText("Announcements"))
+                .setStyle(NotificationCompat.InboxStyle().setSummaryText(appContext.getString(R.string.notification_summary_announcements)))
                 .setGroup(GROUP_KEY_ANNOUNCEMENTS)
                 .setGroupSummary(true)
                 .setAutoCancel(true)

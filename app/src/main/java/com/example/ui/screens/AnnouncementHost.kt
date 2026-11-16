@@ -349,7 +349,7 @@ fun AnnouncementBell(
 
                 if (selectedTab == TAB_NOTIFICATIONS) {
                     if (state.notifications.isEmpty()) {
-                        EmptyText("No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.")
+                        EmptyText(stringResource(R.string.announcement_host_no_notifications_yet))
                     } else {
                         ClearAllRow { state.clearNotifications() }
                         Column(
@@ -392,7 +392,7 @@ fun AnnouncementBell(
                         )
                     }
                     if (state.items.isEmpty()) {
-                        if (state.update == null) EmptyText("No announcements right now.")
+                        if (state.update == null) EmptyText(stringResource(R.string.announcement_host_no_announcements_right_now))
                     } else {
                         ClearAllRow { state.removeAll() }
                         Column(

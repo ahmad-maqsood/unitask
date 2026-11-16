@@ -91,7 +91,8 @@ fun MyTasksTab(
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
-    var isDoneExpanded by rememberSaveable { mutableStateOf(false) }
+    // Done starts collapsed, like before. Every other section starts open.
+    val sectionCollapse = rememberSectionCollapse(TaskSectionKey.DONE)
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
 
@@ -211,13 +212,15 @@ fun MyTasksTab(
             // Overdue section
             if (sections.overdue.isNotEmpty()) {
                 item(key = "header_overdue") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_overdue),
                         count = sections.overdue.size,
-                        isOverdue = true
+                        isOverdue = true,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.OVERDUE),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.OVERDUE) }
                     )
                 }
-                items(sections.overdue, key = { it.task.id }) { taskWithCourse ->
+                items(sections.overdue.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.OVERDUE)), key = { it.task.id }) { taskWithCourse ->
                     SwipeableTaskItem(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
@@ -234,12 +237,14 @@ fun MyTasksTab(
             // Today section
             if (sections.today.isNotEmpty()) {
                 item(key = "header_today") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.my_tasks_today),
-                        count = sections.today.size
+                        count = sections.today.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TODAY),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.TODAY) }
                     )
                 }
-                items(sections.today, key = { it.task.id }) { taskWithCourse ->
+                items(sections.today.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TODAY)), key = { it.task.id }) { taskWithCourse ->
                     SwipeableTaskItem(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
@@ -256,12 +261,14 @@ fun MyTasksTab(
             // Tomorrow section
             if (sections.tomorrow.isNotEmpty()) {
                 item(key = "header_tomorrow") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.my_tasks_tomorrow),
-                        count = sections.tomorrow.size
+                        count = sections.tomorrow.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TOMORROW),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.TOMORROW) }
                     )
                 }
-                items(sections.tomorrow, key = { it.task.id }) { taskWithCourse ->
+                items(sections.tomorrow.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TOMORROW)), key = { it.task.id }) { taskWithCourse ->
                     SwipeableTaskItem(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
@@ -278,12 +285,14 @@ fun MyTasksTab(
             // Later section
             if (sections.later.isNotEmpty()) {
                 item(key = "header_later") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.backup_reminder_card_later),
-                        count = sections.later.size
+                        count = sections.later.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.LATER),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.LATER) }
                     )
                 }
-                items(sections.later, key = { it.task.id }) { taskWithCourse ->
+                items(sections.later.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.LATER)), key = { it.task.id }) { taskWithCourse ->
                     SwipeableTaskItem(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
@@ -300,12 +309,14 @@ fun MyTasksTab(
             // Turned off section
             if (sections.turnedOff.isNotEmpty()) {
                 item(key = "header_turned_off") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.deadlines_turned_off),
-                        count = sections.turnedOff.size
+                        count = sections.turnedOff.size,
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.TURNED_OFF),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.TURNED_OFF) }
                     )
                 }
-                items(sections.turnedOff, key = { it.task.id }) { taskWithCourse ->
+                items(sections.turnedOff.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.TURNED_OFF)), key = { it.task.id }) { taskWithCourse ->
                     SwipeableTaskItem(
                         taskWithCourse = taskWithCourse,
                         onStatusCycle = onStatusCycle,
@@ -322,27 +333,24 @@ fun MyTasksTab(
             // Done section
             if (sections.done.isNotEmpty()) {
                 item(key = "header_done") {
-                    SectionHeader(
+                    CollapsibleSectionHeader(
                         title = stringResource(R.string.common_done),
                         count = sections.done.size,
-                        collapsible = true,
-                        isExpanded = isDoneExpanded,
-                        onToggle = { isDoneExpanded = !isDoneExpanded }
+                        isCollapsed = sectionCollapse.isCollapsed(TaskSectionKey.DONE),
+                        onToggle = { sectionCollapse.toggle(TaskSectionKey.DONE) }
                     )
                 }
-                if (isDoneExpanded) {
-                    items(sections.done, key = { it.task.id }) { taskWithCourse ->
-                        SwipeableTaskItem(
-                            taskWithCourse = taskWithCourse,
-                            onStatusCycle = onStatusCycle,
-                            onEditClick = onEditTask,
-                            onDeleteClick = handleSwipeDelete,
-                            onSwipeTickDone = handleSwipeTickDone,
-                            onSwipeDelete = handleSwipeDelete,
-                            modifier = Modifier.animateItem(),
-                            onChecklistToggle = onChecklistToggle
-                        )
-                    }
+                items(sections.done.shownUnless(sectionCollapse.isCollapsed(TaskSectionKey.DONE)), key = { it.task.id }) { taskWithCourse ->
+                    SwipeableTaskItem(
+                        taskWithCourse = taskWithCourse,
+                        onStatusCycle = onStatusCycle,
+                        onEditClick = onEditTask,
+                        onDeleteClick = handleSwipeDelete,
+                        onSwipeTickDone = handleSwipeTickDone,
+                        onSwipeDelete = handleSwipeDelete,
+                        modifier = Modifier.animateItem(),
+                        onChecklistToggle = onChecklistToggle
+                    )
                 }
             }
         }
@@ -434,70 +442,6 @@ fun QuickAddTaskField(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    count: Int,
-    isOverdue: Boolean = false,
-    collapsible: Boolean = false,
-    isExpanded: Boolean = true,
-    onToggle: (() -> Unit)? = null
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (collapsible && onToggle != null) {
-                    Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onToggle)
-                        .defaultMinSize(minHeight = 48.dp)
-                } else {
-                    Modifier.padding(vertical = 4.dp)
-                }
-            )
-            .padding(horizontal = 4.dp, vertical = if (collapsible) 8.dp else 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Surface(
-                shape = CircleShape,
-                color = if (isOverdue) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = "$count",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                )
-            }
-        }
-        if (collapsible) {
-            IconButton(
-                onClick = { onToggle?.invoke() },
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = stringResource(if (isExpanded) R.string.my_tasks_collapse_done_section else R.string.my_tasks_expand_done_section),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

@@ -478,8 +478,8 @@
     <string name="my_tasks_add_quick_task">Add quick task</string>
     <string name="my_tasks_add_a_task">Add a task...</string>
     <string name="my_tasks_save_task">Save task</string>
-    <string name="my_tasks_collapse_done_section">Collapse Done section</string>
-    <string name="my_tasks_expand_done_section">Expand Done section</string>
+    <string name="section_collapse_description">Collapse %1$s section</string>
+    <string name="section_expand_description">Expand %1$s section</string>
     <!-- NoteEditorScreen.kt -->
     <string name="common_undo">Undo</string>
     <string name="note_editor_redo">Redo</string>

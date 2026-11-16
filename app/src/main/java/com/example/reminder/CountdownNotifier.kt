@@ -38,14 +38,14 @@ object CountdownNotifier {
     /** Pomodoro rounds when the user chose "vibrate only": no sound, one short burst of vibration. */
     const val CHANNEL_ID_VIBRATE = "unitask_countdown_finished_vibrate_v1"
 
-    private fun ensureVibrateChannel(nm: NotificationManager) {
+    private fun ensureVibrateChannel(context: Context, nm: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID_VIBRATE) == null) {
             val channel = NotificationChannel(
                 CHANNEL_ID_VIBRATE,
-                "Pomodoro round ended (vibrate only)",
+                context.getString(R.string.countdown_vibrate_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Vibrates, without sound, when a Pomodoro focus or break round ends."
+                description = context.getString(R.string.countdown_vibrate_channel_description)
                 enableVibration(true)
                 vibrationPattern = HighPriorityAlarm.VIBRATION_PATTERN
                 setSound(null, null)
@@ -55,7 +55,7 @@ object CountdownNotifier {
         }
     }
 
-    private fun ensureChannel(nm: NotificationManager) {
+    private fun ensureChannel(context: Context, nm: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
             val audioAttributes = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
@@ -63,10 +63,10 @@ object CountdownNotifier {
                 .build()
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Countdown finished",
+                context.getString(R.string.countdown_channel_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Alerts when a timer or countdown finishes."
+                description = context.getString(R.string.countdown_channel_description)
                 enableVibration(true)
                 vibrationPattern = HighPriorityAlarm.VIBRATION_PATTERN
                 setSound(HighPriorityAlarm.soundUri(), audioAttributes)
@@ -77,14 +77,14 @@ object CountdownNotifier {
         }
     }
 
-    private fun ensureSilentChannel(nm: NotificationManager) {
+    private fun ensureSilentChannel(context: Context, nm: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID_SILENT) == null) {
             val channel = NotificationChannel(
                 CHANNEL_ID_SILENT,
-                "Countdown finished (silent)",
+                context.getString(R.string.countdown_silent_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shown when a countdown ended while the phone was off or the alarm was very late."
+                description = context.getString(R.string.countdown_silent_channel_description)
                 enableVibration(false)
                 setSound(null, null)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
@@ -166,16 +166,16 @@ object CountdownNotifier {
         val channelId = when {
             !ring -> {
                 cancelSilenceAlarm(context)
-                ensureSilentChannel(nm)
+                ensureSilentChannel(context, nm)
                 CHANNEL_ID_SILENT
             }
             vibrateOnly -> {
                 cancelSilenceAlarm(context)
-                ensureVibrateChannel(nm)
+                ensureVibrateChannel(context, nm)
                 CHANNEL_ID_VIBRATE
             }
             else -> {
-                ensureChannel(nm)
+                ensureChannel(context, nm)
                 CHANNEL_ID
             }
         }

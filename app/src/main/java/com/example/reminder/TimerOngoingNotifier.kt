@@ -134,10 +134,10 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Running timer",
+                appContext.getString(R.string.timer_ongoing_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Shows the stopwatch or countdown while it is running."
+                description = appContext.getString(R.string.timer_ongoing_channel_description)
                 setSound(null, null)
                 enableVibration(false)
                 setShowBadge(false)

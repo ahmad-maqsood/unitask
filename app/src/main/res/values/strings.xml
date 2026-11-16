@@ -839,4 +839,16 @@
     <string name="class_start_channel_description">Tells you when one of your classes starts</string>
     <string name="task_reminder_channel_name">Assignment Deadlines &amp; Reminders</string>
     <string name="task_reminder_channel_description">Notifies students about upcoming assignments and homework deadlines</string>
+    <string name="countdown_vibrate_channel_name">Pomodoro round ended (vibrate only)</string>
+    <string name="countdown_vibrate_channel_description">Vibrates, without sound, when a Pomodoro focus or break round ends.</string>
+    <string name="countdown_channel_name">Countdown finished</string>
+    <string name="countdown_channel_description">Alerts when a timer or countdown finishes.</string>
+    <string name="countdown_silent_channel_name">Countdown finished (silent)</string>
+    <string name="countdown_silent_channel_description">Shown when a countdown ended while the phone was off or the alarm was very late.</string>
+    <string name="timer_ongoing_channel_name">Running timer</string>
+    <string name="timer_ongoing_channel_description">Shows the stopwatch or countdown while it is running.</string>
+    <string name="high_priority_alarm_channel_name">High priority alarms</string>
+    <string name="high_priority_alarm_channel_description">Rings like an alarm for reminders of high priority tasks</string>
+    <string name="high_priority_alarm_silenced_channel_name">High priority alarms (silenced)</string>
+    <string name="high_priority_alarm_silenced_channel_description">Keeps high priority alarm notifications visible after sound and vibration stop</string>
 </resources>

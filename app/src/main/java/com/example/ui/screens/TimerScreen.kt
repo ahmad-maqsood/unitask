@@ -143,11 +143,12 @@ fun TimerScreen(
     val context = LocalContext.current
     val view = LocalView.current
 
-    // In full screen the bulb toggle alone decides whether the screen stays awake, so turning it
-    // off lets the screen time out even while the timer runs. Outside full screen the screen stays
-    // awake while the timer is counting. Cleared again when this screen is left.
+    // One bulb setting, shown both in full screen and in the normal top bar, so the two always
+    // match. In full screen it alone decides whether the screen stays awake, so turning it off lets
+    // the screen time out even while the timer runs. Outside full screen the screen also stays
+    // awake only while the timer is counting. Cleared again when this screen is left.
     val isRunning = TimerLogic.isRunning(state)
-    val keepScreenOn = if (fullscreen) keepAwakeInFullscreen else isRunning
+    val keepScreenOn = if (fullscreen) keepAwakeInFullscreen else (isRunning && keepAwakeInFullscreen)
     DisposableEffect(keepScreenOn) {
         view.keepScreenOn = keepScreenOn
         onDispose {
@@ -310,6 +311,23 @@ fun TimerScreen(
                                     contentDescription = stringResource(R.string.timer_pomodoro_options)
                                 )
                             }
+                        }
+                        IconButton(
+                            onClick = {
+                                keepAwakeInFullscreen = !keepAwakeInFullscreen
+                                controller.setKeepScreenOnInFullscreen(keepAwakeInFullscreen)
+                            },
+                            modifier = Modifier.testTag("timer_keep_awake_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb,
+                                contentDescription = stringResource(if (keepAwakeInFullscreen) R.string.timer_keep_screen_on_on else R.string.timer_keep_screen_on_off),
+                                tint = if (keepAwakeInFullscreen) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                }
+                            )
                         }
                         IconButton(
                             onClick = { showHistory = true },

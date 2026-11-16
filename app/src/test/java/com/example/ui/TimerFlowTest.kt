@@ -236,4 +236,49 @@ class TimerFlowTest {
         composeRule.waitForIdle()
         org.junit.Assert.assertTrue(hostKeepsScreenOn())
     }
+
+    @Test
+    fun keepScreenOnToggleOutsideFullscreenSwitchesAndIsRemembered() {
+        // On by default, as the timer always behaved before the switch existed.
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: on")
+
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: off")
+        org.junit.Assert.assertFalse(controller.keepScreenOnInFullscreen())
+    }
+
+    @Test
+    fun keepScreenOnButtonsInsideAndOutsideFullscreenStayInSync() {
+        // Switch off outside full screen: full screen shows it off too.
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.onNodeWithTag("timer_fullscreen_button").performClick()
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: off")
+
+        // Switch on in full screen: the normal screen shows it on too.
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.onNodeWithTag("timer_exit_fullscreen_button").performClick()
+        composeRule.onNodeWithTag("timer_keep_awake_button")
+            .assertContentDescriptionEquals("Keep screen on: on")
+    }
+
+    @Test
+    fun turningBulbOffOutsideFullscreenLetsScreenSleepEvenWhileTimerRuns() {
+        composeRule.onNodeWithTag("timer_start_button").performClick()
+        composeRule.waitForIdle()
+
+        // Bulb is on by default, so the screen stays awake while the timer runs.
+        org.junit.Assert.assertTrue(hostKeepsScreenOn())
+
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("timer_pause_button").assertIsDisplayed()
+        org.junit.Assert.assertFalse(hostKeepsScreenOn())
+
+        composeRule.onNodeWithTag("timer_keep_awake_button").performClick()
+        composeRule.waitForIdle()
+        org.junit.Assert.assertTrue(hostKeepsScreenOn())
+    }
 }

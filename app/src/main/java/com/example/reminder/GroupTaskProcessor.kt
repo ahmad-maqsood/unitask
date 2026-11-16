@@ -215,22 +215,25 @@ class GroupTaskProcessor(context: Context) {
             postNotification(
                 id = ("summary|" + snapshot.groupId).hashCode(),
                 title = appContext.getString(R.string.group_task_new_tasks_title, snapshot.groupName),
-                text = "${fresh.size} tasks added. Open the Deadlines tab to view.",
+                text = appContext.resources.getQuantityString(R.plurals.group_task_tasks_added_text, fresh.size, fresh.size),
                 groupId = snapshot.groupId
             )
             return
         }
         for (task in fresh) {
-            val who = task.createdByName.ifBlank { "A member" }
+            val who = task.createdByName.ifBlank { appContext.getString(R.string.group_task_member_fallback) }
             // Date and time: a new task is often due days away, and a time alone does not say which day.
-            val due = "Due " + com.example.util.DateFormats.shortDateAtClock(
-                computeDeadlineMillis(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+            val due = appContext.getString(
+                R.string.group_task_due,
+                com.example.util.DateFormats.shortDateAtClock(
+                    computeDeadlineMillis(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+                )
             )
             val course = task.courseLabel?.trim()?.takeIf { it.isNotBlank() }
             val body = if (course != null) {
-                "[$course] $due • ${task.title} (by $who)"
+                appContext.getString(R.string.group_task_new_body_with_course, course, due, task.title, who)
             } else {
-                "$due • ${task.title} (by $who)"
+                appContext.getString(R.string.group_task_new_body, due, task.title, who)
             }
             postNotification(
                 id = ("new|" + snapshot.groupId + "|" + task.id).hashCode(),
@@ -274,8 +277,8 @@ class GroupTaskProcessor(context: Context) {
                 notices.add(
                     Triple(
                         task.id,
-                        "Deadline moved in ${snapshot.groupName}",
-                        "${task.title} is now due ${formatDue(now)}"
+                        appContext.getString(R.string.group_task_deadline_moved_title, snapshot.groupName),
+                        appContext.getString(R.string.group_task_deadline_moved_text, task.title, formatDue(now))
                     )
                 )
             }
@@ -284,7 +287,13 @@ class GroupTaskProcessor(context: Context) {
         val allIds = snapshot.allTasks.map { it.id }.toSet()
         for ((id, v) in old) {
             if (id !in allIds) {
-                notices.add(Triple(id, "Task deleted in ${snapshot.groupName}", "${v.second} was removed"))
+                notices.add(
+                    Triple(
+                        id,
+                        appContext.getString(R.string.group_task_deleted_title, snapshot.groupName),
+                        appContext.getString(R.string.group_task_deleted_text, v.second)
+                    )
+                )
             }
         }
 
@@ -293,7 +302,12 @@ class GroupTaskProcessor(context: Context) {
         if (notices.size > MAX_INDIVIDUAL_NOTICES) {
             postNotification(
                 id = ("changed|" + snapshot.groupId).hashCode(),
-                title = "${notices.size} tasks changed in ${snapshot.groupName}",
+                title = appContext.resources.getQuantityString(
+                    R.plurals.group_task_tasks_changed_title,
+                    notices.size,
+                    notices.size,
+                    snapshot.groupName
+                ),
                 text = appContext.getString(R.string.group_task_changed_text),
                 groupId = snapshot.groupId
             )

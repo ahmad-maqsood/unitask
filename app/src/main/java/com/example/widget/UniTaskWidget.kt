@@ -94,21 +94,23 @@ private sealed interface WidgetRow {
     data class Message(val text: String) : WidgetRow
 }
 
-private fun buildRows(data: TodayOverview?): List<WidgetRow> {
+private fun buildRows(context: Context, data: TodayOverview?): List<WidgetRow> {
     if (data == null) return listOf(WidgetRow.Message("Open UniTask to load today."))
     val rows = ArrayList<WidgetRow>()
     if (data.classes.isNotEmpty()) {
         rows.add(WidgetRow.Section("Classes"))
         data.classes.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.ClassLine(it)) }
         if (data.classes.size > MAX_PER_SECTION) {
-            rows.add(WidgetRow.More("+${data.classes.size - MAX_PER_SECTION} more classes"))
+            val extra = data.classes.size - MAX_PER_SECTION
+            rows.add(WidgetRow.More(context.resources.getQuantityString(R.plurals.widget_more_classes, extra, extra)))
         }
     }
     if (data.tasks.isNotEmpty() || data.overdueCount > 0) {
         rows.add(WidgetRow.Section("Tasks"))
         data.tasks.take(MAX_PER_SECTION).forEach { rows.add(WidgetRow.TaskLine(it)) }
         if (data.tasks.size > MAX_PER_SECTION) {
-            rows.add(WidgetRow.More("+${data.tasks.size - MAX_PER_SECTION} more tasks"))
+            val extra = data.tasks.size - MAX_PER_SECTION
+            rows.add(WidgetRow.More(context.resources.getQuantityString(R.plurals.widget_more_tasks, extra, extra)))
         }
         if (data.overdueCount > 0) rows.add(WidgetRow.Overdue(data.overdueCount))
     }
@@ -135,7 +137,7 @@ private fun openAppAction(context: Context, task: WidgetTask? = null): Action {
 
 @Composable
 private fun WidgetContent(context: Context, data: TodayOverview?) {
-    val rows = buildRows(data)
+    val rows = buildRows(context, data)
     val accentColor = ColorProvider(
         day = AccentColors.widgetLightColor(context),
         night = AccentColors.widgetDarkColor(context)

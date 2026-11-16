@@ -810,6 +810,14 @@
     <!-- UniTaskWidget.kt -->
     <string name="widget_today">Today</string>
     <string name="widget_now">Now</string>
+    <plurals name="widget_more_classes">
+        <item quantity="one">+%1$d more class</item>
+        <item quantity="other">+%1$d more classes</item>
+    </plurals>
+    <plurals name="widget_more_tasks">
+        <item quantity="one">+%1$d more task</item>
+        <item quantity="other">+%1$d more tasks</item>
+    </plurals>
     <!-- DriveAutoBackup.kt -->
     <string name="drive_auto_backup_title">Google Drive backup</string>
     <string name="drive_auto_backup_sign_in_expired">Google Drive backup stopped because the sign-in expired. Open Settings, Backup &amp; data and reconnect.</string>

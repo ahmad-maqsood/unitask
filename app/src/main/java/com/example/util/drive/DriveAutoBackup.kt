@@ -347,7 +347,7 @@ object DriveAutoBackup {
                 context = context,
                 kind = "Backup",
                 title = context.getString(R.string.drive_auto_backup_title),
-                body = "Google Drive backup stopped because the sign-in expired. Open Settings, Backup & data and reconnect."
+                body = context.getString(R.string.drive_auto_backup_sign_in_expired)
             )
             prefs.failureNotified = true
         } else if (driveFull && failingForMs >= ONE_DAY_MS) {
@@ -355,7 +355,7 @@ object DriveAutoBackup {
                 context = context,
                 kind = "Backup",
                 title = context.getString(R.string.drive_auto_backup_title),
-                body = "Google Drive backup stopped because your Google Drive is full. Free up space in Google Drive, then open Settings, Backup & data and tap Back up now."
+                body = context.getString(R.string.drive_auto_backup_drive_full)
             )
             prefs.failureNotified = true
         } else if (prefs.consecutiveFailures >= 3 && failingForMs >= THREE_DAYS_MS) {
@@ -363,7 +363,7 @@ object DriveAutoBackup {
                 context = context,
                 kind = "Backup",
                 title = context.getString(R.string.drive_auto_backup_title),
-                body = "Google Drive backup has not worked for 3 days. Open Settings, Backup & data."
+                body = context.getString(R.string.drive_auto_backup_not_working)
             )
             prefs.failureNotified = true
         }

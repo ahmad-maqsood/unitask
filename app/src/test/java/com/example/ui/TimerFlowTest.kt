@@ -210,10 +210,20 @@ class TimerFlowTest {
         org.junit.Assert.assertFalse(controller.keepScreenOnInFullscreen())
     }
 
-    // The Compose host view that TimerScreen sets keepScreenOn on.
+    // LocalView is nested inside the activity content hierarchy. Inspect the whole
+    // hierarchy rather than assuming the Compose view is the first direct child.
     private fun hostKeepsScreenOn(): Boolean {
         val content = composeRule.activity.findViewById<android.view.ViewGroup>(android.R.id.content)
-        return content.getChildAt(0).keepScreenOn
+
+        fun anyViewKeepsScreenOn(view: android.view.View): Boolean {
+            if (view.keepScreenOn) return true
+            val group = view as? android.view.ViewGroup ?: return false
+            return (0 until group.childCount).any { index ->
+                anyViewKeepsScreenOn(group.getChildAt(index))
+            }
+        }
+
+        return anyViewKeepsScreenOn(content)
     }
 
     @Test

@@ -720,6 +720,18 @@
     <string name="timetable_pending_assignment">%1$s pending assignment%2$s</string>
     <!-- ToolsSheet.kt -->
     <string name="tools_more">More</string>
+    <string name="tools_notes">Notes</string>
+    <string name="tools_notes_description">Lecture notes and summaries</string>
+    <string name="tools_timer">Timer</string>
+    <string name="tools_timer_description">Stopwatch and countdown</string>
+    <string name="tools_progress">Progress</string>
+    <string name="tools_progress_description">Tasks done and your streak</string>
+    <string name="tools_recently_deleted">Recently deleted</string>
+    <string name="tools_recently_deleted_description">Restore tasks and notes</string>
+    <string name="tools_help">Help</string>
+    <string name="tools_help_description">Learn how to use UniTask</string>
+    <string name="tools_settings">Settings</string>
+    <string name="tools_settings_description">Reminders, backup and account</string>
     <!-- UpdatePrompt.kt -->
     <string name="update_prompt_download_apk">Download APK</string>
     <string name="update_prompt_what_s_new">What\'s new</string>

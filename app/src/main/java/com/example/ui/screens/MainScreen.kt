@@ -136,43 +136,43 @@ fun buildToolsList(
     onOpenProgress: () -> Unit = {}
 ): List<ToolEntry> = listOf(
     ToolEntry(
-        label = "Notes",
-        description = "Lecture notes and summaries",
+        labelRes = R.string.tools_notes,
+        descriptionRes = R.string.tools_notes_description,
         icon = Icons.Default.EditNote,
         testTag = "tools_tile_notes",
         onClick = onOpenNotes
     ),
     ToolEntry(
-        label = "Timer",
-        description = "Stopwatch and countdown",
+        labelRes = R.string.tools_timer,
+        descriptionRes = R.string.tools_timer_description,
         icon = Icons.Default.Timer,
         testTag = "tools_tile_timer",
         onClick = onOpenTimer
     ),
     ToolEntry(
-        label = "Progress",
-        description = "Tasks done and your streak",
+        labelRes = R.string.tools_progress,
+        descriptionRes = R.string.tools_progress_description,
         icon = Icons.Default.BarChart,
         testTag = "tools_tile_progress",
         onClick = onOpenProgress
     ),
     ToolEntry(
-        label = "Recently deleted",
-        description = "Restore tasks and notes",
+        labelRes = R.string.tools_recently_deleted,
+        descriptionRes = R.string.tools_recently_deleted_description,
         icon = Icons.Default.DeleteSweep,
         testTag = "tools_tile_recently_deleted",
         onClick = onOpenRecentlyDeleted
     ),
     ToolEntry(
-        label = "Help",
-        description = "Learn how to use UniTask",
+        labelRes = R.string.tools_help,
+        descriptionRes = R.string.tools_help_description,
         icon = Icons.AutoMirrored.Filled.HelpOutline,
         testTag = "tools_tile_help",
         onClick = onOpenHelp
     ),
     ToolEntry(
-        label = "Settings",
-        description = "Reminders, backup and account",
+        labelRes = R.string.tools_settings,
+        descriptionRes = R.string.tools_settings_description,
         icon = Icons.Default.Settings,
         testTag = "tools_tile_settings",
         showBadge = updateAvailable,

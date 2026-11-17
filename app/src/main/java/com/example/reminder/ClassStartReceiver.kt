@@ -62,7 +62,8 @@ class ClassStartReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.w(TAG, "Could not handle class start: ${e.message}")
             } finally {
-                pending.finish()
+                // goAsync() can return null outside a real broadcast, such as in unit tests.
+                pending?.finish()
             }
         }
     }

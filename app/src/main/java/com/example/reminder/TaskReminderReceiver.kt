@@ -107,7 +107,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         android.util.Log.w("UniTask", "Mark as done from notification failed", e)
                         toastOnMain(context, "Could not mark the task as done")
                     } finally {
-                        pending.finish()
+                        pending?.finish()
                     }
                 }
             }
@@ -142,7 +142,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         android.util.Log.w("UniTask", "Mark as done from notification failed", e)
                         toastOnMain(context, "Could not mark the task as done")
                     } finally {
-                        pending.finish()
+                        pending?.finish()
                     }
                 }
             }
@@ -239,7 +239,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                     }
                     if (needed) showReminder(context, intent)
                 } finally {
-                    pending.finish()
+                    pending?.finish()
                 }
             }
             return

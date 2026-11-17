@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import android.app.Application
+import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.R
@@ -19,7 +21,9 @@ import com.example.util.toAppUser
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.io.IOException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -97,6 +101,30 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (isOnline.value) return true
         _snackbarMessage.tryEmit(offlineMessage)
         return false
+    }
+
+    /** Text from strings.xml, so every message can be translated. */
+    private fun str(@StringRes id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
+
+    /**
+     * A short, readable message for a failed group action, such as "Could not create the task.
+     * Check your internet connection and try again." The technical reason (server codes,
+     * exception text) goes to the log, so the screen never shows it.
+     */
+    private fun failureText(@StringRes action: Int, e: Throwable): String {
+        Log.w(TAG, "${str(action)} (${e::class.java.simpleName}): ${e.message}", e)
+        val reason = e.message.orEmpty()
+        val hint = when {
+            e is IOException || e is TimeoutCancellationException ||
+                reason.contains("Unable to resolve host", ignoreCase = true) ||
+                reason.contains("timeout", ignoreCase = true) -> R.string.groups_error_hint_network
+            reason.contains("permission", ignoreCase = true) ||
+                reason.contains("row-level security", ignoreCase = true) ||
+                reason.contains("42501") -> R.string.groups_error_hint_permission
+            else -> R.string.groups_error_hint_try_again
+        }
+        return str(R.string.groups_error_format, str(action), str(hint))
     }
 
     private val _isActionLoading = MutableStateFlow(false)
@@ -342,9 +370,9 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 onFailure = { e ->
                     viewModelScope.launch {
                         val msg = if (e.message?.contains("This group already has a course with that code.") == true) {
-                            "This group already has a course with that code."
+                            str(R.string.groups_error_course_code_exists)
                         } else {
-                            "Failed to create course: ${e.message}"
+                            failureText(R.string.groups_error_create_course, e)
                         }
                         _snackbarMessage.emit(msg)
                     }
@@ -361,9 +389,9 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 onFailure = { e ->
                     viewModelScope.launch {
                         val msg = if (e.message?.contains("This group already has a course with that code.") == true) {
-                            "This group already has a course with that code."
+                            str(R.string.groups_error_course_code_exists)
                         } else {
-                            "Failed to update course: ${e.message}"
+                            failureText(R.string.groups_error_update_course, e)
                         }
                         _snackbarMessage.emit(msg)
                     }
@@ -376,7 +404,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (!requireOnline()) return
         repository.deleteGroupCourse(course.groupId, course.id) { e ->
             viewModelScope.launch {
-                _snackbarMessage.emit("Failed to delete course: ${e.message}")
+                _snackbarMessage.emit(failureText(R.string.groups_error_delete_course, e))
             }
         }
     }
@@ -403,7 +431,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(newGroupId)
                 onComplete(true, joinCode)
             }.onFailure { error ->
-                onComplete(false, error.message ?: "Failed to create group")
+                onComplete(false, error.message ?: str(R.string.groups_error_create_group_failed))
             }
         }
     }
@@ -430,7 +458,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(groupId)
                 onComplete(true, null)
             }.onFailure { error ->
-                onComplete(false, error.message ?: "Failed to join group")
+                onComplete(false, error.message ?: str(R.string.groups_error_join_group_failed))
             }
         }
     }
@@ -475,7 +503,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 rawDisplayName = user.displayName ?: "Student",
                 onFailure = { e ->
                     viewModelScope.launch {
-                        _snackbarMessage.emit("Failed to create task: ${e.message}")
+                        _snackbarMessage.emit(failureText(R.string.groups_error_create_task, e))
                     }
                 }
             )
@@ -494,7 +522,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 assignedTo = assignedTo,
                 onFailure = { e ->
                     viewModelScope.launch {
-                        _snackbarMessage.emit("Failed to update task: ${e.message}")
+                        _snackbarMessage.emit(failureText(R.string.groups_error_update_task, e))
                     }
                 }
             )
@@ -544,7 +572,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             // The server refused: show the task again so the list matches what is really there.
             hiddenTaskIds.update { it - taskId }
             viewModelScope.launch {
-                _snackbarMessage.emit("Failed to delete task: ${e.message}")
+                _snackbarMessage.emit(failureText(R.string.groups_error_delete_task, e))
             }
         }
     }
@@ -568,7 +596,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 }
                 .onFailure { e ->
-                    _snackbarMessage.emit("Could not change role: ${e.message}")
+                    _snackbarMessage.emit(failureText(R.string.groups_error_change_role, e))
                 }
         }
     }
@@ -582,7 +610,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                     _snackbarMessage.emit("Ownership transferred successfully")
                 }
                 .onFailure { e ->
-                    _snackbarMessage.emit("Failed to transfer ownership: ${e.message}")
+                    _snackbarMessage.emit(failureText(R.string.groups_error_transfer_ownership, e))
                 }
         }
     }
@@ -593,7 +621,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.removeMember(groupId, member.uid)
                 .onSuccess { _snackbarMessage.emit("${member.displayName} was removed") }
-                .onFailure { e -> _snackbarMessage.emit("Could not remove member: ${e.message}") }
+                .onFailure { e -> _snackbarMessage.emit(failureText(R.string.groups_error_remove_member, e)) }
         }
     }
 
@@ -611,7 +639,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 reminderScheduler.cancelGroup(groupId)
                 onSuccess()
             }.onFailure { e ->
-                _snackbarMessage.emit("Failed to leave group: ${e.message}")
+                _snackbarMessage.emit(failureText(R.string.groups_error_leave_group, e))
             }
         }
     }
@@ -630,7 +658,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 reminderScheduler.cancelGroup(groupId)
                 onSuccess()
             }.onFailure { e ->
-                _snackbarMessage.emit("Failed to delete group: ${e.message}")
+                _snackbarMessage.emit(failureText(R.string.groups_error_delete_group, e))
             }
         }
     }
@@ -646,7 +674,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 _snackbarMessage.emit("Group settings updated successfully")
                 onComplete(true, null)
             }.onFailure { e ->
-                onComplete(false, e.message ?: "Failed to update group")
+                onComplete(false, e.message ?: str(R.string.groups_error_update_group_failed))
             }
         }
     }
@@ -662,12 +690,14 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 _snackbarMessage.emit("New join code: $newCode")
                 onComplete(true, newCode)
             }.onFailure { e ->
-                onComplete(false, e.message ?: "Failed to regenerate join code")
+                onComplete(false, e.message ?: str(R.string.groups_error_regenerate_code_failed))
             }
         }
     }
 
     private companion object {
+        const val TAG = "GroupsViewModel"
+
         /** How long a deleted task can be brought back. Matches how long the Undo message stays on screen. */
         const val UNDO_WINDOW_MILLIS = 10_000L
     }

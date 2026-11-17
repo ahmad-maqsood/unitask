@@ -494,6 +494,27 @@
     <string name="groups_task_deleted">Task deleted</string>
     <string name="groups_reconnecting">Reconnecting...</string>
     <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
+    <!-- GroupsViewModel.kt: failed group actions. The reason text is only a hint; details go to the log. -->
+    <string name="groups_error_format">%1$s %2$s</string>
+    <string name="groups_error_hint_network">Check your internet connection and try again.</string>
+    <string name="groups_error_hint_permission">You may not have permission to do that.</string>
+    <string name="groups_error_hint_try_again">Please try again.</string>
+    <string name="groups_error_course_code_exists">This group already has a course with that code.</string>
+    <string name="groups_error_create_course">Could not create the course.</string>
+    <string name="groups_error_update_course">Could not update the course.</string>
+    <string name="groups_error_delete_course">Could not delete the course.</string>
+    <string name="groups_error_create_task">Could not create the task.</string>
+    <string name="groups_error_update_task">Could not update the task.</string>
+    <string name="groups_error_delete_task">Could not delete the task.</string>
+    <string name="groups_error_change_role">Could not change the role.</string>
+    <string name="groups_error_transfer_ownership">Could not transfer ownership.</string>
+    <string name="groups_error_remove_member">Could not remove the member.</string>
+    <string name="groups_error_leave_group">Could not leave the group.</string>
+    <string name="groups_error_delete_group">Could not delete the group.</string>
+    <string name="groups_error_create_group_failed">Failed to create group</string>
+    <string name="groups_error_join_group_failed">Failed to join group</string>
+    <string name="groups_error_update_group_failed">Failed to update group</string>
+    <string name="groups_error_regenerate_code_failed">Failed to regenerate join code</string>
     <string name="groups_collaborate_with_classmates_share">Collaborate with classmates, share assignments, and track group deadlines in real time.</string>
     <string name="groups_create_a_group">Create a group</string>
     <string name="groups_join_a_group">Join a group</string>

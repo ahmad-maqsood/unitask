@@ -462,16 +462,27 @@ private fun signInWithGoogle(
         } catch (e: GetCredentialCancellationException) {
             Log.w("Auth", "Google Sign-In cancelled: ${e.message}", e)
             onCancelled()
-        } catch (e: NoCredentialException) {
-            // The phone has no Google account that can sign in to UniTask.
-            Log.w("Auth", "No Google account available: ${e.message}", e)
-            onError(context.getString(R.string.cloud_backup_no_google_account))
         } catch (e: Exception) {
-            Log.e("Auth", "Google Sign-In failed", e)
-            onError(e.localizedMessage ?: "Sign-in failed")
+            if (e is NoCredentialException) {
+                Log.w("Auth", "No Google account available: ${e.message}", e)
+            } else {
+                Log.e("Auth", "Google Sign-In failed", e)
+            }
+            onError(googleSignInErrorMessage(context, e))
         }
     }
 }
+
+/**
+ * The message shown when Google sign-in fails. A phone with no Google account that can sign in
+ * gets a clear instruction instead of a technical error.
+ */
+internal fun googleSignInErrorMessage(context: Context, e: Exception): String =
+    if (e is NoCredentialException) {
+        context.getString(R.string.cloud_backup_no_google_account)
+    } else {
+        e.localizedMessage ?: "Sign-in failed"
+    }
 
 private fun signOut(
     context: Context,

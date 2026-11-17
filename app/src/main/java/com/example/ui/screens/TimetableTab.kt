@@ -100,12 +100,12 @@ fun TimetableTab(
     allTasks: List<TaskWithCourse>,
     courses: List<Course>,
     onAddSlotClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onSelectedDayChange: (Int) -> Unit = {},
     onEditSlot: (LectureSlot) -> Unit,
     onDeleteSlot: (LectureSlot) -> Unit,
     onTaskClick: (TaskWithCourse) -> Unit,
-    onRescheduleAllReminders: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onRescheduleAllReminders: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()

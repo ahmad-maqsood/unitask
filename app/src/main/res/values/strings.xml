@@ -95,7 +95,7 @@
     <string name="add_edit_task_e_g_midterm_lab_report">e.g. Midterm Lab Report, HW 3</string>
     <string name="add_edit_task_title_is_required">Title is required</string>
     <string name="add_edit_task_description_notes_optional">Description &amp; Notes (optional)</string>
-    <string name="add_edit_task_e_g_5_pages_cover">e.g. 5 pages, cover chapters 1-4</string>
+    <string name="add_edit_task_e_g_5_pages_cover">e.g. 5 pages, cover chapters 1–4</string>
     <string name="add_edit_task_checklist">Checklist</string>
     <string name="add_edit_task_add_item">Add item</string>
     <string name="add_edit_task_break_the_assignment_into_small">Break the assignment into small steps you can tick off.</string>
@@ -103,7 +103,7 @@
     <string name="add_edit_task_remove_item">Remove item</string>
     <string name="add_edit_task_due_date_time">Due Date &amp; Time</string>
     <string name="add_edit_task_status">Status</string>
-    <string name="add_edit_task_importing">Importing...</string>
+    <string name="add_edit_task_importing">Importing…</string>
     <string name="add_edit_task_attach_file">Attach file</string>
     <string name="add_edit_task_attached">%1$s attached</string>
     <string name="add_edit_task_remove_attachment">Remove attachment</string>
@@ -190,7 +190,7 @@
     <string name="courses_enrolled_courses">Enrolled Courses</string>
     <string name="courses_courses_this_semester">%1$s courses this semester</string>
     <string name="courses_more_course_options">More course options</string>
-    <string name="courses_archive_courses">Archive courses...</string>
+    <string name="courses_archive_courses">Archive courses…</string>
     <string name="courses_add_your_first_course">Add your first course</string>
     <string name="courses_add_your_university_courses_to">Add your university courses to organize your homework and assignments.</string>
     <string name="courses_add_your_first_course_2">+ Add Your First Course</string>
@@ -208,7 +208,7 @@
     <string name="create_join_group_e_g_cs_301_study">e.g. CS 301 Study Group</string>
     <string name="create_join_group_unique_username_handle">Unique Username (@handle) *</string>
     <string name="create_join_group_e_g_cs301_team">e.g. cs301_team</string>
-    <string name="create_join_group_3_30_chars_lowercase_letters">3-30 chars: lowercase letters, digits, and _</string>
+    <string name="create_join_group_3_30_chars_lowercase_letters">3–30 chars: lowercase letters, digits, and _</string>
     <string name="common_create">Create</string>
     <string name="create_join_group_join_a_group">Join a Group</string>
     <string name="create_join_group_scan_with_camera">Scan with camera</string>
@@ -492,7 +492,7 @@
     <string name="groups_failed_to_create_group">Failed to create group</string>
     <string name="groups_failed_to_join_group">Failed to join group</string>
     <string name="groups_task_deleted">Task deleted</string>
-    <string name="groups_reconnecting">Reconnecting...</string>
+    <string name="groups_reconnecting">Reconnecting…</string>
     <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
     <!-- GroupsViewModel.kt: failed group actions. The reason text is only a hint; details go to the log. -->
     <string name="groups_error_format">%1$s %2$s</string>
@@ -540,7 +540,7 @@
     <string name="local_backup_this_backup_is_encrypted_enter">This backup is encrypted. Enter the password you set when you saved it.</string>
     <string name="local_backup_password">Password</string>
     <string name="local_backup_please_wait">Please wait</string>
-    <string name="local_backup_working_on_your_backup">Working on your backup...</string>
+    <string name="local_backup_working_on_your_backup">Working on your backup…</string>
     <!-- MainScreen.kt -->
     <string name="main_unitask_logo">UniTask logo</string>
     <string name="common_search">Search</string>
@@ -584,7 +584,7 @@
     <string name="my_tasks_today">Today</string>
     <string name="my_tasks_tomorrow">Tomorrow</string>
     <string name="my_tasks_add_quick_task">Add quick task</string>
-    <string name="my_tasks_add_a_task">Add a task...</string>
+    <string name="my_tasks_add_a_task">Add a task…</string>
     <string name="my_tasks_save_task">Save task</string>
     <string name="section_collapse_description">Collapse %1$s section</string>
     <string name="section_expand_description">Expand %1$s section</string>
@@ -617,7 +617,7 @@
     <string name="note_editor_image">Image</string>
     <string name="note_editor_share_as">Share as</string>
     <string name="note_editor_save_as">Save as</string>
-    <string name="note_editor_creating_pdf">Creating PDF...</string>
+    <string name="note_editor_creating_pdf">Creating PDF…</string>
     <string name="note_editor_keep_screen_on">Keep screen on</string>
     <!-- NoteImagePreview.kt -->
     <string name="note_image_preview_image_not_available_on_this">Image not available on this phone</string>
@@ -699,7 +699,7 @@
     <string name="search_archived_in">Archived in %1$s</string>
     <string name="search_this_item_is_part_of">This item is part of %1$s. Restore the semester to view and edit its contents.</string>
     <string name="search_restore_semester">Restore semester</string>
-    <string name="search_search_tasks_notes_courses">Search tasks, notes, courses, settings...</string>
+    <string name="search_search_tasks_notes_courses">Search tasks, notes, courses, settings…</string>
     <string name="search_search_options">Search options</string>
     <string name="search_type_to_search_tasks_notes">Type to search tasks, notes, courses and settings</string>
     <string name="search_nothing_found_for">Nothing found for \'%1$s\'</string>

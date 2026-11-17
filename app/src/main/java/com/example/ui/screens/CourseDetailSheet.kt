@@ -80,6 +80,7 @@ import com.example.ui.theme.rememberCourseColor
 fun CourseDetailSheet(
     courseWithCount: CourseWithTaskCount,
     tasks: List<TaskWithCourse>,
+    modifier: Modifier = Modifier,
     slots: List<LectureSlotWithCourse> = emptyList(),
     onBack: () -> Unit,
     onEditCourse: (Course) -> Unit,
@@ -93,7 +94,6 @@ fun CourseDetailSheet(
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     onUndoDeleteTask: (TaskItem) -> Unit = {},
-    modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     BackHandler { onBack() }

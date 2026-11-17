@@ -43,8 +43,8 @@ import com.example.util.drive.DrivePrefs
  */
 @Composable
 fun DriveRestoreOfferCard(
-    onDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onDismiss: () -> Unit = {},
     viewModel: DriveBackupViewModel = viewModel()
 ) {
     val context = LocalContext.current

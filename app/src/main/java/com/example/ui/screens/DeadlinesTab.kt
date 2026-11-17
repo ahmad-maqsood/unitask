@@ -255,7 +255,8 @@ fun DeadlinesTab(
     val now by rememberMinuteClock()
     val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
     // Which sections are folded away. Every section starts open, as the list always showed them.
-    val sectionCollapse = rememberSectionCollapse()
+    // The choice is remembered, even after closing the app.
+    val sectionCollapse = rememberSectionCollapse("deadlines")
     val showsSections = sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()
     // The tasks on screen. "All" selects only these, so a bulk action never reaches a task that is
     // folded away.

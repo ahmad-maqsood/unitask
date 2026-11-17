@@ -41,6 +41,23 @@ class SectionCollapseTest {
     }
 
     @Test
+    fun toggleReportsTheNewCollapsedKeysSoTheyCanBeSaved() {
+        val saved = mutableListOf<List<String>>()
+        val collapse = SectionCollapse(mutableStateOf(listOf(TaskSectionKey.DONE))) { saved.add(it) }
+
+        collapse.toggle(TaskSectionKey.TODAY)
+        collapse.toggle(TaskSectionKey.DONE)
+
+        assertEquals(
+            listOf(
+                listOf(TaskSectionKey.DONE, TaskSectionKey.TODAY),
+                listOf(TaskSectionKey.TODAY)
+            ),
+            saved
+        )
+    }
+
+    @Test
     fun collapsedSectionShowsNoTasks() {
         val tasks = listOf(1, 2, 3)
         assertEquals(emptyList<Int>(), tasks.shownUnless(collapsed = true))

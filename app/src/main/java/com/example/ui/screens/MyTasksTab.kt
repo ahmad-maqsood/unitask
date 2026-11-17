@@ -91,8 +91,9 @@ fun MyTasksTab(
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
-    // Done starts collapsed, like before. Every other section starts open.
-    val sectionCollapse = rememberSectionCollapse(TaskSectionKey.DONE)
+    // Done starts collapsed, like before. Every other section starts open. After that, whatever
+    // the person collapses or expands is remembered, even after closing the app.
+    val sectionCollapse = rememberSectionCollapse("my_tasks", TaskSectionKey.DONE)
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
 

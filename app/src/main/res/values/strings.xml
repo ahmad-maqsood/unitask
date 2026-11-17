@@ -320,6 +320,21 @@
     <string name="drive_restore_use_the_latest_backup_instead">Use the latest backup instead</string>
     <string name="drive_restore_use_the_older_backup_instead">Use the older backup instead</string>
     <string name="drive_restore_older_backup">Older backup: %1$s</string>
+    <!-- DriveBackupViewModel.kt: progress labels -->
+    <string name="drive_busy_connecting">Connecting</string>
+    <string name="drive_busy_backing_up">Backing up</string>
+    <string name="drive_busy_backing_up_files">Backing up (%1$d of %2$d files)</string>
+    <string name="drive_busy_restoring">Restoring</string>
+    <string name="drive_busy_checking_for_backup">Checking for backup</string>
+    <!-- DriveBackupViewModel.kt: results and errors -->
+    <string name="drive_result_backup_complete">Backup complete: %1$s.</string>
+    <string name="drive_result_backup_up_to_date">Backup is already up to date.</string>
+    <string name="drive_result_app_has_no_data">Your app has no data.</string>
+    <string name="drive_result_restored">Restored %1$s.</string>
+    <string name="drive_error_drive_full">Your Google Drive is full.</string>
+    <string name="drive_error_backup_failed">Backup failed</string>
+    <string name="drive_error_restore_failed">Restore failed</string>
+    <string name="drive_error_check_backup_failed">Failed to check backup</string>
     <!-- DriveRestoreOfferCard.kt -->
     <string name="drive_restore_offer_card_had_unitask_on_another_phone">Had UniTask on another phone?</string>
     <string name="drive_restore_offer_card_restore_your_courses_tasks_notes">Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.</string>

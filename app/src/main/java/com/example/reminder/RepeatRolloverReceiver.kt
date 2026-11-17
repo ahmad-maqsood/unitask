@@ -131,7 +131,7 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.w(TAG, "Could not roll over repeating tasks: ${e.message}")
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }

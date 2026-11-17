@@ -63,7 +63,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.w(TAG, "Could not show the daily summary: ${e.message}")
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }

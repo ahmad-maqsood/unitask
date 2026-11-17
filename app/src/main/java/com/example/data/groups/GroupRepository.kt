@@ -129,6 +129,13 @@ class GroupRepository(private val context: Context) {
     }.distinctUntilChanged()
 
     companion object {
+        /**
+         * Limits, also enforced by the database (supabase/group_limits.sql). Keep the numbers in step:
+         * the app uses them for a quick check and for the message, the database has the final say.
+         */
+        const val MAX_GROUPS_PER_OWNER = 8
+        const val MAX_TASKS_PER_GROUP = 200
+
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 30_000L
@@ -1067,6 +1074,10 @@ class GroupRepository(private val context: Context) {
             throw e
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
+            // The database refuses a 9th owned group; the view model turns this code into a readable message.
+            if (msg.contains("group_limit_reached", ignoreCase = true)) {
+                return Result.failure(Exception("group_limit_reached"))
+            }
             val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("taken", ignoreCase = true)) {
                 "That username is taken"
             } else {

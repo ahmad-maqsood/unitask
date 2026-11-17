@@ -511,6 +511,9 @@
     <string name="groups_error_remove_member">Could not remove the member.</string>
     <string name="groups_error_leave_group">Could not leave the group.</string>
     <string name="groups_error_delete_group">Could not delete the group.</string>
+    <string name="groups_error_group_limit">You can own up to %1$d groups. Delete a group you no longer need, then try again.</string>
+    <string name="groups_error_task_limit">This group has reached its limit of %1$d tasks. Delete old tasks to add new ones.</string>
+    <string name="groups_error_transfer_limit">That member already owns %1$d groups, the most one person can own.</string>
     <string name="groups_error_create_group_failed">Failed to create group</string>
     <string name="groups_error_join_group_failed">Failed to join group</string>
     <string name="groups_error_update_group_failed">Failed to update group</string>

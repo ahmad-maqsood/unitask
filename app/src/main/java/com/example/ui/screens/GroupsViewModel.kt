@@ -10,6 +10,7 @@ import com.example.data.groups.GroupCourse
 import com.example.data.groups.GroupDetail
 import com.example.data.groups.GroupMember
 import com.example.data.groups.GroupMembership
+import com.example.data.groups.GroupRepository
 import com.example.Repositories
 import com.example.data.groups.GroupTask
 import com.example.reminder.GroupReminderScheduler
@@ -416,6 +417,11 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             onComplete(false, "You must be signed in to create a group.")
             return
         }
+        // Quick check so the person is told at once. The database enforces the same limit.
+        if (myMemberships.value.count { it.role == "owner" } >= GroupRepository.MAX_GROUPS_PER_OWNER) {
+            onComplete(false, str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER))
+            return
+        }
 
         viewModelScope.launch {
             _isActionLoading.value = true
@@ -431,7 +437,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(newGroupId)
                 onComplete(true, joinCode)
             }.onFailure { error ->
-                onComplete(false, error.message ?: str(R.string.groups_error_create_group_failed))
+                val text = if (error.message == "group_limit_reached") {
+                    str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
+                } else {
+                    error.message ?: str(R.string.groups_error_create_group_failed)
+                }
+                onComplete(false, text)
             }
         }
     }
@@ -488,6 +499,13 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         closeAddEditTaskDialog()
 
         if (existingTask == null) {
+            // Quick check so the task does not appear and then vanish. The database enforces the same limit.
+            if (selectedGroupTasks.value.size >= GroupRepository.MAX_TASKS_PER_GROUP) {
+                viewModelScope.launch {
+                    _snackbarMessage.emit(str(R.string.groups_error_task_limit, GroupRepository.MAX_TASKS_PER_GROUP))
+                }
+                return
+            }
             repository.createTask(
                 groupId = groupId,
                 title = title,
@@ -503,7 +521,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 rawDisplayName = user.displayName ?: "Student",
                 onFailure = { e ->
                     viewModelScope.launch {
-                        _snackbarMessage.emit(failureText(R.string.groups_error_create_task, e))
+                        val msg = if (e.message?.contains("task_limit_reached") == true) {
+                            str(R.string.groups_error_task_limit, GroupRepository.MAX_TASKS_PER_GROUP)
+                        } else {
+                            failureText(R.string.groups_error_create_task, e)
+                        }
+                        _snackbarMessage.emit(msg)
                     }
                 }
             )
@@ -610,7 +633,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                     _snackbarMessage.emit("Ownership transferred successfully")
                 }
                 .onFailure { e ->
-                    _snackbarMessage.emit(failureText(R.string.groups_error_transfer_ownership, e))
+                    val msg = if (e.message?.contains("group_limit_reached") == true) {
+                        str(R.string.groups_error_transfer_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
+                    } else {
+                        failureText(R.string.groups_error_transfer_ownership, e)
+                    }
+                    _snackbarMessage.emit(msg)
                 }
         }
     }

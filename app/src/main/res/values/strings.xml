@@ -152,6 +152,7 @@
     <!-- CloudBackupSheet.kt -->
     <string name="cloud_backup_online_account">Online account</string>
     <string name="cloud_backup_sign_in_with_google">Sign in with Google</string>
+    <string name="cloud_backup_no_google_account">No Google account was found on this phone. Add one in your phone\'s Settings, then try again.</string>
     <string name="cloud_backup_unitask_works_fully_offline_your">UniTask works fully offline. Your account is used for study groups and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.</string>
     <string name="cloud_backup_export_my_data_json">Export My Data (JSON)</string>
     <string name="cloud_backup_sign_out_keep_offline">Sign Out (Keep Offline)</string>

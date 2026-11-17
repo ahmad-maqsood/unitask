@@ -2,6 +2,7 @@ package com.example.data.groups
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -47,7 +48,7 @@ internal class GroupOfflineCache(context: Context) {
         if (uid.isBlank() || group.id.isBlank()) return
         try {
             val payload = CachedGroupDetail(uid, group.id, group.username, group.name, group.ownerId, group.joinCode)
-            prefs.edit().putString(detailKey(group.id), json.encodeToString(CachedGroupDetail.serializer(), payload)).apply()
+            prefs.edit { putString(detailKey(group.id), json.encodeToString(CachedGroupDetail.serializer(), payload)) }
         } catch (e: Exception) {
             Log.w(TAG, "Could not save group details: ${e.message}")
         }
@@ -82,7 +83,7 @@ internal class GroupOfflineCache(context: Context) {
                     CachedGroupMember(it.uid, it.displayName, it.role, it.joinedAt?.toDate()?.time)
                 }
             )
-            prefs.edit().putString(membersKey(groupId), json.encodeToString(CachedGroupMembers.serializer(), payload)).apply()
+            prefs.edit { putString(membersKey(groupId), json.encodeToString(CachedGroupMembers.serializer(), payload)) }
         } catch (e: Exception) {
             Log.w(TAG, "Could not save group members: ${e.message}")
         }
@@ -111,7 +112,10 @@ internal class GroupOfflineCache(context: Context) {
     /** Removes the saved copy of one group, for example after leaving or deleting it. */
     fun forget(groupId: String) {
         try {
-            prefs.edit().remove(detailKey(groupId)).remove(membersKey(groupId)).apply()
+            prefs.edit {
+                remove(detailKey(groupId))
+                remove(membersKey(groupId))
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Could not remove saved group data: ${e.message}")
         }

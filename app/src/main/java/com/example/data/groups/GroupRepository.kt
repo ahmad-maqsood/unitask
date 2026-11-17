@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import androidx.core.content.edit
 import com.example.R
 import com.example.data.local.computeDeadlineMillis
 import com.example.reminder.GroupTaskProcessor
@@ -144,8 +145,8 @@ class GroupRepository(private val context: Context) {
 
         fun clearCache(context: Context) {
             try {
-                context.getSharedPreferences("group_cache", Context.MODE_PRIVATE).edit().clear().apply()
-                context.getSharedPreferences("group_pending_done", Context.MODE_PRIVATE).edit().clear().apply()
+                context.getSharedPreferences("group_cache", Context.MODE_PRIVATE).edit { clear() }
+                context.getSharedPreferences("group_pending_done", Context.MODE_PRIVATE).edit { clear() }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to clear group_cache: ${e.message}")
             }
@@ -245,9 +246,7 @@ class GroupRepository(private val context: Context) {
                     val payload = CachedMembershipsPayload(uid = myUid, memberships = cachedList)
                     val jsonStr = json.encodeToString(CachedMembershipsPayload.serializer(), payload)
                     context.getSharedPreferences("group_cache", Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("memberships", jsonStr)
-                        .apply()
+                        .edit { putString("memberships", jsonStr) }
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to cache memberships: ${e.message}")
                 }
@@ -952,7 +951,7 @@ class GroupRepository(private val context: Context) {
     private fun clearPendingIfUnchanged(key: String, wanted: Boolean) {
         val prefs = pendingDonePrefs()
         if (prefs.contains(key) && prefs.getBoolean(key, !wanted) == wanted) {
-            prefs.edit().remove(key).apply()
+            prefs.edit { remove(key) }
         }
     }
 
@@ -972,7 +971,7 @@ class GroupRepository(private val context: Context) {
 
     /** Signed out: unsent ticks of that account are dropped. */
     fun clearPendingDone() {
-        pendingDonePrefs().edit().clear().apply()
+        pendingDonePrefs().edit { clear() }
     }
 
     /**
@@ -986,7 +985,7 @@ class GroupRepository(private val context: Context) {
         pendingDone.update { it + (taskId to (isDone to System.currentTimeMillis())) }
 
         val pendingKey = "$myUid|$groupId|$taskId"
-        pendingDonePrefs().edit().putBoolean(pendingKey, isDone).apply()
+        pendingDonePrefs().edit { putBoolean(pendingKey, isDone) }
 
         CoroutineScope(Dispatchers.IO).launch {
             // 1) Save on the phone first, so the tick shows and survives a restart, also offline.

@@ -65,6 +65,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import com.example.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -461,6 +462,10 @@ private fun signInWithGoogle(
         } catch (e: GetCredentialCancellationException) {
             Log.w("Auth", "Google Sign-In cancelled: ${e.message}", e)
             onCancelled()
+        } catch (e: NoCredentialException) {
+            // The phone has no Google account that can sign in to UniTask.
+            Log.w("Auth", "No Google account available: ${e.message}", e)
+            onError(context.getString(R.string.cloud_backup_no_google_account))
         } catch (e: Exception) {
             Log.e("Auth", "Google Sign-In failed", e)
             onError(e.localizedMessage ?: "Sign-in failed")

@@ -166,7 +166,7 @@ fun DriveMigrationDialog(
                     }
                 } else if (backupStarted && state.isError) {
                     Text(
-                        text = state.lastResultMessage ?: "Backup failed.",
+                        text = state.lastResultMessage ?: stringResource(R.string.drive_migration_backup_failed),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )

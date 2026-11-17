@@ -105,7 +105,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         SnoozeStore.clear(context, taskId, cancelAlarm = true)
                     } catch (e: Exception) {
                         android.util.Log.w("UniTask", "Mark as done from notification failed", e)
-                        toastOnMain(context, "Could not mark the task as done")
+                        toastOnMain(context, context.getString(R.string.reminder_could_not_mark_done))
                     } finally {
                         pending?.finish()
                     }
@@ -140,7 +140,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                         GroupReminderScheduler(context).cancel(groupId, taskId)
                     } catch (e: Exception) {
                         android.util.Log.w("UniTask", "Mark as done from notification failed", e)
-                        toastOnMain(context, "Could not mark the task as done")
+                        toastOnMain(context, context.getString(R.string.reminder_could_not_mark_done))
                     } finally {
                         pending?.finish()
                     }

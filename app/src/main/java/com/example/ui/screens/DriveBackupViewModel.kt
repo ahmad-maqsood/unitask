@@ -120,7 +120,7 @@ class DriveBackupViewModel(
         }
         val offlineText = if (prefs.lastSuccessAt > 0L) {
             val counts = prefs.lastCounts
-            val time = formatBackupTime(prefs.lastSuccessAt)
+            val time = formatBackupTime(getApplication<Application>(), prefs.lastSuccessAt)
             if (!counts.isNullOrBlank()) "$time, $counts" else time
         } else {
             null
@@ -255,7 +255,7 @@ class DriveBackupViewModel(
                     is DriveBackupResult.Success -> {
                         val info = result.info
                         val countsText = buildCountsText(getApplication<Application>(), info)
-                        val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                        val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                         _uiState.update {
                             it.copy(
                                 busy = null,
@@ -464,7 +464,7 @@ class DriveBackupViewModel(
             val info = backups.firstOrNull()
             if (info != null) {
                 val countsText = buildCountsText(getApplication<Application>(), info)
-                val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
                         latestBackupInfo = info,
@@ -605,7 +605,7 @@ class DriveBackupViewModel(
             val info = DriveBackupManager.latestInfo(store)
             if (info != null) {
                 val countsText = buildCountsText(getApplication<Application>(), info)
-                val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
                         latestBackupInfo = info,
@@ -628,16 +628,18 @@ class DriveBackupViewModel(
         fun buildCountsText(context: Context, info: DriveBackupInfo): String =
             DriveBackupManager.buildCountsText(context, info)
 
-        fun formatBackupTime(millis: Long): String {
+        fun formatBackupTime(context: Context, millis: Long): String {
             if (millis <= 0L) return ""
             val now = Calendar.getInstance()
             val then = Calendar.getInstance().apply { timeInMillis = millis }
             val timeStr = DateFormats.clock24(millis)
             return when {
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
-                    now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) -> "Today $timeStr"
+                    now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) ->
+                    context.getString(R.string.drive_time_today, timeStr)
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
-                    now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> "Yesterday $timeStr"
+                    now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 ->
+                    context.getString(R.string.drive_time_yesterday, timeStr)
                 else -> DateFormats.monthDayClock24(millis)
             }
         }

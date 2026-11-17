@@ -336,6 +336,15 @@
     <string name="drive_error_backup_failed">Backup failed</string>
     <string name="drive_error_restore_failed">Restore failed</string>
     <string name="drive_error_check_backup_failed">Failed to check backup</string>
+    <string name="drive_error_access_lost_reconnect">Google Drive access was lost. Reconnect and try again.</string>
+    <string name="drive_error_access_lost_settings">Google Drive access was lost. Reconnect in Settings.</string>
+    <string name="drive_error_no_internet">No internet connection.</string>
+    <string name="drive_migration_backup_failed">Backup failed.</string>
+    <string name="drive_error_drive_problem">Google Drive had a problem. Try again later.</string>
+    <string name="drive_error_no_backup_on_drive">No backup found on Google Drive.</string>
+    <string name="drive_time_today">Today %1$s</string>
+    <string name="drive_time_yesterday">Yesterday %1$s</string>
+    <string name="reminder_could_not_mark_done">Could not mark the task as done</string>
     <!-- Backup summaries: "8 courses, 1 task, 2 notes" (Drive and backup file) -->
     <string name="counts_separator">, </string>
     <plurals name="counts_courses">

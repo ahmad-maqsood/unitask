@@ -33,13 +33,13 @@ fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
         val info = state.latestBackupInfo
         val offlineText = state.offlineBackupText
         val details = when {
-            info != null -> "${DriveBackupViewModel.formatBackupTime(info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, info)}"
+            info != null -> "${DriveBackupViewModel.formatBackupTime(context, info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, info)}"
             !offlineText.isNullOrBlank() -> offlineText
             else -> ""
         }
         val older = state.olderBackupInfo
         val olderDetails = older?.let {
-            "${DriveBackupViewModel.formatBackupTime(it.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, it)}"
+            "${DriveBackupViewModel.formatBackupTime(context, it.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, it)}"
         }
         DriveRestoreConfirmDialog(
             details = if (state.useOlderBackup && olderDetails != null) olderDetails else details,

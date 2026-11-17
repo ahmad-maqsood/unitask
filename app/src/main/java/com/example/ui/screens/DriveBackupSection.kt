@@ -160,9 +160,10 @@ fun DriveBackupSection(
                 // Last backup row
                 val latestInfo = state.latestBackupInfo
                 val offlineText = state.offlineBackupText
+                val context = LocalContext.current
                 val lastBackupSubtitle = when {
                     latestInfo != null ->
-                        "${DriveBackupViewModel.formatBackupTime(latestInfo.exportedAt)}, ${DriveBackupViewModel.buildCountsText(LocalContext.current, latestInfo)}"
+                        "${DriveBackupViewModel.formatBackupTime(context, latestInfo.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, latestInfo)}"
                     !offlineText.isNullOrBlank() -> offlineText
                     else -> "No backup yet"
                 }

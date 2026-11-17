@@ -351,10 +351,11 @@ object DriveBackupManager {
             currentCoroutineContext().ensureActive()
             val prefs = DrivePrefs(context)
             prefs.lastAttemptAt = System.currentTimeMillis()
-            prefs.lastError = e.message ?: "Backup failed"
+            val failureText = e.message ?: context.getString(R.string.drive_error_backup_failed)
+            prefs.lastError = failureText
             prefs.consecutiveFailures += 1
             val kind = if (e is DriveException) e.kind else DriveException.Kind.OTHER
-            DriveBackupResult.Failure(kind, e.message ?: "Backup failed")
+            DriveBackupResult.Failure(kind, failureText)
         }
     }
 
@@ -377,7 +378,7 @@ object DriveBackupManager {
             val slot2 = files.firstOrNull { it.name == SLOT_2_NAME }
 
             if (slot1 == null && slot2 == null) {
-                return BackupResult.Failure("No backup found on Google Drive.")
+                return BackupResult.Failure(context.getString(R.string.drive_error_no_backup_on_drive))
             }
 
             val seq1 = slot1?.props?.get("seq")?.toLongOrNull() ?: -1L
@@ -462,15 +463,15 @@ object DriveBackupManager {
             BackupResult.Success(counts)
         } catch (e: DriveException) {
             val message = when (e.kind) {
-                DriveException.Kind.AUTH -> "Google Drive access was lost. Reconnect and try again."
-                DriveException.Kind.QUOTA -> "Your Google Drive is full."
-                DriveException.Kind.NETWORK -> "No internet connection."
-                DriveException.Kind.SERVER, DriveException.Kind.OTHER -> "Google Drive had a problem. Try again later."
+                DriveException.Kind.AUTH -> context.getString(R.string.drive_error_access_lost_reconnect)
+                DriveException.Kind.QUOTA -> context.getString(R.string.drive_error_drive_full)
+                DriveException.Kind.NETWORK -> context.getString(R.string.drive_error_no_internet)
+                DriveException.Kind.SERVER, DriveException.Kind.OTHER -> context.getString(R.string.drive_error_drive_problem)
             }
             BackupResult.Failure(message)
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            BackupResult.Failure(e.message ?: "Google Drive had a problem. Try again later.")
+            BackupResult.Failure(e.message ?: context.getString(R.string.drive_error_drive_problem))
         }
     }
 

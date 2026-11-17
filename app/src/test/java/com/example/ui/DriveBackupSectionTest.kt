@@ -228,6 +228,11 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
         
         composeRule.onNodeWithTag("drive_restore_button").performClick()
+        // The Drive check runs in the background, so wait for the confirm dialog to appear.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Items already on this phone are kept.", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         // Confirm dialog shows the merge and settings sentences
@@ -293,6 +298,10 @@ class DriveBackupSectionTest {
             .assertIsDisplayed()
 
         composeRule.onAllNodesWithText("Disconnect").onLast().performClick()
+        // Disconnecting finishes in the background, so wait for the Connect button to come back.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("drive_connect_button").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_connect_button").assertIsDisplayed()

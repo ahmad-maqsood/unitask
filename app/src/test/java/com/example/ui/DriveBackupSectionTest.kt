@@ -187,7 +187,7 @@ class DriveBackupSectionTest {
         
         waitForResultText()
         composeRule.onNodeWithTag("drive_result_text").assertIsDisplayed()
-        composeRule.onNodeWithText("Backup complete: 1 courses, 1 tasks, 0 notes.").assertIsDisplayed()
+        composeRule.onNodeWithText("Backup complete: 1 course, 1 task, 0 notes.").assertIsDisplayed()
     }
 
     @Test

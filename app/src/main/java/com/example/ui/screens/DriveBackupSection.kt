@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -161,7 +162,7 @@ fun DriveBackupSection(
                 val offlineText = state.offlineBackupText
                 val lastBackupSubtitle = when {
                     latestInfo != null ->
-                        "${DriveBackupViewModel.formatBackupTime(latestInfo.exportedAt)}, ${DriveBackupViewModel.buildCountsText(latestInfo)}"
+                        "${DriveBackupViewModel.formatBackupTime(latestInfo.exportedAt)}, ${DriveBackupViewModel.buildCountsText(LocalContext.current, latestInfo)}"
                     !offlineText.isNullOrBlank() -> offlineText
                     else -> "No backup yet"
                 }

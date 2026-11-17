@@ -254,7 +254,7 @@ class DriveBackupViewModel(
                 when (result) {
                     is DriveBackupResult.Success -> {
                         val info = result.info
-                        val countsText = buildCountsText(info)
+                        val countsText = buildCountsText(getApplication<Application>(), info)
                         val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
                         _uiState.update {
                             it.copy(
@@ -337,7 +337,7 @@ class DriveBackupViewModel(
                 )
                 when (result) {
                     is BackupResult.Success -> {
-                        val desc = describe(result.counts)
+                        val desc = describe(getApplication<Application>(), result.counts)
                         _uiState.update {
                             it.copy(
                                 busy = null,
@@ -463,7 +463,7 @@ class DriveBackupViewModel(
             val backups = DriveBackupManager.listBackups(store)
             val info = backups.firstOrNull()
             if (info != null) {
-                val countsText = buildCountsText(info)
+                val countsText = buildCountsText(getApplication<Application>(), info)
                 val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
@@ -604,7 +604,7 @@ class DriveBackupViewModel(
             val store = storeFactory(tokenProvider)
             val info = DriveBackupManager.latestInfo(store)
             if (info != null) {
-                val countsText = buildCountsText(info)
+                val countsText = buildCountsText(getApplication<Application>(), info)
                 val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
@@ -625,8 +625,8 @@ class DriveBackupViewModel(
     }
 
     companion object {
-        fun buildCountsText(info: DriveBackupInfo): String =
-            DriveBackupManager.buildCountsText(info)
+        fun buildCountsText(context: Context, info: DriveBackupInfo): String =
+            DriveBackupManager.buildCountsText(context, info)
 
         fun formatBackupTime(millis: Long): String {
             if (millis <= 0L) return ""

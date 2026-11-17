@@ -336,6 +336,65 @@
     <string name="drive_error_backup_failed">Backup failed</string>
     <string name="drive_error_restore_failed">Restore failed</string>
     <string name="drive_error_check_backup_failed">Failed to check backup</string>
+    <!-- Backup summaries: "8 courses, 1 task, 2 notes" (Drive and backup file) -->
+    <string name="counts_separator">, </string>
+    <plurals name="counts_courses">
+        <item quantity="one">%d course</item>
+        <item quantity="other">%d courses</item>
+    </plurals>
+    <plurals name="counts_classes">
+        <item quantity="one">%d class</item>
+        <item quantity="other">%d classes</item>
+    </plurals>
+    <plurals name="counts_tasks">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="counts_assignments">
+        <item quantity="one">%d assignment</item>
+        <item quantity="other">%d assignments</item>
+    </plurals>
+    <plurals name="counts_my_tasks">
+        <item quantity="one">%d My task</item>
+        <item quantity="other">%d My tasks</item>
+    </plurals>
+    <plurals name="counts_my_tasks_inline">
+        <item quantity="one">%d my task</item>
+        <item quantity="other">%d my tasks</item>
+    </plurals>
+    <plurals name="counts_notes">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+    <plurals name="counts_images">
+        <item quantity="one">%d image</item>
+        <item quantity="other">%d images</item>
+    </plurals>
+    <plurals name="counts_attachments">
+        <item quantity="one">%d attachment</item>
+        <item quantity="other">%d attachments</item>
+    </plurals>
+    <plurals name="counts_attachments_restored">
+        <item quantity="one">%d attachment restored</item>
+        <item quantity="other">%d attachments restored</item>
+    </plurals>
+    <plurals name="counts_attachments_not_downloaded">
+        <item quantity="one">%d attachment could not be downloaded</item>
+        <item quantity="other">%d attachments could not be downloaded</item>
+    </plurals>
+    <plurals name="counts_study_sessions">
+        <item quantity="one">%d study session</item>
+        <item quantity="other">%d study sessions</item>
+    </plurals>
+    <string name="counts_settings_restored">app settings restored</string>
+    <plurals name="backup_images_not_restored">
+        <item quantity="one">%d image could not be restored (damaged, too large or not downloaded).</item>
+        <item quantity="other">%d images could not be restored (damaged, too large or not downloaded).</item>
+    </plurals>
+    <plurals name="backup_images_left_out">
+        <item quantity="one">%d image left out (too large or could not be read).</item>
+        <item quantity="other">%d images left out (too large or could not be read).</item>
+    </plurals>
     <!-- DriveRestoreOfferCard.kt -->
     <string name="drive_restore_offer_card_had_unitask_on_another_phone">Had UniTask on another phone?</string>
     <string name="drive_restore_offer_card_restore_your_courses_tasks_notes">Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.</string>

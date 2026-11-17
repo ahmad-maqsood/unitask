@@ -2,6 +2,7 @@ package com.example.util.drive
 
 import android.content.Context
 import com.example.BuildConfig
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.MY_TASKS_COURSE_CODE
 import com.example.util.normalizeCourseCode
@@ -103,19 +104,20 @@ object DriveBackupManager {
     /**
      * Builds a human-readable summary of backup counts.
      */
-    fun buildCountsText(info: DriveBackupInfo): String {
+    fun buildCountsText(context: Context, info: DriveBackupInfo): String {
+        val res = context.resources
         val parts = mutableListOf(
-            "${info.courses} courses",
-            "${info.tasks} tasks"
+            res.getQuantityString(R.plurals.counts_courses, info.courses, info.courses),
+            res.getQuantityString(R.plurals.counts_tasks, info.tasks, info.tasks)
         )
         if (info.myTasks > 0) {
-            parts.add("${info.myTasks} My tasks")
+            parts.add(res.getQuantityString(R.plurals.counts_my_tasks, info.myTasks, info.myTasks))
         }
-        parts.add("${info.notes} notes")
+        parts.add(res.getQuantityString(R.plurals.counts_notes, info.notes, info.notes))
         if (info.attachments > 0) {
-            parts.add("${info.attachments} attachments")
+            parts.add(res.getQuantityString(R.plurals.counts_attachments, info.attachments, info.attachments))
         }
-        return parts.joinToString(", ")
+        return parts.joinToString(context.getString(R.string.counts_separator))
     }
 
     /**
@@ -334,7 +336,7 @@ object DriveBackupManager {
             prefs.lastSafeAt = now
             prefs.lastAttemptAt = now
             prefs.lastHash = dataHash
-            prefs.lastCounts = buildCountsText(info)
+            prefs.lastCounts = buildCountsText(context, info)
             prefs.lastError = null
             prefs.consecutiveFailures = 0
             prefs.failureNotified = false

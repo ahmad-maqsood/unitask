@@ -25,8 +25,10 @@ import io.github.jan.supabase.realtime.realtime
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
@@ -59,6 +61,18 @@ import java.util.Date
 private const val TAG = "GroupRepository"
 
 class GroupRepository(private val context: Context) {
+
+    /**
+     * Runs work that has to go on after the screen that started it is gone, such as sending a
+     * tick or a new task to the server. It is one shared scope: a failure in one job does not
+     * cancel the others, and anything a job did not catch itself is written to the log instead
+     * of crashing the app.
+     */
+    private val backgroundScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, e ->
+            Log.e(TAG, "Background group work failed: ${e.message}", e)
+        }
+    )
 
     private fun effectiveUid(): String? =
         currentSupabaseUid() ?: com.example.util.AuthStorage.getLastUid(context)
@@ -290,7 +304,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -401,7 +415,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -478,7 +492,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -593,7 +607,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -658,7 +672,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -909,7 +923,7 @@ class GroupRepository(private val context: Context) {
 
         awaitClose {
             job.cancel()
-            CoroutineScope(Dispatchers.IO).launch {
+            backgroundScope.launch {
                 runLogged("Cleaning up channel $channelName") {
                     channel.unsubscribe()
                     SupabaseProvider.client.realtime.removeChannel(channel)
@@ -987,7 +1001,7 @@ class GroupRepository(private val context: Context) {
         val pendingKey = "$myUid|$groupId|$taskId"
         pendingDonePrefs().edit { putBoolean(pendingKey, isDone) }
 
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             // 1) Save on the phone first, so the tick shows and survives a restart, also offline.
             try {
                 GroupCacheRepository(context).updateDone(myUid, groupId, taskId, isDone)
@@ -1341,7 +1355,7 @@ class GroupRepository(private val context: Context) {
             list.filter { System.currentTimeMillis() - (it.createdAt?.toDate()?.time ?: 0L) < PENDING_MAX_AGE_MILLIS } + localTask
         }
 
-        val insertJob = CoroutineScope(Dispatchers.IO).launch {
+        val insertJob = backgroundScope.launch {
             try {
                 SupabaseProvider.client.postgrest["group_tasks"].insert(payload)
                 localChanges.tryEmit(Unit)
@@ -1407,7 +1421,7 @@ class GroupRepository(private val context: Context) {
             assignedTo = cleanAssigned
         )
 
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             try {
                 // A task that is still being saved is not on the server yet: wait for it first.
                 pendingInserts.awaitSave(taskId)
@@ -1440,7 +1454,7 @@ class GroupRepository(private val context: Context) {
         }
         // Take it off the screen at once, even if its save has not finished.
         pendingTasks.update { list -> list.filter { it.id != taskId } }
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             try {
                 // If the task is still being saved, wait for that to finish first. Otherwise this
                 // delete finds nothing on the server and the task shows up again once the save
@@ -1574,7 +1588,7 @@ class GroupRepository(private val context: Context) {
             colorHex = colorHex.ifBlank { "#4F46E5" },
             createdBy = myUid
         )
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             try {
                 SupabaseProvider.client.postgrest["group_courses"].insert(payload)
                 localChanges.tryEmit(Unit)
@@ -1613,7 +1627,7 @@ class GroupRepository(private val context: Context) {
             instructor = instructor.trim().take(60),
             colorHex = colorHex.ifBlank { "#4F46E5" }
         )
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             try {
                 SupabaseProvider.client.postgrest["group_courses"].update(payload) {
                     filter {
@@ -1647,7 +1661,7 @@ class GroupRepository(private val context: Context) {
             onFailure(Exception("Not signed in"))
             return
         }
-        CoroutineScope(Dispatchers.IO).launch {
+        backgroundScope.launch {
             try {
                 SupabaseProvider.client.postgrest["group_courses"].delete {
                     filter {

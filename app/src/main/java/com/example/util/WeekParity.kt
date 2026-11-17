@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.data.local.LectureSlot
 import com.example.data.local.startOfLocalDay
 import java.util.Calendar
@@ -35,13 +36,12 @@ object WeekParity {
 
     fun setWeekAAnchor(context: Context?, anchorMillis: Long?) {
         inMemoryAnchorMillis = if (anchorMillis != null && anchorMillis > 0L) anchorMillis else null
-        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit()?.let { editor ->
+        context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)?.edit {
             if (anchorMillis == null || anchorMillis <= 0L) {
-                editor.remove(KEY_ANCHOR_MILLIS)
+                remove(KEY_ANCHOR_MILLIS)
             } else {
-                editor.putLong(KEY_ANCHOR_MILLIS, anchorMillis)
+                putLong(KEY_ANCHOR_MILLIS, anchorMillis)
             }
-            editor.apply()
         }
     }
 

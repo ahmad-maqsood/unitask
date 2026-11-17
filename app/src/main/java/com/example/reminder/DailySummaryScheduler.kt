@@ -4,8 +4,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import java.util.Calendar
 
 /**
@@ -34,11 +35,14 @@ class DailySummaryScheduler(context: Context) {
         fun minute(context: Context): Int = prefs(context).getInt(KEY_MINUTE, 0)
 
         fun setEnabled(context: Context, value: Boolean) {
-            prefs(context).edit().putBoolean(KEY_ENABLED, value).apply()
+            prefs(context).edit { putBoolean(KEY_ENABLED, value) }
         }
 
         fun setTime(context: Context, hour: Int, minute: Int) {
-            prefs(context).edit().putInt(KEY_HOUR, hour).putInt(KEY_MINUTE, minute).apply()
+            prefs(context).edit {
+                putInt(KEY_HOUR, hour)
+                putInt(KEY_MINUTE, minute)
+            }
         }
 
         /** The next time after [afterMillis] that the clock shows [hour]:[minute]. */
@@ -63,7 +67,7 @@ class DailySummaryScheduler(context: Context) {
     private fun intent(): Intent =
         Intent(appContext, DailySummaryReceiver::class.java).apply {
             action = ACTION
-            data = Uri.parse("unitask://daily-summary")
+            data = "unitask://daily-summary".toUri()
         }
 
     private fun schedule() {

@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
+import androidx.core.graphics.createBitmap
+import androidx.core.net.toUri
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,7 +53,7 @@ object QrCodeUtil {
     fun parseGroupInvite(text: String): Pair<String, String>? {
         val trimmed = text.trim()
         try {
-            val uri = Uri.parse(trimmed)
+            val uri = trimmed.toUri()
             if (uri.scheme.equals(URI_SCHEME, ignoreCase = true) ||
                 uri.host.equals("unitask.app", ignoreCase = true) ||
                 INVITE_WEB_HOSTS.any { uri.host.equals(it, ignoreCase = true) }
@@ -97,7 +99,7 @@ object QrCodeUtil {
                     pixels[offset + x] = if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE
                 }
             }
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
             bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
             bitmap
         } catch (_: Throwable) {

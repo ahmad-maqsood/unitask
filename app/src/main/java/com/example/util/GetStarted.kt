@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 
 /** The steps of the "Get started" checklist on the Deadlines screen, in the order they are shown. */
 enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boolean = false) {
@@ -58,14 +59,14 @@ class GetStartedPrefs(context: Context) {
 
     var dismissed: Boolean
         get() = prefs.getBoolean(KEY_DISMISSED, false)
-        set(value) = prefs.edit().putBoolean(KEY_DISMISSED, value).apply()
+        set(value) = prefs.edit { putBoolean(KEY_DISMISSED, value) }
 
     var doneSteps: Set<GetStartedStep>
         get() {
             val names = prefs.getStringSet(KEY_DONE, emptySet()).orEmpty()
             return GetStartedStep.entries.filter { it.name in names }.toSet()
         }
-        set(value) = prefs.edit().putStringSet(KEY_DONE, value.map { it.name }.toSet()).apply()
+        set(value) = prefs.edit { putStringSet(KEY_DONE, value.map { it.name }.toSet()) }
 
     /**
      * Adds [steps] to the saved ticks without losing any already saved, and returns the full set.

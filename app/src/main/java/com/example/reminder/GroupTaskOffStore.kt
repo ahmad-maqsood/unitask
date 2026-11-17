@@ -1,6 +1,7 @@
 package com.example.reminder
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -35,7 +36,7 @@ object GroupTaskOffStore {
         prefs(context).getStringSet(KEY_SET, null)?.toSet().orEmpty()
 
     private fun write(context: Context, keys: Set<String>) {
-        prefs(context).edit().putStringSet(KEY_SET, HashSet(keys)).apply()
+        prefs(context).edit { putStringSet(KEY_SET, HashSet(keys)) }
         state.value = keys
         loaded = true
     }

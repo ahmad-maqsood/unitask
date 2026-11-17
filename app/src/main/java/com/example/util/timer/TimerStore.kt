@@ -2,6 +2,7 @@ package com.example.util.timer
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 /**
  * Persists timer state in SharedPreferences so timers survive process death and phone reboots.
@@ -57,24 +58,24 @@ class TimerStore(context: Context) {
 
     fun save(state: TimerState) {
         try {
-            val editor = prefs.edit()
-                .putString(KEY_MODE, state.mode.name)
-                .putLong(KEY_COUNTDOWN_TOTAL_MILLIS, state.countdownTotalMillis)
-                .putLong(KEY_ACCUMULATED_MILLIS, state.accumulatedMillis)
-                .putInt(KEY_POMODORO_ROUND, state.pomodoroRound)
+            prefs.edit {
+                putString(KEY_MODE, state.mode.name)
+                putLong(KEY_COUNTDOWN_TOTAL_MILLIS, state.countdownTotalMillis)
+                putLong(KEY_ACCUMULATED_MILLIS, state.accumulatedMillis)
+                putInt(KEY_POMODORO_ROUND, state.pomodoroRound)
 
-            if (state.pomodoroPhase != null) {
-                editor.putString(KEY_POMODORO_PHASE, state.pomodoroPhase.name)
-            } else {
-                editor.remove(KEY_POMODORO_PHASE)
-            }
+                if (state.pomodoroPhase != null) {
+                    putString(KEY_POMODORO_PHASE, state.pomodoroPhase.name)
+                } else {
+                    remove(KEY_POMODORO_PHASE)
+                }
 
-            if (state.runningSinceMillis != null) {
-                editor.putLong(KEY_RUNNING_SINCE_MILLIS, state.runningSinceMillis)
-            } else {
-                editor.remove(KEY_RUNNING_SINCE_MILLIS)
+                if (state.runningSinceMillis != null) {
+                    putLong(KEY_RUNNING_SINCE_MILLIS, state.runningSinceMillis)
+                } else {
+                    remove(KEY_RUNNING_SINCE_MILLIS)
+                }
             }
-            editor.apply()
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -99,7 +100,7 @@ class TimerStore(context: Context) {
                 TimerLogic.MIN_COUNTDOWN_MINUTES,
                 TimerLogic.MAX_COUNTDOWN_MINUTES
             )
-            prefs.edit().putInt(KEY_LAST_COUNTDOWN_MINUTES, clamped).apply()
+            prefs.edit { putInt(KEY_LAST_COUNTDOWN_MINUTES, clamped) }
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -122,12 +123,12 @@ class TimerStore(context: Context) {
     fun setPomodoroSettings(settings: PomodoroSettings) {
         try {
             val s = settings.sanitized()
-            prefs.edit()
-                .putInt(KEY_POMODORO_FOCUS, s.focusMinutes)
-                .putInt(KEY_POMODORO_SHORT, s.shortBreakMinutes)
-                .putInt(KEY_POMODORO_LONG, s.longBreakMinutes)
-                .putInt(KEY_POMODORO_ROUNDS, s.roundsBeforeLongBreak)
-                .apply()
+            prefs.edit {
+                putInt(KEY_POMODORO_FOCUS, s.focusMinutes)
+                putInt(KEY_POMODORO_SHORT, s.shortBreakMinutes)
+                putInt(KEY_POMODORO_LONG, s.longBreakMinutes)
+                putInt(KEY_POMODORO_ROUNDS, s.roundsBeforeLongBreak)
+            }
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -148,11 +149,11 @@ class TimerStore(context: Context) {
 
     fun setPomodoroAlertSettings(settings: PomodoroAlertSettings) {
         try {
-            prefs.edit()
-                .putBoolean(KEY_POMODORO_RING_ALARM, settings.ringLikeAlarm)
-                .putBoolean(KEY_POMODORO_AUTO_START, settings.autoStartNext)
-                .putBoolean(KEY_POMODORO_STOP_AFTER_LONG, settings.stopAfterLongBreak)
-                .apply()
+            prefs.edit {
+                putBoolean(KEY_POMODORO_RING_ALARM, settings.ringLikeAlarm)
+                putBoolean(KEY_POMODORO_AUTO_START, settings.autoStartNext)
+                putBoolean(KEY_POMODORO_STOP_AFTER_LONG, settings.stopAfterLongBreak)
+            }
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -173,13 +174,13 @@ class TimerStore(context: Context) {
 
     fun setAutoStartAtMillis(value: Long?) {
         try {
-            val editor = prefs.edit()
-            if (value != null) {
-                editor.putLong(KEY_AUTO_START_AT_MILLIS, value)
-            } else {
-                editor.remove(KEY_AUTO_START_AT_MILLIS)
+            prefs.edit {
+                if (value != null) {
+                    putLong(KEY_AUTO_START_AT_MILLIS, value)
+                } else {
+                    remove(KEY_AUTO_START_AT_MILLIS)
+                }
             }
-            editor.apply()
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -200,13 +201,13 @@ class TimerStore(context: Context) {
 
     fun setSessionStartMillis(value: Long?) {
         try {
-            val editor = prefs.edit()
-            if (value != null) {
-                editor.putLong(KEY_SESSION_START_MILLIS, value)
-            } else {
-                editor.remove(KEY_SESSION_START_MILLIS)
+            prefs.edit {
+                if (value != null) {
+                    putLong(KEY_SESSION_START_MILLIS, value)
+                } else {
+                    remove(KEY_SESSION_START_MILLIS)
+                }
             }
-            editor.apply()
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }
@@ -222,7 +223,7 @@ class TimerStore(context: Context) {
 
     fun setKeepScreenOnInFullscreen(value: Boolean) {
         try {
-            prefs.edit().putBoolean(KEY_KEEP_SCREEN_ON_FULLSCREEN, value).apply()
+            prefs.edit { putBoolean(KEY_KEEP_SCREEN_ON_FULLSCREEN, value) }
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }

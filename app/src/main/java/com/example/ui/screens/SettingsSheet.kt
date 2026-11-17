@@ -6,6 +6,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.core.net.toUri
 import com.example.R
 import com.example.util.runLogged
 import android.app.Activity
@@ -564,7 +565,7 @@ fun SettingsButton(
                                         subtitle = "github.com/CondaLabs/unitask",
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, SOURCE_CODE_URL.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -585,7 +586,7 @@ fun SettingsButton(
                                         subtitle = stringResource(R.string.settings_open_the_newest_version_on),
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, LATEST_RELEASE_URL.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -610,7 +611,7 @@ fun SettingsButton(
                                                     "Android ${Build.VERSION.RELEASE} | " +
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -635,7 +636,7 @@ fun SettingsButton(
                                                     "Android ${Build.VERSION.RELEASE} | " +
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -678,7 +679,7 @@ fun SettingsButton(
                                         Button(
                                             onClick = {
                                                 try {
-                                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
+                                                    context.startActivity(Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()))
                                                 } catch (_: Exception) {
                                                     Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                                 }
@@ -836,7 +837,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                         },
                         onPlay = {
                             val id = context.resources.getIdentifier(sound.rawName, "raw", context.packageName)
-                            preview(if (id == 0) null else Uri.parse("android.resource://${context.packageName}/$id"))
+                            preview(if (id == 0) null else "android.resource://${context.packageName}/$id".toUri())
                         },
                         testTag = "sound_option_${sound.key}"
                     )

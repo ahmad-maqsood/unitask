@@ -4,8 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.core.net.toUri
 import com.example.MainActivity
 import com.example.Repositories
 import com.example.data.local.AppDatabase
@@ -38,7 +38,7 @@ object ReminderSnooze {
     private fun firedIntent(context: Context, notificationId: Int): Intent =
         Intent(context, TaskReminderReceiver::class.java).apply {
             action = ACTION_TASK_REMINDER
-            data = Uri.parse("unitask://snooze/$notificationId")
+            data = "unitask://snooze/$notificationId".toUri()
         }
 
     /** Sets the alarm that brings the reminder back after [minutes]. [original] holds the reminder's details. */

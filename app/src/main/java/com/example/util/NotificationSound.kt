@@ -7,6 +7,8 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import java.io.File
 /**
  * Which sound UniTask alerts use.
@@ -38,7 +40,7 @@ object NotificationSound {
 
     private fun rawUri(context: Context, rawName: String): Uri? {
         val id = context.resources.getIdentifier(rawName, "raw", context.packageName)
-        return if (id == 0) null else Uri.parse("android.resource://${context.packageName}/$id")
+        return if (id == 0) null else "android.resource://${context.packageName}/$id".toUri()
     }
 
     /** Built-in sounds whose file really exists. Sound 1 is always listed. */
@@ -46,7 +48,7 @@ object NotificationSound {
         BUILT_IN.filter { it.key == CHOICE_DEFAULT || rawUri(context, it.rawName) != null }
 
     fun phoneUri(context: Context): Uri? =
-        prefs(context).getString(KEY_PHONE_URI, null)?.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+        prefs(context).getString(KEY_PHONE_URI, null)?.takeIf { it.isNotBlank() }?.toUri()
 
     /**
      * Android can restore old settings from the Google backup when the app is reinstalled.
@@ -63,11 +65,11 @@ object NotificationSound {
             val info = context.packageManager.getPackageInfo(context.packageName, 0)
             val isFreshInstall = info.firstInstallTime == info.lastUpdateTime
             if (isFreshInstall) {
-                prefs(context).edit()
-                    .remove(KEY_CHOICE)
-                    .remove(KEY_PHONE_URI)
-                    .remove(KEY_USE_SYSTEM)
-                    .commit()
+                prefs(context).edit(commit = true) {
+                    remove(KEY_CHOICE)
+                    remove(KEY_PHONE_URI)
+                    remove(KEY_USE_SYSTEM)
+                }
             }
             marker.createNewFile()
         } catch (_: Exception) {
@@ -87,7 +89,7 @@ object NotificationSound {
     }
 
     fun setChoice(context: Context, key: String) {
-        prefs(context).edit().putString(KEY_CHOICE, key).apply()
+        prefs(context).edit { putString(KEY_CHOICE, key) }
     }
 
     fun setPhoneSound(context: Context, uri: Uri) {
@@ -97,10 +99,10 @@ object NotificationSound {
                 android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
         } catch (e: Exception) { Log.w("UniTask", "Could not keep access to the chosen sound file", e) }
-        prefs(context).edit()
-            .putString(KEY_PHONE_URI, uri.toString())
-            .putString(KEY_CHOICE, CHOICE_PHONE)
-            .apply()
+        prefs(context).edit {
+            putString(KEY_PHONE_URI, uri.toString())
+            putString(KEY_CHOICE, CHOICE_PHONE)
+        }
     }
 
     /** Short text for the Settings row. */

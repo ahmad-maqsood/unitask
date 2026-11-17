@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import org.json.JSONArray
 
 /** One task that was ticked Done, and when. */
@@ -126,7 +127,7 @@ object CompletionLog {
         try {
             val array = JSONArray()
             items.forEach { array.put(JSONArray().put(it.taskId).put(it.completedAt)) }
-            prefs(context).edit().putString(KEY_ITEMS, array.toString()).apply()
+            prefs(context).edit { putString(KEY_ITEMS, array.toString()) }
         } catch (_: Exception) {
         }
     }

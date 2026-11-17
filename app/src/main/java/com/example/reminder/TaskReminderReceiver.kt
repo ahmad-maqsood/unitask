@@ -11,13 +11,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.example.MainActivity
 import com.example.R
 import com.example.Repositories
@@ -378,7 +378,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
                 action = ReminderSnooze.ACTION_SNOOZE
                 // Data makes each button's PendingIntent different from the others.
-                data = Uri.parse("unitask://snooze-action/$notificationId/$minutes")
+                data = "unitask://snooze-action/$notificationId/$minutes".toUri()
                 putExtras(intent)
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
                 putExtra(ReminderSnooze.EXTRA_SNOOZE_MINUTES, minutes)
@@ -480,7 +480,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             action = ACTION_SILENCE_ALARM
             putExtras(originalIntent)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            data = Uri.parse("unitask://silence-alarm/$notificationId")
+            data = "unitask://silence-alarm/$notificationId".toUri()
         }
         val silencePending = PendingIntent.getBroadcast(
             context,
@@ -510,7 +510,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val silenceIntent = Intent(context, TaskReminderReceiver::class.java).apply {
             action = ACTION_SILENCE_ALARM
-            data = Uri.parse("unitask://silence-alarm/$notificationId")
+            data = "unitask://silence-alarm/$notificationId".toUri()
         }
         val pending = PendingIntent.getBroadcast(
             context,

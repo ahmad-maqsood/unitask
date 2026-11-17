@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 
 /**
  * Persists the last known Supabase user ID on the device.
@@ -22,9 +23,9 @@ object AuthStorage {
     fun setLastUid(context: Context, uid: String?) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (uid.isNullOrBlank()) {
-            prefs.edit().remove(KEY_LAST_UID).apply()
+            prefs.edit { remove(KEY_LAST_UID) }
         } else {
-            prefs.edit().putString(KEY_LAST_UID, uid).apply()
+            prefs.edit { putString(KEY_LAST_UID, uid) }
         }
     }
 
@@ -36,9 +37,9 @@ object AuthStorage {
     fun setLastSyncedUid(context: Context, uid: String?) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (uid.isNullOrBlank()) {
-            prefs.edit().remove(KEY_LAST_SYNCED_UID).apply()
+            prefs.edit { remove(KEY_LAST_SYNCED_UID) }
         } else {
-            prefs.edit().putString(KEY_LAST_SYNCED_UID, uid).apply()
+            prefs.edit { putString(KEY_LAST_SYNCED_UID, uid) }
         }
     }
 
@@ -49,12 +50,12 @@ object AuthStorage {
 
     fun setLastSyncedTimestamp(context: Context, timestamp: Long) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putLong(KEY_LAST_SYNCED_TIMESTAMP, timestamp)
-            .apply()
+            .edit {
+                putLong(KEY_LAST_SYNCED_TIMESTAMP, timestamp)
+            }
     }
 
     fun clear(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { clear() }
     }
 }

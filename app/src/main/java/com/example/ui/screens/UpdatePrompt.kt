@@ -2,7 +2,6 @@ package com.example.ui.screens
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -24,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.example.R
 import com.example.util.UpdateChecker
 import com.example.util.UpdateResult
@@ -33,7 +34,7 @@ private const val KEY_LAST_PROMPTED = "last_prompted_version"
 
 private fun openLink(context: Context, url: String) {
     try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
     } catch (_: Exception) {
     }
 }
@@ -54,7 +55,7 @@ fun UpdatePrompt() {
         if (result != null) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             if (prefs.getString(KEY_LAST_PROMPTED, null) != result.latestVersion) {
-                prefs.edit().putString(KEY_LAST_PROMPTED, result.latestVersion).apply()
+                prefs.edit { putString(KEY_LAST_PROMPTED, result.latestVersion) }
                 update = result
             }
         }

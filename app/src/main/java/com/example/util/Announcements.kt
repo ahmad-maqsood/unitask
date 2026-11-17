@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.CancellationException
@@ -161,7 +162,7 @@ object Announcements {
                 val all = ids(context, key) + newIds
                 // Keep the list from growing forever.
                 val trimmed = if (all.size > MAX_IDS) all.toList().takeLast(MAX_IDS).toSet() else all
-                prefs(context).edit().putStringSet(key, trimmed).apply()
+                prefs(context).edit { putStringSet(key, trimmed) }
             } catch (_: Exception) {
             }
         }
@@ -170,7 +171,7 @@ object Announcements {
     private fun saveCache(context: Context, rows: List<Announcement>) {
         try {
             val text = json.encodeToString(ListSerializer(Announcement.serializer()), rows)
-            prefs(context).edit().putString(KEY_CACHE, text).apply()
+            prefs(context).edit { putString(KEY_CACHE, text) }
         } catch (_: Exception) {
         }
     }

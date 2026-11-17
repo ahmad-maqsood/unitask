@@ -1,6 +1,7 @@
 package com.example.util.drive
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.data.local.AppDatabase
 import com.example.reminder.ClassReminderScheduler
 import com.example.reminder.DailySummaryScheduler
@@ -187,9 +188,9 @@ object SettingsSnapshot {
                 val sort = NotesSort.entries.firstOrNull { it.name == raw }
                 if (sort != null) {
                     context.getSharedPreferences("notes_prefs", Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("sort", sort.name)
-                        .apply()
+                        .edit {
+                            putString("sort", sort.name)
+                        }
                     appliedCount++
                 }
             }

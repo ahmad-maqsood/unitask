@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.example.R
 import com.example.util.UpdateChecker
 import com.example.util.crash.CrashReport
@@ -119,7 +120,7 @@ fun CrashReportScreen(
                         "${Build.MANUFACTURER} ${Build.MODEL}\n" +
                         "Crash: ${report.summary}"
                     val url = REPORT_FORM_URL + Uri.encode(info)
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                 } catch (_: Exception) {
                     Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                 }

@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 
 /**
  * The one-time tips. Each one is shown the first time its screen opens and has a "Learn more"
@@ -32,7 +33,7 @@ class TipPrefs(context: Context) {
     fun markSeen(tip: AppTip) {
         val seen = prefs.getStringSet(KEY_SEEN, emptySet()).orEmpty()
         if (tip.name in seen) return
-        prefs.edit().putStringSet(KEY_SEEN, seen + tip.name).apply()
+        prefs.edit { putStringSet(KEY_SEEN, seen + tip.name) }
     }
 
     private companion object {

@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.example.MainActivity
 import com.example.data.groups.GroupTask
 import com.example.data.local.ReminderOption
@@ -76,7 +78,7 @@ class GroupReminderScheduler(private val context: Context) {
                 val value = listOf(trigger.toString(), task.title, groupLabel, dueInfo, option.label, task.priority)
                     .joinToString(SEP)
                 if (prefs.getString(key, null) != value) {
-                    prefs.edit().putString(key, value).apply()
+                    prefs.edit { putString(key, value) }
                 }
                 // Always (re)set: it is idempotent, and it repairs alarms the system dropped.
                 setAlarm(key, trigger, task.title, groupLabel, dueInfo, option.label, task.priority)
@@ -134,7 +136,7 @@ class GroupReminderScheduler(private val context: Context) {
             val trigger = parts.getOrNull(0)?.toLongOrNull()
             // Entries written by older versions have 4 parts; drop them, the next sync re-creates them.
             if (parts.size < 5 || trigger == null || trigger <= now) {
-                prefs.edit().remove(key).apply()
+                prefs.edit { remove(key) }
                 continue
             }
             setAlarm(key, trigger, parts[1], parts[2], parts[3], parts[4], parts.getOrNull(5).orEmpty())
@@ -144,7 +146,7 @@ class GroupReminderScheduler(private val context: Context) {
     private fun intentFor(key: String): Intent =
         Intent(context, TaskReminderReceiver::class.java).apply {
             action = ACTION
-            data = Uri.parse("unitask://group-reminder/" + Uri.encode(key))
+            data = ("unitask://group-reminder/" + Uri.encode(key)).toUri()
         }
 
     private fun setAlarm(
@@ -212,6 +214,6 @@ class GroupReminderScheduler(private val context: Context) {
             alarmManager?.cancel(pendingIntent)
             pendingIntent.cancel()
         }
-        prefs.edit().remove(key).apply()
+        prefs.edit { remove(key) }
     }
 }

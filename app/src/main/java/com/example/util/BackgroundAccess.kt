@@ -3,9 +3,10 @@ package com.example.util
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.content.edit
+import androidx.core.net.toUri
 
 object BackgroundAccess {
 
@@ -34,7 +35,7 @@ object BackgroundAccess {
 
         // (1) Official one-tap dialog
         if (launch(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$pkg")
+                data = "package:$pkg".toUri()
             })
         ) return true
 
@@ -43,7 +44,7 @@ object BackgroundAccess {
 
         // (3) App info page fallback
         if (launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:$pkg")
+                data = "package:$pkg".toUri()
             })
         ) return true
 
@@ -56,8 +57,8 @@ object BackgroundAccess {
 
     fun setBackgroundSetupPrompted(context: Context, value: Boolean) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_SETUP_PROMPTED, value)
-            .apply()
+            .edit {
+                putBoolean(KEY_SETUP_PROMPTED, value)
+            }
     }
 }

@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.example.MainActivity
 import com.example.R
 import com.example.data.local.AppDatabase
@@ -100,7 +101,7 @@ object MissedReminders {
 
     private fun save(context: Context, keys: Set<String>) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putStringSet(KEY_ARMED, keys).apply()
+            .edit { putStringSet(KEY_ARMED, keys) }
     }
 
     fun recordArmed(context: Context, taskId: Long, option: ReminderOption, triggerAt: Long) {

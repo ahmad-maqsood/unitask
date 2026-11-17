@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import com.example.widget.UniTaskWidget
 
 enum class ThemeMode(val label: String) {
@@ -36,17 +37,17 @@ object ThemePreference {
     fun set(context: Context, newMode: ThemeMode) {
         mode = newMode
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY, newMode.name)
-            .apply()
+            .edit {
+                putString(KEY, newMode.name)
+            }
     }
 
     fun setAccent(context: Context, newAccent: AccentTheme) {
         accent = newAccent
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(ACCENT_KEY, newAccent.name)
-            .apply()
+            .edit {
+                putString(ACCENT_KEY, newAccent.name)
+            }
         // The home screen widget uses this colour too, so redraw it now.
         UniTaskWidget.refreshAsync(context)
     }

@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -109,7 +110,7 @@ object NotificationHistory {
                         .put("unread", it.unread)
                 )
             }
-            prefs(context).edit().putString(KEY_ITEMS, array.toString()).apply()
+            prefs(context).edit { putString(KEY_ITEMS, array.toString()) }
         } catch (_: Exception) {
         }
     }

@@ -74,6 +74,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -258,13 +260,13 @@ fun MainScreen(
     // Called after a task is saved with at least one reminder: the moment reminders matter to the person.
     val onReminderSaved: () -> Unit = {
         val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
-        settings.edit().putBoolean("first_reminder_saved", true).apply()
+        settings.edit { putBoolean("first_reminder_saved", true) }
         val needsNotificationAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED &&
             !settings.getBoolean("notification_permission_prompted", false)
         if (needsNotificationAsk) {
-            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+            settings.edit { putBoolean("notification_permission_prompted", true) }
             scope.launch {
                 snackbarHostState.showSnackbar(
                     message = "Reminder saved. Allow notifications so it can reach you.",
@@ -673,7 +675,7 @@ fun MainScreen(
                                     context.startActivity(
                                         android.content.Intent(
                                             android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                            android.net.Uri.parse("package:${context.packageName}")
+                                            "package:${context.packageName}".toUri()
                                         )
                                     )
                                 } catch (_: Exception) {
@@ -783,7 +785,7 @@ fun MainScreen(
                                                 )
                                             } == true || !settings.getBoolean("notification_permission_prompted", false))
                                         if (canAsk) {
-                                            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+                                            settings.edit { putBoolean("notification_permission_prompted", true) }
                                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                         } else {
                                             // Android will not show its dialog again, or the permission is already

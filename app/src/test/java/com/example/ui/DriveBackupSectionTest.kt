@@ -198,6 +198,11 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_restore_button").performClick()
+        // The Drive check runs in the background, so wait for the dialog's OK button
+        // to appear before asserting on its text.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         composeRule.onAllNodesWithText("No backup found in this Google account.").onLast().assertIsDisplayed()

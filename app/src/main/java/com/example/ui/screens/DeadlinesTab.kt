@@ -664,7 +664,7 @@ fun DeadlinesTab(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Sort,
-                                        contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, sortOption.label),
+                                        contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, stringResource(sortOption.labelRes)),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -677,7 +677,7 @@ fun DeadlinesTab(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    text = option.label,
+                                                    text = stringResource(option.labelRes),
                                                     fontWeight = if (option == sortOption) FontWeight.Bold else FontWeight.Normal,
                                                     color = if (option == sortOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                                 )

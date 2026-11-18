@@ -1,5 +1,7 @@
 package com.example.data.local
 
+import androidx.annotation.StringRes
+import com.example.R
 import java.util.Calendar
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -9,14 +11,14 @@ const val MY_TASKS_COURSE_CODE = "MYTASKS"
 fun Course.isMyTasksCourse(): Boolean =
     code.replace(" ", "").trim().uppercase() == MY_TASKS_COURSE_CODE
 
-enum class RepeatRule(val label: String) {
-    NONE("Does not repeat"),
-    DAILY("Every day"),
-    WEEKDAYS("Every weekday (Mon to Fri)"),
-    WEEKLY("Every week"),
-    BIWEEKLY("Every 2 weeks"),
-    MONTHLY("Every month"),
-    YEARLY("Every year")
+enum class RepeatRule(val label: String, @StringRes val labelRes: Int) {
+    NONE("Does not repeat", R.string.repeat_none),
+    DAILY("Every day", R.string.repeat_daily),
+    WEEKDAYS("Every weekday (Mon to Fri)", R.string.repeat_weekdays),
+    WEEKLY("Every week", R.string.repeat_weekly),
+    BIWEEKLY("Every 2 weeks", R.string.repeat_biweekly),
+    MONTHLY("Every month", R.string.repeat_monthly),
+    YEARLY("Every year", R.string.repeat_yearly)
 }
 
 fun decodeRepeatRule(value: String?): RepeatRule =

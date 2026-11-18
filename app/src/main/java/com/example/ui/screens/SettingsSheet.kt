@@ -300,7 +300,7 @@ fun SettingsButton(
                             SettingsSectionRow(
                                 icon = Icons.Default.Tune,
                                 title = stringResource(R.string.settings_general),
-                                summary = "${ThemePreference.mode.label}, $weekSummary",
+                                summary = stringResource(R.string.settings_general_summary, stringResource(ThemePreference.mode.labelRes), weekSummary),
                                 onClick = { page = SettingsPage.General },
                                 testTag = "settings_section_general"
                             )
@@ -375,7 +375,7 @@ fun SettingsButton(
                                             FilterChip(
                                                 selected = ThemePreference.mode == themeMode,
                                                 onClick = { ThemePreference.set(context, themeMode) },
-                                                label = { Text(themeMode.label) },
+                                                label = { Text(stringResource(themeMode.labelRes)) },
                                                 modifier = Modifier.testTag("theme_chip_${themeMode.name}")
                                             )
                                         }
@@ -393,6 +393,8 @@ fun SettingsButton(
                                     ) {
                                         AccentTheme.entries.forEach { accent ->
                                             val selected = ThemePreference.accent == accent
+                                            val accentName = stringResource(accent.labelRes)
+                                            val accentDesc = if (selected) stringResource(R.string.accent_selected_desc, accentName) else accentName
                                             Box(
                                                 contentAlignment = Alignment.Center,
                                                 modifier = Modifier
@@ -401,8 +403,7 @@ fun SettingsButton(
                                                     .background(accent.swatch)
                                                     .clickable { ThemePreference.setAccent(context, accent) }
                                                     .semantics {
-                                                        contentDescription =
-                                                            if (selected) "${accent.label}, selected" else accent.label
+                                                        contentDescription = accentDesc
                                                     }
                                                     .testTag("accent_chip_${accent.name}")
                                             ) {

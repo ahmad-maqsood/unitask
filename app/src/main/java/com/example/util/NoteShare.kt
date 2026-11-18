@@ -1,5 +1,7 @@
 package com.example.util
 
+import com.example.R
+import androidx.annotation.StringRes
 import android.app.Activity
 import android.content.ClipData
 import android.content.Context
@@ -12,12 +14,13 @@ import java.io.File
 
 enum class NoteExportFormat(
     val label: String,
+    @StringRes val labelRes: Int,
     val extension: String,
     val mimeType: String
 ) {
-    TXT("Text file (.txt)", "txt", "text/plain"),
-    MD("Markdown file (.md)", "md", "text/markdown"),
-    PDF("PDF document (.pdf)", "pdf", "application/pdf")
+    TXT("Text file (.txt)", R.string.export_format_txt, "txt", "text/plain"),
+    MD("Markdown file (.md)", R.string.export_format_md, "md", "text/markdown"),
+    PDF("PDF document (.pdf)", R.string.export_format_pdf, "pdf", "application/pdf")
 }
 
 object NoteShare {

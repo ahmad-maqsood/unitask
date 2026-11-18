@@ -37,20 +37,9 @@ fun formatTrashTaskDueDate(epochMillis: Long, hour: Int, minute: Int): String {
 }
 
 /**
- * Returns full English name for day of week (1 = Monday ... 7 = Sunday).
+ * Returns the full name of the day of week, in the app language (1 = Monday ... 7 = Sunday).
  */
-fun dayOfWeekName(dayOfWeek: Int): String {
-    return when (dayOfWeek) {
-        1 -> "Monday"
-        2 -> "Tuesday"
-        3 -> "Wednesday"
-        4 -> "Thursday"
-        5 -> "Friday"
-        6 -> "Saturday"
-        7 -> "Sunday"
-        else -> ""
-    }
-}
+fun dayOfWeekName(dayOfWeek: Int): String = com.example.util.DayNames.full(dayOfWeek)
 
 /**
  * Formats day and time for a lecture slot in the trash.

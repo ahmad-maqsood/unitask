@@ -50,15 +50,9 @@ import com.example.R
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
 
-val DaysOfWeekLabels = listOf(
-    1 to "Mon",
-    2 to "Tue",
-    3 to "Wed",
-    4 to "Thu",
-    5 to "Fri",
-    6 to "Sat",
-    7 to "Sun"
-)
+/** (1..7, short day name in the app language). Read each time so a language change shows at once. */
+val DaysOfWeekLabels: List<Pair<Int, String>>
+    get() = (1..7).map { it to com.example.util.DayNames.short(it) }
 
 @Composable
 fun AddEditLectureSlotDialog(
@@ -421,9 +415,13 @@ fun AddEditLectureSlotDialog(
                             thisType == otherType
                     }
                     if (overlapping != null && conflictWarningMessage == null) {
-                        val courseLabel = overlapping.course?.code ?: "Another class"
+                        val courseLabel = overlapping.course?.code ?: context.getString(R.string.slot_conflict_another_class)
                         val timeLabel = "${com.example.util.TimeFormatter.format(overlapping.slot.startHour, overlapping.slot.startMinute)} - ${com.example.util.TimeFormatter.format(overlapping.slot.endHour, overlapping.slot.endMinute)}"
-                        conflictWarningMessage = "Time conflict: overlaps with $courseLabel ($timeLabel). Click '${if (slotToEdit != null) "Update Slot" else "Save Slot"}' again to save anyway."
+                        conflictWarningMessage = context.getString(
+                            if (slotToEdit != null) R.string.slot_conflict_warning_update else R.string.slot_conflict_warning_save,
+                            courseLabel,
+                            timeLabel
+                        )
                         return@Button
                     }
                     onSave(

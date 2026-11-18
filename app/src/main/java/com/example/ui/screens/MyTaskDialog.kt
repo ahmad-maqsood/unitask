@@ -672,7 +672,7 @@ fun MyTaskDialog(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
-                                        text = repeatRule.label,
+                                        text = stringResource(repeatRule.labelRes),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -691,7 +691,7 @@ fun MyTaskDialog(
                         ) {
                             RepeatRule.entries.forEach { rule ->
                                 DropdownMenuItem(
-                                    text = { Text(rule.label) },
+                                    text = { Text(stringResource(rule.labelRes)) },
                                     onClick = {
                                         repeatRule = rule
                                         repeatDropdownExpanded = false

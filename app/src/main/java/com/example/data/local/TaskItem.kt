@@ -1,5 +1,7 @@
 package com.example.data.local
 
+import com.example.R
+import androidx.annotation.StringRes
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -21,13 +23,13 @@ enum class TaskStatus {
 
 // A task can have any number of these. An empty set means no reminder.
 // Append new options at the end; do not reorder.
-enum class ReminderOption(val label: String, val offsetMinutes: Long) {
-    AT_DEADLINE("At deadline", 0),
-    TWO_HOURS_BEFORE("2 hours before", 120),
-    ONE_DAY_BEFORE("1 day before", 1440),
-    ONE_HOUR_BEFORE("1 hour before", 60),
-    TWO_DAYS_BEFORE("2 days before", 2880),
-    TWELVE_HOURS_BEFORE("12 hours before", 720)
+enum class ReminderOption(val label: String, val offsetMinutes: Long, @StringRes val labelRes: Int) {
+    AT_DEADLINE("At deadline", 0, R.string.reminder_at_deadline),
+    TWO_HOURS_BEFORE("2 hours before", 120, R.string.reminder_2h),
+    ONE_DAY_BEFORE("1 day before", 1440, R.string.reminder_1d),
+    ONE_HOUR_BEFORE("1 hour before", 60, R.string.reminder_1h),
+    TWO_DAYS_BEFORE("2 days before", 2880, R.string.reminder_2d),
+    TWELVE_HOURS_BEFORE("12 hours before", 720, R.string.reminder_12h)
 }
 
 private const val NO_REMINDERS = "NONE"

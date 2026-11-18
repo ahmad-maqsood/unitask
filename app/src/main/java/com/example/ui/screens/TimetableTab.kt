@@ -168,13 +168,9 @@ fun TimetableTab(
             .sortedWith(compareBy({ it.slot.startHour }, { it.slot.startMinute }))
     }
 
-    val dayLabel by remember(selectedDay, todayDayOfWeek) {
-        androidx.compose.runtime.derivedStateOf {
-            DaysOfWeekLabels.find { it.first == selectedDay }?.second?.let {
-                if (selectedDay == todayDayOfWeek) "$it (Today)" else it
-            } ?: "Schedule"
-        }
-    }
+    val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second?.let {
+        if (selectedDay == todayDayOfWeek) stringResource(R.string.timetable_day_today, it) else it
+    } ?: stringResource(R.string.timetable_day_fallback)
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -398,11 +394,11 @@ fun TimetableTab(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second ?: "this day"
+                        val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second ?: stringResource(R.string.timetable_this_day)
                         // First time: nothing on any day yet. Otherwise this one day is just free.
                         val noClassesAtAll = allSlots.isEmpty()
                         Text(
-                            text = if (noClassesAtAll) "Add your first class" else "No classes scheduled for $dayLabel",
+                            text = if (noClassesAtAll) stringResource(R.string.timetable_add_first_class) else stringResource(R.string.timetable_no_classes_for_day, dayLabel),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface

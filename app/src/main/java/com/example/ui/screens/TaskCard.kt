@@ -591,7 +591,7 @@ fun TaskCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = stringResource(R.string.task_card_reminders, task.reminderOptions.joinToString { it.label }),
+                                    contentDescription = stringResource(R.string.task_card_reminders, task.reminderOptions.joinToString { stringResource(it.labelRes) }),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )

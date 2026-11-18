@@ -1,5 +1,7 @@
 package com.example.ui.theme
 
+import androidx.annotation.StringRes
+import com.example.R
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,10 +9,10 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import com.example.widget.UniTaskWidget
 
-enum class ThemeMode(val label: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark")
+enum class ThemeMode(val label: String, @StringRes val labelRes: Int) {
+    SYSTEM("System", R.string.theme_mode_system),
+    LIGHT("Light", R.string.theme_mode_light),
+    DARK("Dark", R.string.theme_mode_dark)
 }
 
 /** Remembers the Light / Dark / System choice and the accent colour on the phone. */

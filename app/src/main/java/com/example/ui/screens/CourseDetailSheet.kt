@@ -407,16 +407,7 @@ fun CourseDetailSheet(
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 sortedSlots.forEach { slotWithCourse ->
                                     val slot = slotWithCourse.slot
-                                    val dayName = when (slot.dayOfWeek) {
-                                        1 -> "Mon"
-                                        2 -> "Tue"
-                                        3 -> "Wed"
-                                        4 -> "Thu"
-                                        5 -> "Fri"
-                                        6 -> "Sat"
-                                        7 -> "Sun"
-                                        else -> "Day"
-                                    }
+                                    val dayName = com.example.util.DayNames.short(slot.dayOfWeek)
 
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),

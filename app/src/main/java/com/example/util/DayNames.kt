@@ -16,6 +16,10 @@ object DayNames {
     fun short(dayOfWeek: Int, locale: Locale = Locale.getDefault()): String =
         name(dayOfWeek, TextStyle.SHORT, locale)
 
+    /** One-letter name for the calendar header (Mon = "M" in English). */
+    fun narrow(dayOfWeek: Int, locale: Locale = Locale.getDefault()): String =
+        name(dayOfWeek, TextStyle.NARROW, locale)
+
     private fun name(dayOfWeek: Int, style: TextStyle, locale: Locale): String =
         if (dayOfWeek in 1..7) DayOfWeek.of(dayOfWeek).getDisplayName(style, locale) else ""
 }

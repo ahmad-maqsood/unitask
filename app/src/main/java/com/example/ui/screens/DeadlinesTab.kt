@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.ui.res.stringResource
 import com.example.R
 import java.util.Calendar
@@ -8,7 +10,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ViewList
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -41,7 +42,6 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -647,7 +647,7 @@ fun DeadlinesTab(
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                imageVector = if (isCalendarView) Icons.Default.ViewList else Icons.Default.CalendarMonth,
+                                imageVector = if (isCalendarView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.CalendarMonth,
                                 contentDescription = stringResource(if (isCalendarView) R.string.deadlines_switch_to_list_view else R.string.deadlines_switch_to_calendar_view),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -663,7 +663,7 @@ fun DeadlinesTab(
                                         .testTag("sort_button")
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Sort,
+                                        imageVector = Icons.AutoMirrored.Filled.Sort,
                                         contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, stringResource(sortOption.labelRes)),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)

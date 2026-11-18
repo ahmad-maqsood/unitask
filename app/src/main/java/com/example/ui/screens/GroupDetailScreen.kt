@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
@@ -234,7 +234,7 @@ fun GroupDetailScreen(
                             modifier = Modifier.testTag("group_leave_button")
                         ) {
                             Icon(
-                                Icons.Default.ExitToApp,
+                                Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = stringResource(R.string.group_detail_leave_group),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )

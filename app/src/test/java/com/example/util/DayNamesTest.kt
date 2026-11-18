@@ -13,6 +13,11 @@ class DayNamesTest {
     }
 
     @Test
+    fun narrowNamesAreOneLetterInEnglish() {
+        assertEquals(listOf("M", "T", "W", "T", "F", "S", "S"), (1..7).map { DayNames.narrow(it, Locale.ENGLISH) })
+    }
+
+    @Test
     fun outOfRangeDayGivesEmptyText() {
         assertEquals("", DayNames.full(0, Locale.ENGLISH))
         assertEquals("", DayNames.short(8, Locale.ENGLISH))

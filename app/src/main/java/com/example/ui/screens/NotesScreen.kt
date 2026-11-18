@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -22,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -43,7 +44,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
@@ -255,7 +255,7 @@ fun NotesScreen(
                         modifier = Modifier.testTag("notes_back_button")
                     ) {
                         Icon(
-                            imageVector = if (selectionMode) Icons.Default.Close else Icons.Default.ArrowBack,
+                            imageVector = if (selectionMode) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(if (selectionMode) R.string.notes_cancel_selection else R.string.common_back)
                         )
                     }
@@ -360,7 +360,7 @@ fun NotesScreen(
                             modifier = Modifier.testTag("notes_sort_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = stringResource(R.string.notes_sort_notes)
                             )
                         }

@@ -1,13 +1,13 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.ui.res.stringResource
 import com.example.R
 import java.util.Calendar
 import com.example.util.DateFormats
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -109,7 +109,7 @@ internal fun DeadlinesCalendarView(
                         currentMonth -= 1
                     }
                 }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.deadlines_calendar_view_previous_month))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.deadlines_calendar_view_previous_month))
                 }
 
                 Text(
@@ -126,11 +126,11 @@ internal fun DeadlinesCalendarView(
                         currentMonth += 1
                     }
                 }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.deadlines_calendar_view_next_month))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.deadlines_calendar_view_next_month))
                 }
             }
 
-            val weekDayHeaders = listOf("M", "T", "W", "T", "F", "S", "S")
+            val weekDayHeaders = (1..7).map { com.example.util.DayNames.narrow(it) }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                 weekDayHeaders.forEach { header ->
                     Text(

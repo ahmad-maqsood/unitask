@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -39,7 +40,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.FullscreenExit
@@ -295,7 +295,7 @@ fun TimerScreen(
                             modifier = Modifier.testTag("timer_back_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.common_back)
                             )
                         }

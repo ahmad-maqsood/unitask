@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,7 +56,6 @@ import com.example.util.markdown.applyNoteLinkChoice
 import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
@@ -71,7 +72,6 @@ import com.example.util.NoteShare
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.FormatStrikethrough
@@ -495,7 +495,7 @@ fun NoteEditorScreen(
                         modifier = Modifier.testTag("note_editor_back_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back)
                         )
                     }
@@ -1011,7 +1011,7 @@ fun NoteEditorScreen(
                             onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
                             modifier = Modifier.testTag("toolbar_bullet")
                         ) {
-                            Icon(Icons.Default.FormatListBulleted, contentDescription = stringResource(R.string.note_editor_bullet_list))
+                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = stringResource(R.string.note_editor_bullet_list))
                         }
                         IconButton(
                             onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },

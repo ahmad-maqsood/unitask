@@ -145,8 +145,8 @@ fun CourseDetailSheet(
                 scope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     val result = snackbarHostState.showSnackbar(
-                        message = "Class moved to Recently deleted",
-                        actionLabel = "Undo",
+                        message = context.getString(R.string.msg_class_moved_to_recently_deleted),
+                        actionLabel = context.getString(R.string.common_undo),
                         duration = SnackbarDuration.Short
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -553,8 +553,8 @@ fun CourseDetailSheet(
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
                                 val result = snackbarHostState.showSnackbar(
-                                    message = "Task moved to Recently deleted",
-                                    actionLabel = "Undo",
+                                    message = context.getString(R.string.msg_task_moved_to_recently_deleted),
+                                    actionLabel = context.getString(R.string.common_undo),
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {

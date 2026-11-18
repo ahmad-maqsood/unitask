@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +74,7 @@ fun RecentlyDeletedScreen(
     onClose: () -> Unit,
     viewModel: RecentlyDeletedViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
     val deletedNotes by viewModel.deletedNotes.collectAsStateWithLifecycle()
     val deletedClasses by viewModel.deletedClasses.collectAsStateWithLifecycle()
@@ -210,7 +212,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreTask(item.task.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("Task restored")
+                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_task_restored))
                                         }
                                     },
                                     onDeleteForever = { taskToDeleteForever = item }
@@ -240,7 +242,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreNote(item.note.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("Note restored")
+                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_note_restored))
                                         }
                                     },
                                     onDeleteForever = { noteToDeleteForever = item }
@@ -271,7 +273,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreClass(item.slot.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("Class restored")
+                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_class_restored))
                                         }
                                     },
                                     onDeleteForever = { classToDeleteForever = item }

@@ -195,7 +195,7 @@ class SearchViewModel(
             archivedTasks = if (params.includeArchived) data.archived.tasks else emptyList(),
             archivedNotes = if (params.includeArchived) data.archived.notes else emptyList(),
             archivedCourses = if (params.includeArchived) data.archived.courses else emptyList(),
-            settingsEntries = allSettingsSearchEntries,
+            settingsEntries = localizedSettingsSearchEntries(getApplication<Application>()),
             guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList(),
             noteFolderNames = data.folderNames,
             noteFolderColors = data.folderColors

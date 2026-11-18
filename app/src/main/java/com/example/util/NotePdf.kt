@@ -20,6 +20,7 @@ import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
 import androidx.core.graphics.withSave
 import androidx.core.graphics.withTranslation
+import com.example.R
 import com.example.util.markdown.CodeHighlighter
 import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
@@ -320,7 +321,7 @@ object NotePdf {
             val page = currentPage ?: return
             val cv = canvas ?: return
             // Draw "Page N" centered in the bottom margin
-            cv.drawText("Page $pageNumber", PAGE_WIDTH / 2f, PAGE_HEIGHT - 24f, footerPaint)
+            cv.drawText(context.getString(R.string.note_pdf_page, pageNumber), PAGE_WIDTH / 2f, PAGE_HEIGHT - 24f, footerPaint)
             pdfDocument.finishPage(page)
             currentPage = null
             canvas = null

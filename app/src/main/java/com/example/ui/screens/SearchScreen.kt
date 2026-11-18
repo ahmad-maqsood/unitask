@@ -855,7 +855,8 @@ private fun SearchSettingRow(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Settings > ${entry.pageLabel}".replace("Settings > Settings", "Settings"),
+                text = if (entry.page == null) stringResource(R.string.settings_settings)
+                else stringResource(R.string.search_settings_path, entry.pageLabel),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,

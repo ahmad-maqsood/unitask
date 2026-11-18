@@ -269,7 +269,7 @@ fun MainScreen(
             settings.edit { putBoolean("notification_permission_prompted", true) }
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    message = "Reminder saved. Allow notifications so it can reach you.",
+                    message = context.getString(R.string.msg_reminder_saved_allow_notifications),
                     duration = SnackbarDuration.Long
                 )
             }
@@ -818,8 +818,8 @@ fun MainScreen(
                                 scope.launch {
                                     snackbarHostState.currentSnackbarData?.dismiss()
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Class moved to Recently deleted",
-                                        actionLabel = "Undo",
+                                        message = context.getString(R.string.msg_class_moved_to_recently_deleted),
+                                        actionLabel = context.getString(R.string.common_undo),
                                         duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -986,7 +986,7 @@ fun MainScreen(
                 viewModel.restoreSemester(semesterName) {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            message = "Restored $semesterName",
+                            message = context.getString(R.string.msg_restored_semester, semesterName),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -1072,7 +1072,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Restored $semesterName",
+                                message = context.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1082,7 +1082,7 @@ fun MainScreen(
                     viewModel.deleteSemesterForever(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Deleted $semesterName",
+                                message = context.getString(R.string.msg_deleted_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1121,7 +1121,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Restored $semesterName",
+                                message = context.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1149,10 +1149,10 @@ fun MainScreen(
                 viewModel.archiveCourses(courseIds, semesterName) {
                     scope.launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
-                        val courseLabel = if (courseIds.size == 1) "1 course" else "${courseIds.size} courses"
+                        val courseLabel = context.resources.getQuantityString(R.plurals.counts_courses, courseIds.size, courseIds.size)
                         val result = snackbarHostState.showSnackbar(
-                            message = "Archived $courseLabel to $semesterName",
-                            actionLabel = "Undo",
+                            message = context.getString(R.string.msg_archived_courses_to_semester, courseLabel, semesterName),
+                            actionLabel = context.getString(R.string.common_undo),
                             duration = SnackbarDuration.Short
                         )
                         if (result == SnackbarResult.ActionPerformed) {

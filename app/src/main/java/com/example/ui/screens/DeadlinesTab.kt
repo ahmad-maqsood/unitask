@@ -296,7 +296,7 @@ fun DeadlinesTab(
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
                             message = if (wasDone) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
-                            actionLabel = "Undo",
+                            actionLabel = context.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }
@@ -320,8 +320,8 @@ fun DeadlinesTab(
                 try {
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
-                            message = "Task moved to Recently deleted",
-                            actionLabel = "Undo",
+                            message = context.getString(R.string.msg_task_moved_to_recently_deleted),
+                            actionLabel = context.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }

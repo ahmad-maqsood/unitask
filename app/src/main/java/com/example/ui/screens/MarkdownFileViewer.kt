@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +59,7 @@ fun MarkdownFileViewer(
     onOpenSavedNote: (noteId: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     BackHandler {
         onClose()
     }
@@ -108,17 +110,17 @@ fun MarkdownFileViewer(
                                             if (newId > 0L) {
                                                 isSaved = true
                                                 val result = snackbarHostState.showSnackbar(
-                                                    message = "Saved to Notes",
-                                                    actionLabel = "Open",
+                                                    message = context.getString(R.string.msg_saved_to_notes),
+                                                    actionLabel = context.getString(R.string.msg_open),
                                                     duration = SnackbarDuration.Short
                                                 )
                                                 if (result == SnackbarResult.ActionPerformed) {
                                                     onOpenSavedNote(newId)
                                                 }
                                             } else if (newId < 0L) {
-                                                snackbarHostState.showSnackbar("File is too long for a note (limit ${String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)} characters)")
+                                                snackbarHostState.showSnackbar(context.getString(R.string.msg_file_too_long_for_note, String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)))
                                             } else {
-                                                snackbarHostState.showSnackbar("Could not read that file")
+                                                snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
                                             }
                                         } finally {
                                             isSaving = false

@@ -511,7 +511,7 @@ fun GroupQrCodeDialog(
                         IconButton(
                             onClick = {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Join Code", joinCode)
+                                val clip = ClipData.newPlainText(context.getString(R.string.create_join_group_join_code), joinCode)
                                 clipboard.setPrimaryClip(clip)
                                 Toast.makeText(context, resources.getString(R.string.toast_code_copied), Toast.LENGTH_SHORT).show()
                             }
@@ -599,7 +599,7 @@ fun GroupCreatedSuccessDialog(
                         OutlinedButton(
                             onClick = {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Join Code", joinCode)
+                                val clip = ClipData.newPlainText(context.getString(R.string.create_join_group_join_code), joinCode)
                                 clipboard.setPrimaryClip(clip)
                                 Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                             },
@@ -754,7 +754,7 @@ fun EditGroupDialog(
                                 onClick = {
                                     if (currentJoinCode.isNotBlank()) {
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        val clip = ClipData.newPlainText("Join Code", currentJoinCode)
+                                        val clip = ClipData.newPlainText(context.getString(R.string.create_join_group_join_code), currentJoinCode)
                                         clipboard.setPrimaryClip(clip)
                                         Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                                     }

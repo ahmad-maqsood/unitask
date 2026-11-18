@@ -72,7 +72,7 @@ internal fun JoinCodeCard(
                 IconButton(
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Join Code", joinCode))
+                        clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.create_join_group_join_code), joinCode))
                         com.example.ui.AppMessages.show("Join code copied!")
                     },
                     modifier = Modifier.testTag("copy_join_code_button")

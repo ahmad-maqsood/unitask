@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.util.NoteImages
 import kotlinx.coroutines.Dispatchers
@@ -71,8 +72,8 @@ fun NotesHost(
                     editorTarget = null
                     coroutineScope.launch {
                         val result = snackbarHostState.showSnackbar(
-                            message = "Note moved to Recently deleted",
-                            actionLabel = "Undo",
+                            message = context.getString(R.string.msg_note_moved_to_recently_deleted),
+                            actionLabel = context.getString(R.string.common_undo),
                             duration = SnackbarDuration.Short
                         )
                         if (result == SnackbarResult.ActionPerformed) {

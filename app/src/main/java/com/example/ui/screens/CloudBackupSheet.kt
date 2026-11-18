@@ -443,7 +443,7 @@ private fun signInWithGoogle(
     scope.launch {
         val activity = context.findActivity()
         if (activity == null) {
-            onError("Unable to find the screen needed for Google sign-in")
+            onError(context.getString(R.string.sign_in_no_screen))
             return@launch
         }
         try {
@@ -457,7 +457,7 @@ private fun signInWithGoogle(
                 }
                 onSuccess()
             } else {
-                onError("Unexpected credential type received")
+                onError(context.getString(R.string.sign_in_unexpected_credential))
             }
         } catch (e: GetCredentialCancellationException) {
             Log.w("Auth", "Google Sign-In cancelled: ${e.message}", e)
@@ -481,7 +481,7 @@ internal fun googleSignInErrorMessage(context: Context, e: Exception): String =
     if (e is NoCredentialException) {
         context.getString(R.string.cloud_backup_no_google_account)
     } else {
-        e.localizedMessage ?: "Sign-in failed"
+        e.localizedMessage ?: context.getString(R.string.sign_in_failed)
     }
 
 private fun signOut(

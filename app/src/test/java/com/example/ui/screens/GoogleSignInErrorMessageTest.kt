@@ -34,6 +34,6 @@ class GoogleSignInErrorMessageTest {
     fun aFailureWithoutAMessageFallsBackToAGenericOne() {
         val message = googleSignInErrorMessage(context, IllegalStateException())
 
-        assertEquals("Sign-in failed", message)
+        assertEquals(context.getString(R.string.sign_in_failed), message)
     }
 }

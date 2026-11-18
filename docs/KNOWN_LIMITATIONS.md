@@ -25,3 +25,9 @@ The short list of limitations that matter most to users is in the [README](../RE
 ## Notes
 
 - Notes are limited to 300,000 characters and 50 images.
+
+## Language
+
+- UniTask is available in English and Urdu. Choosing a language inside the app needs Android 13 or newer; older phones follow the phone language.
+- A few less common messages (for example some backup error messages, the "Snoozed until" message and the timer status label) are still shown in English only.
+- The "Due ..." line of a reminder is written when the reminder is set, so after changing the language it keeps the old language until the reminder is set again (for example when the task is edited).

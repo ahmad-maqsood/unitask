@@ -21,6 +21,10 @@ Whether you want to fix a bug, improve an existing feature, or suggest something
 
 Please be patient while your pull request is reviewed. I may request changes or provide feedback before accepting it. Not every submission is guaranteed to be merged.
 
+## Translations
+
+UniTask is available in English and Urdu. Text the person sees (screens, snackbar messages, notifications) belongs in `app/src/main/res/values/strings.xml`, with the Urdu version under the same name in `app/src/main/res/values-ur/strings.xml`. Please do not write user-facing text directly in the Kotlin code.
+
 ## Report a bug
 
 - In the app: **Settings, Report a problem**

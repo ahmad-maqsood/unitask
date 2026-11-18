@@ -265,6 +265,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 - Light, dark or system theme, and ten accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite and Mocha.
 - Themed icon on Android 13 and newer.
 - Notification sounds: the phone default, four built-in sounds or any ringtone on the phone. Each sound has its own notification channel, so Android remembers the volume you set.
+- English and Urdu (right-to-left layout included). The app follows the phone language; on Android 13 and newer you can also pick the language in **Settings, General, Language**.
 
 ### Google Drive backup
 

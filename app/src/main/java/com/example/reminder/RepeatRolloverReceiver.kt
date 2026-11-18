@@ -5,9 +5,9 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.core.net.toUri
 import com.example.data.local.AppDatabase
 import com.example.Repositories
 import com.example.data.repository.NoteRepository
@@ -49,7 +49,7 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
             val trigger = nextTriggerMillis(System.currentTimeMillis())
             val intent = Intent(appContext, RepeatRolloverReceiver::class.java).apply {
                 action = ACTION
-                data = Uri.parse("unitask://repeat-rollover")
+                data = "unitask://repeat-rollover".toUri()
             }
             val pendingIntent = PendingIntent.getBroadcast(
                 appContext,
@@ -131,7 +131,7 @@ class RepeatRolloverReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.w(TAG, "Could not roll over repeating tasks: ${e.message}")
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }

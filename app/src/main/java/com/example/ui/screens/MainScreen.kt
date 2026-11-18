@@ -74,6 +74,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -187,6 +189,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
     val activity = context as? Activity
 
@@ -258,16 +261,16 @@ fun MainScreen(
     // Called after a task is saved with at least one reminder: the moment reminders matter to the person.
     val onReminderSaved: () -> Unit = {
         val settings = context.getSharedPreferences("unitask_settings", android.content.Context.MODE_PRIVATE)
-        settings.edit().putBoolean("first_reminder_saved", true).apply()
+        settings.edit { putBoolean("first_reminder_saved", true) }
         val needsNotificationAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED &&
             !settings.getBoolean("notification_permission_prompted", false)
         if (needsNotificationAsk) {
-            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+            settings.edit { putBoolean("notification_permission_prompted", true) }
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    message = "Reminder saved. Allow notifications so it can reach you.",
+                    message = uiResources.getString(R.string.msg_reminder_saved_allow_notifications),
                     duration = SnackbarDuration.Long
                 )
             }
@@ -673,7 +676,7 @@ fun MainScreen(
                                     context.startActivity(
                                         android.content.Intent(
                                             android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                            android.net.Uri.parse("package:${context.packageName}")
+                                            "package:${context.packageName}".toUri()
                                         )
                                     )
                                 } catch (_: Exception) {
@@ -783,7 +786,7 @@ fun MainScreen(
                                                 )
                                             } == true || !settings.getBoolean("notification_permission_prompted", false))
                                         if (canAsk) {
-                                            settings.edit().putBoolean("notification_permission_prompted", true).apply()
+                                            settings.edit { putBoolean("notification_permission_prompted", true) }
                                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                         } else {
                                             // Android will not show its dialog again, or the permission is already
@@ -816,8 +819,8 @@ fun MainScreen(
                                 scope.launch {
                                     snackbarHostState.currentSnackbarData?.dismiss()
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Class moved to Recently deleted",
-                                        actionLabel = "Undo",
+                                        message = uiResources.getString(R.string.msg_class_moved_to_recently_deleted),
+                                        actionLabel = uiResources.getString(R.string.common_undo),
                                         duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -984,7 +987,7 @@ fun MainScreen(
                 viewModel.restoreSemester(semesterName) {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            message = "Restored $semesterName",
+                            message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -1070,7 +1073,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Restored $semesterName",
+                                message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1080,7 +1083,7 @@ fun MainScreen(
                     viewModel.deleteSemesterForever(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Deleted $semesterName",
+                                message = uiResources.getString(R.string.msg_deleted_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1119,7 +1122,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Restored $semesterName",
+                                message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1147,10 +1150,10 @@ fun MainScreen(
                 viewModel.archiveCourses(courseIds, semesterName) {
                     scope.launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
-                        val courseLabel = if (courseIds.size == 1) "1 course" else "${courseIds.size} courses"
+                        val courseLabel = context.resources.getQuantityString(R.plurals.counts_courses, courseIds.size, courseIds.size)
                         val result = snackbarHostState.showSnackbar(
-                            message = "Archived $courseLabel to $semesterName",
-                            actionLabel = "Undo",
+                            message = uiResources.getString(R.string.msg_archived_courses_to_semester, courseLabel, semesterName),
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Short
                         )
                         if (result == SnackbarResult.ActionPerformed) {

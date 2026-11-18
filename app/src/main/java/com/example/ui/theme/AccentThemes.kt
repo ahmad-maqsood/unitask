@@ -1,5 +1,7 @@
 package com.example.ui.theme
 
+import androidx.annotation.StringRes
+import com.example.R
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -11,17 +13,17 @@ import androidx.compose.ui.graphics.Color
  * `swatch` is the circle shown in the Settings picker.
  * Every text/background pair was checked for WCAG AA contrast (4.5:1 for text, 3:1 for outlines).
  */
-enum class AccentTheme(val label: String, val swatch: Color) {
-    INDIGO("Indigo", Color(0xFF4F46E5)),
-    OCEAN("Ocean teal", Color(0xFF157984)),
-    FOREST("Forest green", Color(0xFF157F46)),
-    ROSE("Rose", Color(0xFFD32263)),
-    SUNSET("Sunset orange", Color(0xFFB2531D)),
-    VIOLET("Violet", Color(0xFF8F47E1)),
-    COBALT("Cobalt blue", Color(0xFF1653C5)),
-    AMBER("Golden amber", Color(0xFFB07408)),
-    GRAPHITE("Graphite", Color(0xFF454F5F)),
-    MOCHA("Mocha", Color(0xFF7B4D32))
+enum class AccentTheme(val label: String, @StringRes val labelRes: Int, val swatch: Color) {
+    INDIGO("Indigo", R.string.accent_indigo, Color(0xFF4F46E5)),
+    OCEAN("Ocean teal", R.string.accent_ocean, Color(0xFF157984)),
+    FOREST("Forest green", R.string.accent_forest, Color(0xFF157F46)),
+    ROSE("Rose", R.string.accent_rose, Color(0xFFD32263)),
+    SUNSET("Sunset orange", R.string.accent_sunset, Color(0xFFB2531D)),
+    VIOLET("Violet", R.string.accent_violet, Color(0xFF8F47E1)),
+    COBALT("Cobalt blue", R.string.accent_cobalt, Color(0xFF1653C5)),
+    AMBER("Golden amber", R.string.accent_amber, Color(0xFFB07408)),
+    GRAPHITE("Graphite", R.string.accent_graphite, Color(0xFF454F5F)),
+    MOCHA("Mocha", R.string.accent_mocha, Color(0xFF7B4D32))
 }
 
 fun lightSchemeFor(accent: AccentTheme): ColorScheme = when (accent) {

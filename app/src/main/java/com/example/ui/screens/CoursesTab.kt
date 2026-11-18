@@ -52,10 +52,10 @@ fun CoursesTab(
     onEditCourse: (Course) -> Unit,
     onDeleteCourse: (Course) -> Unit,
     onAddCourseClick: () -> Unit,
+    modifier: Modifier = Modifier,
     archivedSemestersCount: Int = 0,
     onArchiveCoursesClick: () -> Unit = {},
-    onArchivedSemestersClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onArchivedSemestersClick: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),

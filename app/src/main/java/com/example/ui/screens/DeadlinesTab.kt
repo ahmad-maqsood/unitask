@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.ui.res.stringResource
 import com.example.R
 import java.util.Calendar
@@ -8,7 +10,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ViewList
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -41,7 +42,6 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -119,6 +119,7 @@ fun DeadlinesTab(
     onSortOptionSelect: (TaskSortOption) -> Unit,
     pendingCount: Int,
     completedCount: Int,
+    modifier: Modifier = Modifier,
     dueTodayCount: Int = 0,
     onStatusCycle: (TaskItem) -> Unit,
     onSetStatus: (TaskItem, TaskStatus) -> Unit = { _, _ -> },
@@ -132,7 +133,6 @@ fun DeadlinesTab(
     groupEntries: Map<Long, GroupTaskEntry> = emptyMap(),
     isLoading: Boolean = false,
     snackbarHostState: SnackbarHostState? = null,
-    modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null,
     onGetStartedStepClick: ((GetStartedStep) -> Unit)? = null,
     onOpenBackupSettings: (() -> Unit)? = null,
@@ -145,6 +145,7 @@ fun DeadlinesTab(
     var showBatchDeleteConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val activeTasks by remember(db) { db.taskDao().getAllTasksWithCourse() }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -255,7 +256,8 @@ fun DeadlinesTab(
     val now by rememberMinuteClock()
     val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
     // Which sections are folded away. Every section starts open, as the list always showed them.
-    val sectionCollapse = rememberSectionCollapse()
+    // The choice is remembered, even after closing the app.
+    val sectionCollapse = rememberSectionCollapse("deadlines")
     val showsSections = sortOption == TaskSortOption.DUE_DATE_ASC && searchQuery.isBlank()
     // The tasks on screen. "All" selects only these, so a bulk action never reaches a task that is
     // folded away.
@@ -295,7 +297,7 @@ fun DeadlinesTab(
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
                             message = if (wasDone) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
-                            actionLabel = "Undo",
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }
@@ -319,8 +321,8 @@ fun DeadlinesTab(
                 try {
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
-                            message = "Task moved to Recently deleted",
-                            actionLabel = "Undo",
+                            message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }
@@ -646,7 +648,7 @@ fun DeadlinesTab(
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                imageVector = if (isCalendarView) Icons.Default.ViewList else Icons.Default.CalendarMonth,
+                                imageVector = if (isCalendarView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.CalendarMonth,
                                 contentDescription = stringResource(if (isCalendarView) R.string.deadlines_switch_to_list_view else R.string.deadlines_switch_to_calendar_view),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -662,8 +664,8 @@ fun DeadlinesTab(
                                         .testTag("sort_button")
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Sort,
-                                        contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, sortOption.label),
+                                        imageVector = Icons.AutoMirrored.Filled.Sort,
+                                        contentDescription = stringResource(R.string.deadlines_sort_tasks_currently, stringResource(sortOption.labelRes)),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -676,7 +678,7 @@ fun DeadlinesTab(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    text = option.label,
+                                                    text = stringResource(option.labelRes),
                                                     fontWeight = if (option == sortOption) FontWeight.Bold else FontWeight.Normal,
                                                     color = if (option == sortOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                                 )

@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.example.MainActivity
 import com.example.R
 import com.example.data.groups.GroupSnapshot
@@ -73,7 +74,7 @@ class GroupTaskProcessor(context: Context) {
                 val set = prefs.getStringSet(groupId, null) ?: return
                 val updated = HashSet(set.filterNot { it.startsWith(taskId + SEP) })
                 updated.add("$taskId$SEP$deadlineMillis$SEP$title")
-                prefs.edit().putStringSet(groupId, updated).apply()
+                prefs.edit { putStringSet(groupId, updated) }
             }
         }
 
@@ -83,7 +84,7 @@ class GroupTaskProcessor(context: Context) {
                 val prefs = context.applicationContext.getSharedPreferences(STATE_PREFS, Context.MODE_PRIVATE)
                 val set = prefs.getStringSet(groupId, null) ?: return
                 val updated = HashSet(set.filterNot { it.startsWith(taskId + SEP) })
-                prefs.edit().putStringSet(groupId, updated).apply()
+                prefs.edit { putStringSet(groupId, updated) }
             }
         }
 
@@ -109,13 +110,13 @@ class GroupTaskProcessor(context: Context) {
         if (state.groupIds.isNotEmpty() || !isFromCache) {
             scheduler.cancelGroupsNotIn(state.groupIds)
             for (key in seenPrefs.all.keys.toList()) {
-                if (key !in state.groupIds) seenPrefs.edit().remove(key).apply()
+                if (key !in state.groupIds) seenPrefs.edit { remove(key) }
             }
             for (key in stateStore.all.keys.toList()) {
-                if (key !in state.groupIds) stateStore.edit().remove(key).apply()
+                if (key !in state.groupIds) stateStore.edit { remove(key) }
             }
             for (key in summaryStore.all.keys.toList()) {
-                if (key !in state.groupIds) summaryStore.edit().remove(key).apply()
+                if (key !in state.groupIds) summaryStore.edit { remove(key) }
             }
             GroupTaskOffStore.retainGroups(appContext, state.groupIds)
         }
@@ -139,15 +140,15 @@ class GroupTaskProcessor(context: Context) {
                 val currentIds = snapshot.allTasks.map { it.id }
                 val seen = seenPrefs.getStringSet(snapshot.groupId, null)
                 if (seen == null) {
-                    seenPrefs.edit()
-                        .putStringSet(snapshot.groupId, HashSet(currentIds).apply { add(BASELINE) })
-                        .apply()
+                    seenPrefs.edit {
+                        putStringSet(snapshot.groupId, HashSet(currentIds).apply { add(BASELINE) })
+                    }
                 }
                 val stored = stateStore.getStringSet(snapshot.groupId, null)
                 if (stored == null && snapshot.tasks.isNotEmpty()) {
-                    stateStore.edit()
-                        .putStringSet(snapshot.groupId, snapshot.tasks.map { encodeTask(it) }.toHashSet())
-                        .apply()
+                    stateStore.edit {
+                        putStringSet(snapshot.groupId, snapshot.tasks.map { encodeTask(it) }.toHashSet())
+                    }
                 }
             } else {
                 announceNewTasks(myUid, snapshot)
@@ -160,9 +161,9 @@ class GroupTaskProcessor(context: Context) {
     fun clearAll() = synchronized(LOCK) {
         scheduler.cancelGroupsNotIn(emptySet())
         GroupTaskOffStore.clearAll(appContext)
-        seenPrefs.edit().clear().apply()
-        stateStore.edit().clear().apply()
-        summaryStore.edit().clear().apply()
+        seenPrefs.edit { clear() }
+        stateStore.edit { clear() }
+        summaryStore.edit { clear() }
         val manager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.cancel(SUMMARY_ID)
     }
@@ -183,7 +184,7 @@ class GroupTaskProcessor(context: Context) {
                 ).joinToString(SEP)
             }
             .toHashSet()
-        summaryStore.edit().putStringSet(snapshot.groupId, pending).apply()
+        summaryStore.edit { putStringSet(snapshot.groupId, pending) }
     }
     private fun announceNewTasks(myUid: String, snapshot: GroupSnapshot) {
         val currentIds = snapshot.allTasks.map { it.id }
@@ -192,9 +193,9 @@ class GroupTaskProcessor(context: Context) {
         if (seen == null) {
             // First time we see this group on this phone (just joined, or fresh install):
             // remember what is already there without announcing it.
-            seenPrefs.edit()
-                .putStringSet(snapshot.groupId, HashSet(currentIds).apply { add(BASELINE) })
-                .apply()
+            seenPrefs.edit {
+                putStringSet(snapshot.groupId, HashSet(currentIds).apply { add(BASELINE) })
+            }
             return
         }
 
@@ -206,7 +207,7 @@ class GroupTaskProcessor(context: Context) {
             add(BASELINE)
             addAll(currentIds)
         }
-        seenPrefs.edit().putStringSet(snapshot.groupId, updated).apply()
+        seenPrefs.edit { putStringSet(snapshot.groupId, updated) }
 
         if (fresh.isEmpty()) return
         ensureChannel()
@@ -255,9 +256,9 @@ class GroupTaskProcessor(context: Context) {
 
         val mine = snapshot.tasks
         val stored = stateStore.getStringSet(snapshot.groupId, null)
-        stateStore.edit()
-            .putStringSet(snapshot.groupId, mine.map { encodeTask(it) }.toHashSet())
-            .apply()
+        stateStore.edit {
+            putStringSet(snapshot.groupId, mine.map { encodeTask(it) }.toHashSet())
+        }
         // First time this group is seen on this phone: remember it, announce nothing.
         if (stored == null) return
 

@@ -638,3 +638,10 @@ grant execute on function public.is_member(uuid)                          to aut
 grant execute on function public.is_group_admin(uuid)                     to authenticated;
 grant execute on function public.is_group_owner(uuid)                     to authenticated;
 grant execute on function public.delete_my_account()                      to authenticated;
+
+-- 2026-11-18: limits on groups and group tasks (full SQL, run in steps: supabase/group_limits.sql).
+-- create_group refuses a 9th owned group (error text group_limit_reached) and transfer_group_ownership
+-- refuses a new owner who already owns 8. Trigger t_gtasks_limit (function enforce_group_task_limit)
+-- refuses the 201st task in a group (error text task_limit_reached). Both use a transaction advisory lock
+-- so simultaneous requests are counted one by one. Existing data over a limit is left as it is.
+-- The live bodies of create_group and transfer_group_ownership are the ones in group_limits.sql.

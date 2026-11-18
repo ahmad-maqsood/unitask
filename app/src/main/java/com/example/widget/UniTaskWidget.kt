@@ -2,11 +2,11 @@ package com.example.widget
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.Action
@@ -125,11 +125,11 @@ private fun openAppAction(context: Context, task: WidgetTask? = null): Action {
         val taskId = task?.personalTaskId
         if (taskId != null) {
             // The data makes each task's PendingIntent different from the others.
-            data = Uri.parse("unitask://widget/task/$taskId")
+            data = "unitask://widget/task/$taskId".toUri()
             putExtra("opened_task_id", taskId)
             putExtra("extra_is_my_task", task?.isMyTask == true)
         } else {
-            data = Uri.parse("unitask://widget/open")
+            data = "unitask://widget/open".toUri()
         }
     }
     return actionStartActivity(intent)

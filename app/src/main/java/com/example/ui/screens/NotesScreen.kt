@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -22,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -43,7 +44,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.repository.NoteRepository
@@ -134,6 +134,7 @@ fun NotesScreen(
         ?.let { filter -> folders.firstOrNull { it.id == filter.folderId } }
 
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     var showListOverflowMenu by remember { mutableStateOf(false) }
@@ -169,7 +170,7 @@ fun NotesScreen(
                 val items = folderExportNotes(folderId)
                 val ok = items.isNotEmpty() && NoteShare.saveFolderZipToUri(context, uri, items)
                 snackbarHostState.showSnackbar(
-                    if (ok) "Saved to your device" else "Could not save the file",
+                    if (ok) uiResources.getString(R.string.msg_saved_to_device) else uiResources.getString(R.string.msg_could_not_save_file),
                     duration = SnackbarDuration.Short
                 )
             }
@@ -215,15 +216,15 @@ fun NotesScreen(
                             format = format
                         )
                         if (isPdf) isWorking = false
-                        val message = if (ok) "Saved to your device" else "Could not save the file"
+                        val message = if (ok) uiResources.getString(R.string.msg_saved_to_device) else uiResources.getString(R.string.msg_could_not_save_file)
                         snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
                     } catch (_: Exception) {
-                        snackbarHostState.showSnackbar("Could not save the file", duration = SnackbarDuration.Short)
+                        snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_save_file), duration = SnackbarDuration.Short)
                     } finally {
                         if (isPdf) isWorking = false
                     }
                 } else {
-                    snackbarHostState.showSnackbar("Could not save the file", duration = SnackbarDuration.Short)
+                    snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_save_file), duration = SnackbarDuration.Short)
                 }
             }
         }
@@ -255,7 +256,7 @@ fun NotesScreen(
                         modifier = Modifier.testTag("notes_back_button")
                     ) {
                         Icon(
-                            imageVector = if (selectionMode) Icons.Default.Close else Icons.Default.ArrowBack,
+                            imageVector = if (selectionMode) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(if (selectionMode) R.string.notes_cancel_selection else R.string.common_back)
                         )
                     }
@@ -284,7 +285,7 @@ fun NotesScreen(
                                 val result = snackbarHostState.showSnackbar(
                                     message = if (ids.size == 1) "Note moved to Recently deleted"
                                     else "${ids.size} notes moved to Recently deleted",
-                                    actionLabel = "Undo",
+                                    actionLabel = uiResources.getString(R.string.common_undo),
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
@@ -345,7 +346,7 @@ fun NotesScreen(
                                                     format = NoteExportFormat.MD
                                                 )
                                             } catch (_: Exception) {
-                                                snackbarHostState.showSnackbar("Could not share the file", duration = SnackbarDuration.Short)
+                                                snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_share_file), duration = SnackbarDuration.Short)
                                             }
                                         }
                                     }
@@ -360,7 +361,7 @@ fun NotesScreen(
                             modifier = Modifier.testTag("notes_sort_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = stringResource(R.string.notes_sort_notes)
                             )
                         }
@@ -647,9 +648,9 @@ fun NotesScreen(
                                     coroutineScope.launch {
                                         val items = folderExportNotes(activeFolder.id)
                                         if (items.isEmpty()) {
-                                            snackbarHostState.showSnackbar("This folder has no notes to export", duration = SnackbarDuration.Short)
+                                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_folder_has_no_notes_to_export), duration = SnackbarDuration.Short)
                                         } else if (!NoteShare.shareFolderZip(context, activeFolder.name, items)) {
-                                            snackbarHostState.showSnackbar("Could not share the folder", duration = SnackbarDuration.Short)
+                                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_share_folder), duration = SnackbarDuration.Short)
                                         }
                                     }
                                 }
@@ -661,7 +662,7 @@ fun NotesScreen(
                                 onClick = {
                                     showFolderMenu = false
                                     if ((folderCounts[activeFolder.id] ?: 0) == 0) {
-                                        showMessage("This folder has no notes to export")
+                                        showMessage(uiResources.getString(R.string.msg_folder_has_no_notes_to_export))
                                     } else {
                                         saveFolderZipId = activeFolder.id
                                         saveFolderZipLauncher.launch(NoteShare.folderZipFileName(activeFolder.name))
@@ -850,8 +851,8 @@ fun NotesScreen(
                                 snackbarJob?.cancel()
                                 snackbarJob = coroutineScope.launch {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "Note moved to Recently deleted",
-                                        actionLabel = "Undo",
+                                        message = uiResources.getString(R.string.msg_note_moved_to_recently_deleted),
+                                        actionLabel = uiResources.getString(R.string.common_undo),
                                         duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -976,7 +977,7 @@ fun NotesScreen(
                                 format = format
                             )
                         } catch (_: Exception) {
-                            snackbarHostState.showSnackbar("Could not share the file", duration = SnackbarDuration.Short)
+                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_share_file), duration = SnackbarDuration.Short)
                         } finally {
                             if (isPdf) isWorking = false
                         }
@@ -1283,16 +1284,16 @@ private suspend fun importNoteFile(
 
     when (readResult) {
         is MarkdownReadResult.TooLarge -> {
-            snackbarHostState.showSnackbar("File is too large (limit 1 MB)")
+            snackbarHostState.showSnackbar(context.getString(R.string.msg_file_too_large))
         }
         is MarkdownReadResult.Unreadable -> {
-            snackbarHostState.showSnackbar("Could not read that file")
+            snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
         }
         is MarkdownReadResult.Success -> {
             try {
                 val (rawTitle, rawBody) = NoteShare.noteFromImportedText(displayName, readResult.text)
                 if (rawBody.length > NoteRepository.MAX_BODY) {
-                    snackbarHostState.showSnackbar("File is too long for a note (limit ${String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)} characters)")
+                    snackbarHostState.showSnackbar(context.getString(R.string.msg_file_too_long_for_note, String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)))
                     return
                 }
                 val title = rawTitle.take(NoteRepository.MAX_TITLE)
@@ -1304,12 +1305,12 @@ private suspend fun importNoteFile(
                     courseId = null
                 )
                 if (newId > 0L) {
-                    snackbarHostState.showSnackbar("Note imported")
+                    snackbarHostState.showSnackbar(context.getString(R.string.msg_note_imported))
                 } else {
-                    snackbarHostState.showSnackbar("Could not read that file")
+                    snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
                 }
             } catch (_: Exception) {
-                snackbarHostState.showSnackbar("Could not read that file")
+                snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
             }
         }
     }

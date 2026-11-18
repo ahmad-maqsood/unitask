@@ -4,8 +4,10 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.util.BackupCounts
 import com.example.util.BackupResult
 import com.example.util.drive.DriveAuthApi
@@ -73,6 +75,10 @@ class DriveBackupViewModel(
         DrivePrefs(application)
     )
 
+    /** Text from strings.xml, so every message can be translated. */
+    private fun str(@StringRes id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
+
     private var lastToken: String? = null
     private var pendingRestoreAfterConsent: Boolean = false
     private var pendingBackupAfterConsent: Boolean = false
@@ -94,7 +100,7 @@ class DriveBackupViewModel(
             is DriveAuthResult.NeedsConsent -> {
                 // Never launch a consent screen from the background
                 _uiState.update { it.copy(connection = DriveConnectionState.NeedsReconnect, busy = null) }
-                throw DriveException(DriveException.Kind.AUTH, "Google Drive access was lost.")
+                throw DriveException(DriveException.Kind.AUTH, str(R.string.drive_backup_google_drive_access_was_lost))
             }
             is DriveAuthResult.Failed -> {
                 throw DriveException(DriveException.Kind.AUTH, res.message)
@@ -114,7 +120,7 @@ class DriveBackupViewModel(
         }
         val offlineText = if (prefs.lastSuccessAt > 0L) {
             val counts = prefs.lastCounts
-            val time = formatBackupTime(prefs.lastSuccessAt)
+            val time = formatBackupTime(getApplication<Application>(), prefs.lastSuccessAt)
             if (!counts.isNullOrBlank()) "$time, $counts" else time
         } else {
             null
@@ -138,7 +144,7 @@ class DriveBackupViewModel(
 
     fun connect() {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Connecting"), lastResultMessage = null, isError = false) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_connecting)), lastResultMessage = null, isError = false) }
             when (val res = auth.authorize()) {
                 is DriveAuthResult.Granted -> {
                     lastToken = res.accessToken
@@ -175,7 +181,7 @@ class DriveBackupViewModel(
 
     fun onConsentResult(data: Intent?) {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Connecting"), consentRequest = null) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_connecting)), consentRequest = null) }
             when (val res = auth.resultFromIntent(data)) {
                 is DriveAuthResult.Granted -> {
                     lastToken = res.accessToken
@@ -226,7 +232,7 @@ class DriveBackupViewModel(
 
     fun backUpNow(allowEmpty: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Backing up"), lastResultMessage = null, isError = false) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_backing_up)), lastResultMessage = null, isError = false) }
             try {
                 val store = storeFactory(tokenProvider)
                 val result = DriveBackupManager.backUp(
@@ -236,21 +242,26 @@ class DriveBackupViewModel(
                     force = true,
                     onProgress = { done, total ->
                         _uiState.update {
-                            it.copy(busy = DriveBusyState("Backing up", "Backing up ($done of $total files)"))
+                            it.copy(
+                        busy = DriveBusyState(
+                            str(R.string.drive_busy_backing_up),
+                            str(R.string.drive_busy_backing_up_files, done, total)
+                        )
+                    )
                         }
                     }
                 )
                 when (result) {
                     is DriveBackupResult.Success -> {
                         val info = result.info
-                        val countsText = buildCountsText(info)
-                        val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                        val countsText = buildCountsText(getApplication<Application>(), info)
+                        val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                         _uiState.update {
                             it.copy(
                                 busy = null,
                                 latestBackupInfo = info,
                                 offlineBackupText = offlineText,
-                                lastResultMessage = "Backup complete: $countsText.",
+                                lastResultMessage = str(R.string.drive_result_backup_complete, countsText),
                                 isError = false
                             )
                         }
@@ -260,7 +271,7 @@ class DriveBackupViewModel(
                             it.copy(
                                 busy = null,
                                 latestBackupInfo = result.info,
-                                lastResultMessage = "Backup is already up to date.",
+                                lastResultMessage = str(R.string.drive_result_backup_up_to_date),
                                 isError = false
                             )
                         }
@@ -269,7 +280,7 @@ class DriveBackupViewModel(
                         _uiState.update {
                             it.copy(
                                 busy = null,
-                                lastResultMessage = "Your app has no data.",
+                                lastResultMessage = str(R.string.drive_result_app_has_no_data),
                                 isError = true
                             )
                         }
@@ -278,7 +289,7 @@ class DriveBackupViewModel(
                         val isAuth = result.kind == DriveException.Kind.AUTH
                         val conn = if (isAuth) DriveConnectionState.NeedsReconnect else _uiState.value.connection
                         val msg = if (result.kind == DriveException.Kind.QUOTA) {
-                            "Your Google Drive is full."
+                            str(R.string.drive_error_drive_full)
                         } else {
                             result.message
                         }
@@ -297,9 +308,9 @@ class DriveBackupViewModel(
                 val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
                 val conn = if (isAuth) DriveConnectionState.NeedsReconnect else _uiState.value.connection
                 val msg = when {
-                    isQuota -> "Your Google Drive is full."
-                    isAuth -> "Google Drive access was lost."
-                    else -> e.message ?: "Backup failed"
+                    isQuota -> str(R.string.drive_error_drive_full)
+                    isAuth -> str(R.string.drive_backup_google_drive_access_was_lost)
+                    else -> e.message ?: str(R.string.drive_error_backup_failed)
                 }
                 _uiState.update {
                     it.copy(
@@ -316,7 +327,7 @@ class DriveBackupViewModel(
     /** @param slotFileId restores this one backup only (the older one); null restores the newest. */
     fun restoreFromDrive(slotFileId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Restoring"), lastResultMessage = null, isError = false) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_restoring)), lastResultMessage = null, isError = false) }
             try {
                 val store = storeFactory(tokenProvider)
                 val result = DriveBackupManager.restore(
@@ -326,11 +337,11 @@ class DriveBackupViewModel(
                 )
                 when (result) {
                     is BackupResult.Success -> {
-                        val desc = describe(result.counts)
+                        val desc = describe(getApplication<Application>(), result.counts)
                         _uiState.update {
                             it.copy(
                                 busy = null,
-                                lastResultMessage = "Restored $desc.",
+                                lastResultMessage = str(R.string.drive_result_restored, desc),
                                 isError = false
                             )
                         }
@@ -351,9 +362,9 @@ class DriveBackupViewModel(
                 val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
                 val conn = if (isAuth) DriveConnectionState.NeedsReconnect else _uiState.value.connection
                 val msg = when {
-                    isQuota -> "Your Google Drive is full."
-                    isAuth -> "Google Drive access was lost."
-                    else -> e.message ?: "Restore failed"
+                    isQuota -> str(R.string.drive_error_drive_full)
+                    isAuth -> str(R.string.drive_backup_google_drive_access_was_lost)
+                    else -> e.message ?: str(R.string.drive_error_restore_failed)
                 }
                 _uiState.update {
                     it.copy(
@@ -373,7 +384,7 @@ class DriveBackupViewModel(
      */
     fun requestRestore() {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Checking for backup"), lastResultMessage = null, isError = false) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_checking_for_backup)), lastResultMessage = null, isError = false) }
             val isConn = prefs.isConnected
             if (!isConn) {
                 when (val res = auth.authorize()) {
@@ -411,7 +422,7 @@ class DriveBackupViewModel(
      */
     fun startMigrationBackup() {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(busy = DriveBusyState("Backing up"), lastResultMessage = null, isError = false) }
+            _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_backing_up)), lastResultMessage = null, isError = false) }
             val isConn = prefs.isConnected
             if (!isConn) {
                 when (val res = auth.authorize()) {
@@ -446,14 +457,14 @@ class DriveBackupViewModel(
     }
 
     private suspend fun checkLatestAndPromptRestore() {
-        _uiState.update { it.copy(busy = DriveBusyState("Checking for backup")) }
+        _uiState.update { it.copy(busy = DriveBusyState(str(R.string.drive_busy_checking_for_backup))) }
         try {
             val store = storeFactory(tokenProvider)
             val backups = DriveBackupManager.listBackups(store)
             val info = backups.firstOrNull()
             if (info != null) {
-                val countsText = buildCountsText(info)
-                val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                val countsText = buildCountsText(getApplication<Application>(), info)
+                val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
                         latestBackupInfo = info,
@@ -479,7 +490,7 @@ class DriveBackupViewModel(
                         busy = null,
                         showRestoreConfirm = false,
                         showNoBackupDialog = true,
-                        lastResultMessage = "No backup found in this Google account.",
+                        lastResultMessage = str(R.string.drive_restore_no_backup_found_in_this),
                         isError = false
                     )
                 }
@@ -489,9 +500,9 @@ class DriveBackupViewModel(
             val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
             val conn = if (isAuth) DriveConnectionState.NeedsReconnect else _uiState.value.connection
             val msg = when {
-                isQuota -> "Your Google Drive is full."
-                isAuth -> "Google Drive access was lost."
-                else -> e.message ?: "Failed to check backup"
+                isQuota -> str(R.string.drive_error_drive_full)
+                isAuth -> str(R.string.drive_backup_google_drive_access_was_lost)
+                else -> e.message ?: str(R.string.drive_error_check_backup_failed)
             }
             _uiState.update {
                 it.copy(
@@ -593,8 +604,8 @@ class DriveBackupViewModel(
             val store = storeFactory(tokenProvider)
             val info = DriveBackupManager.latestInfo(store)
             if (info != null) {
-                val countsText = buildCountsText(info)
-                val offlineText = "${formatBackupTime(info.exportedAt)}, $countsText"
+                val countsText = buildCountsText(getApplication<Application>(), info)
+                val offlineText = "${formatBackupTime(getApplication<Application>(), info.exportedAt)}, $countsText"
                 _uiState.update {
                     it.copy(
                         latestBackupInfo = info,
@@ -614,19 +625,21 @@ class DriveBackupViewModel(
     }
 
     companion object {
-        fun buildCountsText(info: DriveBackupInfo): String =
-            DriveBackupManager.buildCountsText(info)
+        fun buildCountsText(context: Context, info: DriveBackupInfo): String =
+            DriveBackupManager.buildCountsText(context, info)
 
-        fun formatBackupTime(millis: Long): String {
+        fun formatBackupTime(context: Context, millis: Long): String {
             if (millis <= 0L) return ""
             val now = Calendar.getInstance()
             val then = Calendar.getInstance().apply { timeInMillis = millis }
             val timeStr = DateFormats.clock24(millis)
             return when {
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
-                    now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) -> "Today $timeStr"
+                    now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) ->
+                    context.getString(R.string.drive_time_today, timeStr)
                 now.get(Calendar.YEAR) == then.get(Calendar.YEAR) &&
-                    now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> "Yesterday $timeStr"
+                    now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 ->
+                    context.getString(R.string.drive_time_yesterday, timeStr)
                 else -> DateFormats.monthDayClock24(millis)
             }
         }

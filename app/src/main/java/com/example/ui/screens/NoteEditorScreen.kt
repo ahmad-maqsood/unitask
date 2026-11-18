@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,7 +56,6 @@ import com.example.util.markdown.applyNoteLinkChoice
 import com.example.ui.theme.isDarkTheme
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
@@ -71,7 +72,6 @@ import com.example.util.NoteShare
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.FormatStrikethrough
@@ -110,7 +110,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -466,17 +465,194 @@ fun NoteEditorScreen(
     val selectedCourse = courses.find { it.id == viewModel.selectedCourseId }
     val courseColor = rememberCourseColor(selectedCourse?.colorHex)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
-    ) {
-        // On narrow screens the five action icons leave no room for the course pill in the bar,
-        // so it moves to its own line below the bar.
-        val compactTopBar = LocalConfiguration.current.screenWidthDp < 420
-        TopAppBar(
-            title = {
-                if (!isPreviewMode && !compactTopBar) {
+    // On narrow screens the five action icons leave no room for the course pill in the bar,
+    // so it moves to its own line below the bar. The width is the space this screen really has
+    // (it follows split-screen and foldables), and reading it does not rebuild the editor
+    // whenever some other setting of the phone changes.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val compactTopBar = maxWidth < 420.dp
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+        ) {
+            TopAppBar(
+                title = {
+                    if (!isPreviewMode && !compactTopBar) {
+                        CoursePickerPill(
+                            selectedCourse = selectedCourse,
+                            courseColor = courseColor,
+                            courses = courses,
+                            expanded = showCoursePicker,
+                            onExpandedChange = { showCoursePicker = it },
+                            onSelectCourse = { viewModel.setCourse(it) }
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = handleClose,
+                        modifier = Modifier.testTag("note_editor_back_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back)
+                        )
+                    }
+                },
+                actions = {
+                    if (!isPreviewMode) {
+                        IconButton(
+                            onClick = { viewModel.undo() },
+                            enabled = viewModel.canUndo,
+                            modifier = Modifier.testTag("note_undo_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = stringResource(R.string.common_undo)
+                            )
+                        }
+                        IconButton(
+                            onClick = { viewModel.redo() },
+                            enabled = viewModel.canRedo,
+                            modifier = Modifier.testTag("note_redo_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Redo,
+                                contentDescription = stringResource(R.string.note_editor_redo)
+                            )
+                        }
+                    }
+
+                    // Edit mode toggle button
+                    IconButton(
+                        onClick = { switchToEdit() },
+                        modifier = Modifier.testTag("note_mode_edit_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.common_edit),
+                            tint = if (!isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    // Preview mode toggle button
+                    IconButton(
+                        onClick = { switchToPreview() },
+                        modifier = Modifier.testTag("note_mode_preview_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = stringResource(R.string.note_editor_preview),
+                            tint = if (isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    Box {
+                        IconButton(
+                            onClick = { showOverflowMenu = true },
+                            modifier = Modifier.testTag("note_editor_overflow_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.note_editor_options)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.find_in_note_find_in_note)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null
+                                    )
+                                },
+                                modifier = Modifier.testTag("note_menu_find"),
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showFind = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(if (viewModel.isPinned) R.string.note_editor_unpin else R.string.note_editor_pin)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.PushPin,
+                                        contentDescription = null
+                                    )
+                                },
+                                enabled = viewModel.currentId > 0L || viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                                onClick = {
+                                    showOverflowMenu = false
+                                    viewModel.togglePinned()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_share)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = null
+                                    )
+                                },
+                                enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                                modifier = Modifier.testTag("note_menu_share"),
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showShareDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.note_editor_save_to_device)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Save,
+                                        contentDescription = null
+                                    )
+                                },
+                                enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
+                                modifier = Modifier.testTag("note_menu_save"),
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showSaveDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_delete)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    coroutineScope.launch {
+                                        val idToDelete = viewModel.currentId
+                                        if (idToDelete > 0L) {
+                                            viewModel.moveToTrash(idToDelete)
+                                            onDeleted(idToDelete)
+                                        } else {
+                                            viewModel.discardUnsaved()
+                                            onClose()
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+
+            if (!isPreviewMode && compactTopBar) {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                     CoursePickerPill(
                         selectedCourse = selectedCourse,
                         courseColor = courseColor,
@@ -486,589 +662,416 @@ fun NoteEditorScreen(
                         onSelectCourse = { viewModel.setCourse(it) }
                     )
                 }
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = handleClose,
-                    modifier = Modifier.testTag("note_editor_back_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = stringResource(R.string.common_back)
-                    )
-                }
-            },
-            actions = {
-                if (!isPreviewMode) {
-                    IconButton(
-                        onClick = { viewModel.undo() },
-                        enabled = viewModel.canUndo,
-                        modifier = Modifier.testTag("note_undo_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = stringResource(R.string.common_undo)
-                        )
-                    }
-                    IconButton(
-                        onClick = { viewModel.redo() },
-                        enabled = viewModel.canRedo,
-                        modifier = Modifier.testTag("note_redo_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Redo,
-                            contentDescription = stringResource(R.string.note_editor_redo)
-                        )
-                    }
-                }
+            }
 
-                // Edit mode toggle button
-                IconButton(
-                    onClick = { switchToEdit() },
-                    modifier = Modifier.testTag("note_mode_edit_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.common_edit),
-                        tint = if (!isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
-
-                // Preview mode toggle button
-                IconButton(
-                    onClick = { switchToPreview() },
-                    modifier = Modifier.testTag("note_mode_preview_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Visibility,
-                        contentDescription = stringResource(R.string.note_editor_preview),
-                        tint = if (isPreviewMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
-
-                Box {
-                    IconButton(
-                        onClick = { showOverflowMenu = true },
-                        modifier = Modifier.testTag("note_editor_overflow_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.note_editor_options)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = showOverflowMenu,
-                        onDismissRequest = { showOverflowMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.find_in_note_find_in_note)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null
-                                )
-                            },
-                            modifier = Modifier.testTag("note_menu_find"),
-                            onClick = {
-                                showOverflowMenu = false
-                                showFind = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(if (viewModel.isPinned) R.string.note_editor_unpin else R.string.note_editor_pin)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.PushPin,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = viewModel.currentId > 0L || viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
-                            onClick = {
-                                showOverflowMenu = false
-                                viewModel.togglePinned()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_share)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
-                            modifier = Modifier.testTag("note_menu_share"),
-                            onClick = {
-                                showOverflowMenu = false
-                                showShareDialog = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.note_editor_save_to_device)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Save,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = viewModel.title.isNotBlank() || viewModel.bodyValue.text.isNotBlank(),
-                            modifier = Modifier.testTag("note_menu_save"),
-                            onClick = {
-                                showOverflowMenu = false
-                                showSaveDialog = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_delete)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null
-                                )
-                            },
-                            onClick = {
-                                showOverflowMenu = false
-                                coroutineScope.launch {
-                                    val idToDelete = viewModel.currentId
-                                    if (idToDelete > 0L) {
-                                        viewModel.moveToTrash(idToDelete)
-                                        onDeleted(idToDelete)
-                                    } else {
-                                        viewModel.discardUnsaved()
-                                        onClose()
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        )
-
-        if (!isPreviewMode && compactTopBar) {
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                CoursePickerPill(
-                    selectedCourse = selectedCourse,
-                    courseColor = courseColor,
-                    courses = courses,
-                    expanded = showCoursePicker,
-                    onExpandedChange = { showCoursePicker = it },
-                    onSelectCourse = { viewModel.setCourse(it) }
+            if (showFind) {
+                NoteFindBar(
+                    query = findQuery,
+                    onQueryChange = {
+                        findQuery = it
+                        findIndex = 0
+                    },
+                    currentMatch = currentFindMatch.coerceAtLeast(0),
+                    totalMatches = findMatches.size,
+                    onPrevious = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = false) },
+                    onNext = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = true) },
+                    onClose = { showFind = false }
                 )
             }
-        }
 
-        if (showFind) {
-            NoteFindBar(
-                query = findQuery,
-                onQueryChange = {
-                    findQuery = it
-                    findIndex = 0
-                },
-                currentMatch = currentFindMatch.coerceAtLeast(0),
-                totalMatches = findMatches.size,
-                onPrevious = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = false) },
-                onNext = { findIndex = NoteFind.step(currentFindMatch.coerceAtLeast(0), findMatches.size, forward = true) },
-                onClose = { showFind = false }
-            )
-        }
-
-        // Edit mode keeps it above the title. In Preview it is part of the note header, which
-        // scrolls away with the note instead of staying on screen.
-        if (!isPreviewMode) {
-            KeepScreenOnRow(
-                checked = viewModel.keepScreenOn,
-                onCheckedChange = { viewModel.toggleKeepScreenOn(it) }
-            )
-        }
-
-        if (isPreviewMode) {
-            // Preview mode: MarkdownPreview(body), with the Keep screen on row, the title
-            // (headlineSmall, 3 lines until tapped) and the course chip as its first list item
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .pinchToZoomText(onPinchZoom)
-            ) {
-                CompositionLocalProvider(
-                    LocalNoteFindQuery provides (if (showFind) findQuery else ""),
-                    LocalNoteLinkHandler provides noteLinkHandler
-                ) {
-                WithNoteTextScale(noteTextScale) {
-                    MarkdownPreview(
-                        markdown = viewModel.bodyValue.text,
-                        onToggleChecklist = { lineIndex ->
-                            viewModel.checkpointBeforeToolbar()
-                            val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
-                            viewModel.updateBody(
-                                TextFieldValue(
-                                    text = newText,
-                                    selection = viewModel.bodyValue.selection
-                                )
-                            )
-                        },
-                        imageContent = { src, alt ->
-                            NoteImagePreview(src = src, alt = alt)
-                        },
-                        listState = previewListState,
-                        initialSourceLine = previewTargetLine,
-                        onBlockStartLines = { previewStartLines = it },
-                        header = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                KeepScreenOnRow(
-                                    checked = viewModel.keepScreenOn,
-                                    onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
-                                    horizontalPadding = 0.dp
-                                )
-                                val titleBlank = viewModel.title.isBlank()
-                                Text(
-                                    text = viewModel.title.ifBlank { "Untitled Note" },
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (titleBlank) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    },
-                                    maxLines = if (titleExpanded) Int.MAX_VALUE else 3,
-                                    overflow = TextOverflow.Ellipsis,
-                                    onTextLayout = { if (!titleExpanded) titleOverflows = it.hasVisualOverflow },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(enabled = titleOverflows || titleExpanded) {
-                                            titleExpanded = !titleExpanded
-                                        }
-                                        .padding(vertical = 4.dp)
-                                        .testTag("note_preview_title")
-                                )
-                                if (titleOverflows || titleExpanded) {
-                                    Text(
-                                        text = stringResource(if (titleExpanded) R.string.note_editor_show_less else R.string.note_editor_show_full_title),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .clickable { titleExpanded = !titleExpanded }
-                                            .padding(vertical = 4.dp)
-                                            .testTag("note_preview_title_toggle")
-                                    )
-                                }
-                                Box(modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)) {
-                                    CoursePickerPill(
-                                        selectedCourse = selectedCourse,
-                                        courseColor = courseColor,
-                                        courses = courses,
-                                        expanded = showCoursePicker,
-                                        onExpandedChange = { showCoursePicker = it },
-                                        onSelectCourse = { viewModel.setCourse(it) }
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    )
-                }
-                }
-
-                // Notes that have a [[link]] to this one
-                val bodyForLinks = viewModel.bodyValue.text
-                val backlinks = remember(allNotes, viewModel.title, bodyForLinks, viewModel.currentId) {
-                    findBacklinks(
-                        notes = allNotes,
-                        currentId = viewModel.currentId,
-                        currentTitle = noteDisplayTitle(Note(title = viewModel.title, body = bodyForLinks))
-                    )
-                }
-                if (backlinks.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        Text(
-                            text = stringResource(R.string.note_editor_linked_from),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                                .testTag("note_backlinks"),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            backlinks.forEach { source ->
-                                AssistChip(
-                                    onClick = { openLinkedNote(source.id) },
-                                    label = {
-                                        Text(
-                                            text = noteDisplayTitle(source),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+            // Edit mode keeps it above the title. In Preview it is part of the note header, which
+            // scrolls away with the note instead of staying on screen.
+            if (!isPreviewMode) {
+                KeepScreenOnRow(
+                    checked = viewModel.keepScreenOn,
+                    onCheckedChange = { viewModel.toggleKeepScreenOn(it) }
+                )
             }
-        } else {
-            // Edit mode: Title input field, Body input field, Character limit, Formatting toolbar
-            TextField(
-                value = viewModel.title,
-                onValueChange = { viewModel.updateTitle(it) },
-                placeholder = {
-                    Text(
-                        text = stringResource(R.string.note_editor_title),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                },
-                textStyle = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("note_title_input")
-            )
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .pinchToZoomText(onPinchZoom)
-            ) {
-                val viewportHeight = maxHeight
-                val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                val darkCode = isDarkTheme()
-                val activeFindQuery = if (showFind) findQuery else ""
-                val editorTransformation = remember(markerColor, darkCode, activeFindQuery, currentFindMatch) {
-                    MarkdownEditorTransformation(markerColor, darkCode, activeFindQuery, currentFindMatch)
-                }
-                val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
+            if (isPreviewMode) {
+                // Preview mode: MarkdownPreview(body), with the Keep screen on row, the title
+                // (headlineSmall, 3 lines until tapped) and the course chip as its first list item
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .onSizeChanged { editViewportPx = it.height.toFloat() }
-                        .verticalScroll(editScrollState)
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .pinchToZoomText(onPinchZoom)
                 ) {
+                    CompositionLocalProvider(
+                        LocalNoteFindQuery provides (if (showFind) findQuery else ""),
+                        LocalNoteLinkHandler provides noteLinkHandler
+                    ) {
                     WithNoteTextScale(noteTextScale) {
-                        BasicTextField(
-                            value = viewModel.bodyValue,
-                            onValueChange = { viewModel.onBodyChange(it) },
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurface
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            visualTransformation = editorTransformation,
-                            onTextLayout = { bodyLayout = it },
-                            decorationBox = { innerTextField ->
-                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                                    if (viewModel.bodyValue.text.isEmpty()) {
+                        MarkdownPreview(
+                            markdown = viewModel.bodyValue.text,
+                            onToggleChecklist = { lineIndex ->
+                                viewModel.checkpointBeforeToolbar()
+                                val newText = toggleCheckboxAtLine(viewModel.bodyValue.text, lineIndex)
+                                viewModel.updateBody(
+                                    TextFieldValue(
+                                        text = newText,
+                                        selection = viewModel.bodyValue.selection
+                                    )
+                                )
+                            },
+                            imageContent = { src, alt ->
+                                NoteImagePreview(src = src, alt = alt)
+                            },
+                            listState = previewListState,
+                            initialSourceLine = previewTargetLine,
+                            onBlockStartLines = { previewStartLines = it },
+                            header = {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    KeepScreenOnRow(
+                                        checked = viewModel.keepScreenOn,
+                                        onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
+                                        horizontalPadding = 0.dp
+                                    )
+                                    val titleBlank = viewModel.title.isBlank()
+                                    Text(
+                                        text = viewModel.title.ifBlank { "Untitled Note" },
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (titleBlank) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                        maxLines = if (titleExpanded) Int.MAX_VALUE else 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                        onTextLayout = { if (!titleExpanded) titleOverflows = it.hasVisualOverflow },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(enabled = titleOverflows || titleExpanded) {
+                                                titleExpanded = !titleExpanded
+                                            }
+                                            .padding(vertical = 4.dp)
+                                            .testTag("note_preview_title")
+                                    )
+                                    if (titleOverflows || titleExpanded) {
                                         Text(
-                                            text = stringResource(R.string.note_editor_start_writing),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                            text = stringResource(if (titleExpanded) R.string.note_editor_show_less else R.string.note_editor_show_full_title),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier
+                                                .clickable { titleExpanded = !titleExpanded }
+                                                .padding(vertical = 4.dp)
+                                                .testTag("note_preview_title_toggle")
                                         )
                                     }
-                                    innerTextField()
+                                    Box(modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)) {
+                                        CoursePickerPill(
+                                            selectedCourse = selectedCourse,
+                                            courseColor = courseColor,
+                                            courses = courses,
+                                            expanded = showCoursePicker,
+                                            onExpandedChange = { showCoursePicker = it },
+                                            onSelectCourse = { viewModel.setCourse(it) }
+                                        )
+                                    }
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                // At least the visible height, so tapping the empty space still starts typing
-                                .heightIn(min = viewportHeight)
-                                .testTag("note_body_input")
+                                .weight(1f)
                         )
                     }
-                }
-                ScrollStateScrollbar(editScrollState, viewportPx)
-            }
+                    }
 
-            // Suggestions while a note link is being typed: "[[" followed by part of a title
-            val typedSelection = viewModel.bodyValue.selection
-            val linkQuery = if (typedSelection.collapsed) {
-                activeNoteLinkQuery(viewModel.bodyValue.text, typedSelection.end)
-            } else {
-                null
-            }
-            val linkSuggestions = remember(allNotes, viewModel.currentId, linkQuery?.query) {
-                if (linkQuery == null) emptyList()
-                else noteLinkSuggestions(allNotes, viewModel.currentId, linkQuery.query)
-            }
-            if (linkQuery != null && linkSuggestions.isNotEmpty()) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 2.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("note_link_suggestions")
-                ) {
-                    Column {
-                        linkSuggestions.forEach { suggestion ->
-                            val suggestionTitle = noteDisplayTitle(suggestion)
+                    // Notes that have a [[link]] to this one
+                    val bodyForLinks = viewModel.bodyValue.text
+                    val backlinks = remember(allNotes, viewModel.title, bodyForLinks, viewModel.currentId) {
+                        findBacklinks(
+                            notes = allNotes,
+                            currentId = viewModel.currentId,
+                            currentTitle = noteDisplayTitle(Note(title = viewModel.title, body = bodyForLinks))
+                        )
+                    }
+                    if (backlinks.isNotEmpty()) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                             Text(
-                                text = suggestionTitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                text = stringResource(R.string.note_editor_linked_from),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        applyEditing { applyNoteLinkChoice(it, linkQuery, suggestionTitle) }
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                            )
+                                    .horizontalScroll(rememberScrollState())
+                                    .testTag("note_backlinks"),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                backlinks.forEach { source ->
+                                    AssistChip(
+                                        onClick = { openLinkedNote(source.id) },
+                                        label = {
+                                            Text(
+                                                text = noteDisplayTitle(source),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-
-            // Word and character count line
-            val bodyText = viewModel.bodyValue.text
-            val words = remember(bodyText) { wordCount(bodyText) }
-            val chars = remember(bodyText) { characterCount(bodyText) }
-            val wordsLabel = if (words == 1) "1 word" else "$words words"
-            val charsLabel = if (chars == 1) "1 character" else "$chars characters"
-            val remainingBodyChars = NoteRepository.MAX_BODY - chars
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "$wordsLabel  |  $charsLabel",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("note_word_count")
+            } else {
+                // Edit mode: Title input field, Body input field, Character limit, Formatting toolbar
+                TextField(
+                    value = viewModel.title,
+                    onValueChange = { viewModel.updateTitle(it) },
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.note_editor_title),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    },
+                    textStyle = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("note_title_input")
                 )
 
-                if (remainingBodyChars < 1000) {
-                    Text(
-                        text = stringResource(R.string.note_editor_characters_left, remainingBodyChars),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .pinchToZoomText(onPinchZoom)
+                ) {
+                    val viewportHeight = maxHeight
+                    val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    val darkCode = isDarkTheme()
+                    val activeFindQuery = if (showFind) findQuery else ""
+                    val editorTransformation = remember(markerColor, darkCode, activeFindQuery, currentFindMatch) {
+                        MarkdownEditorTransformation(markerColor, darkCode, activeFindQuery, currentFindMatch)
+                    }
+                    val viewportPx = with(LocalDensity.current) { maxHeight.toPx() }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .onSizeChanged { editViewportPx = it.height.toFloat() }
+                            .verticalScroll(editScrollState)
+                    ) {
+                        WithNoteTextScale(noteTextScale) {
+                            BasicTextField(
+                                value = viewModel.bodyValue,
+                                onValueChange = { viewModel.onBodyChange(it) },
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                visualTransformation = editorTransformation,
+                                onTextLayout = { bodyLayout = it },
+                                decorationBox = { innerTextField ->
+                                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                        if (viewModel.bodyValue.text.isEmpty()) {
+                                            Text(
+                                                text = stringResource(R.string.note_editor_start_writing),
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    // At least the visible height, so tapping the empty space still starts typing
+                                    .heightIn(min = viewportHeight)
+                                    .testTag("note_body_input")
+                            )
+                        }
+                    }
+                    ScrollStateScrollbar(editScrollState, viewportPx)
                 }
-            }
 
-            // Markdown editing toolbar
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+                // Suggestions while a note link is being typed: "[[" followed by part of a title
+                val typedSelection = viewModel.bodyValue.selection
+                val linkQuery = if (typedSelection.collapsed) {
+                    activeNoteLinkQuery(viewModel.bodyValue.text, typedSelection.end)
+                } else {
+                    null
+                }
+                val linkSuggestions = remember(allNotes, viewModel.currentId, linkQuery?.query) {
+                    if (linkQuery == null) emptyList()
+                    else noteLinkSuggestions(allNotes, viewModel.currentId, linkQuery.query)
+                }
+                if (linkQuery != null && linkSuggestions.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 2.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("note_link_suggestions")
+                    ) {
+                        Column {
+                            linkSuggestions.forEach { suggestion ->
+                                val suggestionTitle = noteDisplayTitle(suggestion)
+                                Text(
+                                    text = suggestionTitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            applyEditing { applyNoteLinkChoice(it, linkQuery, suggestionTitle) }
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Word and character count line
+                val bodyText = viewModel.bodyValue.text
+                val words = remember(bodyText) { wordCount(bodyText) }
+                val chars = remember(bodyText) { characterCount(bodyText) }
+                val wordsLabel = if (words == 1) "1 word" else "$words words"
+                val charsLabel = if (chars == 1) "1 character" else "$chars characters"
+                val remainingBodyChars = NoteRepository.MAX_BODY - chars
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { applyEditing { toggleLinePrefix(it, "## ") } },
-                        modifier = Modifier.testTag("toolbar_heading")
-                    ) {
-                        Icon(Icons.Default.Title, contentDescription = stringResource(R.string.note_editor_heading))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleWrap(it, "**") } },
-                        modifier = Modifier.testTag("toolbar_bold")
-                    ) {
-                        Icon(Icons.Default.FormatBold, contentDescription = stringResource(R.string.note_editor_bold))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleWrap(it, "*") } },
-                        modifier = Modifier.testTag("toolbar_italic")
-                    ) {
-                        Icon(Icons.Default.FormatItalic, contentDescription = stringResource(R.string.note_editor_italic))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleWrap(it, "~~") } },
-                        modifier = Modifier.testTag("toolbar_strikethrough")
-                    ) {
-                        Icon(Icons.Default.FormatStrikethrough, contentDescription = stringResource(R.string.note_editor_strikethrough))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
-                        modifier = Modifier.testTag("toolbar_bullet")
-                    ) {
-                        Icon(Icons.Default.FormatListBulleted, contentDescription = stringResource(R.string.note_editor_bullet_list))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },
-                        modifier = Modifier.testTag("toolbar_numbered")
-                    ) {
-                        Icon(Icons.Default.FormatListNumbered, contentDescription = stringResource(R.string.note_editor_numbered_list))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleLinePrefix(it, "- [ ] ") } },
-                        modifier = Modifier.testTag("toolbar_checklist")
-                    ) {
-                        Icon(Icons.Default.Checklist, contentDescription = stringResource(R.string.add_edit_task_checklist))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleLinePrefix(it, "> ") } },
-                        modifier = Modifier.testTag("toolbar_quote")
-                    ) {
-                        Icon(Icons.Default.FormatQuote, contentDescription = stringResource(R.string.note_editor_quote))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { toggleWrap(it, "`") } },
-                        modifier = Modifier.testTag("toolbar_code")
-                    ) {
-                        Icon(Icons.Default.Code, contentDescription = stringResource(R.string.note_editor_inline_code))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { insertLink(it) } },
-                        modifier = Modifier.testTag("toolbar_link")
-                    ) {
-                        Icon(Icons.Default.Link, contentDescription = stringResource(R.string.note_editor_link))
-                    }
-                    IconButton(
-                        onClick = { applyEditing { insertTable(it) } },
-                        modifier = Modifier.testTag("toolbar_table")
-                    ) {
-                        Icon(Icons.Default.TableChart, contentDescription = stringResource(R.string.note_editor_table))
-                    }
-                    IconButton(
-                        onClick = {
-                            val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
-                            if (!NoteImages.canAddImage(count)) {
-                                showImageLimitMessage()
-                            } else {
-                                pickImageLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            }
-                        },
-                        modifier = Modifier.testTag("toolbar_image")
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = stringResource(R.string.note_editor_image))
-                    }
-                    if (isImportingImage) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(horizontal = 4.dp),
-                            strokeWidth = 2.dp
+                    Text(
+                        text = "$wordsLabel  |  $charsLabel",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("note_word_count")
+                    )
+
+                    if (remainingBodyChars < 1000) {
+                        Text(
+                            text = stringResource(R.string.note_editor_characters_left, remainingBodyChars),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (remainingBodyChars < 100) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                // Markdown editing toolbar
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 3.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { applyEditing { toggleLinePrefix(it, "## ") } },
+                            modifier = Modifier.testTag("toolbar_heading")
+                        ) {
+                            Icon(Icons.Default.Title, contentDescription = stringResource(R.string.note_editor_heading))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleWrap(it, "**") } },
+                            modifier = Modifier.testTag("toolbar_bold")
+                        ) {
+                            Icon(Icons.Default.FormatBold, contentDescription = stringResource(R.string.note_editor_bold))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleWrap(it, "*") } },
+                            modifier = Modifier.testTag("toolbar_italic")
+                        ) {
+                            Icon(Icons.Default.FormatItalic, contentDescription = stringResource(R.string.note_editor_italic))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleWrap(it, "~~") } },
+                            modifier = Modifier.testTag("toolbar_strikethrough")
+                        ) {
+                            Icon(Icons.Default.FormatStrikethrough, contentDescription = stringResource(R.string.note_editor_strikethrough))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleLinePrefix(it, "- ") } },
+                            modifier = Modifier.testTag("toolbar_bullet")
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = stringResource(R.string.note_editor_bullet_list))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleLinePrefix(it, "1. ") } },
+                            modifier = Modifier.testTag("toolbar_numbered")
+                        ) {
+                            Icon(Icons.Default.FormatListNumbered, contentDescription = stringResource(R.string.note_editor_numbered_list))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleLinePrefix(it, "- [ ] ") } },
+                            modifier = Modifier.testTag("toolbar_checklist")
+                        ) {
+                            Icon(Icons.Default.Checklist, contentDescription = stringResource(R.string.add_edit_task_checklist))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleLinePrefix(it, "> ") } },
+                            modifier = Modifier.testTag("toolbar_quote")
+                        ) {
+                            Icon(Icons.Default.FormatQuote, contentDescription = stringResource(R.string.note_editor_quote))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { toggleWrap(it, "`") } },
+                            modifier = Modifier.testTag("toolbar_code")
+                        ) {
+                            Icon(Icons.Default.Code, contentDescription = stringResource(R.string.note_editor_inline_code))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { insertLink(it) } },
+                            modifier = Modifier.testTag("toolbar_link")
+                        ) {
+                            Icon(Icons.Default.Link, contentDescription = stringResource(R.string.note_editor_link))
+                        }
+                        IconButton(
+                            onClick = { applyEditing { insertTable(it) } },
+                            modifier = Modifier.testTag("toolbar_table")
+                        ) {
+                            Icon(Icons.Default.TableChart, contentDescription = stringResource(R.string.note_editor_table))
+                        }
+                        IconButton(
+                            onClick = {
+                                val count = NoteImages.countImageReferences(viewModel.bodyValue.text)
+                                if (!NoteImages.canAddImage(count)) {
+                                    showImageLimitMessage()
+                                } else {
+                                    pickImageLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                }
+                            },
+                            modifier = Modifier.testTag("toolbar_image")
+                        ) {
+                            Icon(Icons.Default.Image, contentDescription = stringResource(R.string.note_editor_image))
+                        }
+                        if (isImportingImage) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(horizontal = 4.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
                     }
                 }
             }

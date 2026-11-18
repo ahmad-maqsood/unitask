@@ -4,8 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.core.net.toUri
 import com.example.data.local.AppDatabase
 import com.example.data.local.ReminderOption
 import com.example.data.local.TaskItem
@@ -203,7 +203,7 @@ class ReminderScheduler(private val context: Context) {
         Intent(context, TaskReminderReceiver::class.java).apply {
             action = "com.example.ACTION_TASK_REMINDER"
             if (option != null) {
-                data = Uri.parse("unitask://reminder/$taskId/${option.name}")
+                data = "unitask://reminder/$taskId/${option.name}".toUri()
             }
         }
 

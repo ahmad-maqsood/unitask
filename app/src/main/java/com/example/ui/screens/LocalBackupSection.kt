@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,40 +59,47 @@ private const val MIN_PASSWORD_LENGTH = 6
  * a backup skips images that are too large or cannot be read, a restore skips images that are damaged,
  * too large or could not be downloaded.
  */
-internal fun skippedImagesNote(count: Int, restoring: Boolean): String {
+internal fun skippedImagesNote(context: Context, count: Int, restoring: Boolean): String {
     if (count <= 0) return ""
-    val noun = if (count == 1) "image" else "images"
-    return if (restoring) {
-        " $count $noun could not be restored (damaged, too large or not downloaded)."
-    } else {
-        " $count $noun left out (too large or could not be read)."
-    }
+    val plural = if (restoring) R.plurals.backup_images_not_restored else R.plurals.backup_images_left_out
+    return " " + context.resources.getQuantityString(plural, count, count)
 }
 
-internal fun describe(counts: BackupCounts): String {
-    val base = "${counts.courses} courses, ${counts.slots} classes, ${counts.tasks} assignments"
-    var result = if (counts.myTasks > 0) "$base, ${counts.myTasks} my tasks" else base
+internal fun describe(context: Context, counts: BackupCounts): String {
+    val res = context.resources
+    val parts = mutableListOf(
+        res.getQuantityString(R.plurals.counts_courses, counts.courses, counts.courses),
+        res.getQuantityString(R.plurals.counts_classes, counts.slots, counts.slots),
+        res.getQuantityString(R.plurals.counts_assignments, counts.tasks, counts.tasks)
+    )
+    if (counts.myTasks > 0) {
+        parts.add(res.getQuantityString(R.plurals.counts_my_tasks_inline, counts.myTasks, counts.myTasks))
+    }
     if (counts.notes > 0) {
-        result += ", ${counts.notes} notes"
+        parts.add(res.getQuantityString(R.plurals.counts_notes, counts.notes, counts.notes))
     }
     if (counts.images > 0) {
-        result += ", ${counts.images} images"
+        parts.add(res.getQuantityString(R.plurals.counts_images, counts.images, counts.images))
     }
     if (counts.attachments > 0) {
-        val word = if (counts.attachments == 1) "attachment restored" else "attachments restored"
-        result += ", ${counts.attachments} $word"
+        parts.add(res.getQuantityString(R.plurals.counts_attachments_restored, counts.attachments, counts.attachments))
     }
     if (counts.skippedAttachments > 0) {
-        val word = if (counts.skippedAttachments == 1) "attachment could not be downloaded" else "attachments could not be downloaded"
-        result += ", ${counts.skippedAttachments} $word"
+        parts.add(
+            res.getQuantityString(
+                R.plurals.counts_attachments_not_downloaded,
+                counts.skippedAttachments,
+                counts.skippedAttachments
+            )
+        )
     }
     if (counts.sessions > 0) {
-        result += if (counts.sessions == 1) ", 1 study session" else ", ${counts.sessions} study sessions"
+        parts.add(res.getQuantityString(R.plurals.counts_study_sessions, counts.sessions, counts.sessions))
     }
     if (counts.settingsApplied > 0) {
-        result += ", app settings restored"
+        parts.add(context.getString(R.string.counts_settings_restored))
     }
-    return result
+    return parts.joinToString(context.getString(R.string.counts_separator))
 }
 
 /**
@@ -132,8 +140,8 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     restorePasswordError = null
                     showResult(
                         "Backup restored",
-                        "Added ${describe(result.counts)}." +
-                            skippedImagesNote(result.counts.skippedImages, restoring = true) +
+                        "Added ${describe(context, result.counts)}." +
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = true) +
                             " Items that were already on this phone were kept."
                     )
                 }
@@ -164,8 +172,8 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 when (result) {
                     is BackupResult.Success -> showResult(
                         "Backup saved",
-                        "Saved ${describe(result.counts)}." +
-                            skippedImagesNote(result.counts.skippedImages, restoring = false) +
+                        "Saved ${describe(context, result.counts)}." +
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = false) +
                             " Keep the file somewhere safe, such as Google Drive " +
                             "or another phone. Attached files are not included."
                     )

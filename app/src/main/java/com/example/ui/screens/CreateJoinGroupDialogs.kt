@@ -409,6 +409,7 @@ fun GroupQrCodeDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
     val inviteUri = remember(username, joinCode) {
         com.example.util.QrCodeUtil.buildGroupInviteUri(username, joinCode)
@@ -511,7 +512,7 @@ fun GroupQrCodeDialog(
                         IconButton(
                             onClick = {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Join Code", joinCode)
+                                val clip = ClipData.newPlainText(uiResources.getString(R.string.create_join_group_join_code), joinCode)
                                 clipboard.setPrimaryClip(clip)
                                 Toast.makeText(context, resources.getString(R.string.toast_code_copied), Toast.LENGTH_SHORT).show()
                             }
@@ -557,6 +558,7 @@ fun GroupCreatedSuccessDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
 
     AlertDialog(
@@ -599,7 +601,7 @@ fun GroupCreatedSuccessDialog(
                         OutlinedButton(
                             onClick = {
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Join Code", joinCode)
+                                val clip = ClipData.newPlainText(uiResources.getString(R.string.create_join_group_join_code), joinCode)
                                 clipboard.setPrimaryClip(clip)
                                 Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                             },
@@ -635,6 +637,7 @@ fun EditGroupDialog(
     onRegenerateCode: () -> Unit
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
     var name by rememberSaveable { mutableStateOf(initialName) }
     var username by rememberSaveable { mutableStateOf(initialUsername) }
@@ -754,7 +757,7 @@ fun EditGroupDialog(
                                 onClick = {
                                     if (currentJoinCode.isNotBlank()) {
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        val clip = ClipData.newPlainText("Join Code", currentJoinCode)
+                                        val clip = ClipData.newPlainText(uiResources.getString(R.string.create_join_group_join_code), currentJoinCode)
                                         clipboard.setPrimaryClip(clip)
                                         Toast.makeText(context, resources.getString(R.string.toast_join_code_copied), Toast.LENGTH_SHORT).show()
                                     }

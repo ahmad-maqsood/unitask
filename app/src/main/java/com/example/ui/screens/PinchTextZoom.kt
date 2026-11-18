@@ -13,6 +13,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.core.content.edit
 
 /** Smallest and largest note text size, as a multiple of the normal size. */
 const val NOTE_TEXT_SCALE_MIN = 0.7f
@@ -28,9 +29,9 @@ fun loadNoteTextScale(context: Context): Float =
 
 fun saveNoteTextScale(context: Context, scale: Float) {
     context.getSharedPreferences(NOTE_TEXT_SCALE_PREFS, Context.MODE_PRIVATE)
-        .edit()
-        .putFloat(NOTE_TEXT_SCALE_KEY, scale.coerceIn(NOTE_TEXT_SCALE_MIN, NOTE_TEXT_SCALE_MAX))
-        .apply()
+        .edit {
+            putFloat(NOTE_TEXT_SCALE_KEY, scale.coerceIn(NOTE_TEXT_SCALE_MIN, NOTE_TEXT_SCALE_MAX))
+        }
 }
 
 /**

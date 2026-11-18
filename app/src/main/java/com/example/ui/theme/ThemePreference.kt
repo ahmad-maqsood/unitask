@@ -1,15 +1,18 @@
 package com.example.ui.theme
 
+import androidx.annotation.StringRes
+import com.example.R
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import com.example.widget.UniTaskWidget
 
-enum class ThemeMode(val label: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark")
+enum class ThemeMode(val label: String, @StringRes val labelRes: Int) {
+    SYSTEM("System", R.string.theme_mode_system),
+    LIGHT("Light", R.string.theme_mode_light),
+    DARK("Dark", R.string.theme_mode_dark)
 }
 
 /** Remembers the Light / Dark / System choice and the accent colour on the phone. */
@@ -36,17 +39,17 @@ object ThemePreference {
     fun set(context: Context, newMode: ThemeMode) {
         mode = newMode
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY, newMode.name)
-            .apply()
+            .edit {
+                putString(KEY, newMode.name)
+            }
     }
 
     fun setAccent(context: Context, newAccent: AccentTheme) {
         accent = newAccent
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(ACCENT_KEY, newAccent.name)
-            .apply()
+            .edit {
+                putString(ACCENT_KEY, newAccent.name)
+            }
         // The home screen widget uses this colour too, so redraw it now.
         UniTaskWidget.refreshAsync(context)
     }

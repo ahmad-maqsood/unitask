@@ -251,7 +251,7 @@ object DriveAutoBackup {
                 }
             }
             is DriveAuthResult.NeedsConsent -> {
-                prefs.lastError = "Google Drive access was lost. Reconnect in Settings."
+                prefs.lastError = context.getString(R.string.drive_error_access_lost_settings)
                 prefs.consecutiveFailures += 1
                 checkNotification(context, prefs, now, needsReconnect = true)
                 return Outcome.NeedsReconnect
@@ -276,7 +276,7 @@ object DriveAutoBackup {
                         token
                     }
                     is DriveAuthResult.NeedsConsent -> {
-                        throw DriveException(DriveException.Kind.AUTH, "Google Drive access was lost. Reconnect in Settings.")
+                        throw DriveException(DriveException.Kind.AUTH, context.getString(R.string.drive_error_access_lost_settings))
                     }
                     is DriveAuthResult.Failed -> {
                         throw DriveException(DriveException.Kind.AUTH, refreshed.message)
@@ -310,7 +310,7 @@ object DriveAutoBackup {
                 when (backupResult.kind) {
                     DriveException.Kind.NETWORK, DriveException.Kind.SERVER -> Outcome.Retry
                     DriveException.Kind.AUTH -> {
-                        prefs.lastError = "Google Drive access was lost. Reconnect in Settings."
+                        prefs.lastError = context.getString(R.string.drive_error_access_lost_settings)
                         Outcome.NeedsReconnect
                     }
                     DriveException.Kind.QUOTA, DriveException.Kind.OTHER -> Outcome.Failed

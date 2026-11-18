@@ -2,6 +2,7 @@ package com.example.reminder
 
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
@@ -111,7 +112,7 @@ object SnoozeStore {
     /** Saves the snooze and sets the alarm that brings the reminder back. */
     fun set(context: Context, entry: Entry) {
         val app = context.applicationContext
-        prefs(app).edit().putString(entry.key.toString(), toJson(entry)).apply()
+        prefs(app).edit { putString(entry.key.toString(), toJson(entry)) }
         ReminderSnooze.scheduleAt(app, entry.notificationId, entry.toIntent(), entry.until)
         publish(app)
     }
@@ -120,7 +121,7 @@ object SnoozeStore {
     fun clear(context: Context, key: Long, cancelAlarm: Boolean) {
         val app = context.applicationContext
         val saved = prefs(app).getString(key.toString(), null)?.let { entryFrom(it) }
-        prefs(app).edit().remove(key.toString()).apply()
+        prefs(app).edit { remove(key.toString()) }
         if (cancelAlarm && saved != null) ReminderSnooze.cancel(app, saved.notificationId)
         publish(app)
     }
@@ -160,7 +161,7 @@ object SnoozeStore {
         val now = System.currentTimeMillis()
         for (saved in entries(app)) {
             if (saved.until < now - STALE_AFTER_MS) {
-                prefs(app).edit().remove(saved.key.toString()).apply()
+                prefs(app).edit { remove(saved.key.toString()) }
             } else {
                 ReminderSnooze.scheduleAt(app, saved.notificationId, saved.toIntent(), saved.until)
             }

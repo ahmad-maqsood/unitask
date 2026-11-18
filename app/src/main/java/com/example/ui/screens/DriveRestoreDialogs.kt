@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,16 +29,17 @@ fun DriveRestoreDialogs(viewModel: DriveBackupViewModel) {
     }
 
     if (state.showRestoreConfirm) {
+        val context = LocalContext.current
         val info = state.latestBackupInfo
         val offlineText = state.offlineBackupText
         val details = when {
-            info != null -> "${DriveBackupViewModel.formatBackupTime(info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(info)}"
+            info != null -> "${DriveBackupViewModel.formatBackupTime(context, info.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, info)}"
             !offlineText.isNullOrBlank() -> offlineText
             else -> ""
         }
         val older = state.olderBackupInfo
         val olderDetails = older?.let {
-            "${DriveBackupViewModel.formatBackupTime(it.exportedAt)}, ${DriveBackupViewModel.buildCountsText(it)}"
+            "${DriveBackupViewModel.formatBackupTime(context, it.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, it)}"
         }
         DriveRestoreConfirmDialog(
             details = if (state.useOlderBackup && olderDetails != null) olderDetails else details,

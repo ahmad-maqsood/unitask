@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,6 @@ object LocalTombstonePurge {
             }
         }
 
-        prefs.edit().putBoolean(KEY_PURGED, true).apply()
+        prefs.edit { putBoolean(KEY_PURGED, true) }
     }
 }

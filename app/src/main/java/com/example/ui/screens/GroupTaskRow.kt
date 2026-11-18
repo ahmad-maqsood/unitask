@@ -67,11 +67,11 @@ fun GroupTaskRow(
     currentUid: String,
     isDone: Boolean,
     canModify: Boolean,
+    modifier: Modifier = Modifier,
     courseText: String? = null,
     onToggleDone: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    onDelete: () -> Unit
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }

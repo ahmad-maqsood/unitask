@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -141,7 +142,7 @@ fun OnboardingScreen(
                     } == true || !settings.getBoolean("notification_permission_prompted", false))
                 if (canAsk) {
                     // Remembered so the app does not ask a second time when the first reminder is saved.
-                    settings.edit().putBoolean("notification_permission_prompted", true).apply()
+                    settings.edit { putBoolean("notification_permission_prompted", true) }
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                     // Android will not show its dialog again, or notifications are switched off in the

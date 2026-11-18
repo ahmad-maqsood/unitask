@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +29,6 @@ import com.example.R
 import com.example.data.local.ReminderOption
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedCard
@@ -41,14 +41,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 
 /** Short names for the chips. The caption above the grid says "before the deadline". */
-private fun ReminderOption.chipLabel(): String = when (this) {
-    ReminderOption.AT_DEADLINE -> "At deadline"
-    ReminderOption.ONE_HOUR_BEFORE -> "1 hour"
-    ReminderOption.TWO_HOURS_BEFORE -> "2 hours"
-    ReminderOption.TWELVE_HOURS_BEFORE -> "12 hours"
-    ReminderOption.ONE_DAY_BEFORE -> "1 day"
-    ReminderOption.TWO_DAYS_BEFORE -> "2 days"
-}
+@Composable
+private fun ReminderOption.chipLabel(): String = stringResource(
+    when (this) {
+        ReminderOption.AT_DEADLINE -> R.string.reminder_chip_at_deadline
+        ReminderOption.ONE_HOUR_BEFORE -> R.string.reminder_chip_1h
+        ReminderOption.TWO_HOURS_BEFORE -> R.string.reminder_chip_2h
+        ReminderOption.TWELVE_HOURS_BEFORE -> R.string.reminder_chip_12h
+        ReminderOption.ONE_DAY_BEFORE -> R.string.reminder_chip_1d
+        ReminderOption.TWO_DAYS_BEFORE -> R.string.reminder_chip_2d
+    }
+)
 
 /**
  * The reminder picker used by every task dialog: a fixed grid of two equal columns.
@@ -120,11 +123,12 @@ fun ReminderChipGrid(
 }
 
 /** Text for the "Remind me" row: "Off", one label, or the earliest label plus how many more. */
+@Composable
 fun reminderSummary(options: Set<ReminderOption>): String {
-    if (options.isEmpty()) return "Off"
+    if (options.isEmpty()) return stringResource(R.string.reminder_summary_off)
     val sorted = options.sortedBy { it.offsetMinutes }
-    val first = sorted.first().label
-    return if (sorted.size == 1) first else "$first +${sorted.size - 1} more"
+    val first = stringResource(sorted.first().labelRes)
+    return if (sorted.size == 1) first else stringResource(R.string.reminder_summary_more, first, sorted.size - 1)
 }
 
 /**
@@ -190,7 +194,7 @@ fun ReminderPickerRow(
                 modifier = Modifier.weight(1f)
             )
             Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

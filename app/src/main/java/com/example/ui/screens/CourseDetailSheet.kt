@@ -80,6 +80,7 @@ import com.example.ui.theme.rememberCourseColor
 fun CourseDetailSheet(
     courseWithCount: CourseWithTaskCount,
     tasks: List<TaskWithCourse>,
+    modifier: Modifier = Modifier,
     slots: List<LectureSlotWithCourse> = emptyList(),
     onBack: () -> Unit,
     onEditCourse: (Course) -> Unit,
@@ -93,7 +94,6 @@ fun CourseDetailSheet(
     onEditTask: (TaskItem) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     onUndoDeleteTask: (TaskItem) -> Unit = {},
-    modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     BackHandler { onBack() }
@@ -101,6 +101,7 @@ fun CourseDetailSheet(
     val course = courseWithCount.course
     val courseColor = rememberCourseColor(course.colorHex)
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
     var slotPendingDelete by remember { mutableStateOf<LectureSlot?>(null) }
@@ -145,8 +146,8 @@ fun CourseDetailSheet(
                 scope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     val result = snackbarHostState.showSnackbar(
-                        message = "Class moved to Recently deleted",
-                        actionLabel = "Undo",
+                        message = uiResources.getString(R.string.msg_class_moved_to_recently_deleted),
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Short
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -407,16 +408,7 @@ fun CourseDetailSheet(
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 sortedSlots.forEach { slotWithCourse ->
                                     val slot = slotWithCourse.slot
-                                    val dayName = when (slot.dayOfWeek) {
-                                        1 -> "Mon"
-                                        2 -> "Tue"
-                                        3 -> "Wed"
-                                        4 -> "Thu"
-                                        5 -> "Fri"
-                                        6 -> "Sat"
-                                        7 -> "Sun"
-                                        else -> "Day"
-                                    }
+                                    val dayName = com.example.util.DayNames.short(slot.dayOfWeek)
 
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
@@ -553,8 +545,8 @@ fun CourseDetailSheet(
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
                                 val result = snackbarHostState.showSnackbar(
-                                    message = "Task moved to Recently deleted",
-                                    actionLabel = "Undo",
+                                    message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                                    actionLabel = uiResources.getString(R.string.common_undo),
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {

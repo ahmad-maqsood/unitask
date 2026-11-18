@@ -652,6 +652,23 @@ class AppRepository(
         com.example.widget.UniTaskWidget.refresh(context)
     }
 
+    /**
+     * Cancels one date of a weekly class on this phone, or brings it back. The class stays in the
+     * timetable. Its reminder for that date, the class card, the daily summary and the widget skip it.
+     */
+    suspend fun setClassCancelledOn(slotId: Long, dayMillis: Long, cancelled: Boolean) = withContext(Dispatchers.IO) {
+        com.example.reminder.CancelledClassStore.setCancelled(context, slotId, dayMillis, cancelled)
+        if (cancelled) {
+            try {
+                ClassReminderScheduler(context).cancelSlot(slotId)
+            } catch (e: Exception) {
+                Log.w("AppRepository", "Could not cancel class slot alarm: ${e.message}")
+            }
+        }
+        refreshClassAlarms()
+        com.example.widget.UniTaskWidget.refresh(context)
+    }
+
     fun observeDeletedLectureSlots(): Flow<List<LectureSlotWithCourse>> {
         return lectureSlotDao.observeDeletedSlots().flowOn(Dispatchers.IO)
     }

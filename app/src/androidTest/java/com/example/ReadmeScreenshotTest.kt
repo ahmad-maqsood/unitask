@@ -561,11 +561,11 @@ class ReadmeScreenshotTest {
                 "No groups yet", substring = true
             ).fetchSemanticsNodes().isNotEmpty()
             val reconnectingVisible = composeRule.onAllNodesWithText(
-                "Reconnecting...", substring = true
+                "Reconnecting…", substring = true
             ).fetchSemanticsNodes().isNotEmpty()
             val screenState = when {
                 noGroupsVisible -> "The Groups screen is showing 'No groups yet'."
-                reconnectingVisible -> "The Groups screen is still showing 'Reconnecting...'."
+                reconnectingVisible -> "The Groups screen is still showing 'Reconnecting…'."
                 else -> "The expected group card is absent and neither known state is visible."
             }
             throw AssertionError(

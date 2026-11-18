@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.widthIn
+import androidx.core.net.toUri
 import com.example.R
 import com.example.util.markdown.CodeHighlighter
 import com.example.util.markdown.CodeTokenType
@@ -660,7 +660,7 @@ private fun openLink(context: Context, url: String, noteLinkHandler: ((String) -
 private fun openLinkSafely(context: Context, url: String) {
     if (!isSafeLinkUrl(url)) return
     try {
-        val uri = Uri.parse(url.trim())
+        val uri = url.trim().toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             if (context !is Activity) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

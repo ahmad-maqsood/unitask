@@ -4,12 +4,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.core.graphics.toColorInt
 
 /** Parses a course colour such as "#4F46E5". Returns null when it is missing or not a valid colour. */
 fun parseCourseColorOrNull(hex: String?): Color? {
     if (hex.isNullOrBlank()) return null
     return try {
-        Color(android.graphics.Color.parseColor(hex.trim()))
+        Color(hex.trim().toColorInt())
     } catch (_: IllegalArgumentException) {
         null
     }

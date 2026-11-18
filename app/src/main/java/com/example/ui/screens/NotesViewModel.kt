@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
@@ -146,7 +147,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun setSort(newSort: NotesSort) {
         if (_sort.value == newSort) return
         _sort.value = newSort
-        prefs.edit().putString("sort", newSort.name).apply()
+        prefs.edit { putString("sort", newSort.name) }
     }
 
 

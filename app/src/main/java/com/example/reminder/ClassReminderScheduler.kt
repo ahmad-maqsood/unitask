@@ -5,8 +5,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.example.data.local.AppDatabase
 import com.example.data.local.LectureSlot
 import com.example.data.local.isArchived
@@ -43,9 +44,9 @@ class ClassReminderScheduler(context: Context) {
 
         fun setEnabled(context: Context, value: Boolean) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit()
-                .putBoolean(KEY_ENABLED, value)
-                .apply()
+                .edit {
+                    putBoolean(KEY_ENABLED, value)
+                }
         }
 
         fun notificationIdFor(slotId: Long): Int = ("class|" + slotId).hashCode()
@@ -103,9 +104,9 @@ class ClassReminderScheduler(context: Context) {
             if (enabled) {
                 for (slot in wanted) scheduleSlot(slot)
             }
-            prefs.edit()
-                .putStringSet(KEY_SCHEDULED_IDS, keep.map { it.toString() }.toSet())
-                .apply()
+            prefs.edit {
+                putStringSet(KEY_SCHEDULED_IDS, keep.map { it.toString() }.toSet())
+            }
         }
     }
 
@@ -166,7 +167,7 @@ class ClassReminderScheduler(context: Context) {
             for (id in previous) {
                 cancelSlot(id)
             }
-            prefs.edit().remove(KEY_SCHEDULED_IDS).apply()
+            prefs.edit { remove(KEY_SCHEDULED_IDS) }
         }
     }
 
@@ -196,7 +197,7 @@ class ClassReminderScheduler(context: Context) {
     private fun intentFor(slotId: Long, startMillis: Long): Intent =
         Intent(appContext, ClassStartReceiver::class.java).apply {
             action = ACTION_CLASS_START
-            data = Uri.parse("unitask://class-start/$slotId")
+            data = "unitask://class-start/$slotId".toUri()
             putExtra(ClassStartReceiver.EXTRA_SLOT_ID, slotId)
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, startMillis)
         }
@@ -205,7 +206,7 @@ class ClassReminderScheduler(context: Context) {
     private fun soonIntentFor(slotId: Long, startMillis: Long): Intent =
         Intent(appContext, ClassStartReceiver::class.java).apply {
             action = ACTION_CLASS_SOON
-            data = Uri.parse("unitask://class-soon/$slotId")
+            data = "unitask://class-soon/$slotId".toUri()
             putExtra(ClassStartReceiver.EXTRA_SLOT_ID, slotId)
             putExtra(ClassStartReceiver.EXTRA_START_MILLIS, startMillis)
         }

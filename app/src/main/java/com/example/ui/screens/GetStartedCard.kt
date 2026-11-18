@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +51,11 @@ private data class GetStartedRow(
     val target: GetStartedStep
 )
 
-private fun buildRows(steps: List<GetStartedStep>, done: Set<GetStartedStep>): List<GetStartedRow> {
+private fun buildRows(
+    context: Context,
+    steps: List<GetStartedStep>,
+    done: Set<GetStartedStep>
+): List<GetStartedRow> {
     val rows = steps.filter { !it.isSystem }.map { step ->
         GetStartedRow(
             tag = "get_started_step_${step.name}",
@@ -67,8 +73,9 @@ private fun buildRows(steps: List<GetStartedStep>, done: Set<GetStartedStep>): L
         val left = system.filter { it !in done }
         rows += GetStartedRow(
             tag = "get_started_step_SYSTEM",
-            title = "Make reminders reliable",
-            hint = if (left.isEmpty()) "All set" else "${system.size - left.size} of ${system.size} phone settings on",
+            title = context.getString(R.string.get_started_make_reminders_reliable),
+            hint = if (left.isEmpty()) context.getString(R.string.get_started_all_set)
+                else context.getString(R.string.get_started_phone_settings_on, system.size - left.size, system.size),
             isDone = left.isEmpty(),
             target = left.firstOrNull() ?: system.first()
         )
@@ -89,7 +96,8 @@ fun GetStartedCard(
     onStepClick: ((GetStartedStep) -> Unit)? = null
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val rows = buildRows(steps, done)
+    val context = LocalContext.current
+    val rows = buildRows(context, steps, done)
     val doneCount = rows.count { it.isDone }
     val visibleRows = if (expanded) rows else rows.filter { !it.isDone }.take(1)
 

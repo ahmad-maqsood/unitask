@@ -34,11 +34,14 @@ import kotlinx.coroutines.launch
  * A slim scrollbar for notes. It stays hidden, fades in while the content scrolls, fades out a
  * moment later, and can be dragged while it is showing. It only draws when the content is longer
  * than the screen, and it takes no touches while hidden.
+ *
+ * [thumbFraction] and [progress] are lambdas on purpose: the scroll position changes on every
+ * frame while scrolling, so it is only read while drawing and not while building the screen.
  */
 @Composable
 private fun ScrollbarThumb(
-    thumbFraction: Float,
-    progress: Float,
+    thumbFraction: () -> Float,
+    progress: () -> Float,
     scrolling: Boolean,
     onDragToProgress: (Float) -> Unit,
     modifier: Modifier = Modifier
@@ -54,14 +57,18 @@ private fun ScrollbarThumb(
         }
     }
 
-    val shouldShow = (recentlyScrolled || dragging) && thumbFraction < 0.98f
+    val currentFraction by rememberUpdatedState(thumbFraction)
+    val currentProgress by rememberUpdatedState(progress)
+    val currentOnDrag by rememberUpdatedState(onDragToProgress)
+    // Only rebuilds when the answer changes (shown or hidden), not for every scroll position.
+    val shouldShow by remember {
+        derivedStateOf { (recentlyScrolled || dragging) && currentFraction() < 0.98f }
+    }
     val alpha by animateFloatAsState(
         targetValue = if (shouldShow) 1f else 0f,
         animationSpec = tween(durationMillis = if (shouldShow) 120 else 400),
         label = "noteScrollbarAlpha"
     )
-    val currentFraction by rememberUpdatedState(thumbFraction)
-    val currentOnDrag by rememberUpdatedState(onDragToProgress)
     val thumbColor = MaterialTheme.colorScheme.onSurface
 
     if (alpha <= 0.01f) return
@@ -81,7 +88,7 @@ private fun ScrollbarThumb(
                     onVerticalDrag = { change, _ ->
                         change.consume()
                         val track = size.height.toFloat()
-                        val thumb = maxOf(track * currentFraction, minThumb.toPx()).coerceAtMost(track)
+                        val thumb = maxOf(track * currentFraction(), minThumb.toPx()).coerceAtMost(track)
                         val range = (track - thumb).coerceAtLeast(1f)
                         currentOnDrag(((change.position.y - thumb / 2f) / range).coerceIn(0f, 1f))
                     }
@@ -89,8 +96,8 @@ private fun ScrollbarThumb(
             }
             .drawBehind {
                 val track = size.height
-                val thumb = maxOf(track * currentFraction, minThumb.toPx()).coerceAtMost(track)
-                val top = progress.coerceIn(0f, 1f) * (track - thumb)
+                val thumb = maxOf(track * currentFraction(), minThumb.toPx()).coerceAtMost(track)
+                val top = currentProgress().coerceIn(0f, 1f) * (track - thumb)
                 val width = (if (dragging) 6.dp else 4.dp).toPx()
                 val strength = if (dragging) 0.55f else 0.32f
                 drawRoundRect(
@@ -106,13 +113,15 @@ private fun ScrollbarThumb(
 /** Scrollbar for a plain scrolling column. [viewportPx] is the visible height in pixels. */
 @Composable
 fun BoxScope.ScrollStateScrollbar(state: ScrollState, viewportPx: Float) {
-    val max = state.maxValue
-    val fraction = if (max <= 0 || viewportPx <= 0f) 1f else viewportPx / (viewportPx + max)
-    val progress = if (max <= 0) 0f else state.value.toFloat() / max
-
     ScrollbarThumb(
-        thumbFraction = fraction,
-        progress = progress,
+        thumbFraction = {
+            val max = state.maxValue
+            if (max <= 0 || viewportPx <= 0f) 1f else viewportPx / (viewportPx + max)
+        },
+        progress = {
+            val max = state.maxValue
+            if (max <= 0) 0f else state.value.toFloat() / max
+        },
         scrolling = state.isScrollInProgress,
         onDragToProgress = { target ->
             state.dispatchRawDelta(target * state.maxValue - state.value)
@@ -129,8 +138,9 @@ fun BoxScope.ScrollStateScrollbar(state: ScrollState, viewportPx: Float) {
 fun BoxScope.LazyListScrollbar(state: LazyListState) {
     val scope = rememberCoroutineScope()
 
-    // Pair(thumbFraction, progress) or null when there is nothing to measure yet
-    val metrics by remember(state) {
+    // Pair(thumbFraction, progress) or null when there is nothing to measure yet. It is only read
+    // by the lambdas below (while drawing), so scrolling does not rebuild this function.
+    val metrics = remember(state) {
         derivedStateOf {
             val info = state.layoutInfo
             val visible = info.visibleItemsInfo
@@ -149,11 +159,10 @@ fun BoxScope.LazyListScrollbar(state: LazyListState) {
             }
         }
     }
-    val current = metrics ?: return
-
+    // With nothing to measure the thumb counts as "whole list visible", so it stays hidden.
     ScrollbarThumb(
-        thumbFraction = current.first,
-        progress = current.second,
+        thumbFraction = { metrics.value?.first ?: 1f },
+        progress = { metrics.value?.second ?: 0f },
         scrolling = state.isScrollInProgress,
         onDragToProgress = { target ->
             val info = state.layoutInfo

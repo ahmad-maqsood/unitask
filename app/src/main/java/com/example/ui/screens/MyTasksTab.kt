@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -91,8 +92,11 @@ fun MyTasksTab(
     modifier: Modifier = Modifier,
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
-    // Done starts collapsed, like before. Every other section starts open.
-    val sectionCollapse = rememberSectionCollapse(TaskSectionKey.DONE)
+    val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
+    // Done starts collapsed, like before. Every other section starts open. After that, whatever
+    // the person collapses or expands is remembered, even after closing the app.
+    val sectionCollapse = rememberSectionCollapse("my_tasks", TaskSectionKey.DONE)
     val coroutineScope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
 
@@ -104,7 +108,7 @@ fun MyTasksTab(
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
                         message = if (task.status == TaskStatus.COMPLETED) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
-                        actionLabel = "Undo",
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Indefinite
                     )
                 }
@@ -124,8 +128,8 @@ fun MyTasksTab(
             try {
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
-                        message = "Task moved to Recently deleted",
-                        actionLabel = "Undo",
+                        message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Indefinite
                     )
                 }

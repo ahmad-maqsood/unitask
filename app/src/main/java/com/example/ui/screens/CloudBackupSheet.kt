@@ -65,6 +65,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import com.example.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -442,7 +443,7 @@ private fun signInWithGoogle(
     scope.launch {
         val activity = context.findActivity()
         if (activity == null) {
-            onError("Unable to find the screen needed for Google sign-in")
+            onError(context.getString(R.string.sign_in_no_screen))
             return@launch
         }
         try {
@@ -456,17 +457,32 @@ private fun signInWithGoogle(
                 }
                 onSuccess()
             } else {
-                onError("Unexpected credential type received")
+                onError(context.getString(R.string.sign_in_unexpected_credential))
             }
         } catch (e: GetCredentialCancellationException) {
             Log.w("Auth", "Google Sign-In cancelled: ${e.message}", e)
             onCancelled()
         } catch (e: Exception) {
-            Log.e("Auth", "Google Sign-In failed", e)
-            onError(e.localizedMessage ?: "Sign-in failed")
+            if (e is NoCredentialException) {
+                Log.w("Auth", "No Google account available: ${e.message}", e)
+            } else {
+                Log.e("Auth", "Google Sign-In failed", e)
+            }
+            onError(googleSignInErrorMessage(context, e))
         }
     }
 }
+
+/**
+ * The message shown when Google sign-in fails. A phone with no Google account that can sign in
+ * gets a clear instruction instead of a technical error.
+ */
+internal fun googleSignInErrorMessage(context: Context, e: Exception): String =
+    if (e is NoCredentialException) {
+        context.getString(R.string.cloud_backup_no_google_account)
+    } else {
+        e.localizedMessage ?: context.getString(R.string.sign_in_failed)
+    }
 
 private fun signOut(
     context: Context,

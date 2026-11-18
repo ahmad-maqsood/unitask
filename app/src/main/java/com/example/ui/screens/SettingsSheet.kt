@@ -6,6 +6,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.core.net.toUri
 import com.example.R
 import com.example.util.runLogged
 import android.app.Activity
@@ -299,7 +300,7 @@ fun SettingsButton(
                             SettingsSectionRow(
                                 icon = Icons.Default.Tune,
                                 title = stringResource(R.string.settings_general),
-                                summary = "${ThemePreference.mode.label}, $weekSummary",
+                                summary = stringResource(R.string.settings_general_summary, stringResource(ThemePreference.mode.labelRes), weekSummary),
                                 onClick = { page = SettingsPage.General },
                                 testTag = "settings_section_general"
                             )
@@ -353,10 +354,10 @@ fun SettingsButton(
                                 }
                                 Text(
                                     text = when (currentPage) {
-                                        SettingsPage.General -> "General"
-                                        SettingsPage.Notifications -> "Notifications & reminders"
-                                        SettingsPage.Backup -> "Backup & data"
-                                        SettingsPage.About -> "About & help"
+                                        SettingsPage.General -> stringResource(R.string.settings_general)
+                                        SettingsPage.Notifications -> stringResource(R.string.settings_notifications_reminders)
+                                        SettingsPage.Backup -> stringResource(R.string.settings_backup_data)
+                                        SettingsPage.About -> stringResource(R.string.settings_about_help)
                                     },
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
@@ -374,9 +375,45 @@ fun SettingsButton(
                                             FilterChip(
                                                 selected = ThemePreference.mode == themeMode,
                                                 onClick = { ThemePreference.set(context, themeMode) },
-                                                label = { Text(themeMode.label) },
+                                                label = { Text(stringResource(themeMode.labelRes)) },
                                                 modifier = Modifier.testTag("theme_chip_${themeMode.name}")
                                             )
+                                        }
+                                    }
+                                    if (com.example.util.AppLanguage.isSupported) {
+                                        val currentLanguage = remember { com.example.util.AppLanguage.current(context) }
+                                        Text(
+                                            stringResource(R.string.settings_language),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                                        )
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            com.example.util.AppLanguage.entries.forEach { language ->
+                                                FilterChip(
+                                                    selected = currentLanguage == language,
+                                                    onClick = {
+                                                        if (currentLanguage != language) {
+                                                            com.example.util.AppLanguage.apply(context, language)
+                                                        }
+                                                    },
+                                                    label = {
+                                                        Text(
+                                                            stringResource(
+                                                                when (language) {
+                                                                    com.example.util.AppLanguage.SYSTEM -> R.string.settings_language_system
+                                                                    com.example.util.AppLanguage.ENGLISH -> R.string.settings_language_english
+                                                                    com.example.util.AppLanguage.URDU -> R.string.settings_language_urdu
+                                                                }
+                                                            )
+                                                        )
+                                                    },
+                                                    modifier = Modifier.testTag("language_chip_${language.name}")
+                                                )
+                                            }
                                         }
                                     }
                                     Text(
@@ -392,6 +429,8 @@ fun SettingsButton(
                                     ) {
                                         AccentTheme.entries.forEach { accent ->
                                             val selected = ThemePreference.accent == accent
+                                            val accentName = stringResource(accent.labelRes)
+                                            val accentDesc = if (selected) stringResource(R.string.accent_selected_desc, accentName) else accentName
                                             Box(
                                                 contentAlignment = Alignment.Center,
                                                 modifier = Modifier
@@ -400,8 +439,7 @@ fun SettingsButton(
                                                     .background(accent.swatch)
                                                     .clickable { ThemePreference.setAccent(context, accent) }
                                                     .semantics {
-                                                        contentDescription =
-                                                            if (selected) "${accent.label}, selected" else accent.label
+                                                        contentDescription = accentDesc
                                                     }
                                                     .testTag("accent_chip_${accent.name}")
                                             ) {
@@ -420,9 +458,9 @@ fun SettingsButton(
                                         icon = Icons.Default.Schedule,
                                         title = stringResource(R.string.settings_this_week_is),
                                         subtitle = when (weekParityType) {
-                                            com.example.util.WeekType.A -> "Week A"
-                                            com.example.util.WeekType.B -> "Week B"
-                                            else -> "Not set (Tap to choose Week A or Week B)"
+                                            com.example.util.WeekType.A -> stringResource(R.string.timetable_week_a)
+                                            com.example.util.WeekType.B -> stringResource(R.string.timetable_week_b)
+                                            else -> stringResource(R.string.week_not_set_tap_to_choose)
                                         },
                                         onClick = { showWeekParityDialog = true },
                                         testTag = "settings_week_parity_row"
@@ -564,7 +602,7 @@ fun SettingsButton(
                                         subtitle = "github.com/CondaLabs/unitask",
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, SOURCE_CODE_URL.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -585,7 +623,7 @@ fun SettingsButton(
                                         subtitle = stringResource(R.string.settings_open_the_newest_version_on),
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, LATEST_RELEASE_URL.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -610,7 +648,7 @@ fun SettingsButton(
                                                     "Android ${Build.VERSION.RELEASE} | " +
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = REPORT_FORM_URL + Uri.encode(info)
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -635,7 +673,7 @@ fun SettingsButton(
                                                     "Android ${Build.VERSION.RELEASE} | " +
                                                     "${Build.MANUFACTURER} ${Build.MODEL}"
                                                 val url = FEATURE_FORM_URL + Uri.encode(info)
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                                             } catch (_: Exception) {
                                                 Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                             }
@@ -678,7 +716,7 @@ fun SettingsButton(
                                         Button(
                                             onClick = {
                                                 try {
-                                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(available.pageUrl)))
+                                                    context.startActivity(Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()))
                                                 } catch (_: Exception) {
                                                     Toast.makeText(context, resources.getString(R.string.toast_no_app_can_open_this), Toast.LENGTH_SHORT).show()
                                                 }
@@ -836,7 +874,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                         },
                         onPlay = {
                             val id = context.resources.getIdentifier(sound.rawName, "raw", context.packageName)
-                            preview(if (id == 0) null else Uri.parse("android.resource://${context.packageName}/$id"))
+                            preview(if (id == 0) null else "android.resource://${context.packageName}/$id".toUri())
                         },
                         testTag = "sound_option_${sound.key}"
                     )

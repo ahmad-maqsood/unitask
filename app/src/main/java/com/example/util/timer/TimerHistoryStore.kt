@@ -2,6 +2,7 @@ package com.example.util.timer
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,7 +109,7 @@ class TimerHistoryStore(context: Context) : TimerHistoryHook {
         try {
             val array = JSONArray()
             sessions.forEach { array.put(sessionToJson(it)) }
-            prefs.edit().putString(KEY_SESSIONS, array.toString()).apply()
+            prefs.edit { putString(KEY_SESSIONS, array.toString()) }
         } catch (_: Exception) {
             // Never throw on preference save failures.
         }

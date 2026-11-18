@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 
 /** The phone settings shown on the second welcome page, in the order they appear. */
 enum class OnboardingSetting {
@@ -45,8 +46,8 @@ object OnboardingPrefs {
 
     fun markDone(context: Context) {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_DONE, true)
-            .apply()
+            .edit {
+                putBoolean(KEY_DONE, true)
+            }
     }
 }

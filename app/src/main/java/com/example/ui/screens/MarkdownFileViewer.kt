@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +59,8 @@ fun MarkdownFileViewer(
     onOpenSavedNote: (noteId: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     BackHandler {
         onClose()
     }
@@ -91,7 +94,7 @@ fun MarkdownFileViewer(
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back)
                         )
                     }
@@ -108,17 +111,17 @@ fun MarkdownFileViewer(
                                             if (newId > 0L) {
                                                 isSaved = true
                                                 val result = snackbarHostState.showSnackbar(
-                                                    message = "Saved to Notes",
-                                                    actionLabel = "Open",
+                                                    message = uiResources.getString(R.string.msg_saved_to_notes),
+                                                    actionLabel = uiResources.getString(R.string.msg_open),
                                                     duration = SnackbarDuration.Short
                                                 )
                                                 if (result == SnackbarResult.ActionPerformed) {
                                                     onOpenSavedNote(newId)
                                                 }
                                             } else if (newId < 0L) {
-                                                snackbarHostState.showSnackbar("File is too long for a note (limit ${String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)} characters)")
+                                                snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_file_too_long_for_note, String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)))
                                             } else {
-                                                snackbarHostState.showSnackbar("Could not read that file")
+                                                snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_read_file))
                                             }
                                         } finally {
                                             isSaving = false

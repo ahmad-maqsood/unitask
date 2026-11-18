@@ -84,7 +84,8 @@ class BootReceiver : BroadcastReceiver() {
                     }
                 }
             } finally {
-                pending.finish()
+                // goAsync() can return null outside a real broadcast, such as in unit tests.
+                pending?.finish()
             }
         }
     }

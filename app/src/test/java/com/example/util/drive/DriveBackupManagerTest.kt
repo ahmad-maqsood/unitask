@@ -590,15 +590,37 @@ class DriveBackupManagerTest {
         assertEquals(4, info.attachments)
 
         val expectedSummary = "8 courses, 2 tasks, 3 My tasks, 2 notes, 4 attachments"
-        assertEquals(expectedSummary, DriveBackupManager.buildCountsText(info))
-        assertEquals(expectedSummary, DriveBackupViewModel.buildCountsText(info))
+        assertEquals(expectedSummary, DriveBackupManager.buildCountsText(context, info))
+        assertEquals(expectedSummary, DriveBackupViewModel.buildCountsText(context, info))
         assertEquals(expectedSummary, DrivePrefs(context).lastCounts)
 
         val zeroMyTasksInfo = info.copy(myTasks = 0)
-        assertEquals("8 courses, 2 tasks, 2 notes, 4 attachments", DriveBackupManager.buildCountsText(zeroMyTasksInfo))
+        assertEquals("8 courses, 2 tasks, 2 notes, 4 attachments", DriveBackupManager.buildCountsText(context, zeroMyTasksInfo))
 
         val zeroAttachmentsInfo = info.copy(attachments = 0)
-        assertEquals("8 courses, 2 tasks, 3 My tasks, 2 notes", DriveBackupManager.buildCountsText(zeroAttachmentsInfo))
+        assertEquals("8 courses, 2 tasks, 3 My tasks, 2 notes", DriveBackupManager.buildCountsText(context, zeroAttachmentsInfo))
+    }
+
+    @Test
+    fun buildCountsText_usesSingularForOne() {
+        val info = DriveBackupInfo(
+            slotFileId = "slot",
+            seq = 1L,
+            exportedAt = 0L,
+            courses = 1,
+            tasks = 1,
+            notes = 1,
+            images = 0,
+            appVersion = "",
+            formatVersion = 1,
+            sizeBytes = 0L,
+            attachments = 1,
+            myTasks = 1
+        )
+        assertEquals(
+            "1 course, 1 task, 1 My task, 1 note, 1 attachment",
+            DriveBackupManager.buildCountsText(context, info)
+        )
     }
 
     @Test

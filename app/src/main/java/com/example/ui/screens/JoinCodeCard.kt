@@ -38,6 +38,7 @@ internal fun JoinCodeCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -72,7 +73,7 @@ internal fun JoinCodeCard(
                 IconButton(
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Join Code", joinCode))
+                        clipboard.setPrimaryClip(ClipData.newPlainText(uiResources.getString(R.string.create_join_group_join_code), joinCode))
                         com.example.ui.AppMessages.show("Join code copied!")
                     },
                     modifier = Modifier.testTag("copy_join_code_button")

@@ -46,6 +46,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.R
 import com.example.reminder.AnnouncementNotifier
@@ -56,7 +58,6 @@ import com.example.util.NotificationHistory
 import kotlinx.coroutines.launch
 import com.example.util.DateFormats
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.material3.Button
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.UpdateChecker
@@ -111,14 +112,14 @@ class AnnouncementsState(context: Context) {
     /** Looking at the Announcements tab counts as seeing the update card. */
     fun markUpdateSeen() {
         val found = latestUpdate ?: return
-        updatePrefs().edit().putString(KEY_UPDATE_SEEN, found.latestVersion).apply()
+        updatePrefs().edit { putString(KEY_UPDATE_SEEN, found.latestVersion) }
         reloadUpdate()
     }
 
     /** "Hide" on the update card: hidden until the next version comes out. */
     fun dismissUpdate() {
         val found = latestUpdate ?: return
-        updatePrefs().edit().putString(KEY_UPDATE_HIDDEN, found.latestVersion).apply()
+        updatePrefs().edit { putString(KEY_UPDATE_HIDDEN, found.latestVersion) }
         reloadUpdate()
     }
 
@@ -379,7 +380,7 @@ fun AnnouncementBell(
                             onOpen = {
                                 showSheet = false
                                 try {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(found.pageUrl)))
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, found.pageUrl.toUri()))
                                 } catch (_: Exception) {
                                     android.widget.Toast.makeText(
                                         context,

@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.util.drive.DriveBackupManager
 import com.example.util.drive.DrivePrefs
 
@@ -111,15 +112,15 @@ class BackupReminderPrefs(context: Context) {
     /** Last time a backup file was saved from Settings. */
     var lastLocalExportAt: Long
         get() = prefs.getLong("last_local_export_at", 0L)
-        set(value) = prefs.edit().putLong("last_local_export_at", value).apply()
+        set(value) = prefs.edit { putLong("last_local_export_at", value) }
 
     /** When data without any backup was first noticed. */
     var trackingStartedAt: Long
         get() = prefs.getLong("tracking_started_at", 0L)
-        set(value) = prefs.edit().putLong("tracking_started_at", value).apply()
+        set(value) = prefs.edit { putLong("tracking_started_at", value) }
 
     /** The reminder stays hidden before this time. */
     var snoozedUntil: Long
         get() = prefs.getLong("snoozed_until", 0L)
-        set(value) = prefs.edit().putLong("snoozed_until", value).apply()
+        set(value) = prefs.edit { putLong("snoozed_until", value) }
 }

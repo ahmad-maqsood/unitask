@@ -5,10 +5,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.net.toUri
 import com.example.util.BackgroundAccess
 import com.example.util.NotificationSound
 
@@ -83,7 +83,7 @@ object ReminderHealth {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, pkg)
             HealthCheck.EXACT_ALARMS ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$pkg"))
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, "package:$pkg".toUri())
                 } else {
                     return
                 }
@@ -106,7 +106,7 @@ object ReminderHealth {
         val am = appContext.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val intent = Intent(appContext, TaskReminderReceiver::class.java).apply {
             action = "com.example.ACTION_TASK_REMINDER"
-            data = Uri.parse("unitask://reminder-test")
+            data = "unitask://reminder-test".toUri()
             putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, "Test reminder")
             putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, "MYTASKS")
             putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, "It works. Reminders reach this phone.")

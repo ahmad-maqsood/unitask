@@ -686,8 +686,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val highlightedClassInfo: StateFlow<List<HighlightedClassInfo>> = combine(
         repository.allLectureSlots,
         allDeadlineTasks,
-        _clockTick
-    ) { slots, tasks, _ ->
+        _clockTick,
+        com.example.reminder.CancelledClassStore.keysFlow(getApplication())
+    ) { slots, tasks, _, _ ->
         buildClassSchedule(slots, tasks)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

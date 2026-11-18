@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.core.graphics.toColorInt
 import com.example.R
 import com.example.ui.theme.courseColorName
 import androidx.compose.material3.Button
@@ -223,7 +224,7 @@ FlowRow(
     verticalArrangement = Arrangement.spacedBy(0.dp)
 ) {
     CourseColors.forEach { hex ->
-        val color = Color(android.graphics.Color.parseColor(hex))
+        val color = Color(hex.toColorInt())
         val isSelected = selectedColor.equals(hex, ignoreCase = true)
         // Outer box: 48dp touch target with a spoken name. Inner box: the 34dp visible circle.
         Box(

@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
@@ -74,6 +75,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -100,12 +102,12 @@ fun TimetableTab(
     allTasks: List<TaskWithCourse>,
     courses: List<Course>,
     onAddSlotClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onSelectedDayChange: (Int) -> Unit = {},
     onEditSlot: (LectureSlot) -> Unit,
     onDeleteSlot: (LectureSlot) -> Unit,
     onTaskClick: (TaskWithCourse) -> Unit,
-    onRescheduleAllReminders: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onRescheduleAllReminders: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -168,13 +170,9 @@ fun TimetableTab(
             .sortedWith(compareBy({ it.slot.startHour }, { it.slot.startMinute }))
     }
 
-    val dayLabel by remember(selectedDay, todayDayOfWeek) {
-        androidx.compose.runtime.derivedStateOf {
-            DaysOfWeekLabels.find { it.first == selectedDay }?.second?.let {
-                if (selectedDay == todayDayOfWeek) "$it (Today)" else it
-            } ?: "Schedule"
-        }
-    }
+    val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second?.let {
+        if (selectedDay == todayDayOfWeek) stringResource(R.string.timetable_day_today, it) else it
+    } ?: stringResource(R.string.timetable_day_fallback)
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -398,11 +396,11 @@ fun TimetableTab(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second ?: "this day"
+                        val dayLabel = DaysOfWeekLabels.find { it.first == selectedDay }?.second ?: stringResource(R.string.timetable_this_day)
                         // First time: nothing on any day yet. Otherwise this one day is just free.
                         val noClassesAtAll = allSlots.isEmpty()
                         Text(
-                            text = if (noClassesAtAll) "Add your first class" else "No classes scheduled for $dayLabel",
+                            text = if (noClassesAtAll) stringResource(R.string.timetable_add_first_class) else stringResource(R.string.timetable_no_classes_for_day, dayLabel),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -644,6 +642,20 @@ fun TimetableSlotCard(
     // Turned off: the class stays in the timetable but has no reminders (saved in the database).
     val isSlotEnabled = slot.isEnabled
     val slotScope = rememberCoroutineScope()
+    // The next date this weekly class takes place, and whether it is cancelled on this phone.
+    val cancelledKeys by com.example.reminder.CancelledClassStore.keysFlow(context).collectAsState()
+    val nextOccurrence = remember(slot, cancelledKeys) {
+        com.example.reminder.CancelledClassStore.nextOccurrenceMillis(context, slot)
+    }
+    val nextCancelled = nextOccurrence != null &&
+        com.example.reminder.CancelledClassStore.keyOf(slot.id, nextOccurrence) in cancelledKeys
+    val nextDateText = nextOccurrence?.let {
+        android.text.format.DateUtils.formatDateTime(
+            context, it,
+            android.text.format.DateUtils.FORMAT_SHOW_WEEKDAY or android.text.format.DateUtils.FORMAT_SHOW_DATE or
+                android.text.format.DateUtils.FORMAT_ABBREV_ALL
+        )
+    }
 
     val courseColor = rememberCourseColor(course?.colorHex)
 
@@ -699,6 +711,22 @@ fun TimetableSlotCard(
 
                         if (!isSlotEnabled) {
                             TurnedOffChip(modifier = Modifier.testTag("timetable_slot_off_chip_${slot.id}"))
+                        }
+
+                        if (isSlotEnabled && nextCancelled && nextDateText != null) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.testTag("timetable_slot_cancelled_chip_${slot.id}")
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.timetable_class_cancelled_on, nextDateText),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -771,6 +799,26 @@ fun TimetableSlotCard(
                                 },
                                 modifier = Modifier.testTag("timetable_slot_toggle_enabled_${slot.id}")
                             )
+                            if (isSlotEnabled && nextOccurrence != null && nextDateText != null) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            stringResource(
+                                                if (nextCancelled) R.string.timetable_restore_class_on else R.string.timetable_cancel_class_on,
+                                                nextDateText
+                                            )
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        slotScope.launch {
+                                            Repositories.app(context).setClassCancelledOn(slot.id, nextOccurrence, !nextCancelled)
+                                        }
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.EventBusy, contentDescription = null) },
+                                    modifier = Modifier.testTag("timetable_slot_cancel_date_${slot.id}")
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.timetable_edit_class_slot)) },
                                 onClick = {

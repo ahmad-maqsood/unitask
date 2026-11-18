@@ -18,6 +18,9 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
+import androidx.core.graphics.withSave
+import androidx.core.graphics.withTranslation
+import com.example.R
 import com.example.util.markdown.CodeHighlighter
 import com.example.util.markdown.CodeTokenType
 import com.example.util.markdown.Inline
@@ -318,7 +321,7 @@ object NotePdf {
             val page = currentPage ?: return
             val cv = canvas ?: return
             // Draw "Page N" centered in the bottom margin
-            cv.drawText("Page $pageNumber", PAGE_WIDTH / 2f, PAGE_HEIGHT - 24f, footerPaint)
+            cv.drawText(context.getString(R.string.note_pdf_page, pageNumber), PAGE_WIDTH / 2f, PAGE_HEIGHT - 24f, footerPaint)
             pdfDocument.finishPage(page)
             currentPage = null
             canvas = null
@@ -336,10 +339,9 @@ object NotePdf {
                     }
                     val cutoffLayout = createStaticLayout(cutoffSpannable, imageFallbackPaint, CONTENT_WIDTH)
                     val drawY = minOf(y, BOTTOM_MARGIN - cutoffLayout.height.toFloat())
-                    cv.save()
-                    cv.translate(LEFT_MARGIN, drawY)
-                    cutoffLayout.draw(cv)
-                    cv.restore()
+                    cv.withTranslation(LEFT_MARGIN, drawY) {
+                        cutoffLayout.draw(this)
+                    }
                     stopped = true
                 }
                 finishCurrentPage()
@@ -513,11 +515,11 @@ object NotePdf {
 
                 cv.drawRect(LEFT_MARGIN, y, LEFT_MARGIN + 3f, y + sliceHeight, quoteBarPaint)
 
-                cv.save()
-                cv.clipRect(textX, y, textX + textWidth, y + sliceHeight)
-                cv.translate(textX, y - topOffset)
-                layout.draw(cv)
-                cv.restore()
+                cv.withSave {
+                    clipRect(textX, y, textX + textWidth, y + sliceHeight)
+                    translate(textX, y - topOffset)
+                    layout.draw(this)
+                }
 
                 y += sliceHeight
                 startLine = endLine
@@ -567,11 +569,11 @@ object NotePdf {
                 val bgRect = RectF(LEFT_MARGIN, y, RIGHT_MARGIN, y + boxHeight)
                 cv.drawRoundRect(bgRect, 4f, 4f, codeBgPaint)
 
-                cv.save()
-                cv.clipRect(textX, y + 8f, textX + textWidth, y + 8f + sliceHeight)
-                cv.translate(textX, y + 8f - topOffset)
-                layout.draw(cv)
-                cv.restore()
+                cv.withSave {
+                    clipRect(textX, y + 8f, textX + textWidth, y + 8f + sliceHeight)
+                    translate(textX, y + 8f - topOffset)
+                    layout.draw(this)
+                }
 
                 y += boxHeight
                 startLine = endLine
@@ -645,11 +647,11 @@ object NotePdf {
                 val colW = colWidths.getOrElse(colIdx) { colWidths[0] }
                 val layout = cellLayouts.getOrNull(colIdx)
                 if (layout != null) {
-                    cv.save()
-                    cv.clipRect(currentX + 4f, y + 4f, currentX + colW - 4f, y + rowHeight - 4f)
-                    cv.translate(currentX + 4f, y + 4f)
-                    layout.draw(cv)
-                    cv.restore()
+                    cv.withSave {
+                        clipRect(currentX + 4f, y + 4f, currentX + colW - 4f, y + rowHeight - 4f)
+                        translate(currentX + 4f, y + 4f)
+                        layout.draw(this)
+                    }
                 }
                 currentX += colW
             }
@@ -764,11 +766,11 @@ object NotePdf {
                 val bottomOffset = layout.getLineBottom(endLine - 1).toFloat()
                 val sliceHeight = bottomOffset - topOffset
 
-                cv.save()
-                cv.clipRect(x, y, x + width, y + sliceHeight)
-                cv.translate(x, y - topOffset)
-                layout.draw(cv)
-                cv.restore()
+                cv.withSave {
+                    clipRect(x, y, x + width, y + sliceHeight)
+                    translate(x, y - topOffset)
+                    layout.draw(this)
+                }
 
                 y += sliceHeight
                 startLine = endLine

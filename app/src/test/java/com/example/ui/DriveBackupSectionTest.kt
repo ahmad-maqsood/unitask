@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.assertIsDisplayed
@@ -109,15 +108,11 @@ class DriveBackupSectionTest {
     }
 
     private fun waitForResultText() {
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("drive_result_text").fetchSemanticsNodes().isNotEmpty()
-        }
+        composeRule.waitForTag("drive_result_text")
     }
     
     private fun waitForConnectedUi() {
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("drive_backup_now_button").fetchSemanticsNodes().isNotEmpty()
-        }
+        composeRule.waitForTag("drive_backup_now_button")
         composeRule.waitForIdle()
     }
 
@@ -155,10 +150,7 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Your app has no data.", substring = true)
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        composeRule.waitForText("Your app has no data.", substring = true)
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Your app has no data. Backing up now would replace your Drive backup with an empty one.")
@@ -187,7 +179,7 @@ class DriveBackupSectionTest {
         
         waitForResultText()
         composeRule.onNodeWithTag("drive_result_text").assertIsDisplayed()
-        composeRule.onNodeWithText("Backup complete: 1 courses, 1 tasks, 0 notes.").assertIsDisplayed()
+        composeRule.onNodeWithText("Backup complete: 1 course, 1 task, 0 notes.").assertIsDisplayed()
     }
 
     @Test
@@ -233,6 +225,8 @@ class DriveBackupSectionTest {
         waitForConnectedUi()
         
         composeRule.onNodeWithTag("drive_restore_button").performClick()
+        // The Drive check runs in the background, so wait for the confirm dialog to appear.
+        composeRule.waitForText("Items already on this phone are kept.", substring = true)
         composeRule.waitForIdle()
 
         // Confirm dialog shows the merge and settings sentences
@@ -243,9 +237,7 @@ class DriveBackupSectionTest {
 
         composeRule.onNodeWithText("Restore").performClick()
         composeRule.waitForIdle()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Restored", substring = true).fetchSemanticsNodes().isNotEmpty()
-        }
+        composeRule.waitForText("Restored", substring = true)
 
         // Restored items in DB
         assertEquals(1, courseDao.getAllCoursesList().size)
@@ -298,6 +290,8 @@ class DriveBackupSectionTest {
             .assertIsDisplayed()
 
         composeRule.onAllNodesWithText("Disconnect").onLast().performClick()
+        // Disconnecting finishes in the background, so wait for the Connect button to come back.
+        composeRule.waitForTag("drive_connect_button")
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag("drive_connect_button").assertIsDisplayed()
@@ -319,9 +313,7 @@ class DriveBackupSectionTest {
         fakeStore.failOnMethod = "create"
 
         composeRule.onNodeWithTag("drive_backup_now_button").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Reconnect").fetchSemanticsNodes().isNotEmpty()
-        }
+        composeRule.waitForText("Reconnect")
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Google Drive access was lost.").assertIsDisplayed()

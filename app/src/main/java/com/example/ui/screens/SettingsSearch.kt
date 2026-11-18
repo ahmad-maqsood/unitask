@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.content.Context
+import androidx.annotation.StringRes
+import com.example.R
+
 /**
  * One searchable item in the Settings sheet.
  *
@@ -14,7 +18,11 @@ data class SettingsSearchEntry(
     val pageLabel: String,
     val page: SettingsPage? = null,
     val opensAccount: Boolean = false,
-    val keywords: List<String> = emptyList()
+    val keywords: List<String> = emptyList(),
+    // The texts above are English. These point to the same texts in the phone's language.
+    @StringRes val titleRes: Int = 0,
+    @StringRes val summaryRes: Int = 0,
+    @StringRes val pageLabelRes: Int = 0
 )
 
 /** Asks the Settings button to open the sheet, optionally on a specific page. */
@@ -30,6 +38,9 @@ data class SettingsOpenRequest(
 val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(
         id = "account",
+        titleRes = R.string.cloud_backup_online_account,
+        summaryRes = R.string.settings_search_sign_in_for_groups,
+        pageLabelRes = R.string.settings_settings,
         title = "Online account",
         summary = "Sign in for study groups",
         pageLabel = "Settings",
@@ -38,6 +49,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "theme",
+        titleRes = R.string.settings_theme,
+        summaryRes = R.string.settings_search_theme_summary,
+        pageLabelRes = R.string.settings_general,
         title = "Theme",
         summary = "Light, dark or follow the phone",
         pageLabel = "General",
@@ -46,6 +60,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "accent",
+        titleRes = R.string.settings_accent_colour,
+        summaryRes = R.string.settings_search_accent_summary,
+        pageLabelRes = R.string.settings_general,
         title = "Accent colour",
         summary = "Pick the colour the app uses",
         pageLabel = "General",
@@ -53,7 +70,21 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
         keywords = listOf("color", "colour", "accent", "palette", "style")
     ),
     SettingsSearchEntry(
+        id = "language",
+        titleRes = R.string.settings_language,
+        summaryRes = R.string.settings_search_language_summary,
+        pageLabelRes = R.string.settings_general,
+        title = "Language",
+        summary = "Use English or Urdu in this app",
+        pageLabel = "General",
+        page = SettingsPage.General,
+        keywords = listOf("urdu", "english", "اردو", "translate", "locale", "app language")
+    ),
+    SettingsSearchEntry(
         id = "week_parity",
+        titleRes = R.string.settings_this_week_is,
+        summaryRes = R.string.settings_search_week_summary,
+        pageLabelRes = R.string.settings_general,
         title = "This week is",
         summary = "Choose Week A or Week B for the timetable",
         pageLabel = "General",
@@ -62,6 +93,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "sound",
+        titleRes = R.string.settings_notification_sound,
+        summaryRes = R.string.settings_search_sound_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Notification sound",
         summary = "Choose the reminder sound",
         pageLabel = "Notifications & reminders",
@@ -70,6 +104,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "background_alerts",
+        titleRes = R.string.settings_background_alerts,
+        summaryRes = R.string.settings_search_background_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Background alerts",
         summary = "Keep reminders reliable (battery optimization)",
         pageLabel = "Notifications & reminders",
@@ -78,6 +115,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "check_reminders",
+        titleRes = R.string.reminder_check_check_reminders,
+        summaryRes = R.string.settings_search_check_reminders_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Check reminders",
         summary = "Send a test reminder to this phone",
         pageLabel = "Notifications & reminders",
@@ -86,6 +126,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "class_notifications",
+        titleRes = R.string.settings_class_start_notifications,
+        summaryRes = R.string.settings_search_class_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Class start notifications",
         summary = "Alert before and when each class starts",
         pageLabel = "Notifications & reminders",
@@ -94,6 +137,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "daily_summary",
+        titleRes = R.string.settings_daily_summary,
+        summaryRes = R.string.settings_search_daily_summary_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Daily summary",
         summary = "A morning summary of what is due",
         pageLabel = "Notifications & reminders",
@@ -102,6 +148,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "summary_time",
+        titleRes = R.string.settings_summary_time,
+        summaryRes = R.string.settings_search_summary_time_summary,
+        pageLabelRes = R.string.settings_notifications_reminders,
         title = "Summary time",
         summary = "When the daily summary arrives",
         pageLabel = "Notifications & reminders",
@@ -110,6 +159,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "drive_backup",
+        titleRes = R.string.drive_backup_google_drive_backup,
+        summaryRes = R.string.settings_search_drive_summary,
+        pageLabelRes = R.string.settings_backup_data,
         title = "Google Drive backup",
         summary = "Back up and restore your data with Google Drive",
         pageLabel = "Backup & data",
@@ -118,6 +170,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "local_backup",
+        titleRes = R.string.local_backup_backup_file,
+        summaryRes = R.string.settings_search_local_backup_summary,
+        pageLabelRes = R.string.settings_backup_data,
         title = "Backup file",
         summary = "Save or load a backup file on this phone",
         pageLabel = "Backup & data",
@@ -126,6 +181,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "learn",
+        titleRes = R.string.search_learn_to_use_the_app,
+        summaryRes = R.string.settings_step_by_step_help_for,
+        pageLabelRes = R.string.settings_about_help,
         title = "Learn to use the app",
         summary = "Step by step help for every feature",
         pageLabel = "About & help",
@@ -134,6 +192,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "source_code",
+        titleRes = R.string.settings_source_code,
+        summaryRes = R.string.settings_search_source_summary,
+        pageLabelRes = R.string.settings_about_help,
         title = "Source code",
         summary = "Open the project on GitHub",
         pageLabel = "About & help",
@@ -142,6 +203,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "latest_release",
+        titleRes = R.string.settings_latest_release,
+        summaryRes = R.string.settings_open_the_newest_version_on,
+        pageLabelRes = R.string.settings_about_help,
         title = "Latest release",
         summary = "Open the newest version on GitHub",
         pageLabel = "About & help",
@@ -150,6 +214,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "report_problem",
+        titleRes = R.string.crash_report_report_a_problem,
+        summaryRes = R.string.settings_search_report_summary,
+        pageLabelRes = R.string.settings_about_help,
         title = "Report a problem",
         summary = "Opens a short form",
         pageLabel = "About & help",
@@ -158,6 +225,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "request_feature",
+        titleRes = R.string.settings_request_a_feature,
+        summaryRes = R.string.settings_search_request_summary,
+        pageLabelRes = R.string.settings_about_help,
         title = "Request a feature",
         summary = "Tell us what you would like to see",
         pageLabel = "About & help",
@@ -166,6 +236,9 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         id = "updates",
+        titleRes = R.string.settings_check_for_updates,
+        summaryRes = R.string.settings_search_updates_summary,
+        pageLabelRes = R.string.settings_about_help,
         title = "Check for updates",
         summary = "See if a newer version is available",
         pageLabel = "About & help",
@@ -195,3 +268,21 @@ fun searchSettings(
     if (words.isEmpty()) return emptyList()
     return entries.filter { matchesSetting(it, words) }
 }
+
+/**
+ * The same entry with its title, summary and page name in the phone's language. The English title
+ * stays searchable as a keyword, so typing "dark" still finds Theme on a phone set to Urdu.
+ */
+fun SettingsSearchEntry.localized(context: Context): SettingsSearchEntry {
+    val localTitle = if (titleRes != 0) context.getString(titleRes) else title
+    return copy(
+        title = localTitle,
+        summary = if (summaryRes != 0) context.getString(summaryRes) else summary,
+        pageLabel = if (pageLabelRes != 0) context.getString(pageLabelRes) else pageLabel,
+        keywords = if (localTitle != title) keywords + title else keywords
+    )
+}
+
+/** [allSettingsSearchEntries] in the phone's language. */
+fun localizedSettingsSearchEntries(context: Context): List<SettingsSearchEntry> =
+    allSettingsSearchEntries.map { it.localized(context) }

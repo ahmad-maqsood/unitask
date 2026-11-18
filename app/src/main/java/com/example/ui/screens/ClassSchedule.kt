@@ -17,7 +17,7 @@ internal fun MainViewModel.buildClassSchedule(
 ): List<HighlightedClassInfo> {
     if (slots.isEmpty()) return emptyList()
 
-    val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    val res = getApplication<android.app.Application>().resources
     val cal = Calendar.getInstance()
     val todayDay = when (cal.get(Calendar.DAY_OF_WEEK)) {
         Calendar.MONDAY -> 1
@@ -66,7 +66,7 @@ internal fun MainViewModel.buildClassSchedule(
                 HighlightedClassInfo(
                     slotWithCourse = s,
                     isActiveNow = true,
-                    timeLabel = "Ends in ${endOf(s) - currentMinutes} min",
+                    timeLabel = res.getString(com.example.R.string.class_ends_in, endOf(s) - currentMinutes),
                     pendingTasks = pendingFor(s)
                 )
             } else {
@@ -74,7 +74,7 @@ internal fun MainViewModel.buildClassSchedule(
                 HighlightedClassInfo(
                     slotWithCourse = s,
                     isActiveNow = false,
-                    timeLabel = if (minUntil < 60) "Starts in $minUntil min" else "Starts at ${startTimeText(s)}",
+                    timeLabel = if (minUntil < 60) res.getString(com.example.R.string.class_starts_in, minUntil) else res.getString(com.example.R.string.class_starts_at, startTimeText(s)),
                     pendingTasks = pendingFor(s)
                 )
             }
@@ -101,12 +101,16 @@ internal fun MainViewModel.buildClassSchedule(
             com.example.util.isSlotActive(getApplication(), it.slot, targetCal.timeInMillis)
         }
         if (daySlots.isNotEmpty()) {
-            val prefix = if (dayOffset > 7) "Next " else ""
+            val nextWeek = dayOffset > 7
             return daySlots.map { s ->
                 HighlightedClassInfo(
                     slotWithCourse = s,
                     isActiveNow = false,
-                    timeLabel = "$prefix${dayNames[day - 1]} at ${startTimeText(s)}",
+                    timeLabel = res.getString(
+                        if (nextWeek) com.example.R.string.class_next_day_at else com.example.R.string.class_day_at,
+                        com.example.util.DayNames.full(day),
+                        startTimeText(s)
+                    ),
                     pendingTasks = pendingFor(s)
                 )
             }

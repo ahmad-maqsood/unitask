@@ -60,7 +60,7 @@ fun NoteExportDialog(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = format.label,
+                            text = stringResource(format.labelRes),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }

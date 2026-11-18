@@ -4,7 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.media.ExifInterface
+import androidx.core.graphics.scale
+import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import com.example.data.local.NoteDao
 import com.example.util.markdown.referencedImageNames
@@ -123,7 +124,7 @@ object NoteImages {
                 val scale = MAX_EDGE_PX.toFloat() / curLongest
                 val targetWidth = (rotatedBitmap.width * scale).roundToInt().coerceAtLeast(1)
                 val targetHeight = (rotatedBitmap.height * scale).roundToInt().coerceAtLeast(1)
-                val scaled = Bitmap.createScaledBitmap(rotatedBitmap, targetWidth, targetHeight, true)
+                val scaled = rotatedBitmap.scale(targetWidth, targetHeight, true)
                 if (scaled != rotatedBitmap) {
                     rotatedBitmap.recycle()
                 }

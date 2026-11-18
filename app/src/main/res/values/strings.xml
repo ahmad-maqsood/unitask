@@ -95,7 +95,7 @@
     <string name="add_edit_task_e_g_midterm_lab_report">e.g. Midterm Lab Report, HW 3</string>
     <string name="add_edit_task_title_is_required">Title is required</string>
     <string name="add_edit_task_description_notes_optional">Description &amp; Notes (optional)</string>
-    <string name="add_edit_task_e_g_5_pages_cover">e.g. 5 pages, cover chapters 1-4</string>
+    <string name="add_edit_task_e_g_5_pages_cover">e.g. 5 pages, cover chapters 1–4</string>
     <string name="add_edit_task_checklist">Checklist</string>
     <string name="add_edit_task_add_item">Add item</string>
     <string name="add_edit_task_break_the_assignment_into_small">Break the assignment into small steps you can tick off.</string>
@@ -103,7 +103,7 @@
     <string name="add_edit_task_remove_item">Remove item</string>
     <string name="add_edit_task_due_date_time">Due Date &amp; Time</string>
     <string name="add_edit_task_status">Status</string>
-    <string name="add_edit_task_importing">Importing...</string>
+    <string name="add_edit_task_importing">Importing…</string>
     <string name="add_edit_task_attach_file">Attach file</string>
     <string name="add_edit_task_attached">%1$s attached</string>
     <string name="add_edit_task_remove_attachment">Remove attachment</string>
@@ -152,6 +152,7 @@
     <!-- CloudBackupSheet.kt -->
     <string name="cloud_backup_online_account">Online account</string>
     <string name="cloud_backup_sign_in_with_google">Sign in with Google</string>
+    <string name="cloud_backup_no_google_account">No Google account was found on this phone. Add one in your phone\'s Settings, then try again.</string>
     <string name="cloud_backup_unitask_works_fully_offline_your">UniTask works fully offline. Your account is used for study groups and group tasks. Your courses, tasks and notes stay on this phone, back them up in Settings, Backup and data.</string>
     <string name="cloud_backup_export_my_data_json">Export My Data (JSON)</string>
     <string name="cloud_backup_sign_out_keep_offline">Sign Out (Keep Offline)</string>
@@ -189,7 +190,7 @@
     <string name="courses_enrolled_courses">Enrolled Courses</string>
     <string name="courses_courses_this_semester">%1$s courses this semester</string>
     <string name="courses_more_course_options">More course options</string>
-    <string name="courses_archive_courses">Archive courses...</string>
+    <string name="courses_archive_courses">Archive courses…</string>
     <string name="courses_add_your_first_course">Add your first course</string>
     <string name="courses_add_your_university_courses_to">Add your university courses to organize your homework and assignments.</string>
     <string name="courses_add_your_first_course_2">+ Add Your First Course</string>
@@ -207,7 +208,7 @@
     <string name="create_join_group_e_g_cs_301_study">e.g. CS 301 Study Group</string>
     <string name="create_join_group_unique_username_handle">Unique Username (@handle) *</string>
     <string name="create_join_group_e_g_cs301_team">e.g. cs301_team</string>
-    <string name="create_join_group_3_30_chars_lowercase_letters">3-30 chars: lowercase letters, digits, and _</string>
+    <string name="create_join_group_3_30_chars_lowercase_letters">3–30 chars: lowercase letters, digits, and _</string>
     <string name="common_create">Create</string>
     <string name="create_join_group_join_a_group">Join a Group</string>
     <string name="create_join_group_scan_with_camera">Scan with camera</string>
@@ -320,6 +321,89 @@
     <string name="drive_restore_use_the_latest_backup_instead">Use the latest backup instead</string>
     <string name="drive_restore_use_the_older_backup_instead">Use the older backup instead</string>
     <string name="drive_restore_older_backup">Older backup: %1$s</string>
+    <!-- DriveBackupViewModel.kt: progress labels -->
+    <string name="drive_busy_connecting">Connecting</string>
+    <string name="drive_busy_backing_up">Backing up</string>
+    <string name="drive_busy_backing_up_files">Backing up (%1$d of %2$d files)</string>
+    <string name="drive_busy_restoring">Restoring</string>
+    <string name="drive_busy_checking_for_backup">Checking for backup</string>
+    <!-- DriveBackupViewModel.kt: results and errors -->
+    <string name="drive_result_backup_complete">Backup complete: %1$s.</string>
+    <string name="drive_result_backup_up_to_date">Backup is already up to date.</string>
+    <string name="drive_result_app_has_no_data">Your app has no data.</string>
+    <string name="drive_result_restored">Restored %1$s.</string>
+    <string name="drive_error_drive_full">Your Google Drive is full.</string>
+    <string name="drive_error_backup_failed">Backup failed</string>
+    <string name="drive_error_restore_failed">Restore failed</string>
+    <string name="drive_error_check_backup_failed">Failed to check backup</string>
+    <string name="drive_error_access_lost_reconnect">Google Drive access was lost. Reconnect and try again.</string>
+    <string name="drive_error_access_lost_settings">Google Drive access was lost. Reconnect in Settings.</string>
+    <string name="drive_error_no_internet">No internet connection.</string>
+    <string name="drive_migration_backup_failed">Backup failed.</string>
+    <string name="drive_error_drive_problem">Google Drive had a problem. Try again later.</string>
+    <string name="drive_error_no_backup_on_drive">No backup found on Google Drive.</string>
+    <string name="drive_time_today">Today %1$s</string>
+    <string name="drive_time_yesterday">Yesterday %1$s</string>
+    <string name="reminder_could_not_mark_done">Could not mark the task as done</string>
+    <!-- Backup summaries: "8 courses, 1 task, 2 notes" (Drive and backup file) -->
+    <string name="counts_separator">", "</string>
+    <plurals name="counts_courses">
+        <item quantity="one">%d course</item>
+        <item quantity="other">%d courses</item>
+    </plurals>
+    <plurals name="counts_classes">
+        <item quantity="one">%d class</item>
+        <item quantity="other">%d classes</item>
+    </plurals>
+    <plurals name="counts_tasks">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="counts_assignments">
+        <item quantity="one">%d assignment</item>
+        <item quantity="other">%d assignments</item>
+    </plurals>
+    <plurals name="counts_my_tasks">
+        <item quantity="one">%d My task</item>
+        <item quantity="other">%d My tasks</item>
+    </plurals>
+    <plurals name="counts_my_tasks_inline">
+        <item quantity="one">%d my task</item>
+        <item quantity="other">%d my tasks</item>
+    </plurals>
+    <plurals name="counts_notes">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+    <plurals name="counts_images">
+        <item quantity="one">%d image</item>
+        <item quantity="other">%d images</item>
+    </plurals>
+    <plurals name="counts_attachments">
+        <item quantity="one">%d attachment</item>
+        <item quantity="other">%d attachments</item>
+    </plurals>
+    <plurals name="counts_attachments_restored">
+        <item quantity="one">%d attachment restored</item>
+        <item quantity="other">%d attachments restored</item>
+    </plurals>
+    <plurals name="counts_attachments_not_downloaded">
+        <item quantity="one">%d attachment could not be downloaded</item>
+        <item quantity="other">%d attachments could not be downloaded</item>
+    </plurals>
+    <plurals name="counts_study_sessions">
+        <item quantity="one">%d study session</item>
+        <item quantity="other">%d study sessions</item>
+    </plurals>
+    <string name="counts_settings_restored">app settings restored</string>
+    <plurals name="backup_images_not_restored">
+        <item quantity="one">%d image could not be restored (damaged, too large or not downloaded).</item>
+        <item quantity="other">%d images could not be restored (damaged, too large or not downloaded).</item>
+    </plurals>
+    <plurals name="backup_images_left_out">
+        <item quantity="one">%d image left out (too large or could not be read).</item>
+        <item quantity="other">%d images left out (too large or could not be read).</item>
+    </plurals>
     <!-- DriveRestoreOfferCard.kt -->
     <string name="drive_restore_offer_card_had_unitask_on_another_phone">Had UniTask on another phone?</string>
     <string name="drive_restore_offer_card_restore_your_courses_tasks_notes">Restore your courses, tasks, notes, attachments and settings from your Google Drive backup.</string>
@@ -408,8 +492,32 @@
     <string name="groups_failed_to_create_group">Failed to create group</string>
     <string name="groups_failed_to_join_group">Failed to join group</string>
     <string name="groups_task_deleted">Task deleted</string>
-    <string name="groups_reconnecting">Reconnecting...</string>
+    <string name="groups_reconnecting">Reconnecting…</string>
     <string name="groups_sign_in_with_google_to">Sign in with Google to use groups</string>
+    <!-- GroupsViewModel.kt: failed group actions. The reason text is only a hint; details go to the log. -->
+    <string name="groups_error_format">%1$s %2$s</string>
+    <string name="groups_error_hint_network">Check your internet connection and try again.</string>
+    <string name="groups_error_hint_permission">You may not have permission to do that.</string>
+    <string name="groups_error_hint_try_again">Please try again.</string>
+    <string name="groups_error_course_code_exists">This group already has a course with that code.</string>
+    <string name="groups_error_create_course">Could not create the course.</string>
+    <string name="groups_error_update_course">Could not update the course.</string>
+    <string name="groups_error_delete_course">Could not delete the course.</string>
+    <string name="groups_error_create_task">Could not create the task.</string>
+    <string name="groups_error_update_task">Could not update the task.</string>
+    <string name="groups_error_delete_task">Could not delete the task.</string>
+    <string name="groups_error_change_role">Could not change the role.</string>
+    <string name="groups_error_transfer_ownership">Could not transfer ownership.</string>
+    <string name="groups_error_remove_member">Could not remove the member.</string>
+    <string name="groups_error_leave_group">Could not leave the group.</string>
+    <string name="groups_error_delete_group">Could not delete the group.</string>
+    <string name="groups_error_group_limit">You can own up to %1$d groups. Delete a group you no longer need, then try again.</string>
+    <string name="groups_error_task_limit">This group has reached its limit of %1$d tasks. Delete old tasks to add new ones.</string>
+    <string name="groups_error_transfer_limit">That member already owns %1$d groups, the most one person can own.</string>
+    <string name="groups_error_create_group_failed">Failed to create group</string>
+    <string name="groups_error_join_group_failed">Failed to join group</string>
+    <string name="groups_error_update_group_failed">Failed to update group</string>
+    <string name="groups_error_regenerate_code_failed">Failed to regenerate join code</string>
     <string name="groups_collaborate_with_classmates_share">Collaborate with classmates, share assignments, and track group deadlines in real time.</string>
     <string name="groups_create_a_group">Create a group</string>
     <string name="groups_join_a_group">Join a group</string>
@@ -435,7 +543,7 @@
     <string name="local_backup_this_backup_is_encrypted_enter">This backup is encrypted. Enter the password you set when you saved it.</string>
     <string name="local_backup_password">Password</string>
     <string name="local_backup_please_wait">Please wait</string>
-    <string name="local_backup_working_on_your_backup">Working on your backup...</string>
+    <string name="local_backup_working_on_your_backup">Working on your backup…</string>
     <!-- MainScreen.kt -->
     <string name="main_unitask_logo">UniTask logo</string>
     <string name="common_search">Search</string>
@@ -479,7 +587,7 @@
     <string name="my_tasks_today">Today</string>
     <string name="my_tasks_tomorrow">Tomorrow</string>
     <string name="my_tasks_add_quick_task">Add quick task</string>
-    <string name="my_tasks_add_a_task">Add a task...</string>
+    <string name="my_tasks_add_a_task">Add a task…</string>
     <string name="my_tasks_save_task">Save task</string>
     <string name="section_collapse_description">Collapse %1$s section</string>
     <string name="section_expand_description">Expand %1$s section</string>
@@ -512,7 +620,7 @@
     <string name="note_editor_image">Image</string>
     <string name="note_editor_share_as">Share as</string>
     <string name="note_editor_save_as">Save as</string>
-    <string name="note_editor_creating_pdf">Creating PDF...</string>
+    <string name="note_editor_creating_pdf">Creating PDF…</string>
     <string name="note_editor_keep_screen_on">Keep screen on</string>
     <!-- NoteImagePreview.kt -->
     <string name="note_image_preview_image_not_available_on_this">Image not available on this phone</string>
@@ -594,7 +702,7 @@
     <string name="search_archived_in">Archived in %1$s</string>
     <string name="search_this_item_is_part_of">This item is part of %1$s. Restore the semester to view and edit its contents.</string>
     <string name="search_restore_semester">Restore semester</string>
-    <string name="search_search_tasks_notes_courses">Search tasks, notes, courses, settings...</string>
+    <string name="search_search_tasks_notes_courses">Search tasks, notes, courses, settings…</string>
     <string name="search_search_options">Search options</string>
     <string name="search_type_to_search_tasks_notes">Type to search tasks, notes, courses and settings</string>
     <string name="search_nothing_found_for">Nothing found for \'%1$s\'</string>
@@ -866,4 +974,117 @@
     <string name="high_priority_alarm_channel_description">Rings like an alarm for reminders of high priority tasks</string>
     <string name="high_priority_alarm_silenced_channel_name">High priority alarms (silenced)</string>
     <string name="high_priority_alarm_silenced_channel_description">Keeps high priority alarm notifications visible after sound and vibration stop</string>
+    <!-- Messages that used to be written directly in the code -->
+    <string name="msg_saved_to_device">Saved to your device</string>
+    <string name="msg_could_not_save_file">Could not save the file</string>
+    <string name="msg_could_not_share_file">Could not share the file</string>
+    <string name="msg_folder_has_no_notes_to_export">This folder has no notes to export</string>
+    <string name="msg_could_not_share_folder">Could not share the folder</string>
+    <string name="msg_note_moved_to_recently_deleted">Note moved to Recently deleted</string>
+    <string name="msg_task_moved_to_recently_deleted">Task moved to Recently deleted</string>
+    <string name="msg_class_moved_to_recently_deleted">Class moved to Recently deleted</string>
+    <string name="msg_file_too_large">File is too large (limit 1 MB)</string>
+    <string name="msg_could_not_read_file">Could not read that file</string>
+    <string name="msg_file_too_long_for_note">File is too long for a note (limit %1$s characters)</string>
+    <string name="msg_note_imported">Note imported</string>
+    <string name="msg_saved_to_notes">Saved to Notes</string>
+    <string name="msg_open">Open</string>
+    <string name="msg_reminder_saved_allow_notifications">Reminder saved. Allow notifications so it can reach you.</string>
+    <string name="msg_restored_semester">Restored %1$s</string>
+    <string name="msg_deleted_semester">Deleted %1$s</string>
+    <string name="msg_archived_courses_to_semester">Archived %1$s to %2$s</string>
+    <string name="msg_task_restored">Task restored</string>
+    <string name="msg_note_restored">Note restored</string>
+    <string name="msg_class_restored">Class restored</string>
+    <string name="get_started_make_reminders_reliable">Make reminders reliable</string>
+    <string name="get_started_all_set">All set</string>
+    <string name="get_started_phone_settings_on">%1$d of %2$d phone settings on</string>
+    <string name="sign_in_no_screen">Unable to find the screen needed for Google sign-in</string>
+    <string name="sign_in_unexpected_credential">Unexpected credential type received</string>
+    <string name="sign_in_failed">Sign-in failed</string>
+    <string name="note_pdf_page">Page %1$d</string>
+    <string name="search_settings_path">Settings > %1$s</string>
+    <!-- Settings search texts -->
+    <string name="settings_theme">Theme</string>
+    <string name="settings_search_sign_in_for_groups">Sign in for study groups</string>
+    <string name="settings_search_theme_summary">Light, dark or follow the phone</string>
+    <string name="settings_search_accent_summary">Pick the colour the app uses</string>
+    <string name="settings_search_week_summary">Choose Week A or Week B for the timetable</string>
+    <string name="settings_search_sound_summary">Choose the reminder sound</string>
+    <string name="settings_search_background_summary">Keep reminders reliable (battery optimization)</string>
+    <string name="settings_search_check_reminders_summary">Send a test reminder to this phone</string>
+    <string name="settings_search_class_summary">Alert before and when each class starts</string>
+    <string name="settings_search_daily_summary_summary">A morning summary of what is due</string>
+    <string name="settings_search_summary_time_summary">When the daily summary arrives</string>
+    <string name="settings_search_drive_summary">Back up and restore your data with Google Drive</string>
+    <string name="settings_search_local_backup_summary">Save or load a backup file on this phone</string>
+    <string name="settings_search_source_summary">Open the project on GitHub</string>
+    <string name="settings_search_report_summary">Opens a short form</string>
+    <string name="settings_search_request_summary">Tell us what you would like to see</string>
+    <string name="settings_search_updates_summary">See if a newer version is available</string>
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+    <string name="accent_indigo">Indigo</string>
+    <string name="accent_ocean">Ocean teal</string>
+    <string name="accent_forest">Forest green</string>
+    <string name="accent_rose">Rose</string>
+    <string name="accent_sunset">Sunset orange</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_cobalt">Cobalt blue</string>
+    <string name="accent_amber">Golden amber</string>
+    <string name="accent_graphite">Graphite</string>
+    <string name="accent_mocha">Mocha</string>
+    <string name="accent_selected_desc">%1$s, selected</string>
+    <string name="repeat_none">Does not repeat</string>
+    <string name="repeat_daily">Every day</string>
+    <string name="repeat_weekdays">Every weekday (Mon to Fri)</string>
+    <string name="repeat_weekly">Every week</string>
+    <string name="repeat_biweekly">Every 2 weeks</string>
+    <string name="repeat_monthly">Every month</string>
+    <string name="repeat_yearly">Every year</string>
+    <string name="sort_due_asc">Due Date (Earliest)</string>
+    <string name="sort_due_desc">Due Date (Latest)</string>
+    <string name="sort_alarm_first">Alarm tasks first</string>
+    <string name="sort_title_asc">Title (A-Z)</string>
+    <string name="export_format_txt">Text file (.txt)</string>
+    <string name="export_format_md">Markdown file (.md)</string>
+    <string name="export_format_pdf">PDF document (.pdf)</string>
+    <string name="reminder_at_deadline">At deadline</string>
+    <string name="reminder_2h">2 hours before</string>
+    <string name="reminder_1d">1 day before</string>
+    <string name="reminder_1h">1 hour before</string>
+    <string name="reminder_2d">2 days before</string>
+    <string name="reminder_12h">12 hours before</string>
+    <string name="reminder_chip_at_deadline">At deadline</string>
+    <string name="reminder_chip_1h">1 hour</string>
+    <string name="reminder_chip_2h">2 hours</string>
+    <string name="reminder_chip_12h">12 hours</string>
+    <string name="reminder_chip_1d">1 day</string>
+    <string name="reminder_chip_2d">2 days</string>
+    <string name="reminder_summary_off">Off</string>
+    <string name="reminder_summary_more">%1$s +%2$d more</string>
+    <string name="settings_general_summary">%1$s, %2$s</string>
+    <string name="timetable_day_today">%1$s (Today)</string>
+    <string name="timetable_day_fallback">Schedule</string>
+    <string name="timetable_this_day">this day</string>
+    <string name="timetable_add_first_class">Add your first class</string>
+    <string name="timetable_no_classes_for_day">No classes scheduled for %1$s</string>
+    <string name="class_ends_in">Ends in %1$d min</string>
+    <string name="class_starts_in">Starts in %1$d min</string>
+    <string name="class_starts_at">Starts at %1$s</string>
+    <string name="class_day_at">%1$s at %2$s</string>
+    <string name="class_next_day_at">Next %1$s at %2$s</string>
+    <string name="slot_conflict_warning_save">Time conflict: overlaps with %1$s (%2$s). Tap Save Slot again to save anyway.</string>
+    <string name="slot_conflict_warning_update">Time conflict: overlaps with %1$s (%2$s). Tap Update Slot again to save anyway.</string>
+    <string name="slot_conflict_another_class">Another class</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Phone language</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_urdu">اردو</string>
+    <string name="settings_search_language_summary">Use English or Urdu in this app</string>
+    <string name="week_not_set_tap_to_choose">Not set (Tap to choose Week A or Week B)</string>
+    <string name="timetable_cancel_class_on">Cancel class on %1$s</string>
+    <string name="timetable_restore_class_on">Bring back class on %1$s</string>
+    <string name="timetable_class_cancelled_on">Cancelled %1$s</string>
 </resources>

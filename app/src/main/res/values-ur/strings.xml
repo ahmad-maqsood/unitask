@@ -1013,4 +1013,13 @@
     <string name="timetable_cancel_class_on">%1$s کی کلاس منسوخ کریں</string>
     <string name="timetable_restore_class_on">%1$s کی کلاس بحال کریں</string>
     <string name="timetable_class_cancelled_on">%1$s منسوخ</string>
+    <string name="msg_note_image_limit">ایک نوٹ میں زیادہ سے زیادہ %1$d تصاویر ہو سکتی ہیں</string>
+    <string name="msg_could_not_add_image">وہ تصویر شامل نہیں ہو سکی</string>
+    <string name="msg_no_note_called">\"%1$s\" نام کا کوئی نوٹ نہیں</string>
+    <string name="msg_sign_in_to_join_group">اس گروپ میں شامل ہونے کے لیے سائن ان کریں</string>
+    <string name="msg_left_group">گروپ چھوڑ دیا</string>
+    <string name="msg_group_deleted">گروپ حذف ہو گیا</string>
+    <string name="msg_no_classes_to_export">برآمد کرنے کے لیے کوئی کلاس نہیں</string>
+    <string name="msg_no_calendar_app_could_open_file">کوئی کیلنڈر ایپ فائل نہیں کھول سکی</string>
+    <string name="timetable_export_chooser_title">ٹائم ٹیبل برآمد کریں</string>
 </resources>

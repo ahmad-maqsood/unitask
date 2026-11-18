@@ -552,7 +552,7 @@ private fun TimetableBreakIndicator(gapMinutes: Int) {
 
 private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCourse>) {
     if (slots.isEmpty()) {
-        com.example.ui.AppMessages.show("No classes to export")
+        com.example.ui.AppMessages.show(context.getString(R.string.msg_no_classes_to_export))
         return
     }
 
@@ -601,7 +601,7 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.timetable_export_chooser_title)))
                 return
             } catch (_: Exception) {
                 // Fall through to last fallback
@@ -610,13 +610,13 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
     }
 
     // Last fallback: plain-text share with a message explaining that no calendar app could open the file.
-    com.example.ui.AppMessages.show("No calendar app could open the file", long = true)
+    com.example.ui.AppMessages.show(context.getString(R.string.msg_no_calendar_app_could_open_file), long = true)
     try {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, icsContent)
         }
-        context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+        context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.timetable_export_chooser_title)))
     } catch (_: Exception) {
         // Nothing more we can do
     }

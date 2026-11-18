@@ -80,6 +80,9 @@ fun GroupsTab(
     val context = LocalContext.current
     val failedToCreateGroupMessage = stringResource(R.string.groups_failed_to_create_group)
     val failedToJoinGroupMessage = stringResource(R.string.groups_failed_to_join_group)
+    val signInToJoinMessage = stringResource(R.string.msg_sign_in_to_join_group)
+    val leftGroupMessage = stringResource(R.string.msg_left_group)
+    val groupDeletedMessage = stringResource(R.string.msg_group_deleted)
     val snackbarHostState = remember { SnackbarHostState() }
     com.example.ui.RegisterMessageHost(snackbarHostState)
 
@@ -114,7 +117,7 @@ fun GroupsTab(
                 viewModel.openJoinDialog(username, code)
                 onInviteConsumed()
             } else if (sessionReady) {
-                com.example.ui.AppMessages.show("Sign in to join this group")
+                com.example.ui.AppMessages.show(signInToJoinMessage)
                 onInviteConsumed()
             }
         }
@@ -208,13 +211,13 @@ fun GroupsTab(
                     onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
                         viewModel.leaveCurrentGroup {
-                            com.example.ui.AppMessages.show("Left group")
+                            com.example.ui.AppMessages.show(leftGroupMessage)
                         }
                     },
                     onDeleteGroupClick = {
                         val username = selectedGroupDetail?.username ?: activeMembership?.username ?: ""
                         viewModel.deleteCurrentGroup(username) {
-                            com.example.ui.AppMessages.show("Group deleted")
+                            com.example.ui.AppMessages.show(groupDeletedMessage)
                         }
                     },
                     onUpdateGroupProfile = { newName, newUsername ->

@@ -1087,4 +1087,13 @@
     <string name="timetable_cancel_class_on">Cancel class on %1$s</string>
     <string name="timetable_restore_class_on">Bring back class on %1$s</string>
     <string name="timetable_class_cancelled_on">Cancelled %1$s</string>
+    <string name="msg_note_image_limit">A note can hold up to %1$d images</string>
+    <string name="msg_could_not_add_image">Could not add that image</string>
+    <string name="msg_no_note_called">No note called \"%1$s\"</string>
+    <string name="msg_sign_in_to_join_group">Sign in to join this group</string>
+    <string name="msg_left_group">Left group</string>
+    <string name="msg_group_deleted">Group deleted</string>
+    <string name="msg_no_classes_to_export">No classes to export</string>
+    <string name="msg_no_calendar_app_could_open_file">No calendar app could open the file</string>
+    <string name="timetable_export_chooser_title">Export Timetable</string>
 </resources>

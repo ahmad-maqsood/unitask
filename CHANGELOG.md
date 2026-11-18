@@ -2,6 +2,35 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.6.0] - 18-11-2026
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.6.0)
+
+### Added
+- Added collapsible sections for 'My Tasks' and 'Deadlines' views, with state persistence across app restarts, screen rotations, and tab switches.
+- Added a 'Download APK' button to the update notification for direct installation.
+- Added a 'keep-screen-on' bulb button to the timer's top bar outside of full-screen mode.
+- Added full Urdu language support.
+- Added a language selection setting for Android 13+ devices to override system language.
+- Added functionality to cancel specific occurrences of a weekly class directly from the timetable, excluding them from reminders and widgets.
+- Implemented limits of 8 owned groups and 200 tasks per group to prevent abuse.
+
+### Improved
+- Updated 'Turn on/off' menu items for tasks, groups, and classes to use consistent bell icons.
+- Improved RTL support for icons and layouts.
+- Enhanced Google Drive backup/restore flows with clearer error messaging and pluralization support.
+- Refined notification and reminder logic for better consistency.
+
+### Fixed
+- Fixed a bug where the timer's full-screen keep-awake setting would fail to release the screen when toggled off.
+- Fixed multiple background work issues in group synchronization to prevent crashes.
+- Fixed a flaky test in 'DriveBackupSectionTest' related to the Drive restore dialog.
+
+### Developer & project maintenance
+- Refactored hardcoded UI, notification, and announcement strings into `strings.xml` to support translations and screen readers.
+- Optimized note editor and scrollbar performance.
+- Updated image handling to use AndroidX ExifInterface for consistent rotation support.
+- Updated broadcast receivers for safer background execution.
+
 ## [4.5.0] - 15-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.5.0)
 

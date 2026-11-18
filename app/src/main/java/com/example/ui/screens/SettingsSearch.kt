@@ -70,6 +70,17 @@ val allSettingsSearchEntries: List<SettingsSearchEntry> = listOf(
         keywords = listOf("color", "colour", "accent", "palette", "style")
     ),
     SettingsSearchEntry(
+        id = "language",
+        titleRes = R.string.settings_language,
+        summaryRes = R.string.settings_search_language_summary,
+        pageLabelRes = R.string.settings_general,
+        title = "Language",
+        summary = "Use English or Urdu in this app",
+        pageLabel = "General",
+        page = SettingsPage.General,
+        keywords = listOf("urdu", "english", "اردو", "translate", "locale", "app language")
+    ),
+    SettingsSearchEntry(
         id = "week_parity",
         titleRes = R.string.settings_this_week_is,
         summaryRes = R.string.settings_search_week_summary,

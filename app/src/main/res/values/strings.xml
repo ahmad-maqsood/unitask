@@ -1078,4 +1078,10 @@
     <string name="slot_conflict_warning_save">Time conflict: overlaps with %1$s (%2$s). Tap Save Slot again to save anyway.</string>
     <string name="slot_conflict_warning_update">Time conflict: overlaps with %1$s (%2$s). Tap Update Slot again to save anyway.</string>
     <string name="slot_conflict_another_class">Another class</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Phone language</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_urdu">اردو</string>
+    <string name="settings_search_language_summary">Use English or Urdu in this app</string>
+    <string name="week_not_set_tap_to_choose">Not set (Tap to choose Week A or Week B)</string>
 </resources>

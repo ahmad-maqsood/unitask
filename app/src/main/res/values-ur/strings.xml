@@ -1004,4 +1004,10 @@
     <string name="slot_conflict_warning_save">وقت ٹکرا رہا ہے: %1$s (%2$s) کے ساتھ۔ پھر بھی محفوظ کرنے کے لیے دوبارہ سلاٹ محفوظ کریں دبائیں۔</string>
     <string name="slot_conflict_warning_update">وقت ٹکرا رہا ہے: %1$s (%2$s) کے ساتھ۔ پھر بھی محفوظ کرنے کے لیے دوبارہ سلاٹ اپ ڈیٹ کریں دبائیں۔</string>
     <string name="slot_conflict_another_class">دوسری کلاس</string>
+    <string name="settings_language">زبان</string>
+    <string name="settings_language_system">فون کی زبان</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_urdu">اردو</string>
+    <string name="settings_search_language_summary">اس ایپ میں انگریزی یا اردو استعمال کریں</string>
+    <string name="week_not_set_tap_to_choose">سیٹ نہیں ہے (ہفتہ A یا ہفتہ B چننے کے لیے ٹیپ کریں)</string>
 </resources>

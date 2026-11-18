@@ -1010,4 +1010,7 @@
     <string name="settings_language_urdu">اردو</string>
     <string name="settings_search_language_summary">اس ایپ میں انگریزی یا اردو استعمال کریں</string>
     <string name="week_not_set_tap_to_choose">سیٹ نہیں ہے (ہفتہ A یا ہفتہ B چننے کے لیے ٹیپ کریں)</string>
+    <string name="timetable_cancel_class_on">%1$s کی کلاس منسوخ کریں</string>
+    <string name="timetable_restore_class_on">%1$s کی کلاس بحال کریں</string>
+    <string name="timetable_class_cancelled_on">%1$s منسوخ</string>
 </resources>

@@ -1084,4 +1084,7 @@
     <string name="settings_language_urdu">اردو</string>
     <string name="settings_search_language_summary">Use English or Urdu in this app</string>
     <string name="week_not_set_tap_to_choose">Not set (Tap to choose Week A or Week B)</string>
+    <string name="timetable_cancel_class_on">Cancel class on %1$s</string>
+    <string name="timetable_restore_class_on">Bring back class on %1$s</string>
+    <string name="timetable_class_cancelled_on">Cancelled %1$s</string>
 </resources>

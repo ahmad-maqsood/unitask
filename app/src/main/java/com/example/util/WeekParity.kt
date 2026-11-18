@@ -127,5 +127,8 @@ fun isSlotActive(
     slot: LectureSlot,
     atMillis: Long = System.currentTimeMillis(),
     timeZone: TimeZone = TimeZone.getDefault()
-): Boolean = isSlotActive(slot, atMillis, WeekParity.getWeekAAnchor(context), timeZone)
+): Boolean =
+    // One cancelled date (lecturer away) skips that day only; the weekly class stays.
+    isSlotActive(slot, atMillis, WeekParity.getWeekAAnchor(context), timeZone) &&
+        !com.example.reminder.CancelledClassStore.isCancelled(context, slot.id, atMillis, timeZone)
 

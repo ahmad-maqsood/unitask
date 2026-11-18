@@ -589,9 +589,10 @@ fun TaskCard(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
+                                val reminderNames = task.reminderOptions.map { stringResource(it.labelRes) }.joinToString()
                                 Icon(
                                     imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = stringResource(R.string.task_card_reminders, task.reminderOptions.joinToString { stringResource(it.labelRes) }),
+                                    contentDescription = stringResource(R.string.task_card_reminders, reminderNames),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )

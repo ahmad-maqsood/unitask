@@ -22,6 +22,7 @@ import com.example.MainActivity
 import com.example.R
 import com.example.Repositories
 import com.example.data.local.AppDatabase
+import com.example.data.local.ReminderOption
 import com.example.data.local.TaskStatus
 import com.example.ui.screens.groupTaskItemId
 import com.example.ui.theme.AccentColors
@@ -254,12 +255,25 @@ class TaskReminderReceiver : BroadcastReceiver() {
         }
     }
 
+    /** "2 hours" for the "2 hours before" reminder, in the app language. Null for "At deadline". */
+    private fun spanText(context: Context, option: ReminderOption): String? {
+        val res = when (option) {
+            ReminderOption.AT_DEADLINE -> return null
+            ReminderOption.TWO_HOURS_BEFORE -> R.string.reminder_span_2h
+            ReminderOption.ONE_DAY_BEFORE -> R.string.reminder_span_1d
+            ReminderOption.ONE_HOUR_BEFORE -> R.string.reminder_span_1h
+            ReminderOption.TWO_DAYS_BEFORE -> R.string.reminder_span_2d
+            ReminderOption.TWELVE_HOURS_BEFORE -> R.string.reminder_span_12h
+        }
+        return context.getString(res)
+    }
+
     /** Builds and shows one reminder notification. Safe to call off the main thread. */
     private fun showReminder(context: Context, intent: Intent) {
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, 0L)
-        val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Upcoming Assignment"
-        val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: "Course"
-        val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: "Due soon"
+        val taskTitle = intent.getStringExtra(EXTRA_TASK_TITLE) ?: context.getString(R.string.reminder_default_title)
+        val courseCode = intent.getStringExtra(EXTRA_COURSE_CODE) ?: context.getString(R.string.reminder_default_course)
+        val dueInfo = intent.getStringExtra(EXTRA_DUE_INFO) ?: context.getString(R.string.reminder_due_soon)
         val reminderLabel = intent.getStringExtra(EXTRA_REMINDER_LABEL)
         val reminderOption = intent.getStringExtra(EXTRA_REMINDER_OPTION)
         val priority = intent.getStringExtra(EXTRA_PRIORITY)
@@ -293,14 +307,15 @@ class TaskReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // The stored label is English text that only identifies the choice. It is matched to the
+        // option here, and the words shown come from the string resources (so they can be translated).
+        val labelOption = ReminderOption.entries.firstOrNull { it.label.equals(reminderLabel, ignoreCase = true) }
+        val span = labelOption?.let { spanText(context, it) }
         val title = when {
-            reminderLabel.isNullOrBlank() -> "Due: $taskTitle"
-            reminderLabel.equals("At deadline", ignoreCase = true) -> "Due now: $taskTitle"
-            reminderLabel.lowercase().endsWith(" before") -> {
-                val span = reminderLabel.substring(0, reminderLabel.length - 7).trim()
-                "Due in $span: $taskTitle"
-            }
-            else -> "Due ($reminderLabel): $taskTitle"
+            reminderLabel.isNullOrBlank() -> context.getString(R.string.reminder_title_due, taskTitle)
+            labelOption == ReminderOption.AT_DEADLINE -> context.getString(R.string.reminder_title_due_now, taskTitle)
+            span != null -> context.getString(R.string.reminder_title_due_in, span, taskTitle)
+            else -> context.getString(R.string.reminder_title_due_label, reminderLabel, taskTitle)
         }
 
         val contentText = when {
@@ -314,7 +329,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val isSilence = intent.action == ACTION_SILENCE_ALARM
         if (isAlarm || isSilence) HighPriorityAlarm.ensureChannel(context)
 
-        val bigSummary = if (isMyTask) taskTitle else "Assignment for $courseCode: $taskTitle"
+        val bigSummary = if (isMyTask) taskTitle else context.getString(R.string.reminder_big_summary, courseCode, taskTitle)
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0).takeIf { it != 0 }
             ?: if (!reminderOption.isNullOrBlank()) {
                 ((taskId and 0x7FFFFFFF) * 31 + reminderOption.hashCode()).toInt()

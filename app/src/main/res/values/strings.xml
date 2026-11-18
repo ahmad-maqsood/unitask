@@ -1096,4 +1096,18 @@
     <string name="msg_no_classes_to_export">No classes to export</string>
     <string name="msg_no_calendar_app_could_open_file">No calendar app could open the file</string>
     <string name="timetable_export_chooser_title">Export Timetable</string>
+    <string name="reminder_default_title">Upcoming Assignment</string>
+    <string name="reminder_default_course">Course</string>
+    <string name="reminder_due_soon">Due soon</string>
+    <string name="reminder_due_at">Due %1$s at %2$s</string>
+    <string name="reminder_title_due">Due: %1$s</string>
+    <string name="reminder_title_due_now">Due now: %1$s</string>
+    <string name="reminder_title_due_in">Due in %1$s: %2$s</string>
+    <string name="reminder_title_due_label">Due (%1$s): %2$s</string>
+    <string name="reminder_big_summary">Assignment for %1$s: %2$s</string>
+    <string name="reminder_span_2h">2 hours</string>
+    <string name="reminder_span_1d">1 day</string>
+    <string name="reminder_span_1h">1 hour</string>
+    <string name="reminder_span_2d">2 days</string>
+    <string name="reminder_span_12h">12 hours</string>
 </resources>

@@ -13,7 +13,7 @@ import com.example.MainActivity
 import com.example.data.local.Priority
 import com.example.util.HighPriorityAlarm
 import com.example.data.local.TaskStatus
-import com.example.util.DateFormats
+import com.example.util.DueText
 import com.example.data.local.deadlineMillis
 
 class ReminderScheduler(private val context: Context) {
@@ -131,7 +131,7 @@ class ReminderScheduler(private val context: Context) {
             TaskReminderReceiver.EXTRA_DUE_INFO,
             // Same wording as a snoozed reminder ("Due Fri, Nov 7 at 5:00 PM"). The date matters
             // for the "1 day / 3 days / 1 week before" reminders, which fire on another day.
-            "Due " + DateFormats.shortDateAtClock(calculateDeadlineMillis(task))
+            DueText.dueAt(context, calculateDeadlineMillis(task))
         )
     }
 
@@ -170,11 +170,11 @@ class ReminderScheduler(private val context: Context) {
     fun deliverLate(task: TaskItem, courseCode: String, option: ReminderOption, triggerTime: Long) {
         // Take the alarm away first, so a stuck copy of it can never ring a second time.
         cancelAlarm(requestCodeFor(task.id, option), reminderIntent(task.id, option))
-        val due = DateFormats.shortDateAtClock(calculateDeadlineMillis(task))
+        val due = DueText.dueAt(context, calculateDeadlineMillis(task))
         val intent = buildReminderIntent(task, courseCode, option, triggerTime).apply {
             // "1 hour before" is no longer true. Without a label the title is just "Due: <task>".
             removeExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL)
-            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, "Due $due")
+            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, due)
         }
         context.sendBroadcast(intent)
     }

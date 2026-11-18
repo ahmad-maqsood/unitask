@@ -1022,4 +1022,18 @@
     <string name="msg_no_classes_to_export">برآمد کرنے کے لیے کوئی کلاس نہیں</string>
     <string name="msg_no_calendar_app_could_open_file">کوئی کیلنڈر ایپ فائل نہیں کھول سکی</string>
     <string name="timetable_export_chooser_title">ٹائم ٹیبل برآمد کریں</string>
+    <string name="reminder_default_title">آنے والی اسائنمنٹ</string>
+    <string name="reminder_default_course">کورس</string>
+    <string name="reminder_due_soon">جلد ڈیڈ لائن</string>
+    <string name="reminder_due_at">ڈیڈ لائن %1$s، %2$s</string>
+    <string name="reminder_title_due">ڈیڈ لائن: %1$s</string>
+    <string name="reminder_title_due_now">ابھی ڈیڈ لائن: %1$s</string>
+    <string name="reminder_title_due_in">%1$s میں ڈیڈ لائن: %2$s</string>
+    <string name="reminder_title_due_label">ڈیڈ لائن (%1$s): %2$s</string>
+    <string name="reminder_big_summary">%1$s کے لیے اسائنمنٹ: %2$s</string>
+    <string name="reminder_span_2h">2 گھنٹے</string>
+    <string name="reminder_span_1d">1 دن</string>
+    <string name="reminder_span_1h">1 گھنٹہ</string>
+    <string name="reminder_span_2d">2 دن</string>
+    <string name="reminder_span_12h">12 گھنٹے</string>
 </resources>

@@ -20,6 +20,7 @@ import com.example.data.local.TaskWithCourse
 import com.example.data.local.deadlineMillis
 import com.example.reminder.SnoozeStore
 import com.example.util.DateFormats
+import com.example.util.DueText
 import java.util.Calendar
 
 /** One time the user can snooze to. */
@@ -65,13 +66,14 @@ fun formatSnoozeTime(millis: Long): String {
 }
 
 private fun buildSnoozeEntry(
+    context: android.content.Context,
     taskWithCourse: TaskWithCourse,
     groupEntry: GroupTaskEntry?,
     until: Long
 ): SnoozeStore.Entry {
     val task = taskWithCourse.task
     // A full date, not "Today": the reminder may ring days after it was made.
-    val dueInfo = "Due " + DateFormats.shortDateAtClock(task.deadlineMillis)
+    val dueInfo = DueText.dueAt(context, task.deadlineMillis)
     return SnoozeStore.Entry(
         key = task.id,
         until = until,
@@ -121,7 +123,7 @@ fun SnoozeDialog(
                 choices.forEach { choice ->
                     TextButton(
                         onClick = {
-                            SnoozeStore.set(context, buildSnoozeEntry(taskWithCourse, groupEntry, choice.atMillis))
+                            SnoozeStore.set(context, buildSnoozeEntry(context, taskWithCourse, groupEntry, choice.atMillis))
                             Toast.makeText(
                                 context,
                                 "Snoozed until ${formatSnoozeTime(choice.atMillis)}",

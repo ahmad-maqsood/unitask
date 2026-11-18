@@ -202,18 +202,20 @@ object CountdownNotifier {
         )
 
         val n = maxOf(1L, totalMillis / 60_000L)
-        val title = when {
-            phase == null -> "Countdown finished"
-            phase.isBreak -> "Break over"
-            else -> "Focus session done"
-        }
+        val title = context.getString(
+            when {
+                phase == null -> R.string.countdown_finished_title_countdown
+                phase.isBreak -> R.string.countdown_finished_title_break
+                else -> R.string.countdown_finished_title_focus
+            }
+        )
         val seconds = PomodoroLogic.AUTO_START_DELAY_MILLIS / 1000L
         val text = when {
-            phase == null -> "Your $n minute countdown is done."
-            phase.isBreak && autoStarting -> "Your $n minute break is over. Focus starts in $seconds seconds."
-            phase.isBreak -> "Your $n minute break is over. Ready to focus?"
-            autoStarting -> "You focused for $n minutes. Your break starts in $seconds seconds."
-            else -> "You focused for $n minutes. Time for a break."
+            phase == null -> context.getString(R.string.countdown_finished_text_countdown, n)
+            phase.isBreak && autoStarting -> context.getString(R.string.countdown_finished_text_break_auto, n, seconds)
+            phase.isBreak -> context.getString(R.string.countdown_finished_text_break, n)
+            autoStarting -> context.getString(R.string.countdown_finished_text_focus_auto, n, seconds)
+            else -> context.getString(R.string.countdown_finished_text_focus, n)
         }
 
         val builder = NotificationCompat.Builder(context, channelId)

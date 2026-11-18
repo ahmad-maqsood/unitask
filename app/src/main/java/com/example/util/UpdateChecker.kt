@@ -1,6 +1,7 @@
 package com.example.util
 
 import android.content.Context
+import com.example.R
 import org.json.JSONObject
 import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +104,7 @@ object UpdateChecker {
                     rawTag
                 }
                 if (tag.isBlank()) {
-                    UpdateResult.Failed("No release has been published on GitHub yet.")
+                    UpdateResult.Failed(context.getString(R.string.update_error_no_release))
                 } else if (isNewer(tag, current)) {
                     val page = if (location.startsWith("http")) location else RELEASES_PAGE
                     UpdateResult.Available(tag, page, releaseNotes(tag, current))
@@ -111,15 +112,15 @@ object UpdateChecker {
                     UpdateResult.UpToDate(current)
                 }
             } else if (code == 404) {
-                UpdateResult.Failed("No release has been published on GitHub yet.")
+                UpdateResult.Failed(context.getString(R.string.update_error_no_release))
             } else if (code == 403 || code == 429) {
-                UpdateResult.Failed("GitHub is limiting requests from your network right now. Try again in a little while.")
+                UpdateResult.Failed(context.getString(R.string.update_error_rate_limited))
             } else {
-                UpdateResult.Failed("GitHub answered with error $code.")
+                UpdateResult.Failed(context.getString(R.string.update_error_http, code))
             }
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
-            UpdateResult.Failed("Could not reach GitHub. Check your internet connection.")
+            UpdateResult.Failed(context.getString(R.string.update_error_unreachable))
         }
     }
 

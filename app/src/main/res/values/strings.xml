@@ -1110,4 +1110,16 @@
     <string name="reminder_span_1h">1 hour</string>
     <string name="reminder_span_2d">2 days</string>
     <string name="reminder_span_12h">12 hours</string>
+    <string name="countdown_finished_title_countdown">Countdown finished</string>
+    <string name="countdown_finished_title_break">Break over</string>
+    <string name="countdown_finished_title_focus">Focus session done</string>
+    <string name="countdown_finished_text_countdown">Your %1$d minute countdown is done.</string>
+    <string name="countdown_finished_text_break_auto">Your %1$d minute break is over. Focus starts in %2$d seconds.</string>
+    <string name="countdown_finished_text_break">Your %1$d minute break is over. Ready to focus?</string>
+    <string name="countdown_finished_text_focus_auto">You focused for %1$d minutes. Your break starts in %2$d seconds.</string>
+    <string name="countdown_finished_text_focus">You focused for %1$d minutes. Time for a break.</string>
+    <string name="update_error_no_release">No release has been published on GitHub yet.</string>
+    <string name="update_error_rate_limited">GitHub is limiting requests from your network right now. Try again in a little while.</string>
+    <string name="update_error_http">GitHub answered with error %1$d.</string>
+    <string name="update_error_unreachable">Could not reach GitHub. Check your internet connection.</string>
 </resources>

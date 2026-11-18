@@ -1036,4 +1036,16 @@
     <string name="reminder_span_1h">1 گھنٹہ</string>
     <string name="reminder_span_2d">2 دن</string>
     <string name="reminder_span_12h">12 گھنٹے</string>
+    <string name="countdown_finished_title_countdown">کاؤنٹ ڈاؤن مکمل</string>
+    <string name="countdown_finished_title_break">وقفہ ختم</string>
+    <string name="countdown_finished_title_focus">فوکس سیشن مکمل</string>
+    <string name="countdown_finished_text_countdown">آپ کا %1$d منٹ کا کاؤنٹ ڈاؤن مکمل ہو گیا۔</string>
+    <string name="countdown_finished_text_break_auto">آپ کا %1$d منٹ کا وقفہ ختم ہو گیا۔ فوکس %2$d سیکنڈ میں شروع ہوگا۔</string>
+    <string name="countdown_finished_text_break">آپ کا %1$d منٹ کا وقفہ ختم ہو گیا۔ توجہ کے لیے تیار ہیں؟</string>
+    <string name="countdown_finished_text_focus_auto">آپ نے %1$d منٹ توجہ سے کام کیا۔ آپ کا وقفہ %2$d سیکنڈ میں شروع ہوگا۔</string>
+    <string name="countdown_finished_text_focus">آپ نے %1$d منٹ توجہ سے کام کیا۔ اب وقفے کا وقت ہے۔</string>
+    <string name="update_error_no_release">GitHub پر ابھی تک کوئی ریلیز شائع نہیں ہوئی۔</string>
+    <string name="update_error_rate_limited">GitHub اس وقت آپ کے نیٹ ورک سے درخواستیں محدود کر رہا ہے۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔</string>
+    <string name="update_error_http">GitHub نے خرابی %1$d کے ساتھ جواب دیا۔</string>
+    <string name="update_error_unreachable">GitHub تک رسائی نہیں ہو سکی۔ اپنا انٹرنیٹ کنکشن چیک کریں۔</string>
 </resources>

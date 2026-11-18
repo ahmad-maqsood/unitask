@@ -189,6 +189,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
     val activity = context as? Activity
 
@@ -269,7 +270,7 @@ fun MainScreen(
             settings.edit { putBoolean("notification_permission_prompted", true) }
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.msg_reminder_saved_allow_notifications),
+                    message = uiResources.getString(R.string.msg_reminder_saved_allow_notifications),
                     duration = SnackbarDuration.Long
                 )
             }
@@ -818,8 +819,8 @@ fun MainScreen(
                                 scope.launch {
                                     snackbarHostState.currentSnackbarData?.dismiss()
                                     val result = snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.msg_class_moved_to_recently_deleted),
-                                        actionLabel = context.getString(R.string.common_undo),
+                                        message = uiResources.getString(R.string.msg_class_moved_to_recently_deleted),
+                                        actionLabel = uiResources.getString(R.string.common_undo),
                                         duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -986,7 +987,7 @@ fun MainScreen(
                 viewModel.restoreSemester(semesterName) {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.msg_restored_semester, semesterName),
+                            message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -1072,7 +1073,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.msg_restored_semester, semesterName),
+                                message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1082,7 +1083,7 @@ fun MainScreen(
                     viewModel.deleteSemesterForever(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.msg_deleted_semester, semesterName),
+                                message = uiResources.getString(R.string.msg_deleted_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1121,7 +1122,7 @@ fun MainScreen(
                     viewModel.restoreSemester(semesterName) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.msg_restored_semester, semesterName),
+                                message = uiResources.getString(R.string.msg_restored_semester, semesterName),
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -1151,8 +1152,8 @@ fun MainScreen(
                         snackbarHostState.currentSnackbarData?.dismiss()
                         val courseLabel = context.resources.getQuantityString(R.plurals.counts_courses, courseIds.size, courseIds.size)
                         val result = snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.msg_archived_courses_to_semester, courseLabel, semesterName),
-                            actionLabel = context.getString(R.string.common_undo),
+                            message = uiResources.getString(R.string.msg_archived_courses_to_semester, courseLabel, semesterName),
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Short
                         )
                         if (result == SnackbarResult.ActionPerformed) {

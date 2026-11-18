@@ -75,6 +75,7 @@ fun RecentlyDeletedScreen(
     viewModel: RecentlyDeletedViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
     val deletedNotes by viewModel.deletedNotes.collectAsStateWithLifecycle()
     val deletedClasses by viewModel.deletedClasses.collectAsStateWithLifecycle()
@@ -212,7 +213,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreTask(item.task.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_task_restored))
+                                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_task_restored))
                                         }
                                     },
                                     onDeleteForever = { taskToDeleteForever = item }
@@ -242,7 +243,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreNote(item.note.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_note_restored))
+                                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_note_restored))
                                         }
                                     },
                                     onDeleteForever = { noteToDeleteForever = item }
@@ -273,7 +274,7 @@ fun RecentlyDeletedScreen(
                                     onRestore = {
                                         viewModel.restoreClass(item.slot.id)
                                         scope.launch {
-                                            snackbarHostState.showSnackbar(context.getString(R.string.msg_class_restored))
+                                            snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_class_restored))
                                         }
                                     },
                                     onDeleteForever = { classToDeleteForever = item }

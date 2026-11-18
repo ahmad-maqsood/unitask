@@ -74,6 +74,7 @@ fun AddEditLectureSlotDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val resources = LocalResources.current
     var conflictWarningMessage by remember { mutableStateOf<String?>(null) }
 
@@ -415,9 +416,9 @@ fun AddEditLectureSlotDialog(
                             thisType == otherType
                     }
                     if (overlapping != null && conflictWarningMessage == null) {
-                        val courseLabel = overlapping.course?.code ?: context.getString(R.string.slot_conflict_another_class)
+                        val courseLabel = overlapping.course?.code ?: uiResources.getString(R.string.slot_conflict_another_class)
                         val timeLabel = "${com.example.util.TimeFormatter.format(overlapping.slot.startHour, overlapping.slot.startMinute)} - ${com.example.util.TimeFormatter.format(overlapping.slot.endHour, overlapping.slot.endMinute)}"
-                        conflictWarningMessage = context.getString(
+                        conflictWarningMessage = uiResources.getString(
                             if (slotToEdit != null) R.string.slot_conflict_warning_update else R.string.slot_conflict_warning_save,
                             courseLabel,
                             timeLabel

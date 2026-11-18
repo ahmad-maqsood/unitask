@@ -101,6 +101,7 @@ fun CourseDetailSheet(
     val course = courseWithCount.course
     val courseColor = rememberCourseColor(course.colorHex)
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
     var slotPendingDelete by remember { mutableStateOf<LectureSlot?>(null) }
@@ -145,8 +146,8 @@ fun CourseDetailSheet(
                 scope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.msg_class_moved_to_recently_deleted),
-                        actionLabel = context.getString(R.string.common_undo),
+                        message = uiResources.getString(R.string.msg_class_moved_to_recently_deleted),
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Short
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -544,8 +545,8 @@ fun CourseDetailSheet(
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
                                 val result = snackbarHostState.showSnackbar(
-                                    message = context.getString(R.string.msg_task_moved_to_recently_deleted),
-                                    actionLabel = context.getString(R.string.common_undo),
+                                    message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                                    actionLabel = uiResources.getString(R.string.common_undo),
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {

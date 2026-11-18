@@ -319,7 +319,7 @@
     <string name="drive_time_today">آج %1$s</string>
     <string name="drive_time_yesterday">گزشتہ کل %1$s</string>
     <string name="reminder_could_not_mark_done">ٹاسک کو مکمل نشان زد نہیں کیا جا سکا</string>
-    <string name="counts_separator">، </string>
+    <string name="counts_separator">"، "</string>
     <plurals name="counts_courses">
         <item quantity="one">%d کورس</item>
         <item quantity="other">%d کورسز</item>

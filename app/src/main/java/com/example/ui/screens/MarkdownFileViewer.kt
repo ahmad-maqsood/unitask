@@ -60,6 +60,7 @@ fun MarkdownFileViewer(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     BackHandler {
         onClose()
     }
@@ -110,17 +111,17 @@ fun MarkdownFileViewer(
                                             if (newId > 0L) {
                                                 isSaved = true
                                                 val result = snackbarHostState.showSnackbar(
-                                                    message = context.getString(R.string.msg_saved_to_notes),
-                                                    actionLabel = context.getString(R.string.msg_open),
+                                                    message = uiResources.getString(R.string.msg_saved_to_notes),
+                                                    actionLabel = uiResources.getString(R.string.msg_open),
                                                     duration = SnackbarDuration.Short
                                                 )
                                                 if (result == SnackbarResult.ActionPerformed) {
                                                     onOpenSavedNote(newId)
                                                 }
                                             } else if (newId < 0L) {
-                                                snackbarHostState.showSnackbar(context.getString(R.string.msg_file_too_long_for_note, String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)))
+                                                snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_file_too_long_for_note, String.format(java.util.Locale.US, "%,d", NoteRepository.MAX_BODY)))
                                             } else {
-                                                snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
+                                                snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_read_file))
                                             }
                                         } finally {
                                             isSaving = false

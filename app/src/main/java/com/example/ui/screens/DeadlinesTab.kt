@@ -145,6 +145,7 @@ fun DeadlinesTab(
     var showBatchDeleteConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val db = remember { AppDatabase.getDatabase(context) }
     val activeNotes by remember(db) { db.noteDao().observeNotes() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val activeTasks by remember(db) { db.taskDao().getAllTasksWithCourse() }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -296,7 +297,7 @@ fun DeadlinesTab(
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
                             message = if (wasDone) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
-                            actionLabel = context.getString(R.string.common_undo),
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }
@@ -320,8 +321,8 @@ fun DeadlinesTab(
                 try {
                     val result = withTimeoutOrNull(5000L) {
                         host.showSnackbar(
-                            message = context.getString(R.string.msg_task_moved_to_recently_deleted),
-                            actionLabel = context.getString(R.string.common_undo),
+                            message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                            actionLabel = uiResources.getString(R.string.common_undo),
                             duration = SnackbarDuration.Indefinite
                         )
                     }

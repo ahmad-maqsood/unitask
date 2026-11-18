@@ -3,6 +3,7 @@ package com.example.ui
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,13 +48,17 @@ class SectionCollapsePersistenceTest {
     @Composable
     private fun Sections(storageKey: String, vararg initiallyCollapsed: String) {
         val collapse = rememberSectionCollapse(storageKey, *initiallyCollapsed)
-        listOf(TaskSectionKey.TODAY, TaskSectionKey.DONE).forEach { key ->
-            Text(
-                text = "$key:" + if (collapse.isCollapsed(key)) "collapsed" else "open",
-                modifier = Modifier
-                    .testTag("$storageKey-$key")
-                    .clickable { collapse.toggle(key) }
-            )
+        // A Column, so the lines sit under each other. Without it they would overlap and a tap on
+        // one line would land on the line drawn on top of it.
+        Column {
+            listOf(TaskSectionKey.TODAY, TaskSectionKey.DONE).forEach { key ->
+                Text(
+                    text = "$key:" + if (collapse.isCollapsed(key)) "collapsed" else "open",
+                    modifier = Modifier
+                        .testTag("$storageKey-$key")
+                        .clickable { collapse.toggle(key) }
+                )
+            }
         }
     }
 
@@ -114,8 +119,10 @@ class SectionCollapsePersistenceTest {
         var showScreen by mutableStateOf(true)
         composeRule.setContent {
             if (showScreen) {
-                Sections("my_tasks")
-                Sections("deadlines")
+                Column {
+                    Sections("my_tasks")
+                    Sections("deadlines")
+                }
             }
         }
 

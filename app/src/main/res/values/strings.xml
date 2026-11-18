@@ -346,7 +346,7 @@
     <string name="drive_time_yesterday">Yesterday %1$s</string>
     <string name="reminder_could_not_mark_done">Could not mark the task as done</string>
     <!-- Backup summaries: "8 courses, 1 task, 2 notes" (Drive and backup file) -->
-    <string name="counts_separator">, </string>
+    <string name="counts_separator">", "</string>
     <plurals name="counts_courses">
         <item quantity="one">%d course</item>
         <item quantity="other">%d courses</item>

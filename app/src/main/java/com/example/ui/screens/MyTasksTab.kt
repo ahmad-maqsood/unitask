@@ -93,6 +93,7 @@ fun MyTasksTab(
     onChecklistToggle: ((TaskItem, Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     // Done starts collapsed, like before. Every other section starts open. After that, whatever
     // the person collapses or expands is remembered, even after closing the app.
     val sectionCollapse = rememberSectionCollapse("my_tasks", TaskSectionKey.DONE)
@@ -107,7 +108,7 @@ fun MyTasksTab(
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
                         message = if (task.status == TaskStatus.COMPLETED) "\"${task.title}\" marked as not done" else "\"${task.title}\" marked as done",
-                        actionLabel = context.getString(R.string.common_undo),
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Indefinite
                     )
                 }
@@ -127,8 +128,8 @@ fun MyTasksTab(
             try {
                 val result = withTimeoutOrNull(5000L) {
                     snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.msg_task_moved_to_recently_deleted),
-                        actionLabel = context.getString(R.string.common_undo),
+                        message = uiResources.getString(R.string.msg_task_moved_to_recently_deleted),
+                        actionLabel = uiResources.getString(R.string.common_undo),
                         duration = SnackbarDuration.Indefinite
                     )
                 }

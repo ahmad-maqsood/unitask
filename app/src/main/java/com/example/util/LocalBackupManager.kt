@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import androidx.room.withTransaction
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import com.example.data.local.isArchived
@@ -414,17 +415,17 @@ object LocalBackupManager {
                     envelope.put("data", built.data)
                 } else {
                     envelope.put("encrypted", true)
-                    encryptInto(envelope, built.data.toString(), password)
+                    encryptInto(context, envelope, built.data.toString(), password)
                 }
 
                 val stream = context.contentResolver.openOutputStream(uri, "wt")
-                    ?: return@withContext BackupResult.Failure("Could not write to the chosen location.")
+                    ?: return@withContext BackupResult.Failure(context.getString(R.string.backup_error_cannot_write))
                 stream.use { it.write(envelope.toString(2).toByteArray(Charsets.UTF_8)) }
 
                 BackupReminder.recordLocalExport(context)
                 BackupResult.Success(built.counts)
             } catch (e: Exception) {
-                BackupResult.Failure(e.message ?: "The backup could not be saved.")
+                BackupResult.Failure(e.message ?: context.getString(R.string.backup_error_save_failed))
             }
         }
 
@@ -435,23 +436,21 @@ object LocalBackupManager {
             try {
                 val root = JSONObject(readFile(context, uri))
                 if (root.optString("format") != FORMAT) {
-                    return@withContext BackupResult.Failure("This is not a UniTask backup file.")
+                    return@withContext BackupResult.Failure(context.getString(R.string.backup_error_not_backup_file))
                 }
                 if (root.optInt("version", 0) > FORMAT_VERSION) {
-                    return@withContext BackupResult.Failure(
-                        "This backup was made by a newer version of UniTask. Update the app and try again."
-                    )
+                    return@withContext BackupResult.Failure(context.getString(R.string.backup_error_newer_version))
                 }
 
                 val data: JSONObject = if (root.optBoolean("encrypted", false)) {
                     if (password.isNullOrEmpty()) {
-                        return@withContext BackupResult.Failure("Enter the backup password.", wrongPassword = true)
+                        return@withContext BackupResult.Failure(context.getString(R.string.backup_error_enter_password), wrongPassword = true)
                     }
                     val plain = try {
                         decrypt(root, password)
                     } catch (_: GeneralSecurityException) {
                         return@withContext BackupResult.Failure(
-                            "Wrong password, or the backup file is damaged.",
+                            context.getString(R.string.backup_error_wrong_password),
                             wrongPassword = true
                         )
                     }
@@ -463,9 +462,9 @@ object LocalBackupManager {
                 val counts = applyBackupData(context, data, source = null)
                 BackupResult.Success(counts)
             } catch (_: JSONException) {
-                BackupResult.Failure("The file is damaged or is not a UniTask backup.")
+                BackupResult.Failure(context.getString(R.string.backup_error_damaged))
             } catch (e: Exception) {
-                BackupResult.Failure(e.message ?: "The backup could not be restored.")
+                BackupResult.Failure(e.message ?: context.getString(R.string.backup_error_restore_failed))
             }
         }
 
@@ -1010,7 +1009,7 @@ object LocalBackupManager {
 
     private fun readFile(context: Context, uri: Uri): String {
         val input = context.contentResolver.openInputStream(uri)
-            ?: throw IllegalStateException("Could not open the chosen file.")
+            ?: throw IllegalStateException(context.getString(R.string.backup_error_cannot_open))
         val text = input.use { stream ->
             val out = ByteArrayOutputStream()
             val buffer = ByteArray(8192)
@@ -1020,7 +1019,7 @@ object LocalBackupManager {
                 if (read < 0) break
                 total += read
                 if (total > MAX_FILE_BYTES) {
-                    throw IllegalStateException("This file is too large to be a UniTask backup.")
+                    throw IllegalStateException(context.getString(R.string.backup_error_too_large))
                 }
                 out.write(buffer, 0, read)
             }
@@ -1039,7 +1038,7 @@ object LocalBackupManager {
         }
     }
 
-    private fun encryptInto(envelope: JSONObject, plain: String, password: String) {
+    private fun encryptInto(context: Context, envelope: JSONObject, plain: String, password: String) {
         val random = SecureRandom()
         val salt = ByteArray(16).also { random.nextBytes(it) }
         val iv = ByteArray(12).also { random.nextBytes(it) }
@@ -1055,7 +1054,7 @@ object LocalBackupManager {
                 // try the next one
             }
         }
-        val secret = key ?: throw IllegalStateException("Encryption is not available on this phone.")
+        val secret = key ?: throw IllegalStateException(context.getString(R.string.backup_error_no_encryption))
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, secret, GCMParameterSpec(128, iv))

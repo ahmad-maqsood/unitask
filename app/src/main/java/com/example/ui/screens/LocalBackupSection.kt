@@ -139,10 +139,12 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     restorePasswordInput = ""
                     restorePasswordError = null
                     showResult(
-                        "Backup restored",
-                        "Added ${describe(context, result.counts)}." +
-                            skippedImagesNote(context, result.counts.skippedImages, restoring = true) +
-                            " Items that were already on this phone were kept."
+                        context.getString(R.string.backup_local_restored_title),
+                        context.getString(
+                            R.string.backup_local_restored_body,
+                            describe(context, result.counts),
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = true)
+                        )
                     )
                 }
                 is BackupResult.Failure -> {
@@ -152,7 +154,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                         restoreUri = null
                         restorePasswordInput = ""
                         restorePasswordError = null
-                        showResult("Restore failed", result.message)
+                        showResult(context.getString(R.string.drive_error_restore_failed), result.message)
                     }
                 }
             }
@@ -171,13 +173,14 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 isWorking = false
                 when (result) {
                     is BackupResult.Success -> showResult(
-                        "Backup saved",
-                        "Saved ${describe(context, result.counts)}." +
-                            skippedImagesNote(context, result.counts.skippedImages, restoring = false) +
-                            " Keep the file somewhere safe, such as Google Drive " +
-                            "or another phone. Attached files are not included."
+                        context.getString(R.string.backup_local_saved_title),
+                        context.getString(
+                            R.string.backup_local_saved_body,
+                            describe(context, result.counts),
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = false)
+                        )
                     )
-                    is BackupResult.Failure -> showResult("Backup failed", result.message)
+                    is BackupResult.Failure -> showResult(context.getString(R.string.drive_error_backup_failed), result.message)
                 }
             }
         }
@@ -193,7 +196,10 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 isWorking = false
                 when (kind) {
                     LocalBackupManager.Inspection.INVALID ->
-                        showResult("Not a UniTask backup", "The chosen file is not a UniTask backup file.")
+                        showResult(
+                            context.getString(R.string.backup_local_not_backup_title),
+                            context.getString(R.string.backup_local_not_backup_body)
+                        )
                     LocalBackupManager.Inspection.ENCRYPTED -> {
                         restorePasswordInput = ""
                         restorePasswordError = null

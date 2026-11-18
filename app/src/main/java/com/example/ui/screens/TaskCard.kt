@@ -624,7 +624,7 @@ fun TaskCard(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = stringResource(R.string.task_card_snoozed_until, formatSnoozeTime(snoozedUntil)),
+                            text = stringResource(R.string.task_card_snoozed_until, formatSnoozeTime(LocalContext.current, snoozedUntil)),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,

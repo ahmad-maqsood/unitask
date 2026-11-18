@@ -386,9 +386,7 @@ object DriveBackupManager {
             val candidates = when {
                 slotFileId != null -> {
                     val chosen = listOfNotNull(slot1, slot2).firstOrNull { it.id == slotFileId }
-                        ?: return BackupResult.Failure(
-                            "That backup is no longer on Google Drive. Close this and try again."
-                        )
+                        ?: return BackupResult.Failure(context.getString(R.string.drive_error_backup_gone))
                     listOf(chosen)
                 }
                 seq1 >= seq2 -> listOfNotNull(slot1, slot2)
@@ -406,9 +404,7 @@ object DriveBackupManager {
                     }
                     val version = root.optInt("version", 0)
                     if (version > 1) {
-                        return BackupResult.Failure(
-                            "This backup was made by a newer version of UniTask. Update the app and try again."
-                        )
+                        return BackupResult.Failure(context.getString(R.string.backup_error_newer_version))
                     }
                     val data = root.optJSONObject("data") ?: continue
                     val expectedHash = slot.props["dataHash"]
@@ -427,7 +423,7 @@ object DriveBackupManager {
             }
 
             if (validData == null) {
-                return BackupResult.Failure("The backup on Google Drive is damaged and could not be restored.")
+                return BackupResult.Failure(context.getString(R.string.drive_error_backup_damaged))
             }
 
             val imageIdByName = files

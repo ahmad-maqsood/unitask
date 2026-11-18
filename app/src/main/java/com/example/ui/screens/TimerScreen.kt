@@ -97,6 +97,7 @@ import com.example.util.AppTip
 import com.example.util.timer.PomodoroAlertSettings
 import com.example.util.timer.PomodoroLogic
 import com.example.util.timer.PomodoroPhase
+import com.example.util.timer.PomodoroText
 import com.example.util.timer.PomodoroSettings
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerHistoryLogic
@@ -196,7 +197,7 @@ fun TimerScreen(
     // Pomodoro auto-start: seconds until the next round starts by itself (null when none is waiting).
     val autoStartSecondsLeft by rememberAutoStartSecondsLeft(autoStartAt, controller)
     val autoStartText = autoStartSecondsLeft?.let {
-        PomodoroLogic.autoStartLabel(state, pomodoroSettings, it)
+        PomodoroText.autoStart(context, state, pomodoroSettings, it)
     }
     val cancelAutoStart = {
         // Silence the "round done" alert too, then leave the next round for the user to start.
@@ -461,7 +462,7 @@ fun TimerScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = timerStatusLabel(
-                                    state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase
+                                    context, state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase
                                 ).uppercase(),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
@@ -595,7 +596,7 @@ fun TimerScreen(
                     onPause = { controller.pause() },
                     onResume = { controller.start() },
                     onReset = { controller.reset() },
-                    finishedLabel = if (isFinished) PomodoroLogic.nextActionLabel(state, pomodoroSettings) else null,
+                    finishedLabel = if (isFinished) PomodoroText.nextAction(context, state, pomodoroSettings) else null,
                     onFinishedStart = {
                         // Silence the "phase done" alert, then begin the next focus or break.
                         CountdownNotifier.cancelFinished(context)
@@ -1184,6 +1185,7 @@ private fun stepPomodoroText(text: String, delta: Int, min: Int, max: Int): Stri
 
 /** The short line shown under the clock inside the ring. */
 internal fun timerStatusLabel(
+    context: android.content.Context,
     mode: TimerMode,
     isRunning: Boolean,
     isPaused: Boolean,
@@ -1191,12 +1193,14 @@ internal fun timerStatusLabel(
     pomodoroPhase: PomodoroPhase? = null
 ): String = when {
     // Pomodoro: "Focus", "Short break", "Long break", "Paused", "Focus done" or "Break over".
-    pomodoroPhase != null -> PomodoroLogic.statusLabel(pomodoroPhase, isPaused, isFinished)
-    isFinished -> "Time is up"
-    isRunning -> if (mode == TimerMode.COUNTDOWN) "Focus time" else "Studying"
-    isPaused -> "Paused"
-    mode == TimerMode.COUNTDOWN -> "Tap to change"
-    else -> "Ready"
+    pomodoroPhase != null -> PomodoroText.status(context, pomodoroPhase, isPaused, isFinished)
+    isFinished -> context.getString(R.string.timer_status_time_is_up)
+    isRunning -> context.getString(
+        if (mode == TimerMode.COUNTDOWN) R.string.timer_status_focus_time else R.string.timer_status_studying
+    )
+    isPaused -> context.getString(R.string.timer_status_paused)
+    mode == TimerMode.COUNTDOWN -> context.getString(R.string.timer_status_tap_to_change)
+    else -> context.getString(R.string.timer_status_ready)
 }
 
 @Composable

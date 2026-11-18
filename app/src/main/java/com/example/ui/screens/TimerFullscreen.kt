@@ -64,7 +64,7 @@ fun FullscreenTimerContent(
 ) {
     val colors = MaterialTheme.colorScheme
     val accent = if (isFinished) colors.tertiary else colors.primary
-    val statusText = timerStatusLabel(state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase)
+    val statusText = timerStatusLabel(androidx.compose.ui.platform.LocalContext.current, state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase)
 
     BoxWithConstraints(
         modifier = modifier

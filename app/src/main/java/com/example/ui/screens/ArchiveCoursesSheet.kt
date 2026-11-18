@@ -195,7 +195,9 @@ fun ArchiveCoursesSheet(
                 isError = semesterName.isNotBlank() && !validation.isValid,
                 supportingText = {
                     if (semesterName.isNotBlank() && !validation.isValid && validation.errorMessage != null) {
-                        Text(validation.errorMessage)
+                        Text(
+                            if (validation.errorRes != 0) stringResource(validation.errorRes) else validation.errorMessage
+                        )
                     } else {
                         Text("${semesterName.length}/40")
                     }

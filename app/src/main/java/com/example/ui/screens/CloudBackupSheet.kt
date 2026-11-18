@@ -395,7 +395,7 @@ fun CloudBackupSheet(
                                 }, scope = coroutineScope)
                             } catch (e: Exception) {
                                 isLoading = false
-                                errorMessage = "Delete failed: ${e.message}"
+                                errorMessage = context.getString(R.string.cloud_error_delete_failed, e.message.orEmpty())
                             }
                         }
                     },
@@ -591,13 +591,13 @@ private fun exportUserData(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(sendIntent, "Export UniTask Data"))
+                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.cloud_export_chooser_title)))
                 onDone()
             }
         } catch (e: Exception) {
             Log.e("CloudBackupSheet", "Data export failed: ${e.message}", e)
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                onError?.invoke("Export failed: ${e.message ?: "Unknown error"}")
+                onError?.invoke(context.getString(R.string.cloud_error_export_failed, e.message ?: context.getString(R.string.error_unknown)))
                 onDone()
             }
         }

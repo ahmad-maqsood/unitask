@@ -524,7 +524,11 @@ class AppRepository(
                     context,
                     kind = "Missed task",
                     title = context.getString(R.string.app_repository_missed_task_title, task.title),
-                    body = "It was due ${"${DateFormats.shortDate(task.deadlineMillis)}, ${DateFormats.clock(task.deadlineMillis)}"} and was not marked done.",
+                    body = context.getString(
+                        R.string.app_repository_missed_task_body,
+                        DateFormats.shortDate(task.deadlineMillis),
+                        DateFormats.clock(task.deadlineMillis)
+                    ),
                     target = "tab:MYTASKS",
                     key = "missed-task|${task.id}|${task.deadlineMillis}",
                     nowMillis = now

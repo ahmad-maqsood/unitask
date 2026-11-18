@@ -15,7 +15,9 @@ data class ArchivedCourseConflict(
 data class SemesterNameValidation(
     val isValid: Boolean,
     val trimmedName: String,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** The same message as a string resource, so it shows in the app language. 0 when there is no error. */
+    @androidx.annotation.StringRes val errorRes: Int = 0
 ) {
     val isSuccess: Boolean get() = isValid
 }
@@ -32,12 +34,14 @@ fun validateSemesterName(name: String): SemesterNameValidation {
         trimmed.isEmpty() -> SemesterNameValidation(
             isValid = false,
             trimmedName = trimmed,
-            errorMessage = "Semester name cannot be blank"
+            errorMessage = "Semester name cannot be blank",
+            errorRes = com.example.R.string.semester_error_blank
         )
         trimmed.length > 40 -> SemesterNameValidation(
             isValid = false,
             trimmedName = trimmed,
-            errorMessage = "Semester name cannot exceed 40 characters"
+            errorMessage = "Semester name cannot exceed 40 characters",
+            errorRes = com.example.R.string.semester_error_too_long
         )
         else -> SemesterNameValidation(
             isValid = true,

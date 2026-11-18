@@ -474,6 +474,9 @@
     <string name="groups_error_remove_member">رکن کو ہٹایا نہیں جا سکا۔</string>
     <string name="groups_error_leave_group">گروپ چھوڑا نہیں جا سکا۔</string>
     <string name="groups_error_delete_group">گروپ حذف نہیں ہو سکا۔</string>
+    <string name="groups_error_group_limit">آپ زیادہ سے زیادہ %1$d گروپس کے مالک ہو سکتے ہیں۔ جس گروپ کی ضرورت نہیں اسے حذف کریں، پھر دوبارہ کوشش کریں۔</string>
+    <string name="groups_error_task_limit">اس گروپ میں ٹاسک کی حد %1$d تک پہنچ گئی ہے۔ نئے ٹاسک شامل کرنے کے لیے پرانے ٹاسک حذف کریں۔</string>
+    <string name="groups_error_transfer_limit">وہ رکن پہلے ہی %1$d گروپس کا مالک ہے، جو ایک شخص کے لیے زیادہ سے زیادہ حد ہے۔</string>
     <string name="groups_error_create_group_failed">گروپ بنانے میں ناکامی</string>
     <string name="groups_error_join_group_failed">گروپ جوائن کرنے میں ناکامی</string>
     <string name="groups_error_update_group_failed">گروپ اپڈیٹ کرنے میں ناکامی</string>

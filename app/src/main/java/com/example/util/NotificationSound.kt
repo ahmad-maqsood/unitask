@@ -2,6 +2,7 @@ package com.example.util
 
 import android.app.NotificationManager
 import android.content.Context
+import com.example.R
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
@@ -107,7 +108,7 @@ object NotificationSound {
 
     /** Short text for the Settings row. */
     fun label(context: Context): String = when (val c = choice(context)) {
-        CHOICE_SYSTEM -> "Phone default"
+        CHOICE_SYSTEM -> context.getString(R.string.sound_phone_default)
         CHOICE_PHONE -> {
             val title = try {
                 phoneUri(context)?.let { RingtoneManager.getRingtone(context, it)?.getTitle(context) }

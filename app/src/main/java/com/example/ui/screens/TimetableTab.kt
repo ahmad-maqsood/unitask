@@ -565,7 +565,7 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
         )
     }
 
-    val icsContent = buildTimetableIcs(slots, anchorMillis)
+    val icsContent = buildTimetableIcs(slots, anchorMillis, defaultTitle = context.getString(R.string.label_lecture))
 
     val exportsDir = java.io.File(context.cacheDir, "exports")
     if (!exportsDir.exists()) {

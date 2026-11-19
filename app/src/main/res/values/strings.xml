@@ -1346,4 +1346,15 @@
     <string name="group_task_you_suffix">(you)</string>
     <string name="group_task_tag_all">@all</string>
     <string name="group_task_tagged_count_format">%1$d tagged</string>
+    <string name="sound_phone_default">Phone default</string>
+    <string name="note_pdf_cutoff">The rest of this note was cut off to keep the PDF small.</string>
+    <string name="note_pdf_image">Image</string>
+    <string name="note_pdf_image_with_alt">Image: %1$s</string>
+    <string name="drive_auth_consent_missing">Consent required but the permission screen could not be opened</string>
+    <string name="drive_auth_no_token">No access token returned</string>
+    <string name="drive_auth_connection_cancelled">Connection cancelled</string>
+    <string name="drive_auth_cancelled">Authorization cancelled</string>
+    <string name="drive_auth_network_error">Network error during authorization</string>
+    <string name="drive_auth_play_services">Google Play services is unavailable or needs an update</string>
+    <string name="drive_auth_failed">Authorization failed</string>
 </resources>

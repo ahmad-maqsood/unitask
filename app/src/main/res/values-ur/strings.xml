@@ -1272,4 +1272,15 @@
     <string name="group_task_you_suffix">(آپ)</string>
     <string name="group_task_tag_all">@سب</string>
     <string name="group_task_tagged_count_format">%1$d ٹیگ شدہ</string>
+    <string name="sound_phone_default">فون کی ڈیفالٹ</string>
+    <string name="note_pdf_cutoff">پی ڈی ایف چھوٹی رکھنے کے لیے اس نوٹ کا باقی حصہ کاٹ دیا گیا۔</string>
+    <string name="note_pdf_image">تصویر</string>
+    <string name="note_pdf_image_with_alt">تصویر: %1$s</string>
+    <string name="drive_auth_consent_missing">اجازت درکار ہے لیکن اجازت کی اسکرین نہیں کھل سکی</string>
+    <string name="drive_auth_no_token">کوئی رسائی ٹوکن نہیں ملا</string>
+    <string name="drive_auth_connection_cancelled">کنکشن منسوخ کر دیا گیا</string>
+    <string name="drive_auth_cancelled">اجازت منسوخ کر دی گئی</string>
+    <string name="drive_auth_network_error">اجازت کے دوران نیٹ ورک کی خرابی</string>
+    <string name="drive_auth_play_services">گوگل پلے سروسز دستیاب نہیں ہیں یا انہیں اپ ڈیٹ کی ضرورت ہے</string>
+    <string name="drive_auth_failed">اجازت ناکام ہو گئی</string>
 </resources>

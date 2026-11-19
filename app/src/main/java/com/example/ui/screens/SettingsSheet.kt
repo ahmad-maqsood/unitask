@@ -329,7 +329,7 @@ fun SettingsButton(
                             SettingsSectionRow(
                                 icon = Icons.Default.Info,
                                 title = stringResource(R.string.settings_about_help),
-                                summary = if (available != null) "Update available" else "Version $currentVersion",
+                                summary = if (available != null) stringResource(R.string.settings_update_available) else stringResource(R.string.settings_version_format, currentVersion),
                                 onClick = { page = SettingsPage.About },
                                 testTag = "settings_section_about",
                                 showBadge = available != null

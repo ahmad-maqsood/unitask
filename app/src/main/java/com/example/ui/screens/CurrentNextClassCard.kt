@@ -182,7 +182,7 @@ fun CurrentNextClassCard(
                         contentColor = courseColor
                     ) {
                         Text(
-                            text = course?.code ?: "Class",
+                            text = course?.code ?: stringResource(R.string.label_class),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -204,7 +204,7 @@ fun CurrentNextClassCard(
 
                 // Course Name (fixed to exactly 2 lines reservation)
                 Text(
-                    text = course?.name ?: "Lecture",
+                    text = course?.name ?: stringResource(R.string.label_lecture),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

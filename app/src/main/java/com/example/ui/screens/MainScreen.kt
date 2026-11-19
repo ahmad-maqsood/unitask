@@ -581,10 +581,12 @@ fun MainScreen(
                 // real courses yet the Timetable button starts with the course instead.
                 val hasRealCourses = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() }
                 val fabDescription = when (currentTab) {
-                    MainTab.DEADLINES -> "Add assignment"
-                    MainTab.TIMETABLE -> if (hasRealCourses) "Add class slot" else "Add course"
-                    MainTab.COURSES -> "Add course"
-                    else -> "Add task"
+                    MainTab.DEADLINES -> stringResource(R.string.fab_add_assignment)
+                    MainTab.TIMETABLE ->
+                        if (hasRealCourses) stringResource(R.string.fab_add_class_slot)
+                        else stringResource(R.string.fab_add_course)
+                    MainTab.COURSES -> stringResource(R.string.fab_add_course)
+                    else -> stringResource(R.string.fab_add_task)
                 }
                 FloatingActionButton(
                     onClick = {

@@ -1325,4 +1325,13 @@
     <string name="health_battery_hint">Battery restrictions can stop reminders when the app is closed.</string>
     <string name="health_test_title">Test reminder</string>
     <string name="health_test_body">It works. Reminders reach this phone.</string>
+    <string name="fab_add_assignment">Add assignment</string>
+    <string name="fab_add_class_slot">Add class slot</string>
+    <string name="fab_add_course">Add course</string>
+    <string name="fab_add_task">Add task</string>
+    <string name="settings_update_available">Update available</string>
+    <string name="settings_version_format">Version %1$s</string>
+    <string name="announcements_title">Messages from UniTask</string>
+    <string name="label_class">Class</string>
+    <string name="label_lecture">Lecture</string>
 </resources>

@@ -229,7 +229,7 @@ fun AnnouncementHost(state: AnnouncementsState) {
     if (shown.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = { state.dismissPopup() },
-            title = { Text(if (shown.size == 1) shown[0].title else "Messages from UniTask") },
+            title = { Text(if (shown.size == 1) shown[0].title else stringResource(R.string.announcements_title)) },
             text = {
                 Column(
                     modifier = Modifier

@@ -1251,4 +1251,13 @@
     <string name="health_battery_hint">ایپ بند ہونے پر بیٹری کی پابندیاں یاد دہانیاں روک سکتی ہیں۔</string>
     <string name="health_test_title">ٹیسٹ یاد دہانی</string>
     <string name="health_test_body">یہ کام کر رہی ہے۔ یاد دہانیاں اس فون تک پہنچتی ہیں۔</string>
+    <string name="fab_add_assignment">اسائنمنٹ شامل کریں</string>
+    <string name="fab_add_class_slot">کلاس کا وقت شامل کریں</string>
+    <string name="fab_add_course">کورس شامل کریں</string>
+    <string name="fab_add_task">ٹاسک شامل کریں</string>
+    <string name="settings_update_available">اپ ڈیٹ دستیاب ہے</string>
+    <string name="settings_version_format">ورژن %1$s</string>
+    <string name="announcements_title">UniTask کے پیغامات</string>
+    <string name="label_class">کلاس</string>
+    <string name="label_lecture">لیکچر</string>
 </resources>

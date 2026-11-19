@@ -28,6 +28,13 @@ object BackupReminder {
         /** Whole days since the newest backup. Only meaningful when [neverBackedUp] is false. */
         val daysAgo: Int
     ) {
+        /** Message in English for tests; the card uses [messageFor] so it is translated. */
+        fun messageFor(context: android.content.Context): String = if (neverBackedUp) {
+            context.getString(com.example.R.string.backup_reminder_never)
+        } else {
+            context.getString(com.example.R.string.backup_reminder_days_ago_format, daysAgo)
+        }
+
         val message: String
             get() = if (neverBackedUp) {
                 "Your courses, tasks and notes are only on this phone, and you have not made a backup yet."

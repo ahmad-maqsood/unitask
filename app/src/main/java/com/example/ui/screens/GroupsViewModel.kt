@@ -346,7 +346,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val targetKey = normalizeCourseKey(code)
         val duplicateByCode = otherCourses.firstOrNull { normalizeCourseKey(it.code) == targetKey }
         if (duplicateByCode != null) {
-            _courseSaveError.value = "This group already has a course with the code ${duplicateByCode.code} (${duplicateByCode.name})."
+            _courseSaveError.value = str(R.string.group_course_duplicate_code_format, duplicateByCode.code, duplicateByCode.name)
             return
         }
 

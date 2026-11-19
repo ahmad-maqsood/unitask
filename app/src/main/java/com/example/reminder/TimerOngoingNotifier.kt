@@ -73,8 +73,8 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             views.setTextViewText(
                 R.id.timer_notif_label,
                 when {
-                    phase != null -> "$title • $totalMinutes min"
-                    countdown -> "$totalMinutes minute countdown"
+                    phase != null -> appContext.getString(R.string.timer_notif_phase_format, title, totalMinutes)
+                    countdown -> appContext.getString(R.string.timer_notif_countdown_format, totalMinutes)
                     else -> title
                 }
             )

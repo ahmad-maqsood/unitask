@@ -1305,4 +1305,22 @@
     <string name="course_delete_will_be_deleted_format">%1$s حذف کر دیا جائے گا۔</string>
     <string name="course_delete_will_be_deleted_with_warning_format">%1$s حذف کر دیا جائے گا۔ %2$s</string>
     <string name="course_delete_fallback_format">%1$s اور اس کی تمام اسائنمنٹس، کلاس کے اوقات اور منسلک فائلیں حذف کر دی جائیں گی۔</string>
+    <string name="timer_duration_h_min">%1$d گھنٹے %2$d منٹ</string>
+    <string name="timer_duration_h">%1$d گھنٹے</string>
+    <string name="timer_duration_min">%1$d منٹ</string>
+    <string name="timer_duration_sec">%1$d سیکنڈ</string>
+    <string name="timer_history_countdown_goal_format">%1$s · کاؤنٹ ڈاؤن · ہدف %2$s</string>
+    <string name="timer_history_stopwatch_format">%1$s · اسٹاپ واچ</string>
+    <string name="timer_mode_pomodoro_format">پومودورو · راؤنڈ %1$d · %2$s</string>
+    <string name="timer_mode_countdown_format">کاؤنٹ ڈاؤن · %1$s</string>
+    <string name="timer_mode_stopwatch">اسٹاپ واچ</string>
+    <string name="group_course_duplicate_code_format">اس گروپ میں کوڈ %1$s (%2$s) والا کورس پہلے سے موجود ہے۔</string>
+    <string name="settings_daily_summary_on_format">ہر روز %1$s بجے</string>
+    <string name="settings_daily_summary_off">بند ہے۔ آج کی کلاسوں اور ٹاسکس کا ایک الرٹ حاصل کریں</string>
+    <string name="settings_update_available_detail_format">اپ ڈیٹ دستیاب ہے: %1$s (آپ کے پاس %2$s ہے)</string>
+    <string name="settings_up_to_date_format">آپ کے پاس تازہ ترین ورژن ہے (%1$s)</string>
+    <string name="timer_notif_phase_format">%1$s • %2$d منٹ</string>
+    <string name="timer_notif_countdown_format">%1$d منٹ کا کاؤنٹ ڈاؤن</string>
+    <string name="backup_reminder_never">آپ کے کورسز، ٹاسکس اور نوٹس صرف اس فون میں ہیں، اور آپ نے ابھی تک بیک اپ نہیں بنایا۔</string>
+    <string name="backup_reminder_days_ago_format">آپ کا آخری بیک اپ %1$d دن پہلے بنا تھا۔ آپ کے کورسز، ٹاسکس اور نوٹس صرف اس فون میں ہیں۔</string>
 </resources>

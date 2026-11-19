@@ -1379,4 +1379,22 @@
     <string name="course_delete_will_be_deleted_format">%1$s will be deleted.</string>
     <string name="course_delete_will_be_deleted_with_warning_format">%1$s will be deleted. %2$s</string>
     <string name="course_delete_fallback_format">%1$s and all of its assignments, class slots and attached files will be deleted.</string>
+    <string name="timer_duration_h_min">%1$d h %2$d min</string>
+    <string name="timer_duration_h">%1$d h</string>
+    <string name="timer_duration_min">%1$d min</string>
+    <string name="timer_duration_sec">%1$d s</string>
+    <string name="timer_history_countdown_goal_format">%1$s · Countdown · goal %2$s</string>
+    <string name="timer_history_stopwatch_format">%1$s · Stopwatch</string>
+    <string name="timer_mode_pomodoro_format">POMODORO · ROUND %1$d · %2$s</string>
+    <string name="timer_mode_countdown_format">COUNTDOWN · %1$s</string>
+    <string name="timer_mode_stopwatch">STOPWATCH</string>
+    <string name="group_course_duplicate_code_format">This group already has a course with the code %1$s (%2$s).</string>
+    <string name="settings_daily_summary_on_format">Every day at %1$s</string>
+    <string name="settings_daily_summary_off">Off. Get one alert with today's classes and tasks</string>
+    <string name="settings_update_available_detail_format">Update available: %1$s (you have %2$s)</string>
+    <string name="settings_up_to_date_format">You're on the latest version (%1$s)</string>
+    <string name="timer_notif_phase_format">%1$s • %2$d min</string>
+    <string name="timer_notif_countdown_format">%1$d minute countdown</string>
+    <string name="backup_reminder_never">Your courses, tasks and notes are only on this phone, and you have not made a backup yet.</string>
+    <string name="backup_reminder_days_ago_format">Your last backup was %1$d days ago. Your courses, tasks and notes are only on this phone.</string>
 </resources>

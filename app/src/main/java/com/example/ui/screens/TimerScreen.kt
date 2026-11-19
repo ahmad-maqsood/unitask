@@ -555,7 +555,7 @@ fun TimerScreen(
                     val presetMinutes = listOf(15, 25, 45, 60)
                     val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
                     val currentTotalMinutes = (state.countdownTotalMillis / 60_000L).toInt()
-                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes) else stringResource(R.string.timer_custom_label)
+                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes, context) else stringResource(R.string.timer_custom_label)
 
                     Row(
                         modifier = Modifier
@@ -639,7 +639,7 @@ fun TimerScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = if (todayMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(todayMillis),
+                                text = if (todayMillis == 0L) context.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, context),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -755,7 +755,7 @@ fun TimerScreen(
                     }
 
                     Text(
-                        text = stringResource(R.string.timer_total, TimerLogic.formatDuration(totalMinutes)),
+                        text = stringResource(R.string.timer_total, TimerLogic.formatDuration(totalMinutes, context)),
                         style = MaterialTheme.typography.bodyMedium
                     )
 

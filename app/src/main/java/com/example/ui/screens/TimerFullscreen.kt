@@ -160,11 +160,17 @@ private fun FullscreenTimerPanel(
     val countdown = state.mode == TimerMode.COUNTDOWN
     val modeText = when {
         state.pomodoroPhase != null ->
-            "POMODORO · ROUND ${state.pomodoroRound} · " +
-                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
+            context.getString(
+                R.string.timer_mode_pomodoro_format,
+                state.pomodoroRound,
+                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
+            )
         countdown ->
-            "COUNTDOWN · " + TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
-        else -> "STOPWATCH"
+            context.getString(
+                R.string.timer_mode_countdown_format,
+                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
+            )
+        else -> context.getString(R.string.timer_mode_stopwatch)
     }
     val endMillis = TimerLogic.scheduledEndTimeMillis(state)
 
@@ -268,9 +274,9 @@ private fun FullscreenTimerPanel(
                         }
                     }
                     val (icon, description, tag) = when {
-                        isIdle -> Triple(Icons.Default.PlayArrow, "Start", "timer_start_button")
-                        isRunning -> Triple(Icons.Default.Pause, "Pause", "timer_pause_button")
-                        else -> Triple(Icons.Default.PlayArrow, "Resume", "timer_resume_button")
+                        isIdle -> Triple(Icons.Default.PlayArrow, stringResource(R.string.timer_start), "timer_start_button")
+                        isRunning -> Triple(Icons.Default.Pause, stringResource(R.string.timer_notif_pause), "timer_pause_button")
+                        else -> Triple(Icons.Default.PlayArrow, stringResource(R.string.timer_notif_resume), "timer_resume_button")
                     }
                     FilledIconButton(
                         onClick = { if (isRunning) controller.pause() else controller.start() },

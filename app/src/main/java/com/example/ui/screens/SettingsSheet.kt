@@ -564,9 +564,9 @@ fun SettingsButton(
                                         icon = Icons.Default.WbSunny,
                                         title = stringResource(R.string.settings_daily_summary),
                                         subtitle = if (summaryEnabled) {
-                                            "Every day at ${TimeFormatter.format(summaryHour, summaryMinute)}"
+                                            stringResource(R.string.settings_daily_summary_on_format, TimeFormatter.format(summaryHour, summaryMinute))
                                         } else {
-                                            "Off. Get one alert with today's classes and tasks"
+                                            stringResource(R.string.settings_daily_summary_off)
                                         },
                                         onClick = { setSummaryEnabled(!summaryEnabled) },
                                         switchChecked = summaryEnabled,
@@ -689,10 +689,10 @@ fun SettingsButton(
                                         testTag = "settings_request_feature_row"
                                     )
                                     val statusText = when (val r = updateResult) {
-                                        is UpdateResult.Available -> "Update available: ${r.latestVersion} (you have $currentVersion)"
-                                        is UpdateResult.UpToDate -> "You're on the latest version ($currentVersion)"
+                                        is UpdateResult.Available -> stringResource(R.string.settings_update_available_detail_format, r.latestVersion, currentVersion)
+                                        is UpdateResult.UpToDate -> stringResource(R.string.settings_up_to_date_format, currentVersion)
                                         is UpdateResult.Failed -> r.message
-                                        null -> "Version $currentVersion"
+                                        null -> stringResource(R.string.settings_version_format, currentVersion)
                                     }
                                     SettingsRow(
                                         icon = Icons.Default.SystemUpdate,

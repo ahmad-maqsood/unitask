@@ -70,7 +70,7 @@ fun BackupReminderCard(
             }
 
             Text(
-                text = reminder.message,
+                text = reminder.messageFor(androidx.compose.ui.platform.LocalContext.current),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

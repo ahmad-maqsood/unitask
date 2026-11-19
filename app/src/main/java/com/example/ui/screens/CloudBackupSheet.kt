@@ -194,7 +194,7 @@ fun CloudBackupSheet(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = currentUser.displayName ?: "Google Account",
+                                text = currentUser.displayName ?: stringResource(R.string.label_google_account),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,

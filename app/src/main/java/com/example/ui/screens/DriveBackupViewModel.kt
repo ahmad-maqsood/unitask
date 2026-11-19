@@ -148,7 +148,7 @@ class DriveBackupViewModel(
             when (val res = auth.authorize()) {
                 is DriveAuthResult.Granted -> {
                     lastToken = res.accessToken
-                    val email = res.accountEmail ?: "Connected"
+                    val email = res.accountEmail ?: str(R.string.drive_connected_fallback)
                     prefs.connectedEmail = email
                     _uiState.update {
                         it.copy(
@@ -185,7 +185,7 @@ class DriveBackupViewModel(
             when (val res = auth.resultFromIntent(data)) {
                 is DriveAuthResult.Granted -> {
                     lastToken = res.accessToken
-                    val email = res.accountEmail ?: "Connected"
+                    val email = res.accountEmail ?: str(R.string.drive_connected_fallback)
                     prefs.connectedEmail = email
                     _uiState.update {
                         it.copy(
@@ -390,7 +390,7 @@ class DriveBackupViewModel(
                 when (val res = auth.authorize()) {
                     is DriveAuthResult.Granted -> {
                         lastToken = res.accessToken
-                        val email = res.accountEmail ?: "Connected"
+                        val email = res.accountEmail ?: str(R.string.drive_connected_fallback)
                         prefs.connectedEmail = email
                         _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
                         checkLatestAndPromptRestore()
@@ -428,7 +428,7 @@ class DriveBackupViewModel(
                 when (val res = auth.authorize()) {
                     is DriveAuthResult.Granted -> {
                         lastToken = res.accessToken
-                        val email = res.accountEmail ?: "Connected"
+                        val email = res.accountEmail ?: str(R.string.drive_connected_fallback)
                         prefs.connectedEmail = email
                         _uiState.update { it.copy(connection = DriveConnectionState.Connected(email)) }
                         DriveAutoBackup.onAppOpen(getApplication())

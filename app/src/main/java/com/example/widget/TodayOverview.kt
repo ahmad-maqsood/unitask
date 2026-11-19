@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.data.local.AppDatabase
 import com.example.data.local.TaskStatus
 import com.example.data.local.computeDeadlineMillis
+import com.example.R
 import com.example.data.local.isMyTasksCourse
 import com.example.data.local.startOfLocalDay
 import com.example.reminder.GroupTaskProcessor
@@ -95,7 +96,7 @@ object TodayOverviewLoader {
                 val isMy = course?.isMyTasksCourse() == true
                 DueItem(
                     deadlineMillis = computeDeadlineMillis(it.dueDateEpochMillis, it.dueTimeHour, it.dueTimeMinute),
-                    label = if (isMy) "My task" else course?.code.orEmpty(),
+                    label = if (isMy) appContext.getString(R.string.daily_summary_my_task) else course?.code.orEmpty(),
                     title = it.title,
                     personalTaskId = it.id,
                     isMyTask = isMy

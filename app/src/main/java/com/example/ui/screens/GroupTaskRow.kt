@@ -110,12 +110,14 @@ fun GroupTaskRow(
         com.example.reminder.GroupReminderScheduler.optionsFor(task).isNotEmpty()
     val hasBadge = !task.courseLabel.isNullOrBlank()
 
-    val tagText = remember(task.assignedTo, members) {
+    val tagAllLabel = stringResource(R.string.group_task_tag_all)
+    val memberFallbackLabel = stringResource(R.string.label_member)
+    val tagText = remember(task.assignedTo, members, tagAllLabel, memberFallbackLabel) {
         if (task.assignedTo.isEmpty()) {
-            "@all"
+            tagAllLabel
         } else {
             task.assignedTo.joinToString(", ") { uid ->
-                "@" + (members.find { it.uid == uid }?.displayName?.takeIf { it.isNotBlank() } ?: "Member")
+                "@" + (members.find { it.uid == uid }?.displayName?.takeIf { it.isNotBlank() } ?: memberFallbackLabel)
             }
         }
     }

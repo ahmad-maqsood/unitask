@@ -1265,4 +1265,11 @@
     <string name="notes_move_notes_to_format">%1$d نوٹس منتقل کریں</string>
     <string name="group_task_course_other">دیگر</string>
     <string name="drive_migration_backup_complete">بیک اپ مکمل ہو گیا۔</string>
+    <string name="drive_connected_fallback">منسلک</string>
+    <string name="label_google_account">گوگل اکاؤنٹ</string>
+    <string name="label_student">طالب علم</string>
+    <string name="label_member">رکن</string>
+    <string name="group_task_you_suffix">(آپ)</string>
+    <string name="group_task_tag_all">@سب</string>
+    <string name="group_task_tagged_count_format">%1$d ٹیگ شدہ</string>
 </resources>

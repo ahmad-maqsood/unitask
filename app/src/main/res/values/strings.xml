@@ -1339,4 +1339,11 @@
     <string name="notes_move_notes_to_format">Move %1$d notes to</string>
     <string name="group_task_course_other">Other</string>
     <string name="drive_migration_backup_complete">Backup complete.</string>
+    <string name="drive_connected_fallback">Connected</string>
+    <string name="label_google_account">Google Account</string>
+    <string name="label_student">Student</string>
+    <string name="label_member">Member</string>
+    <string name="group_task_you_suffix">(you)</string>
+    <string name="group_task_tag_all">@all</string>
+    <string name="group_task_tagged_count_format">%1$d tagged</string>
 </resources>

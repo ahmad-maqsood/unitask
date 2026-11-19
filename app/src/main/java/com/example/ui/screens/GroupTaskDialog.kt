@@ -265,8 +265,8 @@ fun GroupTaskDialog(
                             Checkbox(checked = isTagged, onCheckedChange = null)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = m.displayName.ifBlank { "Student" } +
-                                    if (m.uid == currentUid) " (you)" else "",
+                                text = m.displayName.ifBlank { stringResource(R.string.label_student) } +
+                                    if (m.uid == currentUid) " " + stringResource(R.string.group_task_you_suffix) else "",
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -641,7 +641,7 @@ fun GroupTaskDialog(
                                     maxLines = 1
                                 )
                                 Text(
-                                    text = if (tagAll) "@all" else "${taggedUids.size} tagged",
+                                    text = if (tagAll) stringResource(R.string.group_task_tag_all) else stringResource(R.string.group_task_tagged_count_format, taggedUids.size),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1,

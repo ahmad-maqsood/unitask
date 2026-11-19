@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -159,7 +160,8 @@ fun ArchivedSemestersScreen(
             courseCount = target.courseCount,
             taskCount = target.taskCount,
             classCount = target.classCount,
-            noteCount = target.noteCount
+            noteCount = target.noteCount,
+            context = LocalContext.current
         )
         AlertDialog(
             onDismissRequest = { semesterToDelete = null },
@@ -229,7 +231,8 @@ private fun ArchivedSemesterCard(
                 courseCount = semester.courseCount,
                 taskCount = semester.taskCount,
                 classCount = semester.classCount,
-                noteCount = semester.noteCount
+                noteCount = semester.noteCount,
+                context = LocalContext.current
             )
             Text(
                 text = countsText,

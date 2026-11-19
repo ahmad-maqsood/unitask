@@ -76,14 +76,14 @@ fun CourseCard(
             try {
                 val db = AppDatabase.getDatabase(context)
                 val loss = queryCourseDeleteLoss(db, course)
-                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount)
+                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount, context)
                 deleteWarningMessage = if (warning.isNotBlank()) {
-                    "${course.code} will be deleted. $warning"
+                    context.getString(R.string.course_delete_will_be_deleted_with_warning_format, course.code, warning)
                 } else {
-                    "${course.code} will be deleted."
+                    context.getString(R.string.course_delete_will_be_deleted_format, course.code)
                 }
             } catch (_: Exception) {
-                deleteWarningMessage = "${course.code} and all of its assignments, class slots and attached files will be deleted."
+                deleteWarningMessage = context.getString(R.string.course_delete_fallback_format, course.code)
             }
         } else {
             deleteWarningMessage = null
@@ -93,7 +93,7 @@ fun CourseCard(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = stringResource(R.string.course_card_delete_course),
-            message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            message = deleteWarningMessage ?: context.getString(R.string.course_delete_fallback_format, course.code),
             onConfirm = { onDeleteClick(course) },
             onDismiss = { showDeleteConfirm = false }
         )

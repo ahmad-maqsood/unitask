@@ -1366,4 +1366,17 @@
     <string name="timetable_overlaps_more_format">Overlaps %1$s +%2$d</string>
     <string name="timetable_conflict_description_format">Time conflict with %1$s</string>
     <string name="folder_color_none">No colour</string>
+    <string name="archive_summary_format">%1$s, %2$s and %3$s will be hidden. Their reminders stop.</string>
+    <string name="archive_summary_adds_format">%1$s Adds to the existing %2$s.</string>
+    <string name="archive_counts_format">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="semester_delete_confirm_format">Permanently delete %1$s including %2$s? This cannot be undone.</string>
+    <string name="course_delete_warning_tasks_classes_attachments">This also permanently deletes %1$s, %2$s and their attachments.</string>
+    <string name="course_delete_warning_tasks_classes">This also permanently deletes %1$s and %2$s.</string>
+    <string name="course_delete_warning_tasks_attachments">This also permanently deletes %1$s and their attachments.</string>
+    <string name="course_delete_warning_tasks">This also permanently deletes %1$s.</string>
+    <string name="course_delete_warning_classes">This also permanently deletes %1$s.</string>
+    <string name="course_delete_warning_attachments">This also permanently deletes their attachments.</string>
+    <string name="course_delete_will_be_deleted_format">%1$s will be deleted.</string>
+    <string name="course_delete_will_be_deleted_with_warning_format">%1$s will be deleted. %2$s</string>
+    <string name="course_delete_fallback_format">%1$s and all of its assignments, class slots and attached files will be deleted.</string>
 </resources>

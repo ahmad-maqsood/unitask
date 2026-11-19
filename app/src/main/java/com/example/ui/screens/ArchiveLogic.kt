@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import com.example.R
+import android.content.Context
+
 
 /**
  * Details of a course code conflict where a code is already used in an archived semester.
@@ -70,11 +73,24 @@ fun archiveSummaryText(
     taskCount: Int,
     classCount: Int,
     noteCount: Int,
-    existingName: String? = null
+    existingName: String? = null,
+    // Screens pass the context so the text is translated; plain unit tests leave it null (English).
+    context: Context? = null
 ): String {
-    val base = "$taskCount tasks, $classCount classes and $noteCount notes will be hidden. Their reminders stop."
+    val base = if (context != null) {
+        context.getString(
+            R.string.archive_summary_format,
+            context.resources.getQuantityString(R.plurals.counts_tasks, taskCount, taskCount),
+            context.resources.getQuantityString(R.plurals.counts_classes, classCount, classCount),
+            context.resources.getQuantityString(R.plurals.counts_notes, noteCount, noteCount)
+        )
+    } else {
+        "$taskCount tasks, $classCount classes and $noteCount notes will be hidden. Their reminders stop."
+    }
     return if (existingName.isNullOrBlank()) {
         base
+    } else if (context != null) {
+        context.getString(R.string.archive_summary_adds_format, base, existingName.trim())
     } else {
         "$base Adds to the existing ${existingName.trim()}."
     }
@@ -87,8 +103,19 @@ fun formatSemesterCounts(
     courseCount: Int,
     taskCount: Int,
     classCount: Int,
-    noteCount: Int
+    noteCount: Int,
+    context: Context? = null
 ): String {
+    if (context != null) {
+        val res = context.resources
+        return context.getString(
+            R.string.archive_counts_format,
+            res.getQuantityString(R.plurals.counts_courses, courseCount, courseCount),
+            res.getQuantityString(R.plurals.counts_tasks, taskCount, taskCount),
+            res.getQuantityString(R.plurals.counts_classes, classCount, classCount),
+            res.getQuantityString(R.plurals.counts_notes, noteCount, noteCount)
+        )
+    }
     val coursesStr = if (courseCount == 1) "1 course" else "$courseCount courses"
     val tasksStr = if (taskCount == 1) "1 task" else "$taskCount tasks"
     val classesStr = if (classCount == 1) "1 class" else "$classCount classes"
@@ -104,8 +131,12 @@ fun deleteSemesterConfirmationMessage(
     courseCount: Int,
     taskCount: Int,
     classCount: Int,
-    noteCount: Int
+    noteCount: Int,
+    context: Context? = null
 ): String {
-    val counts = formatSemesterCounts(courseCount, taskCount, classCount, noteCount)
+    val counts = formatSemesterCounts(courseCount, taskCount, classCount, noteCount, context)
+    if (context != null) {
+        return context.getString(R.string.semester_delete_confirm_format, semesterName, counts)
+    }
     return "Permanently delete $semesterName including $counts? This cannot be undone."
 }

@@ -1292,4 +1292,17 @@
     <string name="timetable_overlaps_more_format">%1$s سے ٹکراؤ +%2$d</string>
     <string name="timetable_conflict_description_format">%1$s کے ساتھ وقت کا ٹکراؤ</string>
     <string name="folder_color_none">کوئی رنگ نہیں</string>
+    <string name="archive_summary_format">%1$s، %2$s اور %3$s چھپا دیے جائیں گے۔ ان کی یاد دہانیاں رک جائیں گی۔</string>
+    <string name="archive_summary_adds_format">%1$s یہ موجودہ %2$s میں شامل ہوں گے۔</string>
+    <string name="archive_counts_format">%1$s، %2$s، %3$s، %4$s</string>
+    <string name="semester_delete_confirm_format">%1$s کو %2$s سمیت مستقل طور پر حذف کریں؟ اسے واپس نہیں کیا جا سکتا۔</string>
+    <string name="course_delete_warning_tasks_classes_attachments">اس سے %1$s، %2$s اور ان کے منسلکات بھی مستقل طور پر حذف ہو جائیں گے۔</string>
+    <string name="course_delete_warning_tasks_classes">اس سے %1$s اور %2$s بھی مستقل طور پر حذف ہو جائیں گے۔</string>
+    <string name="course_delete_warning_tasks_attachments">اس سے %1$s اور ان کے منسلکات بھی مستقل طور پر حذف ہو جائیں گے۔</string>
+    <string name="course_delete_warning_tasks">اس سے %1$s بھی مستقل طور پر حذف ہو جائیں گے۔</string>
+    <string name="course_delete_warning_classes">اس سے %1$s بھی مستقل طور پر حذف ہو جائیں گی۔</string>
+    <string name="course_delete_warning_attachments">اس سے ان کے منسلکات بھی مستقل طور پر حذف ہو جائیں گے۔</string>
+    <string name="course_delete_will_be_deleted_format">%1$s حذف کر دیا جائے گا۔</string>
+    <string name="course_delete_will_be_deleted_with_warning_format">%1$s حذف کر دیا جائے گا۔ %2$s</string>
+    <string name="course_delete_fallback_format">%1$s اور اس کی تمام اسائنمنٹس، کلاس کے اوقات اور منسلک فائلیں حذف کر دی جائیں گی۔</string>
 </resources>

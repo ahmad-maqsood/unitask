@@ -1,5 +1,7 @@
 package com.example.util
 
+import com.example.R
+import android.content.Context
 import com.example.data.local.AppDatabase
 import com.example.data.local.Course
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +21,23 @@ data class CourseDeleteLossSummary(
  * For example: "This also permanently deletes 12 tasks, 3 classes and their attachments."
  * If no tasks, classes or attachments exist, returns an empty string.
  */
-fun formatCourseDeleteWarning(taskCount: Int, classCount: Int, attachmentCount: Int): String {
+fun formatCourseDeleteWarning(taskCount: Int, classCount: Int, attachmentCount: Int, context: Context? = null): String {
     if (taskCount <= 0 && classCount <= 0 && attachmentCount <= 0) {
         return ""
+    }
+    if (context != null) {
+        val res = context.resources
+        val t = res.getQuantityString(R.plurals.counts_tasks, taskCount, taskCount)
+        val c = res.getQuantityString(R.plurals.counts_classes, classCount, classCount)
+        return when {
+            taskCount > 0 && classCount > 0 && attachmentCount > 0 -> context.getString(R.string.course_delete_warning_tasks_classes_attachments, t, c)
+            taskCount > 0 && classCount > 0 -> context.getString(R.string.course_delete_warning_tasks_classes, t, c)
+            taskCount > 0 && attachmentCount > 0 -> context.getString(R.string.course_delete_warning_tasks_attachments, t)
+            taskCount > 0 -> context.getString(R.string.course_delete_warning_tasks, t)
+            classCount > 0 -> context.getString(R.string.course_delete_warning_classes, c)
+            attachmentCount > 0 -> context.getString(R.string.course_delete_warning_attachments)
+            else -> ""
+        }
     }
     val taskStr = if (taskCount == 1) "1 task" else "$taskCount tasks"
     val classStr = if (classCount == 1) "1 class" else "$classCount classes"

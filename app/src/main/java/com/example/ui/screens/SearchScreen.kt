@@ -615,7 +615,7 @@ private fun SearchTaskRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val courseCode = if (result.course?.isMyTasksCourse() == true) "My tasks" else result.course?.code.orEmpty()
+                val courseCode = if (result.course?.isMyTasksCourse() == true) stringResource(R.string.main_my_tasks) else result.course?.code.orEmpty()
                 if (courseCode.isNotBlank()) {
                     Text(
                         text = courseCode,
@@ -781,7 +781,7 @@ private fun SearchCourseRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val code = if (result.course.isMyTasksCourse()) "My tasks" else result.course.code
+                val code = if (result.course.isMyTasksCourse()) stringResource(R.string.main_my_tasks) else result.course.code
                 Text(
                     text = code,
                     style = MaterialTheme.typography.titleMedium,
@@ -797,7 +797,7 @@ private fun SearchCourseRow(
                 }
             }
 
-            val name = if (result.course.isMyTasksCourse()) "Personal tasks" else result.course.name
+            val name = if (result.course.isMyTasksCourse()) stringResource(R.string.personal_tasks) else result.course.name
             if (name.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

@@ -87,7 +87,7 @@ internal fun NoteImagePreview(src: String, alt: String) {
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = alt.ifBlank { "Note image" },
+            contentDescription = alt.ifBlank { stringResource(R.string.note_image_description) },
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,7 +110,7 @@ internal fun NoteImagePreview(src: String, alt: String) {
                 ) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = alt.ifBlank { "Note image" },
+                        contentDescription = alt.ifBlank { stringResource(R.string.note_image_description) },
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()

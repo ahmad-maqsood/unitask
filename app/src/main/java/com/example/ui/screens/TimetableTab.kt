@@ -353,7 +353,7 @@ fun TimetableTab(
                         FilterChip(
                             selected = selectedWeekFilter == w,
                             onClick = { selectedWeekFilter = w },
-                            label = { ShrinkToFitText(text = if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            label = { ShrinkToFitText(text = when (w) { "All" -> stringResource(R.string.timetable_all_weeks); "Week A" -> stringResource(R.string.timetable_week_a); else -> stringResource(R.string.timetable_week_b) }, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -410,9 +410,9 @@ fun TimetableTab(
 
                         Text(
                             text = if (noClassesAtAll) {
-                                "Add your lectures to keep track of your weekly schedule."
+                                stringResource(R.string.timetable_empty_no_classes)
                             } else {
-                                "Enjoy your free time or add lectures to keep track of your weekly schedule."
+                                stringResource(R.string.timetable_empty_free_day)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -560,7 +560,7 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
     val hasAlternating = slots.any { weekTypeOf(it.slot) != WeekType.ALL }
     if (hasAlternating && anchorMillis == null) {
         com.example.ui.AppMessages.show(
-            "Week A anchor is not set, so alternating classes may be offset by a week",
+            context.getString(R.string.timetable_anchor_not_set),
             long = true
         )
     }

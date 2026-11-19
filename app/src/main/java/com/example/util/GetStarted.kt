@@ -1,21 +1,29 @@
 package com.example.util
 
 import android.content.Context
+import androidx.annotation.StringRes
+import com.example.R
 import androidx.core.content.edit
 
 /** The steps of the "Get started" checklist on the Deadlines screen, in the order they are shown. */
-enum class GetStartedStep(val title: String, val hint: String, val isSystem: Boolean = false) {
+enum class GetStartedStep(
+    val title: String,
+    val hint: String,
+    @StringRes val titleRes: Int,
+    @StringRes val hintRes: Int,
+    val isSystem: Boolean = false
+) {
     // Phone settings. These are read live from the phone, never saved as ticked, so a step
     // un-ticks again if the person turns the setting back off.
-    NOTIFICATIONS("Allow notifications", "So reminders and group alerts can reach you", isSystem = true),
-    BATTERY("Turn off battery optimization", "Lets reminders ring on time in the background", isSystem = true),
+    NOTIFICATIONS("Allow notifications", "So reminders and group alerts can reach you", R.string.get_started_step_notifications_title, R.string.get_started_step_notifications_hint, isSystem = true),
+    BATTERY("Turn off battery optimization", "Lets reminders ring on time in the background", R.string.get_started_step_battery_title, R.string.get_started_step_battery_hint, isSystem = true),
 
-    COURSE("Add a course", "Courses tab, then tap +"),
-    DEADLINE("Add a deadline", "Deadlines tab, then tap +"),
-    REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline"),
-    CLASS("Add a class", "Timetable tab, then tap +"),
-    TIMER("Try the timer", "More menu, then Timer"),
-    BACKUP("Back up your data", "Settings, then Backup & data, then Connect Google Drive")
+    COURSE("Add a course", "Courses tab, then tap +", R.string.get_started_step_course_title, R.string.get_started_step_course_hint),
+    DEADLINE("Add a deadline", "Deadlines tab, then tap +", R.string.get_started_step_deadline_title, R.string.get_started_step_deadline_hint),
+    REMINDER("Set a reminder", "Use the Remind me row when you add or edit a deadline", R.string.get_started_step_reminder_title, R.string.get_started_step_reminder_hint),
+    CLASS("Add a class", "Timetable tab, then tap +", R.string.get_started_step_class_title, R.string.get_started_step_class_hint),
+    TIMER("Try the timer", "More menu, then Timer", R.string.get_started_step_timer_title, R.string.get_started_step_timer_hint),
+    BACKUP("Back up your data", "Settings, then Backup & data, then Connect Google Drive", R.string.get_started_step_backup_title, R.string.get_started_step_backup_hint)
 }
 
 object GetStartedLogic {

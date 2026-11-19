@@ -71,7 +71,7 @@ fun OneTimeTip(tip: AppTip, modifier: Modifier = Modifier) {
                 )
                 Column(modifier = Modifier.weight(1f).padding(vertical = 6.dp)) {
                     Text(
-                        text = tip.text,
+                        text = stringResource(tip.textRes),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )

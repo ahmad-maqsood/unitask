@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
+import com.example.R
 import com.example.util.BackgroundAccess
 import com.example.util.NotificationSound
 
@@ -50,27 +51,27 @@ object ReminderHealth {
         return listOf(
             HealthItem(
                 HealthCheck.NOTIFICATIONS,
-                "Notifications are allowed",
+                appContext.getString(R.string.health_notifications_title),
                 notificationsOn,
-                "UniTask cannot show anything while notifications are off."
+                appContext.getString(R.string.health_notifications_hint)
             ),
             HealthItem(
                 HealthCheck.CHANNEL,
-                "Reminders are not blocked",
+                appContext.getString(R.string.health_channel_title),
                 channelOk,
-                "The reminder category is switched off in the phone's notification settings."
+                appContext.getString(R.string.health_channel_hint)
             ),
             HealthItem(
                 HealthCheck.EXACT_ALARMS,
-                "Reminders ring on time",
+                appContext.getString(R.string.health_exact_title),
                 exactOk,
-                "Without \"Alarms & reminders\" the phone may delay reminders by several minutes."
+                appContext.getString(R.string.health_exact_hint)
             ),
             HealthItem(
                 HealthCheck.BATTERY,
-                "Battery saver will not stop reminders",
+                appContext.getString(R.string.health_battery_title),
                 BackgroundAccess.isIgnoringBatteryOptimizations(appContext),
-                "Battery restrictions can stop reminders when the app is closed."
+                appContext.getString(R.string.health_battery_hint)
             )
         )
     }
@@ -107,9 +108,9 @@ object ReminderHealth {
         val intent = Intent(appContext, TaskReminderReceiver::class.java).apply {
             action = "com.example.ACTION_TASK_REMINDER"
             data = "unitask://reminder-test".toUri()
-            putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, "Test reminder")
+            putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, appContext.getString(R.string.health_test_title))
             putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, "MYTASKS")
-            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, "It works. Reminders reach this phone.")
+            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, appContext.getString(R.string.health_test_body))
             putExtra(TaskReminderReceiver.EXTRA_NOTIFICATION_ID, TEST_NOTIFICATION_ID)
         }
         val pending = PendingIntent.getBroadcast(

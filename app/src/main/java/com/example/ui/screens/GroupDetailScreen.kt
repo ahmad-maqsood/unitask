@@ -132,7 +132,7 @@ fun GroupDetailScreen(
     var showQrCodeDialog by remember { mutableStateOf(false) }
     var memberToTransferOwnership by remember { mutableStateOf<GroupMember?>(null) }
 
-    val effectiveName = groupDetail?.name?.ifBlank { null } ?: fallbackName.ifBlank { "Group" }
+    val effectiveName = groupDetail?.name?.ifBlank { null } ?: fallbackName.ifBlank { stringResource(R.string.group_default_name) }
     val effectiveUsername = groupDetail?.username?.ifBlank { null } ?: fallbackUsername
     val isOwner = groupDetail?.ownerId == currentUid || fallbackRole == "owner"
     val joinCode = groupDetail?.joinCode ?: ""
@@ -465,8 +465,8 @@ fun GroupDetailScreen(
                                 }
 
                                                                val roleLabel = when (member.role) {
-                                    "owner" -> "Owner"
-                                    "admin" -> "Admin"
+                                    "owner" -> stringResource(R.string.groups_owner)
+                                    "admin" -> stringResource(R.string.groups_admin)
                                     else -> null
                                 }
                                 if (roleLabel != null) {

@@ -1283,4 +1283,13 @@
     <string name="drive_auth_network_error">اجازت کے دوران نیٹ ورک کی خرابی</string>
     <string name="drive_auth_play_services">گوگل پلے سروسز دستیاب نہیں ہیں یا انہیں اپ ڈیٹ کی ضرورت ہے</string>
     <string name="drive_auth_failed">اجازت ناکام ہو گئی</string>
+    <string name="drive_migration_backing_up">بیک اپ ہو رہا ہے...</string>
+    <string name="notes_default_name">نوٹ</string>
+    <string name="timer_custom_label">حسبِ ضرورت</string>
+    <string name="group_default_name">گروپ</string>
+    <string name="groups_admin">منتظم</string>
+    <string name="timetable_overlaps_format">%1$s سے ٹکراؤ</string>
+    <string name="timetable_overlaps_more_format">%1$s سے ٹکراؤ +%2$d</string>
+    <string name="timetable_conflict_description_format">%1$s کے ساتھ وقت کا ٹکراؤ</string>
+    <string name="folder_color_none">کوئی رنگ نہیں</string>
 </resources>

@@ -51,9 +51,9 @@ object NoteShare {
      * Joins several notes into one Markdown text. Each note becomes a "##" section with its
      * title, and sections are separated by a horizontal rule. Pairs are (title, body).
      */
-    fun combinedMarkdown(notes: List<Pair<String, String>>): String {
+    fun combinedMarkdown(notes: List<Pair<String, String>>, untitled: String = "Untitled note"): String {
         return notes.joinToString("\n\n---\n\n") { (title, body) ->
-            val heading = "## ${title.trim().ifBlank { "Untitled note" }}"
+            val heading = "## ${title.trim().ifBlank { untitled }}"
             if (body.isBlank()) heading else "$heading\n\n$body"
         }
     }

@@ -245,7 +245,7 @@ fun NotesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (selectionMode) "${selectedIds.size} selected" else "Notes",
+                        text = if (selectionMode) stringResource(R.string.deadlines_selected, selectedIds.size.toString()) else stringResource(R.string.tools_notes),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -333,7 +333,8 @@ fun NotesScreen(
                                             chosen[0].note.body
                                         } else {
                                             NoteShare.combinedMarkdown(
-                                                chosen.map { noteDisplayTitle(it.note) to it.note.body }
+                                                chosen.map { noteDisplayTitle(it.note) to it.note.body },
+                                                untitled = context.getString(R.string.note_untitled)
                                             )
                                         }
                                         coroutineScope.launch {
@@ -1009,12 +1010,13 @@ fun NotesScreen(
     if (saveRequestNoteId != null && saveRequestFormat == null) {
         val targetId = saveRequestNoteId
         val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
+        val defaultNoteName = stringResource(R.string.notes_default_name)
         NoteExportDialog(
             title = stringResource(R.string.note_editor_save_as),
             onPick = { format ->
                 saveRequestFormat = format.name
                 val realTitle = targetNote?.title.orEmpty()
-                val titleForName = if (realTitle.isNotBlank()) realTitle else (targetNote?.let { noteDisplayTitle(it) } ?: "Note")
+                val titleForName = if (realTitle.isNotBlank()) realTitle else (targetNote?.let { noteDisplayTitle(it) } ?: defaultNoteName)
                 val suggestedName = NoteShare.fileNameFor(titleForName, format)
                 saveDocumentLauncher.launch(suggestedName)
             },

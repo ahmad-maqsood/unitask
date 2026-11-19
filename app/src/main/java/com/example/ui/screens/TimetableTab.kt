@@ -151,7 +151,8 @@ fun TimetableTab(
     }
     var isCardDismissed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var currentAnchor by remember { mutableStateOf(WeekParity.getWeekAAnchor(context)) }
-    val conflicts = remember(allSlots) { findConflicts(allSlots) }
+    val conflictFallbackLabel = stringResource(R.string.label_class)
+    val conflicts = remember(allSlots, conflictFallbackLabel) { findConflicts(allSlots, conflictFallbackLabel) }
 
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
@@ -702,7 +703,7 @@ fun TimetableSlotCard(
                             contentColor = courseColor
                         ) {
                             Text(
-                                text = course?.code ?: "Class",
+                                text = course?.code ?: stringResource(R.string.label_class),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -744,11 +745,11 @@ fun TimetableSlotCard(
 
                         if (conflictsWith.isNotEmpty()) {
                             val conflictText = if (conflictsWith.size <= 2) {
-                                "Overlaps ${conflictsWith.joinToString(", ")}"
+stringResource(R.string.timetable_overlaps_format, conflictsWith.joinToString(", "))
                             } else {
-                                "Overlaps ${conflictsWith.take(2).joinToString(", ")} +${conflictsWith.size - 2}"
+                                stringResource(R.string.timetable_overlaps_more_format, conflictsWith.take(2).joinToString(", "), conflictsWith.size - 2)
                             }
-                            val conflictDescription = "Time conflict with ${conflictsWith.joinToString(", ")}"
+                            val conflictDescription = stringResource(R.string.timetable_conflict_description_format, conflictsWith.joinToString(", "))
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = MaterialTheme.colorScheme.errorContainer,
@@ -858,7 +859,7 @@ fun TimetableSlotCard(
 
                 // Course Name
                 Text(
-                    text = course?.name ?: "Lecture",
+                    text = course?.name ?: stringResource(R.string.label_lecture),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

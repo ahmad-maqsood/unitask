@@ -555,7 +555,7 @@ fun TimerScreen(
                     val presetMinutes = listOf(15, 25, 45, 60)
                     val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
                     val currentTotalMinutes = (state.countdownTotalMillis / 60_000L).toInt()
-                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes) else "Custom"
+                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes) else stringResource(R.string.timer_custom_label)
 
                     Row(
                         modifier = Modifier

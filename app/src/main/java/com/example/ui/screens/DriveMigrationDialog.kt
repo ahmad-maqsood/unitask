@@ -142,7 +142,7 @@ fun DriveMigrationDialog(
                     }
                 } else if (backupSucceeded) {
                     Text(
-                        text = state.lastResultMessage ?: "Backup complete.",
+                        text = state.lastResultMessage ?: stringResource(R.string.drive_migration_backup_complete),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Row(

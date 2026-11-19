@@ -183,7 +183,7 @@ fun MoveToFolderDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (noteCount == 1) "Move note to" else "Move $noteCount notes to")
+            Text(if (noteCount == 1) stringResource(R.string.notes_move_note_to) else stringResource(R.string.notes_move_notes_to_format, noteCount))
         },
         text = {
             Column(

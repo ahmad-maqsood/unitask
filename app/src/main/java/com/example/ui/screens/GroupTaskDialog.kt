@@ -413,15 +413,16 @@ fun GroupTaskDialog(
                                             maxLines = 1
                                         )
                                         val matched = groupCourses.firstOrNull { it.code.equals(courseLabel, ignoreCase = true) }
+                                        val noneLabel = stringResource(R.string.group_task_none)
                                         val summary = when {
                                             matched != null -> "${matched.code} (${matched.name})"
-                                            customCourse -> courseLabel.ifBlank { "Other" }
-                                            else -> "None"
+                                            customCourse -> courseLabel.ifBlank { stringResource(R.string.group_task_course_other) }
+                                            else -> noneLabel
                                         }
                                         Text(
                                             text = summary,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (summary == "None") {
+                                            color = if (summary == noneLabel) {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
                                                 MaterialTheme.colorScheme.primary

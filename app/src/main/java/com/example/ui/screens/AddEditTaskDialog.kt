@@ -742,8 +742,8 @@ fun AddEditTaskDialog(
                         ) {
                             TaskStatus.entries.forEach { s ->
                                 val label = when (s) {
-                                    TaskStatus.PENDING -> "Pending"
-                                    TaskStatus.COMPLETED -> "Done"
+                                    TaskStatus.PENDING -> stringResource(R.string.task_status_pending)
+                                    TaskStatus.COMPLETED -> stringResource(R.string.task_status_done)
                                 }
                                 FilterChip(
                                     selected = status == s,

@@ -366,8 +366,8 @@ private fun DayBar(
 private fun DayHeader(day: LocalDate, today: LocalDate, totalMillis: Long) {
     val locale = LocalConfiguration.current.locales[0]
     val title = when (day) {
-        today -> "Today"
-        today.minusDays(1) -> "Yesterday"
+        today -> stringResource(R.string.quick_date_today)
+        today.minusDays(1) -> stringResource(R.string.timer_history_yesterday)
         else -> day.format(DateTimeFormatter.ofPattern("EEE, d MMM", locale))
     }
     Row(

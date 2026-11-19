@@ -1260,4 +1260,9 @@
     <string name="announcements_title">UniTask کے پیغامات</string>
     <string name="label_class">کلاس</string>
     <string name="label_lecture">لیکچر</string>
+    <string name="timer_history_yesterday">کل</string>
+    <string name="notes_move_note_to">نوٹ منتقل کریں</string>
+    <string name="notes_move_notes_to_format">%1$d نوٹس منتقل کریں</string>
+    <string name="group_task_course_other">دیگر</string>
+    <string name="drive_migration_backup_complete">بیک اپ مکمل ہو گیا۔</string>
 </resources>

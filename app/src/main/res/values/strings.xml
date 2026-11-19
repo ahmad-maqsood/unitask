@@ -1334,4 +1334,9 @@
     <string name="announcements_title">Messages from UniTask</string>
     <string name="label_class">Class</string>
     <string name="label_lecture">Lecture</string>
+    <string name="timer_history_yesterday">Yesterday</string>
+    <string name="notes_move_note_to">Move note to</string>
+    <string name="notes_move_notes_to_format">Move %1$d notes to</string>
+    <string name="group_task_course_other">Other</string>
+    <string name="drive_migration_backup_complete">Backup complete.</string>
 </resources>

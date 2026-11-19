@@ -269,6 +269,9 @@
     <string name="deadlines_selected">%1$s selected</string>
     <string name="deadlines_deselect">Deselect</string>
     <string name="deadlines_all">All</string>
+    <string name="deadlines_chip_all">All (%1$d)</string>
+    <string name="deadlines_chip_pending">Pending (%1$d)</string>
+    <string name="deadlines_chip_done">Done (%1$d)</string>
     <string name="deadlines_close_batch_mode">Close batch mode</string>
     <string name="deadlines_no_assignments_match_your_filters">No assignments match your filters</string>
     <string name="deadlines_add_your_first_assignment">Add your first assignment</string>

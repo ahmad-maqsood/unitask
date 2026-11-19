@@ -249,6 +249,9 @@
     <string name="deadlines_selected">%1$s منتخب</string>
     <string name="deadlines_deselect">انتخاب ہٹائیں</string>
     <string name="deadlines_all">سب</string>
+    <string name="deadlines_chip_all">سب (%1$d)</string>
+    <string name="deadlines_chip_pending">زیرِ التوا (%1$d)</string>
+    <string name="deadlines_chip_done">مکمل (%1$d)</string>
     <string name="deadlines_close_batch_mode">کئی منتخب کرنے کا موڈ بند کریں</string>
     <string name="deadlines_no_assignments_match_your_filters">کوئی اسائنمنٹ آپ کے فلٹرز سے میل نہیں کھاتی</string>
     <string name="deadlines_add_your_first_assignment">اپنی پہلی اسائنمنٹ شامل کریں</string>

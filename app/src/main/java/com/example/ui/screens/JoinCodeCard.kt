@@ -87,10 +87,10 @@ internal fun JoinCodeCard(
                             type = "text/plain"
                             putExtra(
                                 Intent.EXTRA_TEXT,
-                                "Join my UniTask group @$username with code $joinCode"
+                                context.getString(R.string.join_code_share_text, username, joinCode)
                             )
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "Share Group Join Code"))
+                        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.join_code_share_title)))
                     },
                     modifier = Modifier.testTag("share_join_code_button")
                 ) {

@@ -210,13 +210,15 @@ fun MainScreen(
     com.example.ui.RegisterMessageHost(snackbarHostState)
     val scope = rememberCoroutineScope()
 
+    val upToDateText = stringResource(R.string.refresh_up_to_date)
+    val syncingText = stringResource(R.string.refresh_syncing)
     LaunchedEffect(viewModel) {
         viewModel.refreshMessage.collectLatest { message ->
             snackbarHostState.currentSnackbarData?.dismiss()
             val job = launch {
                 snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
             }
-            if (message == "Up to date" || message == "Syncing...") {
+            if (message == upToDateText || message == syncingText) {
                 delay(2000L)
                 job.cancel()
                 snackbarHostState.currentSnackbarData?.dismiss()

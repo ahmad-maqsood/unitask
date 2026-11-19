@@ -190,7 +190,7 @@ fun GetStartedCard(
                             )
                             if (!row.isDone) {
                                 Text(
-                                    text = if (onStepClick != null && !row.target.isSystem) "Tap to start" else row.hint,
+                                    text = if (onStepClick != null && !row.target.isSystem) stringResource(R.string.get_started_tap_to_start) else row.hint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

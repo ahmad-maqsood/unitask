@@ -42,10 +42,10 @@ fun RingAlarmToggleRow(
 ) {
     val needsReminder = checked && !hasReminders
     val description = when {
-        needsReminder -> "Pick a reminder above, or the alarm will not ring."
-        checked && forGroup -> "Rings like an alarm at each reminder time for everyone in the group."
-        checked -> "Rings like an alarm at each reminder time until you open or dismiss it."
-        else -> "Off. Reminders use the normal notification sound."
+        needsReminder -> stringResource(R.string.ring_alarm_needs_reminder)
+        checked && forGroup -> stringResource(R.string.ring_alarm_on_group)
+        checked -> stringResource(R.string.ring_alarm_on)
+        else -> stringResource(R.string.ring_alarm_off)
     }
 
     Surface(

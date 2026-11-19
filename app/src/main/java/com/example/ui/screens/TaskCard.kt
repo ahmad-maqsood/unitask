@@ -551,12 +551,12 @@ fun TaskCard(
 
                         if (task.repeat != RepeatRule.NONE) {
                             val repeatShortLabel = when (task.repeat) {
-                                RepeatRule.DAILY -> "Daily"
-                                RepeatRule.WEEKDAYS -> "Weekdays"
-                                RepeatRule.WEEKLY -> "Weekly"
-                                RepeatRule.BIWEEKLY -> "Every 2 wks"
-                                RepeatRule.MONTHLY -> "Monthly"
-                                RepeatRule.YEARLY -> "Yearly"
+                                RepeatRule.DAILY -> stringResource(R.string.repeat_short_daily)
+                                RepeatRule.WEEKDAYS -> stringResource(R.string.repeat_short_weekdays)
+                                RepeatRule.WEEKLY -> stringResource(R.string.repeat_short_weekly)
+                                RepeatRule.BIWEEKLY -> stringResource(R.string.repeat_short_biweekly)
+                                RepeatRule.MONTHLY -> stringResource(R.string.repeat_short_monthly)
+                                RepeatRule.YEARLY -> stringResource(R.string.repeat_short_yearly)
                                 RepeatRule.NONE -> ""
                             }
                             Surface(
@@ -735,17 +735,17 @@ fun StatusToggleChip(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
             Icons.Default.RadioButtonUnchecked,
-            "Pending"
+            stringResource(R.string.task_status_pending)
         )
         TaskStatus.COMPLETED -> Quadruple(
             if (dark) StatusDoneBgDark else StatusDoneBgLight,
             if (dark) StatusDoneFgDark else StatusDoneFgLight,
             Icons.Default.CheckCircle,
-            "Done"
+            stringResource(R.string.task_status_done)
         )
     }
 
-    val actionDescription = if (isDone) "Mark not done" else "Mark done"
+    val actionDescription = if (isDone) stringResource(R.string.deadline_task_cards_mark_not_done) else stringResource(R.string.deadline_task_cards_mark_done)
     val haptics = rememberAppHaptics()
 
     Surface(

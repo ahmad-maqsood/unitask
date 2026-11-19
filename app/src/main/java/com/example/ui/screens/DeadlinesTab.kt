@@ -1081,7 +1081,10 @@ fun DeadlinesTab(
         AlertDialog(
             onDismissRequest = { showBatchDeleteConfirmDialog = false },
             title = {
-                Text(if (count == 1) "Delete 1 selected task?" else "Delete $count selected tasks?")
+                Text(
+                    androidx.compose.ui.platform.LocalContext.current.resources
+                        .getQuantityString(R.plurals.batch_delete_selected_tasks, count, count)
+                )
             },
             confirmButton = {
                 TextButton(

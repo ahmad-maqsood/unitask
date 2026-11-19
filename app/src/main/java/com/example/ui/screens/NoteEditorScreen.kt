@@ -729,7 +729,7 @@ fun NoteEditorScreen(
                                     )
                                     val titleBlank = viewModel.title.isBlank()
                                     Text(
-                                        text = viewModel.title.ifBlank { "Untitled Note" },
+                                        text = viewModel.title.ifBlank { stringResource(R.string.note_untitled) },
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = if (titleBlank) {
@@ -806,7 +806,7 @@ fun NoteEditorScreen(
                                         onClick = { openLinkedNote(source.id) },
                                         label = {
                                             Text(
-                                                text = noteDisplayTitle(source),
+                                                text = noteDisplayTitle(source, stringResource(R.string.note_untitled)),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -920,7 +920,7 @@ fun NoteEditorScreen(
                     ) {
                         Column {
                             linkSuggestions.forEach { suggestion ->
-                                val suggestionTitle = noteDisplayTitle(suggestion)
+                                val suggestionTitle = noteDisplayTitle(suggestion, stringResource(R.string.note_untitled))
                                 Text(
                                     text = suggestionTitle,
                                     style = MaterialTheme.typography.bodyMedium,

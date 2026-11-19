@@ -112,7 +112,12 @@ private fun stripMarkdownLine(line: String): String {
     return s
 }
 
-fun noteDisplayTitle(note: Note): String {
+/**
+ * The title shown for a note: its own title, else its first line of text, else [untitled].
+ * Links, sorting and file names keep the English default so they stay the same in every language;
+ * screens that only show the title pass the translated text.
+ */
+fun noteDisplayTitle(note: Note, untitled: String = "Untitled note"): String {
     if (note.title.isNotBlank()) {
         return note.title.trim()
     }
@@ -124,7 +129,7 @@ fun noteDisplayTitle(note: Note): String {
             }
         }
     }
-    return "Untitled note"
+    return untitled
 }
 
 fun notePreviewText(body: String, maxLines: Int = 2): String {

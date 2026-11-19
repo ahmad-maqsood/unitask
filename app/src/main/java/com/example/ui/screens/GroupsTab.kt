@@ -143,13 +143,16 @@ fun GroupsTab(
             viewModel.onRemovedFromGroup(gid)
         }
     }
+    val upToDateText = stringResource(R.string.refresh_up_to_date)
+    val syncingText = stringResource(R.string.refresh_syncing)
+    val joinCodeMarker = stringResource(R.string.group_new_join_code_marker)
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collectLatest { msg ->
             snackbarHostState.currentSnackbarData?.dismiss()
             val job = launch {
                 snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
             }
-            if (msg.contains("Up to date") || msg.contains("New join code") || msg.contains("copied") || msg.contains("Syncing")) {
+            if (msg.contains(upToDateText) || msg.contains(joinCodeMarker) || msg.contains(syncingText)) {
                 delay(2000L)
                 job.cancel()
                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -230,7 +233,7 @@ fun GroupsTab(
                     onRegenerateGroupCode = {
                         viewModel.regenerateGroupCode { success, codeOrError ->
                             if (codeOrError != null) {
-                                com.example.ui.AppMessages.show(if (success) "New code: $codeOrError" else codeOrError)
+                                com.example.ui.AppMessages.show(if (success) uiResources.getString(R.string.group_new_code, codeOrError) else codeOrError)
                             }
                         }
                     },

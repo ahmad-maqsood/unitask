@@ -104,7 +104,7 @@ class RecentlyDeletedViewModel(
     fun restoreDisabledReason(taskWithCourse: TaskWithCourse): String? {
         val course = taskWithCourse.course ?: return null
         return if (course.isArchived) {
-            "Its course is archived in ${course.archivedSemester}. Restore the semester first."
+            getApplication<Application>().getString(R.string.trash_restore_blocked_archived, course.archivedSemester)
         } else {
             null
         }
@@ -113,7 +113,7 @@ class RecentlyDeletedViewModel(
     fun restoreDisabledReason(slotWithCourse: LectureSlotWithCourse): String? {
         val course = slotWithCourse.course ?: return null
         return if (course.isArchived) {
-            "Its course is archived in ${course.archivedSemester}. Restore the semester first."
+            getApplication<Application>().getString(R.string.trash_restore_blocked_archived, course.archivedSemester)
         } else {
             null
         }

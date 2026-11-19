@@ -839,9 +839,9 @@ private fun PomodoroOptionsDialog(
                 PomodoroSwitchRow(
                     title = stringResource(R.string.timer_ring_like_an_alarm),
                     description = if (settings.ringLikeAlarm) {
-                        "Rings and vibrates when a round ends. Turn off to vibrate only."
+                        stringResource(R.string.timer_ring_on_description)
                     } else {
-                        "Vibrates only, with no sound, when a round ends."
+                        stringResource(R.string.timer_ring_off_description)
                     },
                     checked = settings.ringLikeAlarm,
                     tag = "timer_option_ring",

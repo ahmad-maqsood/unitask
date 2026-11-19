@@ -337,7 +337,7 @@ fun SearchScreen(
                                         onClick = { tasksExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.tasks.size))
+                                        Text(stringResource(R.string.search_show_all, results.tasks.size))
                                     }
                                 }
                             }
@@ -380,7 +380,7 @@ fun SearchScreen(
                                         onClick = { notesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.notes.size))
+                                        Text(stringResource(R.string.search_show_all, results.notes.size))
                                     }
                                 }
                             }
@@ -422,7 +422,7 @@ fun SearchScreen(
                                         onClick = { coursesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.courses.size))
+                                        Text(stringResource(R.string.search_show_all, results.courses.size))
                                     }
                                 }
                             }
@@ -459,7 +459,7 @@ fun SearchScreen(
                                         onClick = { settingsExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.settings.size))
+                                        Text(stringResource(R.string.search_show_all, results.settings.size))
                                     }
                                 }
                             }
@@ -496,7 +496,7 @@ fun SearchScreen(
                                         onClick = { guidesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.guides.size))
+                                        Text(stringResource(R.string.search_show_all, results.guides.size))
                                     }
                                 }
                             }
@@ -672,7 +672,7 @@ private fun SearchNoteRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = result.noteItem.note.title.ifBlank { "Untitled note" },
+                    text = result.noteItem.note.title.ifBlank { stringResource(R.string.note_untitled) },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

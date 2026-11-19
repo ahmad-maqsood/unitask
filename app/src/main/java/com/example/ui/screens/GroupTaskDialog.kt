@@ -658,9 +658,9 @@ fun GroupTaskDialog(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = when {
-                                tagError -> "Pick @all or at least one member."
-                                tagAll -> "Everyone in the group sees this in their Deadlines."
-                                else -> "Only tagged members see this in their Deadlines."
+                                tagError -> stringResource(R.string.group_task_tag_error)
+                                tagAll -> stringResource(R.string.group_task_tag_all_hint)
+                                else -> stringResource(R.string.group_task_tag_some_hint)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (tagError) MaterialTheme.colorScheme.error

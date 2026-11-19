@@ -289,7 +289,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 GroupRepository.localChanges.tryEmit(Unit)
                 rescheduleAllReminders()
-                _refreshMessage.emit("Up to date")
+                _refreshMessage.emit(getApplication<Application>().getString(R.string.refresh_up_to_date))
             } finally {
                 _isRefreshing.value = false
             }
@@ -558,7 +558,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val (name, result) = MarkdownFileReader.readFromUri(getApplication(), uri)
                 if (requireTextFileName && !MarkdownFileReader.looksLikeMarkdownOrBinName(name)) {
-                    _markdownViewerState.value = MarkdownViewerState.Error("UniTask can only open Markdown (.md), text or BIN files")
+                    _markdownViewerState.value = MarkdownViewerState.Error(getApplication<Application>().getString(R.string.md_error_unsupported_file))
                     return@launch
                 }
                 when (result) {
@@ -569,20 +569,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                     is MarkdownReadResult.TooLarge -> {
-                        _markdownViewerState.value = MarkdownViewerState.Error("File is too large (limit 1 MB)")
+                        _markdownViewerState.value = MarkdownViewerState.Error(getApplication<Application>().getString(R.string.md_error_too_large))
                     }
                     is MarkdownReadResult.Binary -> {
-                        _markdownViewerState.value = MarkdownViewerState.Error("This does not look like a text file")
+                        _markdownViewerState.value = MarkdownViewerState.Error(getApplication<Application>().getString(R.string.md_error_binary))
                     }
                     is MarkdownReadResult.Unreadable -> {
-                        _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
+                        _markdownViewerState.value = MarkdownViewerState.Error(getApplication<Application>().getString(R.string.md_error_unreadable))
                     }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w("UniTask", "Opening a Markdown file failed", e)
-                _markdownViewerState.value = MarkdownViewerState.Error("Could not read that file")
+                _markdownViewerState.value = MarkdownViewerState.Error(getApplication<Application>().getString(R.string.md_error_unreadable))
             }
         }
     }

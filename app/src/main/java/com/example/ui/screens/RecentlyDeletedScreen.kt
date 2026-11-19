@@ -159,19 +159,19 @@ fun RecentlyDeletedScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text(formatTabTitle("Tasks", deletedTasks.size)) },
+                    text = { Text(formatTabTitle(stringResource(R.string.trash_tab_tasks), deletedTasks.size)) },
                     modifier = Modifier.testTag("recently_deleted_tab_tasks")
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text(formatTabTitle("Notes", deletedNotes.size)) },
+                    text = { Text(formatTabTitle(stringResource(R.string.trash_tab_notes), deletedNotes.size)) },
                     modifier = Modifier.testTag("recently_deleted_tab_notes")
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text(formatTabTitle("Classes", validDeletedClasses.size)) },
+                    text = { Text(formatTabTitle(stringResource(R.string.trash_tab_classes), validDeletedClasses.size)) },
                     modifier = Modifier.testTag("recently_deleted_tab_classes")
                 )
             }
@@ -325,9 +325,9 @@ fun RecentlyDeletedScreen(
 
     if (showEmptyTrashDialog) {
         val emptyMessage = when (selectedTab) {
-            0 -> "All tasks in the trash will be permanently deleted. This cannot be undone."
-            1 -> "All notes in the trash will be permanently deleted. This cannot be undone."
-            else -> "All classes in the trash will be permanently deleted. This cannot be undone."
+            0 -> stringResource(R.string.trash_empty_tasks_message)
+            1 -> stringResource(R.string.trash_empty_notes_message)
+            else -> stringResource(R.string.trash_empty_classes_message)
         }
         ConfirmDeleteDialog(
             title = stringResource(R.string.recently_deleted_empty_trash_2),
@@ -420,17 +420,21 @@ private fun DeletedTaskCard(
     val task = item.task
     val course = item.course
     val isMy = course?.isMyTasksCourse() == true
-    val courseLabel = if (isMy) "My tasks" else course?.code.orEmpty()
+    val courseLabel = if (isMy) stringResource(R.string.main_my_tasks) else course?.code.orEmpty()
     val courseColor = rememberCourseColor(course?.colorHex)
 
     val daysLeft = remember(task.deletedAt, now) {
         daysLeftInTrash(task.deletedAt, now)
     }
+    val daysLeftResources = LocalContext.current.resources
     val daysLeftText = remember(daysLeft) {
-        formatTrashDaysLeft(daysLeft)
+        formatTrashDaysLeft(daysLeft) { daysLeftResources.getQuantityString(R.plurals.trash_days_left, it, it) }
     }
+    val dueContext = LocalContext.current
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
-        formatTrashTaskDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+        formatTrashTaskDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) { date, time ->
+            dueContext.getString(R.string.reminder_due_at, date, time)
+        }
     }
 
     Card(
@@ -515,7 +519,7 @@ private fun DeletedTaskCard(
                         .weight(1f, fill = false)
                 ) {
                     Text(
-                        text = restoreDisabledReason ?: "Restore",
+                        text = restoreDisabledReason ?: stringResource(R.string.common_restore),
                         textAlign = if (restoreDisabledReason != null) TextAlign.End else TextAlign.Start
                     )
                 }
@@ -542,13 +546,15 @@ private fun DeletedNoteCard(
     onDeleteForever: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val displayTitle = remember(item.note) { noteDisplayTitle(item.note) }
+    val untitledText = stringResource(R.string.note_untitled)
+    val displayTitle = remember(item.note, untitledText) { noteDisplayTitle(item.note, untitledText) }
     val previewText = remember(item.note.body) { notePreviewText(item.note.body, maxLines = 2) }
     val daysLeft = remember(item.note.deletedAt, now) {
         daysLeftInTrash(item.note.deletedAt, now)
     }
+    val daysLeftResources = LocalContext.current.resources
     val daysLeftText = remember(daysLeft) {
-        formatTrashDaysLeft(daysLeft)
+        formatTrashDaysLeft(daysLeft) { daysLeftResources.getQuantityString(R.plurals.trash_days_left, it, it) }
     }
 
     val courseColor = rememberCourseColor(item.courseColorHex)
@@ -666,8 +672,9 @@ private fun DeletedClassCard(
     val daysLeft = remember(slot.deletedAt, now) {
         daysLeftInTrash(slot.deletedAt, now)
     }
+    val daysLeftResources = LocalContext.current.resources
     val daysLeftText = remember(daysLeft) {
-        formatTrashDaysLeft(daysLeft)
+        formatTrashDaysLeft(daysLeft) { daysLeftResources.getQuantityString(R.plurals.trash_days_left, it, it) }
     }
     val timeText = remember(slot.dayOfWeek, slot.startHour, slot.startMinute, slot.endHour, slot.endMinute) {
         formatTrashClassTime(slot.dayOfWeek, slot.startHour, slot.startMinute, slot.endHour, slot.endMinute)
@@ -765,7 +772,7 @@ private fun DeletedClassCard(
                         .weight(1f, fill = false)
                 ) {
                     Text(
-                        text = restoreDisabledReason ?: "Restore",
+                        text = restoreDisabledReason ?: stringResource(R.string.common_restore),
                         textAlign = if (restoreDisabledReason != null) TextAlign.End else TextAlign.Start
                     )
                 }

@@ -76,8 +76,8 @@ fun MarkdownFileViewer(
             val name = state.displayName
             if (name.contains('.')) name.substringBeforeLast('.') else name
         }
-        is MarkdownViewerState.Loading -> "Opening file..."
-        is MarkdownViewerState.Error -> "Unable to open"
+        is MarkdownViewerState.Loading -> stringResource(R.string.md_viewer_opening)
+        is MarkdownViewerState.Error -> stringResource(R.string.md_viewer_unable_to_open)
     }
 
     Scaffold(
@@ -133,9 +133,9 @@ fun MarkdownFileViewer(
                         ) {
                             Text(
                                 text = when {
-                                    isSaved -> "Saved"
-                                    isSaving -> "Saving..."
-                                    else -> "Save to Notes"
+                                    isSaved -> stringResource(R.string.md_viewer_saved)
+                                    isSaving -> stringResource(R.string.md_viewer_saving)
+                                    else -> stringResource(R.string.md_viewer_save_to_notes)
                                 }
                             )
                         }

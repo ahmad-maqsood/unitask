@@ -259,7 +259,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 val wasStale = repository.checkAndCleanStaleMembership(user.uid, groupId)
                 if (wasStale && _selectedGroupId.value == groupId) {
                     _selectedGroupId.value = null
-                    _snackbarMessage.emit("This group is no longer available.")
+                    _snackbarMessage.emit(str(R.string.group_vm_group_unavailable))
                 }
             }
         }
@@ -276,7 +276,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             _selectedGroupId.value = null
         }
         viewModelScope.launch {
-            _snackbarMessage.emit("You are no longer a member of that group.")
+            _snackbarMessage.emit(str(R.string.group_vm_removed_from_group))
         }
     }
     fun openCreateDialog() {
@@ -353,7 +353,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val targetTrimmedName = name.trim()
         val duplicateByName = otherCourses.firstOrNull { it.name.trim().equals(targetTrimmedName, ignoreCase = true) }
         if (duplicateByName != null) {
-            _courseSaveError.value = "This group already has a course named ${duplicateByName.name}."
+            _courseSaveError.value = str(R.string.group_vm_duplicate_course_name, duplicateByName.name)
             return
         }
 
@@ -414,7 +414,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
-            onComplete(false, "You must be signed in to create a group.")
+            onComplete(false, str(R.string.group_vm_sign_in_to_create))
             return
         }
         // Quick check so the person is told at once. The database enforces the same limit.
@@ -451,7 +451,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
-            onComplete(false, "You must be signed in to join a group.")
+            onComplete(false, str(R.string.group_vm_sign_in_to_join))
             return
         }
 
@@ -614,8 +614,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             repository.setMemberRole(groupId, member.uid, if (makeAdmin) "admin" else "member")
                 .onSuccess {
                     _snackbarMessage.emit(
-                        if (makeAdmin) "${member.displayName} is now an admin"
-                        else "${member.displayName} is no longer an admin"
+                        if (makeAdmin) str(R.string.group_vm_now_admin, member.displayName)
+                        else str(R.string.group_vm_no_longer_admin, member.displayName)
                     )
                 }
                 .onFailure { e ->
@@ -630,7 +630,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.transferOwnership(groupId, newOwnerUid)
                 .onSuccess {
-                    _snackbarMessage.emit("Ownership transferred successfully")
+                    _snackbarMessage.emit(str(R.string.group_vm_ownership_transferred))
                 }
                 .onFailure { e ->
                     val msg = if (e.message?.contains("group_limit_reached") == true) {
@@ -648,7 +648,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.removeMember(groupId, member.uid)
-                .onSuccess { _snackbarMessage.emit("${member.displayName} was removed") }
+                .onSuccess { _snackbarMessage.emit(str(R.string.group_vm_member_removed, member.displayName)) }
                 .onFailure { e -> _snackbarMessage.emit(failureText(R.string.groups_error_remove_member, e)) }
         }
     }
@@ -699,7 +699,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.updateGroupProfile(groupId, newName, newUsername)
             _isActionLoading.value = false
             result.onSuccess {
-                _snackbarMessage.emit("Group settings updated successfully")
+                _snackbarMessage.emit(str(R.string.group_vm_settings_updated))
                 onComplete(true, null)
             }.onFailure { e ->
                 onComplete(false, e.message ?: str(R.string.groups_error_update_group_failed))
@@ -715,7 +715,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.regenerateGroupCode(groupId)
             _isActionLoading.value = false
             result.onSuccess { newCode ->
-                _snackbarMessage.emit("New join code: $newCode")
+                _snackbarMessage.emit(str(R.string.group_new_join_code, newCode))
                 onComplete(true, newCode)
             }.onFailure { e ->
                 onComplete(false, e.message ?: str(R.string.groups_error_regenerate_code_failed))

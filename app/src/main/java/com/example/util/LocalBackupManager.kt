@@ -28,6 +28,7 @@ import com.example.util.drive.SettingsSnapshot
 import com.example.util.markdown.referencedImageNames
 import com.example.util.timer.TimerHistoryStore
 import com.example.util.timer.TimerSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -825,6 +826,8 @@ object LocalBackupManager {
 
                     val bytes = try {
                         source.noteImage(name)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w("UniTask", "Could not download a note image", e)
                         null
@@ -844,6 +847,8 @@ object LocalBackupManager {
                         Log.w("UniTask", "Could not write a restored image", e)
                         skippedImages++
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.w("UniTask", "Could not restore an image from the backup", e)
                     skippedImages++
@@ -919,6 +924,8 @@ object LocalBackupManager {
 
                     val downloaded = try {
                         source.downloadAttachment(storedName, destFile)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w("UniTask", "Could not download an attachment", e)
                         false
@@ -942,6 +949,8 @@ object LocalBackupManager {
                     )
                     taskAttachmentDao.insertAttachment(attachment)
                     addedAttachments++
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.w("UniTask", "Could not restore an attachment", e)
                     skippedAttachments++

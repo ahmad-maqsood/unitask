@@ -881,7 +881,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                 }
 
                 SoundOptionRow(
-                    label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else "Choose from phone…",
+                    label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else stringResource(R.string.sound_choose_from_phone),
                     selected = selected == NotificationSound.CHOICE_PHONE,
                     onSelect = {
                         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {

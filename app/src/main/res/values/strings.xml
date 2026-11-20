@@ -1370,6 +1370,7 @@
     <string name="sound_builtin_4">Sound 4</string>
     <string name="sound_from_phone_format">From phone: %1$s</string>
     <string name="sound_custom_fallback">custom sound</string>
+    <string name="sound_choose_from_phone">Choose from phone…</string>
     <string name="note_pdf_cutoff">The rest of this note was cut off to keep the PDF small.</string>
     <string name="note_pdf_image">Image</string>
     <string name="note_pdf_image_with_alt">Image: %1$s</string>

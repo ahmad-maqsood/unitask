@@ -1296,6 +1296,7 @@
     <string name="sound_builtin_4">آواز 4</string>
     <string name="sound_from_phone_format">فون سے: %1$s</string>
     <string name="sound_custom_fallback">حسبِ ضرورت آواز</string>
+    <string name="sound_choose_from_phone">فون سے منتخب کریں…</string>
     <string name="note_pdf_cutoff">پی ڈی ایف چھوٹی رکھنے کے لیے اس نوٹ کا باقی حصہ کاٹ دیا گیا۔</string>
     <string name="note_pdf_image">تصویر</string>
     <string name="note_pdf_image_with_alt">تصویر: %1$s</string>

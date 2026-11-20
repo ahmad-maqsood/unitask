@@ -1290,6 +1290,10 @@
     <string name="group_task_tag_all">@سب</string>
     <string name="group_task_tagged_count_format">%1$d ٹیگ شدہ</string>
     <string name="sound_phone_default">فون کی ڈیفالٹ</string>
+    <string name="sound_builtin_1">آواز 1</string>
+    <string name="sound_builtin_2">آواز 2</string>
+    <string name="sound_builtin_3">آواز 3</string>
+    <string name="sound_builtin_4">آواز 4</string>
     <string name="note_pdf_cutoff">پی ڈی ایف چھوٹی رکھنے کے لیے اس نوٹ کا باقی حصہ کاٹ دیا گیا۔</string>
     <string name="note_pdf_image">تصویر</string>
     <string name="note_pdf_image_with_alt">تصویر: %1$s</string>

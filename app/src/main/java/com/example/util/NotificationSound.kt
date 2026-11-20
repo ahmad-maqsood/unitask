@@ -28,13 +28,13 @@ object NotificationSound {
     const val CHOICE_SYSTEM = "system"
     const val CHOICE_PHONE = "phone"
 
-    data class BuiltIn(val key: String, val label: String, val rawName: String)
+    data class BuiltIn(val key: String, @androidx.annotation.StringRes val labelRes: Int, val rawName: String)
 
     val BUILT_IN = listOf(
-        BuiltIn(CHOICE_DEFAULT, "Sound 1", "sound_1"),
-        BuiltIn("s2", "Sound 2", "sound_2"),
-        BuiltIn("s3", "Sound 3", "sound_3"),
-        BuiltIn("s4", "Sound 4", "sound_4")
+        BuiltIn(CHOICE_DEFAULT, R.string.sound_builtin_1, "sound_1"),
+        BuiltIn("s2", R.string.sound_builtin_2, "sound_2"),
+        BuiltIn("s3", R.string.sound_builtin_3, "sound_3"),
+        BuiltIn("s4", R.string.sound_builtin_4, "sound_4")
     )
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -115,7 +115,7 @@ object NotificationSound {
             } catch (_: Exception) { null }
             "From phone: ${title ?: "custom sound"}"
         }
-        else -> BUILT_IN.firstOrNull { it.key == c }?.label ?: BUILT_IN.first().label
+        else -> context.getString((BUILT_IN.firstOrNull { it.key == c } ?: BUILT_IN.first()).labelRes)
     }
 
     /** Sound for the notification itself. null means "use the phone's default". */

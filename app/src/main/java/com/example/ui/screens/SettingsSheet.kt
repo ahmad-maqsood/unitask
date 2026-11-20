@@ -865,7 +865,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                 )
                 NotificationSound.availableBuiltIn(context).forEach { sound ->
                     SoundOptionRow(
-                        label = sound.label,
+                        label = stringResource(sound.labelRes),
                         selected = selected == sound.key,
                         onSelect = {
                             NotificationSound.setChoice(context, sound.key)

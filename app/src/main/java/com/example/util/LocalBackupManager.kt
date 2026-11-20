@@ -425,6 +425,8 @@ object LocalBackupManager {
 
                 BackupReminder.recordLocalExport(context)
                 BackupResult.Success(built.counts)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 BackupResult.Failure(e.message ?: context.getString(R.string.backup_error_save_failed))
             }
@@ -464,6 +466,8 @@ object LocalBackupManager {
                 BackupResult.Success(counts)
             } catch (_: JSONException) {
                 BackupResult.Failure(context.getString(R.string.backup_error_damaged))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 BackupResult.Failure(e.message ?: context.getString(R.string.backup_error_restore_failed))
             }

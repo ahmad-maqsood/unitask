@@ -78,6 +78,7 @@ fun GroupsTab(
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val failedToCreateGroupMessage = stringResource(R.string.groups_failed_to_create_group)
     val failedToJoinGroupMessage = stringResource(R.string.groups_failed_to_join_group)
     val signInToJoinMessage = stringResource(R.string.msg_sign_in_to_join_group)

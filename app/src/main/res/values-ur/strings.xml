@@ -1287,7 +1287,7 @@
     <string name="label_student">طالب علم</string>
     <string name="label_member">رکن</string>
     <string name="group_task_you_suffix">(آپ)</string>
-    <string name="group_task_tag_all">@سب</string>
+    <string name="group_task_tag_all">\@سب</string>
     <string name="group_task_tagged_count_format">%1$d ٹیگ شدہ</string>
     <string name="sound_phone_default">فون کی ڈیفالٹ</string>
     <string name="sound_builtin_1">آواز 1</string>

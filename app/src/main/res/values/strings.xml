@@ -1361,7 +1361,7 @@
     <string name="label_student">Student</string>
     <string name="label_member">Member</string>
     <string name="group_task_you_suffix">(you)</string>
-    <string name="group_task_tag_all">@all</string>
+    <string name="group_task_tag_all">\@all</string>
     <string name="group_task_tagged_count_format">%1$d tagged</string>
     <string name="sound_phone_default">Phone default</string>
     <string name="sound_builtin_1">Sound 1</string>
@@ -1415,9 +1415,9 @@
     <string name="timer_mode_stopwatch">STOPWATCH</string>
     <string name="group_course_duplicate_code_format">This group already has a course with the code %1$s (%2$s).</string>
     <string name="settings_daily_summary_on_format">Every day at %1$s</string>
-    <string name="settings_daily_summary_off">Off. Get one alert with today's classes and tasks</string>
+    <string name="settings_daily_summary_off">Off. Get one alert with today\'s classes and tasks</string>
     <string name="settings_update_available_detail_format">Update available: %1$s (you have %2$s)</string>
-    <string name="settings_up_to_date_format">You're on the latest version (%1$s)</string>
+    <string name="settings_up_to_date_format">You\'re on the latest version (%1$s)</string>
     <string name="timer_notif_phase_format">%1$s • %2$d min</string>
     <string name="timer_notif_countdown_format">%1$d minute countdown</string>
     <string name="backup_reminder_never">Your courses, tasks and notes are only on this phone, and you have not made a backup yet.</string>

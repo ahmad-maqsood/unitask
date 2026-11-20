@@ -11,6 +11,7 @@ import com.example.util.BackupResult
 import com.example.util.BuiltBackup
 import com.example.util.LocalBackupManager
 import com.example.util.NoteImages
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -416,6 +417,8 @@ object DriveBackupManager {
                     }
                     validData = data
                     break
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     // slot damaged, try fallback slot
                     android.util.Log.w("UniTask", "Drive backup slot unreadable, trying the other one", e)
@@ -439,6 +442,8 @@ object DriveBackupManager {
                     val fileId = imageIdByName[name] ?: return null
                     return try {
                         store.download(fileId)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         null
                     }
@@ -449,6 +454,8 @@ object DriveBackupManager {
                     return try {
                         store.downloadToFile(fileId, target)
                         true
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         false
                     }

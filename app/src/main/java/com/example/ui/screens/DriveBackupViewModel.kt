@@ -21,6 +21,7 @@ import com.example.util.drive.DrivePrefs
 import com.example.util.drive.DriveRestClient
 import com.example.util.drive.DriveStore
 import com.example.util.drive.GoogleDriveAuth
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -303,6 +304,8 @@ class DriveBackupViewModel(
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 val isAuth = e is DriveException && e.kind == DriveException.Kind.AUTH
                 val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
@@ -357,6 +360,8 @@ class DriveBackupViewModel(
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 val isAuth = e is DriveException && e.kind == DriveException.Kind.AUTH
                 val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
@@ -495,6 +500,8 @@ class DriveBackupViewModel(
                     )
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val isAuth = e is DriveException && e.kind == DriveException.Kind.AUTH
             val isQuota = e is DriveException && e.kind == DriveException.Kind.QUOTA
@@ -613,6 +620,8 @@ class DriveBackupViewModel(
                     )
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             if (e is DriveException && e.kind == DriveException.Kind.AUTH) {
                 _uiState.update { it.copy(connection = DriveConnectionState.NeedsReconnect) }

@@ -75,7 +75,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,6 +86,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.ringsAlarm
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
@@ -644,7 +644,7 @@ fun TimetableSlotCard(
     val isSlotEnabled = slot.isEnabled
     val slotScope = rememberCoroutineScope()
     // The next date this weekly class takes place, and whether it is cancelled on this phone.
-    val cancelledKeys by com.example.reminder.CancelledClassStore.keysFlow(context).collectAsState()
+    val cancelledKeys by com.example.reminder.CancelledClassStore.keysFlow(context).collectAsStateWithLifecycle()
     val nextOccurrence = remember(slot, cancelledKeys) {
         com.example.reminder.CancelledClassStore.nextOccurrenceMillis(context, slot)
     }

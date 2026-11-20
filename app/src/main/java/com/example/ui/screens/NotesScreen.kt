@@ -52,6 +52,7 @@ import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteExportFormat
 import com.example.util.NoteShare
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -218,6 +219,8 @@ fun NotesScreen(
                         if (isPdf) isWorking = false
                         val message = if (ok) uiResources.getString(R.string.msg_saved_to_device) else uiResources.getString(R.string.msg_could_not_save_file)
                         snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_save_file), duration = SnackbarDuration.Short)
                     } finally {
@@ -1330,6 +1333,8 @@ private suspend fun importNoteFile(
                 } else {
                     snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
             }

@@ -74,7 +74,7 @@ internal fun JoinCodeCard(
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText(uiResources.getString(R.string.create_join_group_join_code), joinCode))
-                        com.example.ui.AppMessages.show("Join code copied!")
+                        com.example.ui.AppMessages.show(uiResources.getString(R.string.toast_join_code_copied))
                     },
                     modifier = Modifier.testTag("copy_join_code_button")
                 ) {
@@ -87,10 +87,10 @@ internal fun JoinCodeCard(
                             type = "text/plain"
                             putExtra(
                                 Intent.EXTRA_TEXT,
-                                "Join my UniTask group @$username with code $joinCode"
+                                uiResources.getString(R.string.join_code_share_text, username, joinCode)
                             )
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "Share Group Join Code"))
+                        context.startActivity(Intent.createChooser(shareIntent, uiResources.getString(R.string.join_code_share_title)))
                     },
                     modifier = Modifier.testTag("share_join_code_button")
                 ) {

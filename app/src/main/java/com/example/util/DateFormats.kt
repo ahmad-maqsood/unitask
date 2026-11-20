@@ -31,7 +31,8 @@ object DateFormats {
 
 
     /** Mon, Nov 4 at 9:30 AM (or 09:30 on a 24-hour phone) */
-    fun shortDateAtClock(millis: Long) = format("EEE, MMM d 'at' ${TimeFormatter.clockPattern()}", millis)
+    fun shortDateAtClock(context: android.content.Context, millis: Long): String =
+        context.getString(com.example.R.string.date_at_time, shortDate(millis), clock(millis))
 
     /** Nov 4, 9:30 AM (or 09:30 on a 24-hour phone) */
     fun monthDayClock(millis: Long) = format("MMM d, ${TimeFormatter.clockPattern()}", millis)

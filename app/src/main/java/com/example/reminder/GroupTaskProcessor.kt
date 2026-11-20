@@ -227,6 +227,7 @@ class GroupTaskProcessor(context: Context) {
             val due = appContext.getString(
                 R.string.group_task_due,
                 com.example.util.DateFormats.shortDateAtClock(
+                    appContext,
                     computeDeadlineMillis(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
                 )
             )

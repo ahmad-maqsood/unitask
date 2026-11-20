@@ -162,10 +162,12 @@ private fun CameraPreview(onResult: (String) -> Unit) {
     val lifecycleOwner = remember(context) { context.findLifecycleOwner() }
     val executor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
     val delivered = remember { AtomicBoolean(false) }
+    val disposed = remember { AtomicBoolean(false) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
+            disposed.set(true)
             try {
                 cameraProvider?.unbindAll()
             } catch (_: Exception) {
@@ -184,6 +186,8 @@ private fun CameraPreview(onResult: (String) -> Unit) {
             providerFuture.addListener({
                 try {
                     val provider = providerFuture.get()
+                    // The dialog may have closed while the camera was starting; do not start it then.
+                    if (disposed.get()) return@addListener
                     cameraProvider = provider
                     val owner = lifecycleOwner ?: return@addListener
 

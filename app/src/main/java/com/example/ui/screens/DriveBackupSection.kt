@@ -165,7 +165,7 @@ fun DriveBackupSection(
                     latestInfo != null ->
                         "${DriveBackupViewModel.formatBackupTime(context, latestInfo.exportedAt)}, ${DriveBackupViewModel.buildCountsText(context, latestInfo)}"
                     !offlineText.isNullOrBlank() -> offlineText
-                    else -> "No backup yet"
+                    else -> stringResource(R.string.drive_backup_none_yet)
                 }
 
                 Row(

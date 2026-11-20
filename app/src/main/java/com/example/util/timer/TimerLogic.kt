@@ -1,5 +1,7 @@
 package com.example.util.timer
 
+import com.example.R
+import android.content.Context
 import java.util.Locale
 
 enum class TimerMode {
@@ -186,8 +188,16 @@ object TimerLogic {
         return (currentTotal + delta).coerceIn(MIN_COUNTDOWN_MINUTES, MAX_COUNTDOWN_MINUTES)
     }
 
-    fun formatDuration(totalMinutes: Int): String {
+    // Screens pass the context so the units are translated; unit tests leave it null (English).
+    fun formatDuration(totalMinutes: Int, context: Context? = null): String {
         val (h, m) = splitHoursAndMinutes(totalMinutes)
+        if (context != null) {
+            return when {
+                h > 0 && m > 0 -> context.getString(R.string.timer_duration_h_min, h, m)
+                h > 0 -> context.getString(R.string.timer_duration_h, h)
+                else -> context.getString(R.string.timer_duration_min, m)
+            }
+        }
         return when {
             h > 0 && m > 0 -> "$h h $m min"
             h > 0 -> "$h h"

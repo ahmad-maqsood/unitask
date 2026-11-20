@@ -229,7 +229,7 @@ fun AnnouncementHost(state: AnnouncementsState) {
     if (shown.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = { state.dismissPopup() },
-            title = { Text(if (shown.size == 1) shown[0].title else "Messages from UniTask") },
+            title = { Text(if (shown.size == 1) shown[0].title else stringResource(R.string.announcements_title)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -542,11 +542,12 @@ private fun NotificationRow(
                     Text(item.body, style = MaterialTheme.typography.bodyMedium)
                 }
                 Text(
-                    buildString {
-                        if (isNew) append("New • ")
-                        append(item.kind)
-                        append(" • ")
-                        append(whenText)
+                    notificationKindLabel(item.kind).let { kindText ->
+                        if (isNew) {
+                            stringResource(R.string.notif_meta_new, kindText, whenText)
+                        } else {
+                            stringResource(R.string.notif_meta, kindText, whenText)
+                        }
                     },
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = if (isNew) FontWeight.Bold else FontWeight.Normal,
@@ -562,7 +563,8 @@ private fun NotificationRow(
 
 @Composable
 private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
-    val meta = remember(item.id, item.createdAt, item.expiresAt) { announcementMeta(item) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val meta = remember(item.id, item.createdAt, item.expiresAt) { announcementMeta(context, item) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -592,9 +594,26 @@ private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
     }
 }
 
-private fun announcementMeta(item: Announcement): String {
+private fun announcementMeta(context: android.content.Context, item: Announcement): String {
     val parts = mutableListOf<String>()
-    item.createdAtMillis?.let { parts.add("Posted " + DateFormats.monthDayClock(it)) }
-    item.expiresAtMillis?.let { parts.add("Expires " + DateFormats.monthDayClock(it)) }
+    item.createdAtMillis?.let { parts.add(context.getString(R.string.announcement_host_posted, DateFormats.monthDayClock(it))) }
+    item.expiresAtMillis?.let { parts.add(context.getString(R.string.announcement_host_expires, DateFormats.monthDayClock(it))) }
     return parts.joinToString(" · ")
+}
+
+/** The saved kind of a notification, such as "Daily summary", shown in the app language. */
+@androidx.compose.runtime.Composable
+private fun notificationKindLabel(kind: String): String {
+    val res = when (kind) {
+        "Missed reminder" -> R.string.notif_kind_missed_reminder
+        "Daily summary" -> R.string.notif_kind_daily_summary
+        "Missed task" -> R.string.notif_kind_missed_task
+        "Group update" -> R.string.notif_kind_group_update
+        "Backup" -> R.string.notif_kind_backup
+        "Class" -> R.string.notif_kind_class
+        "Deadline" -> R.string.notif_kind_deadline
+        "Group deadline" -> R.string.notif_kind_group_deadline
+        else -> return kind
+    }
+    return stringResource(res)
 }

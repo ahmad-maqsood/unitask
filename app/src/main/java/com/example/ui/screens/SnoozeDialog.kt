@@ -12,6 +12,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.R
@@ -20,10 +21,23 @@ import com.example.data.local.TaskWithCourse
 import com.example.data.local.deadlineMillis
 import com.example.reminder.SnoozeStore
 import com.example.util.DateFormats
+import com.example.util.DueText
 import java.util.Calendar
 
 /** One time the user can snooze to. */
-data class SnoozeChoice(val label: String, val atMillis: Long)
+data class SnoozeChoice(
+    val label: String,
+    val atMillis: Long,
+    /** String resource for [label] in the app language, with [labelArg] filled in when it has a placeholder. */
+    @androidx.annotation.StringRes val labelRes: Int = 0,
+    val labelArg: String? = null
+) {
+    fun localizedLabel(context: android.content.Context): String = when {
+        labelRes == 0 -> label
+        labelArg != null -> context.getString(labelRes, labelArg)
+        else -> context.getString(labelRes)
+    }
+}
 
 /**
  * The snooze times to offer. A time after the deadline is hidden (a reminder after the due time is
@@ -39,16 +53,21 @@ fun snoozeChoices(now: Long, deadlineMillis: Long): List<SnoozeChoice> {
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
     val all = listOf(
-        SnoozeChoice("30 minutes", now + 30 * 60_000L),
-        SnoozeChoice("1 hour", now + 60 * 60_000L),
-        SnoozeChoice("3 hours", now + 3 * 60 * 60_000L),
-        SnoozeChoice("Tomorrow, ${com.example.util.TimeFormatter.format(8, 0)}", tomorrowMorning)
+        SnoozeChoice("30 minutes", now + 30 * 60_000L, R.string.snooze_choice_30_minutes),
+        SnoozeChoice("1 hour", now + 60 * 60_000L, R.string.snooze_choice_1_hour),
+        SnoozeChoice("3 hours", now + 3 * 60 * 60_000L, R.string.snooze_choice_3_hours),
+        SnoozeChoice(
+            "Tomorrow, ${com.example.util.TimeFormatter.format(8, 0)}",
+            tomorrowMorning,
+            R.string.snooze_time_tomorrow,
+            com.example.util.TimeFormatter.format(8, 0)
+        )
     )
     return if (deadlineMillis > now) all.filter { it.atMillis < deadlineMillis } else all
 }
 
 /** "Today, 6:30 PM", "Tomorrow, 8:00 AM" or "Nov 7, 8:00 AM". */
-fun formatSnoozeTime(millis: Long): String {
+fun formatSnoozeTime(context: android.content.Context, millis: Long): String {
     val target = Calendar.getInstance().apply { timeInMillis = millis }
     val today = Calendar.getInstance()
     val tomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
@@ -58,20 +77,21 @@ fun formatSnoozeTime(millis: Long): String {
 
     val time = DateFormats.clock(millis)
     return when {
-        sameDay(target, today) -> "Today, $time"
-        sameDay(target, tomorrow) -> "Tomorrow, $time"
-        else -> "${DateFormats.monthDay(millis)}, $time"
+        sameDay(target, today) -> context.getString(R.string.snooze_time_today, time)
+        sameDay(target, tomorrow) -> context.getString(R.string.snooze_time_tomorrow, time)
+        else -> context.getString(R.string.snooze_time_date, DateFormats.monthDay(millis), time)
     }
 }
 
 private fun buildSnoozeEntry(
+    context: android.content.Context,
     taskWithCourse: TaskWithCourse,
     groupEntry: GroupTaskEntry?,
     until: Long
 ): SnoozeStore.Entry {
     val task = taskWithCourse.task
     // A full date, not "Today": the reminder may ring days after it was made.
-    val dueInfo = "Due " + DateFormats.shortDateAtClock(task.deadlineMillis)
+    val dueInfo = DueText.dueAt(context, task.deadlineMillis)
     return SnoozeStore.Entry(
         key = task.id,
         until = until,
@@ -94,6 +114,7 @@ fun SnoozeDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val task = taskWithCourse.task
     val choices = snoozeChoices(System.currentTimeMillis(), task.deadlineMillis)
 
@@ -104,9 +125,9 @@ fun SnoozeDialog(
             Column {
                 Text(
                     text = if (currentUntil != null) {
-                        "Snoozed until ${formatSnoozeTime(currentUntil)}. Pick a new time or clear it."
+                        stringResource(R.string.snooze_dialog_current, formatSnoozeTime(context, currentUntil))
                     } else {
-                        "Get one extra reminder for this task later. Your other reminders still ring."
+                        stringResource(R.string.snooze_dialog_hint)
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -121,17 +142,17 @@ fun SnoozeDialog(
                 choices.forEach { choice ->
                     TextButton(
                         onClick = {
-                            SnoozeStore.set(context, buildSnoozeEntry(taskWithCourse, groupEntry, choice.atMillis))
+                            SnoozeStore.set(context, buildSnoozeEntry(context, taskWithCourse, groupEntry, choice.atMillis))
                             Toast.makeText(
                                 context,
-                                "Snoozed until ${formatSnoozeTime(choice.atMillis)}",
+                                resources.getString(R.string.task_card_snoozed_until, formatSnoozeTime(context, choice.atMillis)),
                                 Toast.LENGTH_SHORT
                             ).show()
                             onDismiss()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(choice.label, modifier = Modifier.fillMaxWidth())
+                        Text(choice.localizedLabel(context), modifier = Modifier.fillMaxWidth())
                     }
                 }
                 if (currentUntil != null) {

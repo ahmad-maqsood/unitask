@@ -14,7 +14,7 @@ import com.example.data.local.LectureSlotWithCourse
  *
  * Returns a map from slot id to the distinct list of course codes (or names if code is blank) of overlapping slots.
  */
-fun findConflicts(slots: List<LectureSlotWithCourse>): Map<Long, List<String>> {
+fun findConflicts(slots: List<LectureSlotWithCourse>, fallbackLabel: String = "Class"): Map<Long, List<String>> {
     val validSlots = slots.filter {
         !it.slot.isDeleted &&
         it.slot.isEnabled &&
@@ -46,7 +46,7 @@ fun findConflicts(slots: List<LectureSlotWithCourse>): Map<Long, List<String>> {
             if (aStart < bEnd && bStart < aEnd) {
                 val label = b.course?.code?.trim()?.ifEmpty { null }
                     ?: b.course?.name?.trim()?.ifEmpty { null }
-                    ?: "Class"
+                    ?: fallbackLabel
                 result.getOrPut(a.slot.id) { mutableListOf() }.add(label)
             }
         }

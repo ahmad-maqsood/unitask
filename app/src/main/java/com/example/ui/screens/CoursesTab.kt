@@ -111,9 +111,9 @@ fun CoursesTab(
                                 }
                             )
                             val archivedLabel = if (archivedSemestersCount > 0) {
-                                "Archived semesters ($archivedSemestersCount)"
+                                stringResource(R.string.courses_archived_semesters_count, archivedSemestersCount)
                             } else {
-                                "Archived semesters"
+                                stringResource(R.string.archived_semesters_archived_semesters)
                             }
                             DropdownMenuItem(
                                 text = { Text(archivedLabel) },

@@ -85,9 +85,9 @@ fun ReminderCheckDialog(onDismiss: () -> Unit) {
                 }
                 Text(
                     text = if (testSent) {
-                        "A test reminder will arrive in about 10 seconds. Lock your screen now to test it properly."
+                        stringResource(R.string.reminder_check_test_sent)
                     } else {
-                        "Send a test reminder to see that it reaches this phone."
+                        stringResource(R.string.reminder_check_test_prompt)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

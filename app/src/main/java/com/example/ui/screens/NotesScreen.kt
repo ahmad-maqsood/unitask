@@ -52,6 +52,7 @@ import com.example.util.MarkdownFileReader
 import com.example.util.MarkdownReadResult
 import com.example.util.NoteExportFormat
 import com.example.util.NoteShare
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -218,6 +219,8 @@ fun NotesScreen(
                         if (isPdf) isWorking = false
                         val message = if (ok) uiResources.getString(R.string.msg_saved_to_device) else uiResources.getString(R.string.msg_could_not_save_file)
                         snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         snackbarHostState.showSnackbar(uiResources.getString(R.string.msg_could_not_save_file), duration = SnackbarDuration.Short)
                     } finally {
@@ -245,7 +248,7 @@ fun NotesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (selectionMode) "${selectedIds.size} selected" else "Notes",
+                        text = if (selectionMode) stringResource(R.string.deadlines_selected, selectedIds.size.toString()) else stringResource(R.string.tools_notes),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -283,8 +286,7 @@ fun NotesScreen(
                             snackbarJob?.cancel()
                             snackbarJob = coroutineScope.launch {
                                 val result = snackbarHostState.showSnackbar(
-                                    message = if (ids.size == 1) "Note moved to Recently deleted"
-                                    else "${ids.size} notes moved to Recently deleted",
+                                    message = uiResources.getQuantityString(R.plurals.notes_moved_to_trash, ids.size, ids.size),
                                     actionLabel = uiResources.getString(R.string.common_undo),
                                     duration = SnackbarDuration.Short
                                 )
@@ -334,7 +336,8 @@ fun NotesScreen(
                                             chosen[0].note.body
                                         } else {
                                             NoteShare.combinedMarkdown(
-                                                chosen.map { noteDisplayTitle(it.note) to it.note.body }
+                                                chosen.map { noteDisplayTitle(it.note) to it.note.body },
+                                                untitled = uiResources.getString(R.string.note_untitled)
                                             )
                                         }
                                         coroutineScope.launch {
@@ -778,7 +781,13 @@ fun NotesScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             Text(
-                                text = if (isEmptyFolder) "Folder is empty" else if (isFiltered) "No notes found" else "Add your first note",
+                                text = if (isEmptyFolder) {
+                                    stringResource(R.string.notes_empty_folder_title)
+                                } else if (isFiltered) {
+                                    stringResource(R.string.notes_empty_filtered_title)
+                                } else {
+                                    stringResource(R.string.notes_empty_title)
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -788,11 +797,11 @@ fun NotesScreen(
 
                             Text(
                                 text = if (isEmptyFolder) {
-                                    "This folder is empty. Use a note's menu to move notes here, or tap and hold a note to pick several."
+                                    stringResource(R.string.notes_empty_folder_hint)
                                 } else if (isFiltered) {
-                                    "No notes match your search or filter."
+                                    stringResource(R.string.notes_empty_filtered_hint)
                                 } else {
-                                    "Capture your thoughts, lecture notes, or ideas."
+                                    stringResource(R.string.notes_empty_hint)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -876,8 +885,18 @@ fun NotesScreen(
                 moveRequestIds = null
                 viewModel.moveNotesToFolder(ids, folderId)
                 viewModel.clearSelection()
-                val where = if (folderId == null) "out of its folder" else "to \"${folderNamesById[folderId].orEmpty()}\""
-                showMessage(if (ids.size == 1) "Note moved $where" else "${ids.size} notes moved $where")
+                showMessage(
+                    if (folderId == null) {
+                        uiResources.getQuantityString(R.plurals.notes_moved_out_of_folder, ids.size, ids.size)
+                    } else {
+                        uiResources.getQuantityString(
+                            R.plurals.notes_moved_to_named_folder,
+                            ids.size,
+                            ids.size,
+                            folderNamesById[folderId].orEmpty()
+                        )
+                    }
+                )
             },
             onNewFolder = {
                 newFolderMoveIds = ids
@@ -903,8 +922,11 @@ fun NotesScreen(
                             viewModel.moveNotesToFolder(pendingMoveIds, newId)
                             viewModel.clearSelection()
                             showMessage(
-                                if (pendingMoveIds.size == 1) "Note moved to the new folder"
-                                else "${pendingMoveIds.size} notes moved to the new folder"
+                                uiResources.getQuantityString(
+                                    R.plurals.notes_moved_to_new_folder,
+                                    pendingMoveIds.size,
+                                    pendingMoveIds.size
+                                )
                             )
                         } else {
                             viewModel.setFolderFilter(NotesFolderFilter.Folder(newId))
@@ -950,7 +972,7 @@ fun NotesScreen(
             onConfirm = {
                 deleteFolderTarget = null
                 viewModel.deleteFolder(folder.id)
-                showMessage("Folder deleted")
+                showMessage(uiResources.getString(R.string.notes_folder_deleted))
             },
             onDismiss = { deleteFolderTarget = null }
         )
@@ -991,12 +1013,13 @@ fun NotesScreen(
     if (saveRequestNoteId != null && saveRequestFormat == null) {
         val targetId = saveRequestNoteId
         val targetNote = notes.firstOrNull { it.note.id == targetId }?.note
+        val defaultNoteName = stringResource(R.string.notes_default_name)
         NoteExportDialog(
             title = stringResource(R.string.note_editor_save_as),
             onPick = { format ->
                 saveRequestFormat = format.name
                 val realTitle = targetNote?.title.orEmpty()
-                val titleForName = if (realTitle.isNotBlank()) realTitle else (targetNote?.let { noteDisplayTitle(it) } ?: "Note")
+                val titleForName = if (realTitle.isNotBlank()) realTitle else (targetNote?.let { noteDisplayTitle(it) } ?: defaultNoteName)
                 val suggestedName = NoteShare.fileNameFor(titleForName, format)
                 saveDocumentLauncher.launch(suggestedName)
             },
@@ -1043,7 +1066,8 @@ private fun NoteCard(
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val displayTitle = remember(item.note) { noteDisplayTitle(item.note) }
+    val untitledText = stringResource(R.string.note_untitled)
+    val displayTitle = remember(item.note, untitledText) { noteDisplayTitle(item.note, untitledText) }
     val previewText = remember(item.note.body) { notePreviewText(item.note.body, maxLines = 2) }
     val updatedLabel = remember(item.note.updatedAt) { formatNoteDate(item.note.updatedAt) }
 
@@ -1309,6 +1333,8 @@ private suspend fun importNoteFile(
                 } else {
                     snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 snackbarHostState.showSnackbar(context.getString(R.string.msg_could_not_read_file))
             }

@@ -111,6 +111,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -156,6 +157,7 @@ fun NoteEditorScreen(
         if (editorLoaded) viewModel.watchForOutsideChanges()
     }
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle(emptyList())
 
@@ -303,7 +305,7 @@ fun NoteEditorScreen(
     }
 
     val showImageLimitMessage = {
-        com.example.ui.AppMessages.show("A note can hold up to ${NoteImages.MAX_IMAGES_PER_NOTE} images")
+        com.example.ui.AppMessages.show(resources.getString(R.string.msg_note_image_limit, NoteImages.MAX_IMAGES_PER_NOTE))
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -324,12 +326,12 @@ fun NoteEditorScreen(
                             insertImageLine(current, NoteImages.imageMarkdown(imageName))
                         }
                     } else {
-                        com.example.ui.AppMessages.show("Could not add that image")
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_add_image))
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
-                    com.example.ui.AppMessages.show("Could not add that image")
+                    com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_add_image))
                 } finally {
                     isImportingImage = false
                 }
@@ -364,16 +366,18 @@ fun NoteEditorScreen(
                             body = currentBody,
                             format = format
                         )
-                        val message = if (ok) "Saved to your device" else "Could not save the file"
+                        val message = resources.getString(if (ok) R.string.msg_saved_to_device else R.string.msg_could_not_save_file)
                         com.example.ui.AppMessages.show(message)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
-                        com.example.ui.AppMessages.show("Could not save the file")
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_save_file))
                     } finally {
                         if (isPdf) isWorking = false
                     }
                 }
             } else {
-                com.example.ui.AppMessages.show("Could not save the file")
+                com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_save_file))
             }
         }
     }
@@ -436,7 +440,7 @@ fun NoteEditorScreen(
     val openLinkByTitle: (String) -> Unit = { title ->
         val target = findNoteForLink(allNotes, title)
         if (target == null) {
-            com.example.ui.AppMessages.show("No note called \"$title\"")
+            com.example.ui.AppMessages.show(resources.getString(R.string.msg_no_note_called, title))
         } else {
             openLinkedNote(target.id)
         }
@@ -729,7 +733,7 @@ fun NoteEditorScreen(
                                     )
                                     val titleBlank = viewModel.title.isBlank()
                                     Text(
-                                        text = viewModel.title.ifBlank { "Untitled Note" },
+                                        text = viewModel.title.ifBlank { stringResource(R.string.note_untitled) },
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = if (titleBlank) {
@@ -806,7 +810,7 @@ fun NoteEditorScreen(
                                         onClick = { openLinkedNote(source.id) },
                                         label = {
                                             Text(
-                                                text = noteDisplayTitle(source),
+                                                text = noteDisplayTitle(source, stringResource(R.string.note_untitled)),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -920,7 +924,7 @@ fun NoteEditorScreen(
                     ) {
                         Column {
                             linkSuggestions.forEach { suggestion ->
-                                val suggestionTitle = noteDisplayTitle(suggestion)
+                                val suggestionTitle = noteDisplayTitle(suggestion, stringResource(R.string.note_untitled))
                                 Text(
                                     text = suggestionTitle,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -1096,7 +1100,7 @@ fun NoteEditorScreen(
                             format = format
                         )
                     } catch (_: Exception) {
-                        com.example.ui.AppMessages.show("Could not share the file")
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_share_file))
                     } finally {
                         if (isPdf) isWorking = false
                     }

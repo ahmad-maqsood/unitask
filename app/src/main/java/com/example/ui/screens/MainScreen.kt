@@ -210,13 +210,15 @@ fun MainScreen(
     com.example.ui.RegisterMessageHost(snackbarHostState)
     val scope = rememberCoroutineScope()
 
+    val upToDateText = stringResource(R.string.refresh_up_to_date)
+    val syncingText = stringResource(R.string.refresh_syncing)
     LaunchedEffect(viewModel) {
         viewModel.refreshMessage.collectLatest { message ->
             snackbarHostState.currentSnackbarData?.dismiss()
             val job = launch {
                 snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
             }
-            if (message == "Up to date" || message == "Syncing...") {
+            if (message == upToDateText || message == syncingText) {
                 delay(2000L)
                 job.cancel()
                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -579,10 +581,12 @@ fun MainScreen(
                 // real courses yet the Timetable button starts with the course instead.
                 val hasRealCourses = allCourses.any { !it.isDeleted && !it.isMyTasksCourse() }
                 val fabDescription = when (currentTab) {
-                    MainTab.DEADLINES -> "Add assignment"
-                    MainTab.TIMETABLE -> if (hasRealCourses) "Add class slot" else "Add course"
-                    MainTab.COURSES -> "Add course"
-                    else -> "Add task"
+                    MainTab.DEADLINES -> stringResource(R.string.fab_add_assignment)
+                    MainTab.TIMETABLE ->
+                        if (hasRealCourses) stringResource(R.string.fab_add_class_slot)
+                        else stringResource(R.string.fab_add_course)
+                    MainTab.COURSES -> stringResource(R.string.fab_add_course)
+                    else -> stringResource(R.string.fab_add_task)
                 }
                 FloatingActionButton(
                     onClick = {

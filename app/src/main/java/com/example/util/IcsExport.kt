@@ -84,7 +84,8 @@ fun buildTimetableIcs(
     slots: List<LectureSlotWithCourse>,
     weekAAnchorMillis: Long? = null,
     nowMillis: Long = System.currentTimeMillis(),
-    zoneId: ZoneId = ZoneId.systemDefault()
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    defaultTitle: String = "Lecture"
 ): String {
     val sb = StringBuilder()
     sb.append(foldLine("BEGIN:VCALENDAR"))
@@ -151,7 +152,7 @@ fun buildTimetableIcs(
             "FREQ=WEEKLY;WKST=MO;BYDAY=$byDay"
         }
 
-        val title = course?.name?.ifBlank { course.code } ?: course?.code ?: "Lecture"
+        val title = course?.name?.ifBlank { course.code } ?: course?.code ?: defaultTitle
         val rawLocation = cleanClassroom(slot.classroom).ifBlank { course?.location.orEmpty() }
         val location = cleanClassroom(rawLocation)
         val instructor = slot.instructor.ifBlank { course?.instructor.orEmpty() }

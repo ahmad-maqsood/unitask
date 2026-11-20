@@ -332,7 +332,7 @@ object NotePdf {
             if (pageNumber >= MAX_PAGES) {
                 if (!stopped) {
                     val cv = ensurePage()
-                    val cutoffText = "The rest of this note was cut off to keep the PDF small."
+                    val cutoffText = context.getString(R.string.note_pdf_cutoff)
                     val cutoffSpannable = SpannableStringBuilder(cutoffText).apply {
                         setSpan(StyleSpan(Typeface.ITALIC), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                         setSpan(ForegroundColorSpan(0xFF777777.toInt()), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -722,7 +722,7 @@ object NotePdf {
             }
 
             if (!drawn) {
-                val fallbackText = if (block.alt.isNotBlank()) "Image: ${block.alt}" else "Image"
+                val fallbackText = if (block.alt.isNotBlank()) context.getString(R.string.note_pdf_image_with_alt, block.alt) else context.getString(R.string.note_pdf_image)
                 val fallbackSpannable = SpannableStringBuilder(fallbackText).apply {
                     setSpan(StyleSpan(Typeface.ITALIC), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     setSpan(ForegroundColorSpan(0xFF777777.toInt()), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

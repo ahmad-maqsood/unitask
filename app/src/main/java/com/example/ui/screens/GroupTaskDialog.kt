@@ -265,8 +265,8 @@ fun GroupTaskDialog(
                             Checkbox(checked = isTagged, onCheckedChange = null)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = m.displayName.ifBlank { "Student" } +
-                                    if (m.uid == currentUid) " (you)" else "",
+                                text = m.displayName.ifBlank { stringResource(R.string.label_student) } +
+                                    if (m.uid == currentUid) " " + stringResource(R.string.group_task_you_suffix) else "",
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -413,15 +413,16 @@ fun GroupTaskDialog(
                                             maxLines = 1
                                         )
                                         val matched = groupCourses.firstOrNull { it.code.equals(courseLabel, ignoreCase = true) }
+                                        val noneLabel = stringResource(R.string.group_task_none)
                                         val summary = when {
                                             matched != null -> "${matched.code} (${matched.name})"
-                                            customCourse -> courseLabel.ifBlank { "Other" }
-                                            else -> "None"
+                                            customCourse -> courseLabel.ifBlank { stringResource(R.string.group_task_course_other) }
+                                            else -> noneLabel
                                         }
                                         Text(
                                             text = summary,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (summary == "None") {
+                                            color = if (summary == noneLabel) {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
                                                 MaterialTheme.colorScheme.primary
@@ -640,7 +641,7 @@ fun GroupTaskDialog(
                                     maxLines = 1
                                 )
                                 Text(
-                                    text = if (tagAll) "@all" else "${taggedUids.size} tagged",
+                                    text = if (tagAll) stringResource(R.string.group_task_tag_all) else stringResource(R.string.group_task_tagged_count_format, taggedUids.size),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1,
@@ -658,9 +659,9 @@ fun GroupTaskDialog(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = when {
-                                tagError -> "Pick @all or at least one member."
-                                tagAll -> "Everyone in the group sees this in their Deadlines."
-                                else -> "Only tagged members see this in their Deadlines."
+                                tagError -> stringResource(R.string.group_task_tag_error)
+                                tagAll -> stringResource(R.string.group_task_tag_all_hint)
+                                else -> stringResource(R.string.group_task_tag_some_hint)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (tagError) MaterialTheme.colorScheme.error

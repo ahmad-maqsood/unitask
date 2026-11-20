@@ -55,9 +55,9 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
 
         val phase = state.pomodoroPhase
         val title = when {
-            phase != null -> phase.label
-            countdown -> "Countdown"
-            else -> "Stopwatch"
+            phase != null -> com.example.util.timer.PomodoroText.phase(appContext, phase)
+            countdown -> appContext.getString(R.string.timer_countdown)
+            else -> appContext.getString(R.string.timer_stopwatch)
         }
         val views = RemoteViews(appContext.packageName, R.layout.notification_timer)
         views.setTextViewText(R.id.timer_notif_label, title)
@@ -73,8 +73,8 @@ class TimerOngoingNotifier(context: Context) : TimerOngoingHook {
             views.setTextViewText(
                 R.id.timer_notif_label,
                 when {
-                    phase != null -> "$title • $totalMinutes min"
-                    countdown -> "$totalMinutes minute countdown"
+                    phase != null -> appContext.getString(R.string.timer_notif_phase_format, title, totalMinutes)
+                    countdown -> appContext.getString(R.string.timer_notif_countdown_format, totalMinutes)
                     else -> title
                 }
             )

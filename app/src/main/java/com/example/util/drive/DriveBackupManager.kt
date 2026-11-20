@@ -11,6 +11,7 @@ import com.example.util.BackupResult
 import com.example.util.BuiltBackup
 import com.example.util.LocalBackupManager
 import com.example.util.NoteImages
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -308,6 +309,8 @@ object DriveBackupManager {
                     if (age > THIRTY_DAYS_MS) {
                         try {
                             store.delete(f.id)
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             // A failed prune is not fatal: it is tried again on the next backup.
                             android.util.Log.w("UniTask", "Drive prune failed", e)
@@ -386,9 +389,7 @@ object DriveBackupManager {
             val candidates = when {
                 slotFileId != null -> {
                     val chosen = listOfNotNull(slot1, slot2).firstOrNull { it.id == slotFileId }
-                        ?: return BackupResult.Failure(
-                            "That backup is no longer on Google Drive. Close this and try again."
-                        )
+                        ?: return BackupResult.Failure(context.getString(R.string.drive_error_backup_gone))
                     listOf(chosen)
                 }
                 seq1 >= seq2 -> listOfNotNull(slot1, slot2)
@@ -406,9 +407,7 @@ object DriveBackupManager {
                     }
                     val version = root.optInt("version", 0)
                     if (version > 1) {
-                        return BackupResult.Failure(
-                            "This backup was made by a newer version of UniTask. Update the app and try again."
-                        )
+                        return BackupResult.Failure(context.getString(R.string.backup_error_newer_version))
                     }
                     val data = root.optJSONObject("data") ?: continue
                     val expectedHash = slot.props["dataHash"]
@@ -420,6 +419,8 @@ object DriveBackupManager {
                     }
                     validData = data
                     break
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     // slot damaged, try fallback slot
                     android.util.Log.w("UniTask", "Drive backup slot unreadable, trying the other one", e)
@@ -427,7 +428,7 @@ object DriveBackupManager {
             }
 
             if (validData == null) {
-                return BackupResult.Failure("The backup on Google Drive is damaged and could not be restored.")
+                return BackupResult.Failure(context.getString(R.string.drive_error_backup_damaged))
             }
 
             val imageIdByName = files
@@ -443,6 +444,8 @@ object DriveBackupManager {
                     val fileId = imageIdByName[name] ?: return null
                     return try {
                         store.download(fileId)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         null
                     }
@@ -453,6 +456,8 @@ object DriveBackupManager {
                     return try {
                         store.downloadToFile(fileId, target)
                         true
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         false
                     }

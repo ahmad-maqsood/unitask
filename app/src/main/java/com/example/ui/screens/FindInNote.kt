@@ -128,7 +128,7 @@ fun NoteFindBar(
             )
             if (query.isNotBlank()) {
                 Text(
-                    text = if (totalMatches == 0) "No results" else "${currentMatch + 1} of $totalMatches",
+                    text = if (totalMatches == 0) stringResource(R.string.find_in_note_no_results) else stringResource(R.string.find_in_note_position, currentMatch + 1, totalMatches),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.testTag("note_find_count")

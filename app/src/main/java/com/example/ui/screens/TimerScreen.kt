@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -97,6 +98,7 @@ import com.example.util.AppTip
 import com.example.util.timer.PomodoroAlertSettings
 import com.example.util.timer.PomodoroLogic
 import com.example.util.timer.PomodoroPhase
+import com.example.util.timer.PomodoroText
 import com.example.util.timer.PomodoroSettings
 import com.example.util.timer.TimerController
 import com.example.util.timer.TimerHistoryLogic
@@ -141,6 +143,7 @@ fun TimerScreen(
     }
 
     val context = LocalContext.current
+    val resources = LocalResources.current
     val view = LocalView.current
 
     // One bulb setting, shown both in full screen and in the normal top bar, so the two always
@@ -196,7 +199,7 @@ fun TimerScreen(
     // Pomodoro auto-start: seconds until the next round starts by itself (null when none is waiting).
     val autoStartSecondsLeft by rememberAutoStartSecondsLeft(autoStartAt, controller)
     val autoStartText = autoStartSecondsLeft?.let {
-        PomodoroLogic.autoStartLabel(state, pomodoroSettings, it)
+        PomodoroText.autoStart(context, state, pomodoroSettings, it)
     }
     val cancelAutoStart = {
         // Silence the "round done" alert too, then leave the next round for the user to start.
@@ -461,7 +464,7 @@ fun TimerScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = timerStatusLabel(
-                                    state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase
+                                    context, state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase
                                 ).uppercase(),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
@@ -554,7 +557,7 @@ fun TimerScreen(
                     val presetMinutes = listOf(15, 25, 45, 60)
                     val isCustomSelected = state.countdownTotalMillis !in presetMinutes.map { it * 60_000L }
                     val currentTotalMinutes = (state.countdownTotalMillis / 60_000L).toInt()
-                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes) else "Custom"
+                    val customLabel = if (isCustomSelected) TimerLogic.formatDuration(currentTotalMinutes, context) else stringResource(R.string.timer_custom_label)
 
                     Row(
                         modifier = Modifier
@@ -595,7 +598,7 @@ fun TimerScreen(
                     onPause = { controller.pause() },
                     onResume = { controller.start() },
                     onReset = { controller.reset() },
-                    finishedLabel = if (isFinished) PomodoroLogic.nextActionLabel(state, pomodoroSettings) else null,
+                    finishedLabel = if (isFinished) PomodoroText.nextAction(context, state, pomodoroSettings) else null,
                     onFinishedStart = {
                         // Silence the "phase done" alert, then begin the next focus or break.
                         CountdownNotifier.cancelFinished(context)
@@ -638,7 +641,7 @@ fun TimerScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = if (todayMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(todayMillis),
+                                text = if (todayMillis == 0L) resources.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, context),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -754,7 +757,7 @@ fun TimerScreen(
                     }
 
                     Text(
-                        text = stringResource(R.string.timer_total, TimerLogic.formatDuration(totalMinutes)),
+                        text = stringResource(R.string.timer_total, TimerLogic.formatDuration(totalMinutes, context)),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -838,9 +841,9 @@ private fun PomodoroOptionsDialog(
                 PomodoroSwitchRow(
                     title = stringResource(R.string.timer_ring_like_an_alarm),
                     description = if (settings.ringLikeAlarm) {
-                        "Rings and vibrates when a round ends. Turn off to vibrate only."
+                        stringResource(R.string.timer_ring_on_description)
                     } else {
-                        "Vibrates only, with no sound, when a round ends."
+                        stringResource(R.string.timer_ring_off_description)
                     },
                     checked = settings.ringLikeAlarm,
                     tag = "timer_option_ring",
@@ -1184,6 +1187,7 @@ private fun stepPomodoroText(text: String, delta: Int, min: Int, max: Int): Stri
 
 /** The short line shown under the clock inside the ring. */
 internal fun timerStatusLabel(
+    context: android.content.Context,
     mode: TimerMode,
     isRunning: Boolean,
     isPaused: Boolean,
@@ -1191,12 +1195,14 @@ internal fun timerStatusLabel(
     pomodoroPhase: PomodoroPhase? = null
 ): String = when {
     // Pomodoro: "Focus", "Short break", "Long break", "Paused", "Focus done" or "Break over".
-    pomodoroPhase != null -> PomodoroLogic.statusLabel(pomodoroPhase, isPaused, isFinished)
-    isFinished -> "Time is up"
-    isRunning -> if (mode == TimerMode.COUNTDOWN) "Focus time" else "Studying"
-    isPaused -> "Paused"
-    mode == TimerMode.COUNTDOWN -> "Tap to change"
-    else -> "Ready"
+    pomodoroPhase != null -> PomodoroText.status(context, pomodoroPhase, isPaused, isFinished)
+    isFinished -> context.getString(R.string.timer_status_time_is_up)
+    isRunning -> context.getString(
+        if (mode == TimerMode.COUNTDOWN) R.string.timer_status_focus_time else R.string.timer_status_studying
+    )
+    isPaused -> context.getString(R.string.timer_status_paused)
+    mode == TimerMode.COUNTDOWN -> context.getString(R.string.timer_status_tap_to_change)
+    else -> context.getString(R.string.timer_status_ready)
 }
 
 @Composable

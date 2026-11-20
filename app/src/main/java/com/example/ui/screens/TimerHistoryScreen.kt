@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
@@ -166,7 +167,7 @@ fun TimerHistoryScreen(
             onDismissRequest = { sessionToDelete = null },
             title = { Text(stringResource(R.string.timer_history_delete_this_session)) },
             text = {
-                Text(stringResource(R.string.timer_history_will_be_removed_from_your, TimerHistoryLogic.formatTotal(session.durationMillis)))
+                Text(stringResource(R.string.timer_history_will_be_removed_from_your, TimerHistoryLogic.formatTotal(session.durationMillis, LocalContext.current)))
             },
             confirmButton = {
                 TextButton(
@@ -227,7 +228,7 @@ private fun SummaryCard(
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = if (todayMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(todayMillis),
+                text = if (todayMillis == 0L) stringResource(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, LocalContext.current),
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.testTag("timer_history_today_total")
@@ -236,7 +237,7 @@ private fun SummaryCard(
             Row(modifier = Modifier.fillMaxWidth()) {
                 SummaryStat(
                     label = stringResource(R.string.timer_history_last_7_days),
-                    value = if (weekMillis == 0L) "0 min" else TimerHistoryLogic.formatTotal(weekMillis),
+                    value = if (weekMillis == 0L) stringResource(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(weekMillis, LocalContext.current),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryStat(
@@ -246,7 +247,7 @@ private fun SummaryCard(
                 )
                 SummaryStat(
                     label = stringResource(R.string.timer_history_average),
-                    value = if (sessionCount == 0) "-" else TimerHistoryLogic.formatTotal(averageMillis),
+                    value = if (sessionCount == 0) "-" else TimerHistoryLogic.formatTotal(averageMillis, LocalContext.current),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -366,8 +367,8 @@ private fun DayBar(
 private fun DayHeader(day: LocalDate, today: LocalDate, totalMillis: Long) {
     val locale = LocalConfiguration.current.locales[0]
     val title = when (day) {
-        today -> "Today"
-        today.minusDays(1) -> "Yesterday"
+        today -> stringResource(R.string.quick_date_today)
+        today.minusDays(1) -> stringResource(R.string.timer_history_yesterday)
         else -> day.format(DateTimeFormatter.ofPattern("EEE, d MMM", locale))
     }
     Row(
@@ -383,7 +384,7 @@ private fun DayHeader(day: LocalDate, today: LocalDate, totalMillis: Long) {
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = TimerHistoryLogic.formatTotal(totalMillis),
+            text = TimerHistoryLogic.formatTotal(totalMillis, LocalContext.current),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -397,9 +398,9 @@ private fun SessionRow(session: TimerSession, zone: ZoneId, onDelete: () -> Unit
         com.example.util.TimeFormatter.format(started.hour, started.minute)
     }
     val detail = if (session.mode == TimerMode.COUNTDOWN && session.plannedMillis != null) {
-        "$startText · Countdown · goal ${TimerHistoryLogic.formatTotal(session.plannedMillis)}"
+        stringResource(R.string.timer_history_countdown_goal_format, startText, TimerHistoryLogic.formatTotal(session.plannedMillis, LocalContext.current))
     } else {
-        "$startText · Stopwatch"
+        stringResource(R.string.timer_history_stopwatch_format, startText)
     }
 
     Card(
@@ -435,7 +436,7 @@ private fun SessionRow(session: TimerSession, zone: ZoneId, onDelete: () -> Unit
                     .padding(horizontal = 12.dp)
             ) {
                 Text(
-                    text = TimerHistoryLogic.formatTotal(session.durationMillis),
+                    text = TimerHistoryLogic.formatTotal(session.durationMillis, LocalContext.current),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

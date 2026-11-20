@@ -82,6 +82,8 @@ fun CreateGroupDialog(
     onDismiss: () -> Unit,
     onCreate: (name: String, username: String) -> Unit
 ) {
+    val context = LocalContext.current
+    val resources = LocalResources.current
     var name by rememberSaveable { mutableStateOf("") }
     var username by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
@@ -151,11 +153,11 @@ fun CreateGroupDialog(
                 onClick = {
                     val trimmedName = name.trim()
                     if (trimmedName.isEmpty()) {
-                        errorMessage = "Group name is required"
+                        errorMessage = resources.getString(R.string.group_error_name_required)
                         return@Button
                     }
                     if (username.length < 3) {
-                        errorMessage = "Username must be at least 3 characters"
+                        errorMessage = resources.getString(R.string.group_error_username_short)
                         return@Button
                     }
                     onCreate(trimmedName, username)
@@ -217,7 +219,7 @@ fun JoinGroupDialog(
                     errorMessage = null
                     Toast.makeText(context, resources.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                 } else {
-                    errorMessage = "QR code found, but invalid invite format."
+                    errorMessage = resources.getString(R.string.group_error_qr_invalid)
                 }
             },
             onDismiss = { showScanner = false }
@@ -238,14 +240,14 @@ fun JoinGroupDialog(
                             joinCode = parsed.second
                             Toast.makeText(context, resources.getString(R.string.toast_qr_code_detected_filled), Toast.LENGTH_SHORT).show()
                         } else {
-                            errorMessage = "QR code found, but invalid invite format."
+                            errorMessage = resources.getString(R.string.group_error_qr_invalid)
                         }
                     } else {
-                        errorMessage = "Could not detect a QR code in that image."
+                        errorMessage = resources.getString(R.string.group_error_qr_not_found)
                     }
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
-                    errorMessage = "Failed to read QR image: ${e.message}"
+                    errorMessage = resources.getString(R.string.group_error_qr_read_failed, e.message.orEmpty())
                 }
             }
         }
@@ -367,11 +369,11 @@ fun JoinGroupDialog(
                     val cleanUsername = username.trim().lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }.take(30)
                     val cleanCode = joinCode.trim().uppercase()
                     if (cleanUsername.isEmpty()) {
-                        errorMessage = "Group username is required"
+                        errorMessage = resources.getString(R.string.group_error_group_username_required)
                         return@Button
                     }
                     if (cleanCode.length < 8) {
-                        errorMessage = "Join code must be 8 characters"
+                        errorMessage = resources.getString(R.string.group_error_join_code_length)
                         return@Button
                     }
                     onJoin(cleanUsername, cleanCode)
@@ -813,11 +815,11 @@ fun EditGroupDialog(
                 onClick = {
                     val trimmedName = name.trim()
                     if (trimmedName.isEmpty()) {
-                        errorMessage = "Group name is required"
+                        errorMessage = uiResources.getString(R.string.group_error_name_required)
                         return@Button
                     }
                     if (username.length < 3) {
-                        errorMessage = "Username must be at least 3 characters"
+                        errorMessage = uiResources.getString(R.string.group_error_username_short)
                         return@Button
                     }
                     onSaveProfile(trimmedName, username)

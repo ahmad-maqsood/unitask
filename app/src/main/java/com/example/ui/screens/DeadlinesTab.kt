@@ -249,9 +249,9 @@ fun DeadlinesTab(
     val dueTodayCountStr by remember(dueTodayCount) { derivedStateOf { dueTodayCount.toString() } }
     // Counts for the status chips. They are the same totals as the stats card, so they stay
     // the same whichever chip is selected.
-    val allTasksLabel by remember(pendingCount, completedCount) { derivedStateOf { "All (${pendingCount + completedCount})" } }
-    val pendingChipLabel by remember(pendingCount) { derivedStateOf { "Pending ($pendingCount)" } }
-    val doneChipLabel by remember(completedCount) { derivedStateOf { "Done ($completedCount)" } }
+    val allTasksLabel = stringResource(R.string.deadlines_chip_all, pendingCount + completedCount)
+    val pendingChipLabel = stringResource(R.string.deadlines_chip_pending, pendingCount)
+    val doneChipLabel = stringResource(R.string.deadlines_chip_done, completedCount)
     // Re-sorted when the minute changes, so a task moves to Overdue (or Today) on its own.
     val now by rememberMinuteClock()
     val sections by remember(tasks) { derivedStateOf { groupDeadlines(tasks, now) } }
@@ -1081,7 +1081,10 @@ fun DeadlinesTab(
         AlertDialog(
             onDismissRequest = { showBatchDeleteConfirmDialog = false },
             title = {
-                Text(if (count == 1) "Delete 1 selected task?" else "Delete $count selected tasks?")
+                Text(
+                    androidx.compose.ui.platform.LocalContext.current.resources
+                        .getQuantityString(R.plurals.batch_delete_selected_tasks, count, count)
+                )
             },
             confirmButton = {
                 TextButton(

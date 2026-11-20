@@ -129,13 +129,21 @@ fun buildNoteSnippet(
 }
 
 /**
+ * Text that the "My tasks" course is searched by: the English name plus the name in the app's
+ * current language, so a search works in either one.
+ */
+internal fun myTasksSearchText(localizedLabel: String?): String =
+    if (localizedLabel.isNullOrBlank() || localizedLabel == "My tasks") "My tasks" else "My tasks $localizedLabel"
+
+/**
  * Checks if a task matches all query words across title, description, and course code/name.
  */
-fun matchesTask(taskWithCourse: TaskWithCourse, words: List<String>): Boolean {
+fun matchesTask(taskWithCourse: TaskWithCourse, words: List<String>, myTasksLabel: String? = null): Boolean {
     val task = taskWithCourse.task
     val course = taskWithCourse.course
-    val courseCode = if (course?.isMyTasksCourse() == true) "My tasks" else course?.code.orEmpty()
-    val courseName = if (course?.isMyTasksCourse() == true) "My tasks" else course?.name.orEmpty()
+    val myTasksText = myTasksSearchText(myTasksLabel)
+    val courseCode = if (course?.isMyTasksCourse() == true) myTasksText else course?.code.orEmpty()
+    val courseName = if (course?.isMyTasksCourse() == true) myTasksText else course?.name.orEmpty()
 
     return words.all { word ->
         task.title.contains(word, ignoreCase = true) ||
@@ -164,9 +172,10 @@ fun matchesNote(noteItem: NoteListItem, words: List<String>, folderName: String?
 /**
  * Checks if a course matches all query words across code, name, instructor, and location.
  */
-fun matchesCourse(course: Course, words: List<String>): Boolean {
-    val code = if (course.isMyTasksCourse()) "My tasks" else course.code
-    val name = if (course.isMyTasksCourse()) "My tasks" else course.name
+fun matchesCourse(course: Course, words: List<String>, myTasksLabel: String? = null): Boolean {
+    val myTasksText = myTasksSearchText(myTasksLabel)
+    val code = if (course.isMyTasksCourse()) myTasksText else course.code
+    val name = if (course.isMyTasksCourse()) myTasksText else course.name
     val instructor = course.instructor
     val location = course.location
 
@@ -208,7 +217,9 @@ fun searchEverything(
     settingsEntries: List<SettingsSearchEntry> = emptyList(),
     guideEntries: List<AppFeature> = emptyList(),
     noteFolderNames: Map<Long, String> = emptyMap(),
-    noteFolderColors: Map<Long, String> = emptyMap()
+    noteFolderColors: Map<Long, String> = emptyMap(),
+    // The "My tasks" name in the app's language. Null (tests) searches the English name only.
+    myTasksLabel: String? = null
 ): SearchResults {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) {
@@ -222,12 +233,12 @@ fun searchEverything(
 
     val taskResults = ArrayList<SearchTaskResult>()
     for (t in tasks) {
-        if (matchesTask(t, words)) {
+        if (matchesTask(t, words, myTasksLabel)) {
             taskResults.add(SearchTaskResult(taskWithCourse = t, archivedSemester = null))
         }
     }
     for (a in archivedTasks) {
-        if (matchesTask(a.item, words)) {
+        if (matchesTask(a.item, words, myTasksLabel)) {
             taskResults.add(SearchTaskResult(taskWithCourse = a.item, archivedSemester = a.semesterName))
         }
     }
@@ -268,12 +279,12 @@ fun searchEverything(
 
     val courseResults = ArrayList<SearchCourseResult>()
     for (c in courses) {
-        if (matchesCourse(c, words)) {
+        if (matchesCourse(c, words, myTasksLabel)) {
             courseResults.add(SearchCourseResult(course = c, archivedSemester = null))
         }
     }
     for (a in archivedCourses) {
-        if (matchesCourse(a.item, words)) {
+        if (matchesCourse(a.item, words, myTasksLabel)) {
             courseResults.add(SearchCourseResult(course = a.item, archivedSemester = a.semesterName))
         }
     }

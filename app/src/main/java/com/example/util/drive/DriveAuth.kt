@@ -2,6 +2,7 @@ package com.example.util.drive
 
 import android.app.PendingIntent
 import android.content.Context
+import com.example.R
 import android.content.Intent
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
@@ -84,7 +85,7 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
                 if (pendingIntent != null) {
                     DriveAuthResult.NeedsConsent(pendingIntent)
                 } else {
-                    DriveAuthResult.Failed("Consent required but pending intent missing", retryable = false)
+                    DriveAuthResult.Failed(context.getString(R.string.drive_auth_consent_missing), retryable = false)
                 }
             } else {
                 val token = result.accessToken
@@ -96,7 +97,7 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
                     }
                     DriveAuthResult.Granted(accessToken = token, accountEmail = email)
                 } else {
-                    DriveAuthResult.Failed("No access token returned", retryable = false)
+                    DriveAuthResult.Failed(context.getString(R.string.drive_auth_no_token), retryable = false)
                 }
             }
         } catch (e: Exception) {
@@ -107,7 +108,7 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
 
     override fun resultFromIntent(data: Intent?): DriveAuthResult {
         if (data == null) {
-            return DriveAuthResult.Failed("Connection cancelled", retryable = false)
+            return DriveAuthResult.Failed(context.getString(R.string.drive_auth_connection_cancelled), retryable = false)
         }
         return try {
             val result = authClient.getAuthorizationResultFromIntent(data)
@@ -120,7 +121,7 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
                 }
                 DriveAuthResult.Granted(accessToken = token, accountEmail = email)
             } else {
-                DriveAuthResult.Failed("Connection cancelled", retryable = false)
+                DriveAuthResult.Failed(context.getString(R.string.drive_auth_connection_cancelled), retryable = false)
             }
         } catch (e: Exception) {
             // A real error (no Play services, network) must not be shown as if the person cancelled.
@@ -141,33 +142,33 @@ class GoogleDriveAuth(private val context: Context) : DriveAuthApi {
 
     private fun mapAuthException(e: Exception): DriveAuthResult.Failed {
         if (e is CancellationException) {
-            return DriveAuthResult.Failed("Authorization cancelled", retryable = false)
+            return DriveAuthResult.Failed(context.getString(R.string.drive_auth_cancelled), retryable = false)
         }
         if (e is IOException) {
-            return DriveAuthResult.Failed("Network error during authorization", retryable = true)
+            return DriveAuthResult.Failed(context.getString(R.string.drive_auth_network_error), retryable = true)
         }
         if (e is ApiException) {
             return when (e.statusCode) {
                 CommonStatusCodes.CANCELED -> {
-                    DriveAuthResult.Failed("Authorization cancelled", retryable = false)
+                    DriveAuthResult.Failed(context.getString(R.string.drive_auth_cancelled), retryable = false)
                 }
                 CommonStatusCodes.NETWORK_ERROR,
                 CommonStatusCodes.TIMEOUT -> {
-                    DriveAuthResult.Failed("Network error during authorization", retryable = true)
+                    DriveAuthResult.Failed(context.getString(R.string.drive_auth_network_error), retryable = true)
                 }
                 ConnectionResult.SERVICE_MISSING,
                 ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED,
                 ConnectionResult.SERVICE_DISABLED,
                 ConnectionResult.SERVICE_INVALID -> {
-                    DriveAuthResult.Failed("Google Play services is unavailable or needs update", retryable = false)
+                    DriveAuthResult.Failed(context.getString(R.string.drive_auth_play_services), retryable = false)
                 }
                 else -> {
-                    val msg = e.localizedMessage ?: "Authorization failed"
+                    val msg = e.localizedMessage ?: context.getString(R.string.drive_auth_failed)
                     DriveAuthResult.Failed(msg, retryable = false)
                 }
             }
         }
-        val msg = e.localizedMessage ?: "Authorization failed"
+        val msg = e.localizedMessage ?: context.getString(R.string.drive_auth_failed)
         return DriveAuthResult.Failed(msg, retryable = false)
     }
 }

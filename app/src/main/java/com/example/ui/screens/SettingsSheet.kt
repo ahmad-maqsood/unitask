@@ -329,7 +329,7 @@ fun SettingsButton(
                             SettingsSectionRow(
                                 icon = Icons.Default.Info,
                                 title = stringResource(R.string.settings_about_help),
-                                summary = if (available != null) "Update available" else "Version $currentVersion",
+                                summary = if (available != null) stringResource(R.string.settings_update_available) else stringResource(R.string.settings_version_format, currentVersion),
                                 onClick = { page = SettingsPage.About },
                                 testTag = "settings_section_about",
                                 showBadge = available != null
@@ -564,9 +564,9 @@ fun SettingsButton(
                                         icon = Icons.Default.WbSunny,
                                         title = stringResource(R.string.settings_daily_summary),
                                         subtitle = if (summaryEnabled) {
-                                            "Every day at ${TimeFormatter.format(summaryHour, summaryMinute)}"
+                                            stringResource(R.string.settings_daily_summary_on_format, TimeFormatter.format(summaryHour, summaryMinute))
                                         } else {
-                                            "Off. Get one alert with today's classes and tasks"
+                                            stringResource(R.string.settings_daily_summary_off)
                                         },
                                         onClick = { setSummaryEnabled(!summaryEnabled) },
                                         switchChecked = summaryEnabled,
@@ -689,10 +689,10 @@ fun SettingsButton(
                                         testTag = "settings_request_feature_row"
                                     )
                                     val statusText = when (val r = updateResult) {
-                                        is UpdateResult.Available -> "Update available: ${r.latestVersion} (you have $currentVersion)"
-                                        is UpdateResult.UpToDate -> "You're on the latest version ($currentVersion)"
+                                        is UpdateResult.Available -> stringResource(R.string.settings_update_available_detail_format, r.latestVersion, currentVersion)
+                                        is UpdateResult.UpToDate -> stringResource(R.string.settings_up_to_date_format, currentVersion)
                                         is UpdateResult.Failed -> r.message
-                                        null -> "Version $currentVersion"
+                                        null -> stringResource(R.string.settings_version_format, currentVersion)
                                     }
                                     SettingsRow(
                                         icon = Icons.Default.SystemUpdate,
@@ -819,6 +819,7 @@ private fun SettingsRow(
 @Composable
 private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     var selected by remember { mutableStateOf(NotificationSound.choice(context)) }
     val player = remember { arrayOfNulls<Ringtone>(1) }
     DisposableEffect(Unit) { onDispose { try { player[0]?.stop() } catch (e: Exception) { Log.w("UniTask", "Could not stop the sound preview", e) } } }
@@ -865,7 +866,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                 )
                 NotificationSound.availableBuiltIn(context).forEach { sound ->
                     SoundOptionRow(
-                        label = sound.label,
+                        label = stringResource(sound.labelRes),
                         selected = selected == sound.key,
                         onSelect = {
                             NotificationSound.setChoice(context, sound.key)
@@ -881,12 +882,12 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                 }
 
                 SoundOptionRow(
-                    label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else "Choose from phone…",
+                    label = if (selected == NotificationSound.CHOICE_PHONE) NotificationSound.label(context) else stringResource(R.string.sound_choose_from_phone),
                     selected = selected == NotificationSound.CHOICE_PHONE,
                     onSelect = {
                         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                             putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Notification sound")
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, uiResources.getString(R.string.sound_picker_title))
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                             NotificationSound.phoneUri(context)?.let {

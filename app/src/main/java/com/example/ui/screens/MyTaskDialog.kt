@@ -590,19 +590,19 @@ fun MyTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        QuickDateChip("Today", selected = isDaysFromToday(selectedDueDateMillis, 0)) {
+                        QuickDateChip(stringResource(R.string.quick_date_today), selected = isDaysFromToday(selectedDueDateMillis, 0)) {
                             val c = Calendar.getInstance()
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Tomorrow", selected = isDaysFromToday(selectedDueDateMillis, 1)) {
+                        QuickDateChip(stringResource(R.string.quick_date_tomorrow), selected = isDaysFromToday(selectedDueDateMillis, 1)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("In 3 Days", selected = isDaysFromToday(selectedDueDateMillis, 3)) {
+                        QuickDateChip(stringResource(R.string.quick_date_in_3_days), selected = isDaysFromToday(selectedDueDateMillis, 3)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 3) }
                             selectedDueDateMillis = c.timeInMillis
                         }
-                        QuickDateChip("Next Week", selected = isDaysFromToday(selectedDueDateMillis, 7)) {
+                        QuickDateChip(stringResource(R.string.quick_date_next_week), selected = isDaysFromToday(selectedDueDateMillis, 7)) {
                             val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7) }
                             selectedDueDateMillis = c.timeInMillis
                         }

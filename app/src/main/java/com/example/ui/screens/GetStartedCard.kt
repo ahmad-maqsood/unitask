@@ -59,8 +59,8 @@ private fun buildRows(
     val rows = steps.filter { !it.isSystem }.map { step ->
         GetStartedRow(
             tag = "get_started_step_${step.name}",
-            title = step.title,
-            hint = step.hint,
+            title = context.getString(step.titleRes),
+            hint = context.getString(step.hintRes),
             isDone = step in done,
             target = step
         )
@@ -190,7 +190,7 @@ fun GetStartedCard(
                             )
                             if (!row.isDone) {
                                 Text(
-                                    text = if (onStepClick != null && !row.target.isSystem) "Tap to start" else row.hint,
+                                    text = if (onStepClick != null && !row.target.isSystem) stringResource(R.string.get_started_tap_to_start) else row.hint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

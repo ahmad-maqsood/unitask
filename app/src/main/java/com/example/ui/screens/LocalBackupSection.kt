@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -109,6 +110,7 @@ internal fun describe(context: Context, counts: BackupCounts): String {
 @Composable
 fun LocalBackupSection(showHeading: Boolean = true) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
 
     var showExportDialog by remember { mutableStateOf(false) }
@@ -139,10 +141,12 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                     restorePasswordInput = ""
                     restorePasswordError = null
                     showResult(
-                        "Backup restored",
-                        "Added ${describe(context, result.counts)}." +
-                            skippedImagesNote(context, result.counts.skippedImages, restoring = true) +
-                            " Items that were already on this phone were kept."
+                        resources.getString(R.string.backup_local_restored_title),
+                        resources.getString(
+                            R.string.backup_local_restored_body,
+                            describe(context, result.counts),
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = true)
+                        )
                     )
                 }
                 is BackupResult.Failure -> {
@@ -152,7 +156,7 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                         restoreUri = null
                         restorePasswordInput = ""
                         restorePasswordError = null
-                        showResult("Restore failed", result.message)
+                        showResult(resources.getString(R.string.drive_error_restore_failed), result.message)
                     }
                 }
             }
@@ -171,13 +175,14 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 isWorking = false
                 when (result) {
                     is BackupResult.Success -> showResult(
-                        "Backup saved",
-                        "Saved ${describe(context, result.counts)}." +
-                            skippedImagesNote(context, result.counts.skippedImages, restoring = false) +
-                            " Keep the file somewhere safe, such as Google Drive " +
-                            "or another phone. Attached files are not included."
+                        resources.getString(R.string.backup_local_saved_title),
+                        resources.getString(
+                            R.string.backup_local_saved_body,
+                            describe(context, result.counts),
+                            skippedImagesNote(context, result.counts.skippedImages, restoring = false)
+                        )
                     )
-                    is BackupResult.Failure -> showResult("Backup failed", result.message)
+                    is BackupResult.Failure -> showResult(resources.getString(R.string.drive_error_backup_failed), result.message)
                 }
             }
         }
@@ -193,7 +198,10 @@ fun LocalBackupSection(showHeading: Boolean = true) {
                 isWorking = false
                 when (kind) {
                     LocalBackupManager.Inspection.INVALID ->
-                        showResult("Not a UniTask backup", "The chosen file is not a UniTask backup file.")
+                        showResult(
+                            resources.getString(R.string.backup_local_not_backup_title),
+                            resources.getString(R.string.backup_local_not_backup_body)
+                        )
                     LocalBackupManager.Inspection.ENCRYPTED -> {
                         restorePasswordInput = ""
                         restorePasswordError = null

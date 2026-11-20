@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ fun CourseCard(
 
     val courseColor = rememberCourseColor(course.colorHex)
     val context = LocalContext.current
+    val resources = LocalResources.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteWarningMessage by remember { mutableStateOf<String?>(null) }
 
@@ -76,14 +78,14 @@ fun CourseCard(
             try {
                 val db = AppDatabase.getDatabase(context)
                 val loss = queryCourseDeleteLoss(db, course)
-                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount)
+                val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount, context)
                 deleteWarningMessage = if (warning.isNotBlank()) {
-                    "${course.code} will be deleted. $warning"
+                    resources.getString(R.string.course_delete_will_be_deleted_with_warning_format, course.code, warning)
                 } else {
-                    "${course.code} will be deleted."
+                    resources.getString(R.string.course_delete_will_be_deleted_format, course.code)
                 }
             } catch (_: Exception) {
-                deleteWarningMessage = "${course.code} and all of its assignments, class slots and attached files will be deleted."
+                deleteWarningMessage = resources.getString(R.string.course_delete_fallback_format, course.code)
             }
         } else {
             deleteWarningMessage = null
@@ -93,7 +95,7 @@ fun CourseCard(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = stringResource(R.string.course_card_delete_course),
-            message = deleteWarningMessage ?: "${course.code} and all of its assignments, class slots and attached files will be deleted.",
+            message = deleteWarningMessage ?: resources.getString(R.string.course_delete_fallback_format, course.code),
             onConfirm = { onDeleteClick(course) },
             onDismiss = { showDeleteConfirm = false }
         )

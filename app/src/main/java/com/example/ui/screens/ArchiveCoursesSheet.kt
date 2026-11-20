@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,7 +62,8 @@ fun ArchiveCoursesSheet(
     val taskCount = selectedCourses.sumOf { it.taskCount }
     val classCount = selectedCourses.sumOf { it.classCount }
     val noteCount = selectedCourses.sumOf { it.noteCount }
-    val summaryText = archiveSummaryText(taskCount, classCount, noteCount, existingMatch)
+    val context = LocalContext.current
+    val summaryText = archiveSummaryText(taskCount, classCount, noteCount, existingMatch, context)
 
     val allSelected = courses.isNotEmpty() && selectedIds.size == courses.size
     val canConfirm = validation.isValid && selectedIds.isNotEmpty()
@@ -170,7 +172,7 @@ fun ArchiveCoursesSheet(
                                 }
                             }
                             Spacer(modifier = Modifier.size(8.dp))
-                            val taskLabel = if (course.taskCount == 1) "1 task" else "${course.taskCount} tasks"
+                            val taskLabel = context.resources.getQuantityString(R.plurals.counts_tasks, course.taskCount, course.taskCount)
                             Text(
                                 text = taskLabel,
                                 style = MaterialTheme.typography.labelSmall,
@@ -195,7 +197,9 @@ fun ArchiveCoursesSheet(
                 isError = semesterName.isNotBlank() && !validation.isValid,
                 supportingText = {
                     if (semesterName.isNotBlank() && !validation.isValid && validation.errorMessage != null) {
-                        Text(validation.errorMessage)
+                        Text(
+                            if (validation.errorRes != 0) stringResource(validation.errorRes) else validation.errorMessage
+                        )
                     } else {
                         Text("${semesterName.length}/40")
                     }

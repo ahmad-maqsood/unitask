@@ -160,7 +160,11 @@ object MissedReminders {
         for (taskId in missed.map { it.taskId }.distinct()) {
             val task = database.taskDao().getTaskById(taskId) ?: continue
             if (task.status == TaskStatus.COMPLETED || !task.isEnabled) continue
-            lines +="${task.title}: due ${DateFormats.shortDateAtClock(task.deadlineMillis)}"
+            lines += context.getString(
+                R.string.missed_reminder_line,
+                task.title,
+                DateFormats.shortDateAtClock(context, task.deadlineMillis)
+            )
         }
         if (lines.isEmpty()) return
 
@@ -192,7 +196,11 @@ object MissedReminders {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (lines.size == 1) "Missed reminder" else "${lines.size} missed reminders"
+        val title = if (lines.size == 1) {
+            context.getString(R.string.missed_reminder_title_one)
+        } else {
+            context.getString(R.string.missed_reminder_title_many, lines.size)
+        }
         val inbox = NotificationCompat.InboxStyle().setSummaryText(context.getString(R.string.notification_summary_missed_reminders))
         lines.forEach { inbox.addLine(it) }
 

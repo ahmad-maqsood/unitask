@@ -182,7 +182,7 @@ fun AddEditLectureSlotDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = selectedCourse?.let { "${it.code} - ${it.name}" } ?: "Select Course",
+                                    text = selectedCourse?.let { "${it.code} - ${it.name}" } ?: stringResource(R.string.lecture_slot_select_course),
                                     modifier = Modifier.weight(1f, fill = false),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
@@ -332,7 +332,7 @@ fun AddEditLectureSlotDialog(
                                     val clean = classroom.replace("[Week A]", "").replace("[Week B]", "").trim()
                                     classroom = if (tag.isEmpty()) clean else if (clean.isEmpty()) tag else "$clean $tag"
                                 },
-                                label = { ShrinkToFitText(text = freq, style = MaterialTheme.typography.labelSmall) },
+                                label = { ShrinkToFitText(text = when (freq) { "Week A" -> stringResource(R.string.timetable_week_a); "Week B" -> stringResource(R.string.timetable_week_b); else -> stringResource(R.string.lecture_slot_every_week) }, style = MaterialTheme.typography.labelSmall) },
                                 modifier = Modifier.weight(1f)
                             )
                         }

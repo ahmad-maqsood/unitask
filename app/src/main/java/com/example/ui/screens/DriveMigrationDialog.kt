@@ -135,14 +135,14 @@ fun DriveMigrationDialog(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Text(
-                            text = state.busy?.progressText ?: state.busy?.label ?: "Backing up...",
+                            text = state.busy?.progressText ?: state.busy?.label ?: stringResource(R.string.drive_migration_backing_up),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )
                     }
                 } else if (backupSucceeded) {
                     Text(
-                        text = state.lastResultMessage ?: "Backup complete.",
+                        text = state.lastResultMessage ?: stringResource(R.string.drive_migration_backup_complete),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Row(

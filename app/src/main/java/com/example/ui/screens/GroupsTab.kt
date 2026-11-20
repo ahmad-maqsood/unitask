@@ -78,8 +78,12 @@ fun GroupsTab(
     viewModel: GroupsViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val uiResources = androidx.compose.ui.platform.LocalResources.current
     val failedToCreateGroupMessage = stringResource(R.string.groups_failed_to_create_group)
     val failedToJoinGroupMessage = stringResource(R.string.groups_failed_to_join_group)
+    val signInToJoinMessage = stringResource(R.string.msg_sign_in_to_join_group)
+    val leftGroupMessage = stringResource(R.string.msg_left_group)
+    val groupDeletedMessage = stringResource(R.string.msg_group_deleted)
     val snackbarHostState = remember { SnackbarHostState() }
     com.example.ui.RegisterMessageHost(snackbarHostState)
 
@@ -94,6 +98,7 @@ fun GroupsTab(
     val selectedGroupMembers by viewModel.selectedGroupMembers.collectAsStateWithLifecycle()
     val selectedGroupTasks by viewModel.selectedGroupTasks.collectAsStateWithLifecycle()
     val selectedGroupCourses by viewModel.selectedGroupCourses.collectAsStateWithLifecycle()
+    // null until the done marks have been read; the group screen waits for them before drawing its tasks.
     val myDoneTaskIds by viewModel.myDoneTaskIds.collectAsStateWithLifecycle()
     val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
 
@@ -114,7 +119,7 @@ fun GroupsTab(
                 viewModel.openJoinDialog(username, code)
                 onInviteConsumed()
             } else if (sessionReady) {
-                com.example.ui.AppMessages.show("Sign in to join this group")
+                com.example.ui.AppMessages.show(signInToJoinMessage)
                 onInviteConsumed()
             }
         }
@@ -140,13 +145,16 @@ fun GroupsTab(
             viewModel.onRemovedFromGroup(gid)
         }
     }
+    val upToDateText = stringResource(R.string.refresh_up_to_date)
+    val syncingText = stringResource(R.string.refresh_syncing)
+    val joinCodeMarker = stringResource(R.string.group_new_join_code_marker)
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collectLatest { msg ->
             snackbarHostState.currentSnackbarData?.dismiss()
             val job = launch {
                 snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
             }
-            if (msg.contains("Up to date") || msg.contains("New join code") || msg.contains("copied") || msg.contains("Syncing")) {
+            if (msg.contains(upToDateText) || msg.contains(joinCodeMarker) || msg.contains(syncingText)) {
                 delay(2000L)
                 job.cancel()
                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -194,7 +202,8 @@ fun GroupsTab(
                     tasks = selectedGroupTasks,
                     courses = selectedGroupCourses,
                     members = selectedGroupMembers,
-                    doneTaskIds = myDoneTaskIds,
+                    doneTaskIds = myDoneTaskIds.orEmpty(),
+                    doneMarksLoaded = myDoneTaskIds != null,
                     isLoading = isActionLoading,
                     onBack = { viewModel.clearSelectedGroup() },
                     onAddTaskClick = { viewModel.openAddTaskDialog() },
@@ -208,13 +217,13 @@ fun GroupsTab(
                     onRemoveMember = { member -> viewModel.removeMember(member) },
                     onLeaveGroupClick = {
                         viewModel.leaveCurrentGroup {
-                            com.example.ui.AppMessages.show("Left group")
+                            com.example.ui.AppMessages.show(leftGroupMessage)
                         }
                     },
                     onDeleteGroupClick = {
                         val username = selectedGroupDetail?.username ?: activeMembership?.username ?: ""
                         viewModel.deleteCurrentGroup(username) {
-                            com.example.ui.AppMessages.show("Group deleted")
+                            com.example.ui.AppMessages.show(groupDeletedMessage)
                         }
                     },
                     onUpdateGroupProfile = { newName, newUsername ->
@@ -227,7 +236,7 @@ fun GroupsTab(
                     onRegenerateGroupCode = {
                         viewModel.regenerateGroupCode { success, codeOrError ->
                             if (codeOrError != null) {
-                                com.example.ui.AppMessages.show(if (success) "New code: $codeOrError" else codeOrError)
+                                com.example.ui.AppMessages.show(if (success) uiResources.getString(R.string.group_new_code, codeOrError) else codeOrError)
                             }
                         }
                     },

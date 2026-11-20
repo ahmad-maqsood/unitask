@@ -232,6 +232,35 @@ class GlobalSearchTest {
     }
 
     @Test
+    fun testMyTasksLabelMatchesAppLanguageAndEnglish() {
+        val myTasksCourse = Course(id = 99, name = "My tasks", code = "MYTASKS")
+        val task = makeTask(title = "Buy groceries", course = myTasksCourse)
+        val urduLabel = "میرے ٹاسک"
+
+        for (query in listOf(urduLabel, "My tasks")) {
+            val results = searchEverything(
+                query = query,
+                tasks = listOf(task),
+                notes = emptyList(),
+                courses = listOf(myTasksCourse),
+                myTasksLabel = urduLabel
+            )
+            assertEquals("tasks for '$query'", 1, results.tasks.size)
+            assertEquals("courses for '$query'", 1, results.courses.size)
+        }
+
+        // Without the translated name (plain tests) the Urdu text finds nothing.
+        val none = searchEverything(
+            query = urduLabel,
+            tasks = listOf(task),
+            notes = emptyList(),
+            courses = listOf(myTasksCourse)
+        )
+        assertEquals(0, none.tasks.size)
+        assertEquals(0, none.courses.size)
+    }
+
+    @Test
     fun testEmptyQuery() {
         val task = makeTask()
         val note = makeNote()

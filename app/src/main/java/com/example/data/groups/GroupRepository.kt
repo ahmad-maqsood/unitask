@@ -136,6 +136,22 @@ class GroupRepository(private val context: Context) {
         const val MAX_GROUPS_PER_OWNER = 8
         const val MAX_TASKS_PER_GROUP = 200
 
+        /**
+         * Short codes carried in the failure message of create, join and edit group.
+         * The view model turns each one into text in the app language (GroupsViewModel.groupErrorText).
+         */
+        const val ERROR_GROUP_LIMIT = "group_limit_reached"
+        const val ERROR_NOT_SIGNED_IN = "not_signed_in"
+        const val ERROR_SERVER_UNREACHABLE = "server_unreachable"
+        const val ERROR_GROUP_NAME_BLANK = "group_name_blank"
+        const val ERROR_USERNAME_LENGTH = "username_length"
+        const val ERROR_USERNAME_TAKEN = "username_taken"
+        const val ERROR_USERNAME_MAYBE_TAKEN = "username_maybe_taken"
+        const val ERROR_JOIN_FIELDS_REQUIRED = "join_fields_required"
+        const val ERROR_WRONG_JOIN_CODE = "wrong_join_code"
+        const val ERROR_ALREADY_MEMBER = "already_a_member"
+        const val ERROR_NO_SUCH_GROUP = "no_such_group"
+
         private const val JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         private const val TIMEOUT_MILLIS = 15000L
         private const val POLL_MILLIS = 30_000L
@@ -1041,14 +1057,14 @@ class GroupRepository(private val context: Context) {
         val displayName = rawDisplayName.trim().take(60).ifEmpty { "Student" }
 
         if (cleanName.isBlank()) {
-            return Result.failure(IllegalArgumentException("Group name cannot be blank"))
+            return Result.failure(IllegalArgumentException(ERROR_GROUP_NAME_BLANK))
         }
         if (cleanUsername.length !in 3..30) {
-            return Result.failure(IllegalArgumentException("Username must be 3-30 characters"))
+            return Result.failure(IllegalArgumentException(ERROR_USERNAME_LENGTH))
         }
 
         val currentUid = currentSupabaseUid()
-            ?: return Result.failure(Exception("Not signed in"))
+            ?: return Result.failure(Exception(ERROR_NOT_SIGNED_IN))
 
         return try {
             withTimeout(TIMEOUT_MILLIS) {
@@ -1069,19 +1085,19 @@ class GroupRepository(private val context: Context) {
                 Result.success(pair)
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            Result.failure(Exception("Could not reach the server. Check your connection and try again."))
+            Result.failure(Exception(ERROR_SERVER_UNREACHABLE))
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
             // The database refuses a 9th owned group; the view model turns this code into a readable message.
             if (msg.contains("group_limit_reached", ignoreCase = true)) {
-                return Result.failure(Exception("group_limit_reached"))
+                return Result.failure(Exception(ERROR_GROUP_LIMIT))
             }
             val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("taken", ignoreCase = true)) {
-                "That username is taken"
+                ERROR_USERNAME_TAKEN
             } else {
-                "That username may have just been taken, or connection failed."
+                ERROR_USERNAME_MAYBE_TAKEN
             }
             Result.failure(Exception(friendly))
         }
@@ -1102,11 +1118,11 @@ class GroupRepository(private val context: Context) {
         val displayName = rawDisplayName.trim().take(60).ifEmpty { "Student" }
 
         if (cleanUsername.isBlank() || cleanCode.isBlank()) {
-            return Result.failure(IllegalArgumentException("Username and join code are required"))
+            return Result.failure(IllegalArgumentException(ERROR_JOIN_FIELDS_REQUIRED))
         }
 
         val currentUid = currentSupabaseUid()
-            ?: return Result.failure(Exception("Not signed in"))
+            ?: return Result.failure(Exception(ERROR_NOT_SIGNED_IN))
 
         return try {
             withTimeout(TIMEOUT_MILLIS) {
@@ -1124,7 +1140,7 @@ class GroupRepository(private val context: Context) {
                 Result.success(groupId)
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            Result.failure(Exception("Could not reach the server. Check your connection and try again."))
+            Result.failure(Exception(ERROR_SERVER_UNREACHABLE))
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -1132,15 +1148,15 @@ class GroupRepository(private val context: Context) {
             val friendly = if (msg.contains("invalid_group_or_code", ignoreCase = true) ||
                 msg.contains("wrong join code", ignoreCase = true)
             ) {
-                "Wrong join code, or that group no longer exists."
+                ERROR_WRONG_JOIN_CODE
             } else if (msg.contains("already in this group", ignoreCase = true) ||
                 msg.contains("already_a_member", ignoreCase = true)
             ) {
-                "You are already in this group"
+                ERROR_ALREADY_MEMBER
             } else if (msg.contains("No group with that username", ignoreCase = true)) {
-                "No group with that username"
+                ERROR_NO_SUCH_GROUP
             } else {
-                "Wrong join code, or that group no longer exists."
+                ERROR_WRONG_JOIN_CODE
             }
             Result.failure(Exception(friendly))
         }
@@ -1211,9 +1227,9 @@ class GroupRepository(private val context: Context) {
     suspend fun updateGroupProfile(groupId: String, name: String, username: String): Result<Unit> {
         val cleanName = name.trim().take(60)
         val cleanUsername = username.trim().lowercase().filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
-        if (cleanName.isBlank()) return Result.failure(IllegalArgumentException("Group name cannot be blank"))
-        if (cleanUsername.length !in 3..30) return Result.failure(IllegalArgumentException("Username must be 3-30 characters"))
-        val currentUid = currentSupabaseUid() ?: return Result.failure(Exception("Not signed in"))
+        if (cleanName.isBlank()) return Result.failure(IllegalArgumentException(ERROR_GROUP_NAME_BLANK))
+        if (cleanUsername.length !in 3..30) return Result.failure(IllegalArgumentException(ERROR_USERNAME_LENGTH))
+        val currentUid = currentSupabaseUid() ?: return Result.failure(Exception(ERROR_NOT_SIGNED_IN))
 
         return try {
             withTimeout(TIMEOUT_MILLIS) {
@@ -1229,7 +1245,7 @@ class GroupRepository(private val context: Context) {
                 } catch (rpcEx: Exception) {
                     val msg = rpcEx.message.orEmpty()
                     if (msg.contains("username_taken", ignoreCase = true) || msg.contains("duplicate key", ignoreCase = true)) {
-                        throw Exception("That username is taken")
+                        throw Exception(ERROR_USERNAME_TAKEN)
                     }
                     SupabaseProvider.client.postgrest["groups"].update(
                         UpdateGroupProfilePayload(name = cleanName, username = cleanUsername)
@@ -1250,7 +1266,7 @@ class GroupRepository(private val context: Context) {
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
             val friendly = if (msg.contains("username_taken", ignoreCase = true) || msg.contains("23505")) {
-                "That username is taken"
+                ERROR_USERNAME_TAKEN
             } else {
                 e.message ?: "Failed to update group"
             }

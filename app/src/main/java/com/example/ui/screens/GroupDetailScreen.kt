@@ -55,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +81,7 @@ import com.example.data.groups.GroupTask
 import java.util.Date
 import java.util.Locale
 import com.example.data.local.computeDeadlineMillis
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +95,11 @@ fun GroupDetailScreen(
     courses: List<GroupCourse> = emptyList(),
     members: List<GroupMember>,
     doneTaskIds: Set<String>,
+    /**
+     * False until the saved "done" marks have been read. They arrive a moment after the tasks, so the
+     * list waits for them (see below) and a finished task is drawn once, in its final place.
+     */
+    doneMarksLoaded: Boolean = true,
     isLoading: Boolean,
     onBack: () -> Unit,
     onAddTaskClick: () -> Unit,
@@ -132,7 +139,7 @@ fun GroupDetailScreen(
     var showQrCodeDialog by remember { mutableStateOf(false) }
     var memberToTransferOwnership by remember { mutableStateOf<GroupMember?>(null) }
 
-    val effectiveName = groupDetail?.name?.ifBlank { null } ?: fallbackName.ifBlank { "Group" }
+    val effectiveName = groupDetail?.name?.ifBlank { null } ?: fallbackName.ifBlank { stringResource(R.string.group_default_name) }
     val effectiveUsername = groupDetail?.username?.ifBlank { null } ?: fallbackUsername
     val isOwner = groupDetail?.ownerId == currentUid || fallbackRole == "owner"
     val joinCode = groupDetail?.joinCode ?: ""
@@ -159,6 +166,19 @@ fun GroupDetailScreen(
             .sortedBy { it.second }
             .map { it.first }
     }
+
+    // Same order as the Deadlines tab: open tasks by deadline, finished ones last.
+    val orderedTasks = remember(sortedTasks, doneTaskIds) { orderGroupTasks(sortedTasks, doneTaskIds) }
+
+    // Wait for the done marks before drawing the tasks. Without this a finished task is first drawn in
+    // its deadline place and then slides down when its mark arrives. The wait is at most 1.5 seconds, for
+    // the case where the marks never come (for example offline with no saved copy).
+    var waitedForDoneMarks by remember(effectiveGroupId) { mutableStateOf(false) }
+    LaunchedEffect(effectiveGroupId) {
+        delay(1_500)
+        waitedForDoneMarks = true
+    }
+    val showTasks = doneMarksLoaded || waitedForDoneMarks
 
 
     Scaffold(
@@ -359,8 +379,8 @@ fun GroupDetailScreen(
                                 )
                             }
                         }
-                    } else {
-                        items(sortedTasks, key = { it.id }) { task ->
+                    } else if (showTasks) {
+                        items(orderedTasks, key = { it.id }) { task ->
                             val isDone = doneTaskIds.contains(task.id)
                             val canModify = task.createdBy == currentUid || isStaff
                             // "CS-509 • Theory of Automata" when the tag matches one of the group's courses.
@@ -465,8 +485,8 @@ fun GroupDetailScreen(
                                 }
 
                                                                val roleLabel = when (member.role) {
-                                    "owner" -> "Owner"
-                                    "admin" -> "Admin"
+                                    "owner" -> stringResource(R.string.groups_owner)
+                                    "admin" -> stringResource(R.string.groups_admin)
                                     else -> null
                                 }
                                 if (roleLabel != null) {

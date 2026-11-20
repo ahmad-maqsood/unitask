@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -110,7 +111,7 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
                     modifier = Modifier.weight(1f),
                     value = data.doneThisWeek.toString(),
                     label = stringResource(R.string.progress_done_this_week),
-                    note = weekNote(data.doneThisWeek, data.doneLastWeek)
+                    note = weekNote(LocalContext.current, data.doneThisWeek, data.doneLastWeek)
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
@@ -142,12 +143,12 @@ private fun ProgressContent(data: ProgressSummary, modifier: Modifier = Modifier
     }
 }
 
-private fun weekNote(thisWeek: Int, lastWeek: Int): String = when {
-    lastWeek == 0 && thisWeek == 0 -> "Nothing yet"
-    lastWeek == 0 -> "Last week: none"
-    thisWeek > lastWeek -> "${thisWeek - lastWeek} more than last week"
-    thisWeek < lastWeek -> "${lastWeek - thisWeek} fewer than last week"
-    else -> "Same as last week"
+private fun weekNote(context: android.content.Context, thisWeek: Int, lastWeek: Int): String = when {
+    lastWeek == 0 && thisWeek == 0 -> context.getString(R.string.progress_week_none_yet)
+    lastWeek == 0 -> context.getString(R.string.progress_week_last_none)
+    thisWeek > lastWeek -> context.getString(R.string.progress_week_more, thisWeek - lastWeek)
+    thisWeek < lastWeek -> context.getString(R.string.progress_week_fewer, lastWeek - thisWeek)
+    else -> context.getString(R.string.progress_week_same)
 }
 
 @Composable

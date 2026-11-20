@@ -1,5 +1,7 @@
 package com.example.util.timer
 
+import com.example.R
+import android.content.Context
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -72,10 +74,13 @@ object TimerHistoryLogic {
             .sortedByDescending { it.first }
 
     /** "45 s", "25 min", "1 h" or "1 h 25 min". */
-    fun formatTotal(millis: Long): String {
+    fun formatTotal(millis: Long, context: Context? = null): String {
         val nonNegative = maxOf(0L, millis)
-        if (nonNegative in 1 until 60_000L) return "${nonNegative / 1000L} s"
-        return TimerLogic.formatDuration((nonNegative / 60_000L).toInt())
+        if (nonNegative in 1 until 60_000L) {
+            return if (context != null) context.getString(R.string.timer_duration_sec, (nonNegative / 1000L).toInt())
+            else "${nonNegative / 1000L} s"
+        }
+        return TimerLogic.formatDuration((nonNegative / 60_000L).toInt(), context)
     }
 
     /** A short form for the narrow chart bars: "<1m", "25m", "1h" or "1h25m". Empty for zero. */

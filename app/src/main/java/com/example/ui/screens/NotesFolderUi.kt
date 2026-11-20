@@ -124,6 +124,7 @@ fun FolderColorPicker(
         horizontalArrangement = Arrangement.spacedBy(0.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        val noColourLabel = stringResource(R.string.folder_color_none)
         val options = listOf("") + CourseColors
         options.forEach { hex ->
             val isSelected = if (hex.isEmpty()) selectedHex.isBlank() else selectedHex.equals(hex, ignoreCase = true)
@@ -137,7 +138,7 @@ fun FolderColorPicker(
                         role = Role.RadioButton,
                         onClick = { onSelect(hex) }
                     )
-                    .semantics { contentDescription = if (hex.isEmpty()) "No colour" else courseColorName(hex) }
+                    .semantics { contentDescription = if (hex.isEmpty()) noColourLabel else courseColorName(hex) }
                     .testTag("folder_color_${hex.ifEmpty { "none" }}"),
                 contentAlignment = Alignment.Center
             ) {
@@ -183,7 +184,7 @@ fun MoveToFolderDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (noteCount == 1) "Move note to" else "Move $noteCount notes to")
+            Text(if (noteCount == 1) stringResource(R.string.notes_move_note_to) else stringResource(R.string.notes_move_notes_to_format, noteCount))
         },
         text = {
             Column(

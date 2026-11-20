@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +65,7 @@ fun FullscreenTimerContent(
 ) {
     val colors = MaterialTheme.colorScheme
     val accent = if (isFinished) colors.tertiary else colors.primary
-    val statusText = timerStatusLabel(state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase)
+    val statusText = timerStatusLabel(androidx.compose.ui.platform.LocalContext.current, state.mode, isRunning, isPaused, isFinished, state.pomodoroPhase)
 
     BoxWithConstraints(
         modifier = modifier
@@ -157,14 +158,21 @@ private fun FullscreenTimerPanel(
 ) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val resources = LocalResources.current
     val countdown = state.mode == TimerMode.COUNTDOWN
     val modeText = when {
         state.pomodoroPhase != null ->
-            "POMODORO · ROUND ${state.pomodoroRound} · " +
-                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
+            resources.getString(
+                R.string.timer_mode_pomodoro_format,
+                state.pomodoroRound,
+                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
+            )
         countdown ->
-            "COUNTDOWN · " + TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt())
-        else -> "STOPWATCH"
+            resources.getString(
+                R.string.timer_mode_countdown_format,
+                TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
+            )
+        else -> resources.getString(R.string.timer_mode_stopwatch)
     }
     val endMillis = TimerLogic.scheduledEndTimeMillis(state)
 
@@ -268,9 +276,9 @@ private fun FullscreenTimerPanel(
                         }
                     }
                     val (icon, description, tag) = when {
-                        isIdle -> Triple(Icons.Default.PlayArrow, "Start", "timer_start_button")
-                        isRunning -> Triple(Icons.Default.Pause, "Pause", "timer_pause_button")
-                        else -> Triple(Icons.Default.PlayArrow, "Resume", "timer_resume_button")
+                        isIdle -> Triple(Icons.Default.PlayArrow, stringResource(R.string.timer_start), "timer_start_button")
+                        isRunning -> Triple(Icons.Default.Pause, stringResource(R.string.timer_notif_pause), "timer_pause_button")
+                        else -> Triple(Icons.Default.PlayArrow, stringResource(R.string.timer_notif_resume), "timer_resume_button")
                     }
                     FilledIconButton(
                         onClick = { if (isRunning) controller.pause() else controller.start() },

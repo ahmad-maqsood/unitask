@@ -67,7 +67,7 @@ class GroupReminderScheduler(private val context: Context) {
             if (GroupTaskOffStore.keyOf(groupId, task.id) in turnedOff) continue
             val deadline = deadlineMillis(task)
             // With the date, like personal reminders: "1 day before" fires on another day.
-            val dueInfo = "Due " + com.example.util.DateFormats.shortDateAtClock(deadline)
+            val dueInfo = com.example.util.DueText.dueAt(context, deadline)
 
             for (option in optionsFor(task)) {
                 val trigger = deadline - option.offsetMinutes * 60_000L

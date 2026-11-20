@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.app.Application
+import com.example.R
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
@@ -198,7 +199,8 @@ class SearchViewModel(
             settingsEntries = localizedSettingsSearchEntries(getApplication<Application>()),
             guideEntries = if (params.includeGuides) FeatureGuide.all else emptyList(),
             noteFolderNames = data.folderNames,
-            noteFolderColors = data.folderColors
+            noteFolderColors = data.folderColors,
+            myTasksLabel = getApplication<Application>().getString(R.string.main_my_tasks)
         )
     }
         .flowOn(Dispatchers.Default)

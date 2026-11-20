@@ -337,7 +337,7 @@ fun SearchScreen(
                                         onClick = { tasksExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.tasks.size))
+                                        Text(stringResource(R.string.search_show_all, results.tasks.size))
                                     }
                                 }
                             }
@@ -380,7 +380,7 @@ fun SearchScreen(
                                         onClick = { notesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.notes.size))
+                                        Text(stringResource(R.string.search_show_all, results.notes.size))
                                     }
                                 }
                             }
@@ -422,7 +422,7 @@ fun SearchScreen(
                                         onClick = { coursesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.courses.size))
+                                        Text(stringResource(R.string.search_show_all, results.courses.size))
                                     }
                                 }
                             }
@@ -459,7 +459,7 @@ fun SearchScreen(
                                         onClick = { settingsExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.settings.size))
+                                        Text(stringResource(R.string.search_show_all, results.settings.size))
                                     }
                                 }
                             }
@@ -496,7 +496,7 @@ fun SearchScreen(
                                         onClick = { guidesExpanded = true },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(formatShowAllButtonText(results.guides.size))
+                                        Text(stringResource(R.string.search_show_all, results.guides.size))
                                     }
                                 }
                             }
@@ -615,7 +615,7 @@ private fun SearchTaskRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val courseCode = if (result.course?.isMyTasksCourse() == true) "My tasks" else result.course?.code.orEmpty()
+                val courseCode = if (result.course?.isMyTasksCourse() == true) stringResource(R.string.main_my_tasks) else result.course?.code.orEmpty()
                 if (courseCode.isNotBlank()) {
                     Text(
                         text = courseCode,
@@ -633,8 +633,8 @@ private fun SearchTaskRow(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 val statusLabel = when (result.task.status) {
-                    TaskStatus.COMPLETED -> "Completed"
-                    TaskStatus.PENDING -> "Pending"
+                    TaskStatus.COMPLETED -> stringResource(R.string.deadlines_completed)
+                    TaskStatus.PENDING -> stringResource(R.string.task_status_pending)
                 }
                 Text(
                     text = statusLabel,
@@ -672,7 +672,7 @@ private fun SearchNoteRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = result.noteItem.note.title.ifBlank { "Untitled note" },
+                    text = result.noteItem.note.title.ifBlank { stringResource(R.string.note_untitled) },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -781,7 +781,7 @@ private fun SearchCourseRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val code = if (result.course.isMyTasksCourse()) "My tasks" else result.course.code
+                val code = if (result.course.isMyTasksCourse()) stringResource(R.string.main_my_tasks) else result.course.code
                 Text(
                     text = code,
                     style = MaterialTheme.typography.titleMedium,
@@ -797,7 +797,7 @@ private fun SearchCourseRow(
                 }
             }
 
-            val name = if (result.course.isMyTasksCourse()) "Personal tasks" else result.course.name
+            val name = if (result.course.isMyTasksCourse()) stringResource(R.string.personal_tasks) else result.course.name
             if (name.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

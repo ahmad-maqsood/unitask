@@ -8,9 +8,11 @@ import java.util.Calendar
  * Returns formatted days left in trash text.
  * For example: "1 day left" or "28 days left".
  */
-fun formatTrashDaysLeft(daysLeft: Int): String {
-    return if (daysLeft == 1) "1 day left" else "$daysLeft days left"
-}
+fun formatTrashDaysLeft(
+    daysLeft: Int,
+    // Screens pass the translated plural text; the default is English for plain unit tests.
+    format: (Int) -> String = { if (it == 1) "1 day left" else "$it days left" }
+): String = format(daysLeft)
 
 /**
  * Formats the tab label with its item count.
@@ -24,7 +26,13 @@ fun formatTabTitle(name: String, count: Int): String {
  * Formats the original due date of a task in the trash.
  * For example: "Due Mon, Nov 4 at 9:30 AM" or empty string if no due date.
  */
-fun formatTrashTaskDueDate(epochMillis: Long, hour: Int, minute: Int): String {
+fun formatTrashTaskDueDate(
+    epochMillis: Long,
+    hour: Int,
+    minute: Int,
+    // Builds the line from the date and the time. Screens pass the translated "Due %1$s at %2$s".
+    format: (date: String, time: String) -> String = { date, time -> "Due $date at $time" }
+): String {
     if (epochMillis <= 0L) return ""
     val cal = Calendar.getInstance().apply {
         timeInMillis = epochMillis
@@ -33,7 +41,7 @@ fun formatTrashTaskDueDate(epochMillis: Long, hour: Int, minute: Int): String {
     }
     val dateStr = DateFormats.shortDate(epochMillis)
     val timeStr = DateFormats.clock(cal.timeInMillis)
-    return "Due $dateStr at $timeStr"
+    return format(dateStr, timeStr)
 }
 
 /**

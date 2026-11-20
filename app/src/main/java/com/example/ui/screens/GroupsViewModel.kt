@@ -92,7 +92,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     val isOnline: StateFlow<Boolean> = repository.observeIsOnline()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val offlineMessage = "You're offline. Connect to the internet and try again."
+    private val offlineMessage: String get() = str(R.string.group_vm_offline_try_again)
 
     /**
      * Group changes (add, edit, delete, roles, join codes) must reach the server, so they cannot run offline.
@@ -102,6 +102,25 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (isOnline.value) return true
         _snackbarMessage.tryEmit(offlineMessage)
         return false
+    }
+
+    /**
+     * The text for a failure from create, join or edit group. The repository sends short codes
+     * (GroupRepository.ERROR_*); anything else, such as a raw server message, is shown as it came.
+     */
+    private fun groupErrorText(error: Throwable, @StringRes fallback: Int): String = when (error.message) {
+        GroupRepository.ERROR_GROUP_LIMIT -> str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
+        GroupRepository.ERROR_NOT_SIGNED_IN -> str(R.string.group_error_not_signed_in)
+        GroupRepository.ERROR_SERVER_UNREACHABLE -> str(R.string.group_error_server_unreachable)
+        GroupRepository.ERROR_GROUP_NAME_BLANK -> str(R.string.group_error_name_blank)
+        GroupRepository.ERROR_USERNAME_LENGTH -> str(R.string.group_error_username_length)
+        GroupRepository.ERROR_USERNAME_TAKEN -> str(R.string.group_error_username_taken)
+        GroupRepository.ERROR_USERNAME_MAYBE_TAKEN -> str(R.string.group_error_username_maybe_taken)
+        GroupRepository.ERROR_JOIN_FIELDS_REQUIRED -> str(R.string.group_error_join_fields_required)
+        GroupRepository.ERROR_WRONG_JOIN_CODE -> str(R.string.group_error_wrong_join_code)
+        GroupRepository.ERROR_ALREADY_MEMBER -> str(R.string.group_error_already_member)
+        GroupRepository.ERROR_NO_SUCH_GROUP -> str(R.string.group_error_no_such_group)
+        else -> error.message ?: str(fallback)
     }
 
     /** Text from strings.xml, so every message can be translated. */
@@ -231,8 +250,13 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * The ids of the tasks this person has ticked in the open group, or null until they have been read
+     * (the saved copy comes first). One value carries both facts, so the screen never sees "loaded" and
+     * the ticks out of step. Opening another group starts again from null.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val myDoneTaskIds: StateFlow<Set<String>> = kotlinx.coroutines.flow.combine(
+    val myDoneTaskIds: StateFlow<Set<String>?> = kotlinx.coroutines.flow.combine(
         _currentUser,
         _selectedGroupId
     ) { user, groupId ->
@@ -240,10 +264,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }.flatMapLatest { (uid, groupId) ->
         if (!uid.isNullOrBlank() && !groupId.isNullOrBlank()) {
             repository.observeGroupDoneTasks(uid, groupId)
+                .map<Set<String>, Set<String>?> { it }
+                .onStart { emit(null) }
         } else {
             flowOf(emptySet())
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     
     // Deadline alarms and "new task" notices for all groups are handled app-wide by
@@ -259,7 +285,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 val wasStale = repository.checkAndCleanStaleMembership(user.uid, groupId)
                 if (wasStale && _selectedGroupId.value == groupId) {
                     _selectedGroupId.value = null
-                    _snackbarMessage.emit("This group is no longer available.")
+                    _snackbarMessage.emit(str(R.string.group_vm_group_unavailable))
                 }
             }
         }
@@ -276,7 +302,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             _selectedGroupId.value = null
         }
         viewModelScope.launch {
-            _snackbarMessage.emit("You are no longer a member of that group.")
+            _snackbarMessage.emit(str(R.string.group_vm_removed_from_group))
         }
     }
     fun openCreateDialog() {
@@ -346,14 +372,14 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val targetKey = normalizeCourseKey(code)
         val duplicateByCode = otherCourses.firstOrNull { normalizeCourseKey(it.code) == targetKey }
         if (duplicateByCode != null) {
-            _courseSaveError.value = "This group already has a course with the code ${duplicateByCode.code} (${duplicateByCode.name})."
+            _courseSaveError.value = str(R.string.group_course_duplicate_code_format, duplicateByCode.code, duplicateByCode.name)
             return
         }
 
         val targetTrimmedName = name.trim()
         val duplicateByName = otherCourses.firstOrNull { it.name.trim().equals(targetTrimmedName, ignoreCase = true) }
         if (duplicateByName != null) {
-            _courseSaveError.value = "This group already has a course named ${duplicateByName.name}."
+            _courseSaveError.value = str(R.string.group_vm_duplicate_course_name, duplicateByName.name)
             return
         }
 
@@ -414,7 +440,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
-            onComplete(false, "You must be signed in to create a group.")
+            onComplete(false, str(R.string.group_vm_sign_in_to_create))
             return
         }
         // Quick check so the person is told at once. The database enforces the same limit.
@@ -437,12 +463,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(newGroupId)
                 onComplete(true, joinCode)
             }.onFailure { error ->
-                val text = if (error.message == "group_limit_reached") {
-                    str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
-                } else {
-                    error.message ?: str(R.string.groups_error_create_group_failed)
-                }
-                onComplete(false, text)
+                onComplete(false, groupErrorText(error, R.string.groups_error_create_group_failed))
             }
         }
     }
@@ -451,7 +472,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (!isOnline.value) { onComplete(false, offlineMessage); return }
         val user = _currentUser.value
         if (user == null) {
-            onComplete(false, "You must be signed in to join a group.")
+            onComplete(false, str(R.string.group_vm_sign_in_to_join))
             return
         }
 
@@ -469,14 +490,14 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(groupId)
                 onComplete(true, null)
             }.onFailure { error ->
-                onComplete(false, error.message ?: str(R.string.groups_error_join_group_failed))
+                onComplete(false, groupErrorText(error, R.string.groups_error_join_group_failed))
             }
         }
     }
 
     fun toggleTaskDone(task: GroupTask) {
         val user = _currentUser.value ?: return
-        val currentDone = myDoneTaskIds.value.contains(task.id)
+        val currentDone = myDoneTaskIds.value.orEmpty().contains(task.id)
         repository.setTaskDone(user.uid, task.groupId, task.id, !currentDone)
     }
 
@@ -614,8 +635,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             repository.setMemberRole(groupId, member.uid, if (makeAdmin) "admin" else "member")
                 .onSuccess {
                     _snackbarMessage.emit(
-                        if (makeAdmin) "${member.displayName} is now an admin"
-                        else "${member.displayName} is no longer an admin"
+                        if (makeAdmin) str(R.string.group_vm_now_admin, member.displayName)
+                        else str(R.string.group_vm_no_longer_admin, member.displayName)
                     )
                 }
                 .onFailure { e ->
@@ -630,7 +651,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.transferOwnership(groupId, newOwnerUid)
                 .onSuccess {
-                    _snackbarMessage.emit("Ownership transferred successfully")
+                    _snackbarMessage.emit(str(R.string.group_vm_ownership_transferred))
                 }
                 .onFailure { e ->
                     val msg = if (e.message?.contains("group_limit_reached") == true) {
@@ -648,7 +669,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         val groupId = _selectedGroupId.value ?: return
         viewModelScope.launch {
             repository.removeMember(groupId, member.uid)
-                .onSuccess { _snackbarMessage.emit("${member.displayName} was removed") }
+                .onSuccess { _snackbarMessage.emit(str(R.string.group_vm_member_removed, member.displayName)) }
                 .onFailure { e -> _snackbarMessage.emit(failureText(R.string.groups_error_remove_member, e)) }
         }
     }
@@ -699,10 +720,10 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.updateGroupProfile(groupId, newName, newUsername)
             _isActionLoading.value = false
             result.onSuccess {
-                _snackbarMessage.emit("Group settings updated successfully")
+                _snackbarMessage.emit(str(R.string.group_vm_settings_updated))
                 onComplete(true, null)
             }.onFailure { e ->
-                onComplete(false, e.message ?: str(R.string.groups_error_update_group_failed))
+                onComplete(false, groupErrorText(e, R.string.groups_error_update_group_failed))
             }
         }
     }
@@ -715,7 +736,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.regenerateGroupCode(groupId)
             _isActionLoading.value = false
             result.onSuccess { newCode ->
-                _snackbarMessage.emit("New join code: $newCode")
+                _snackbarMessage.emit(str(R.string.group_new_join_code, newCode))
                 onComplete(true, newCode)
             }.onFailure { e ->
                 onComplete(false, e.message ?: str(R.string.groups_error_regenerate_code_failed))

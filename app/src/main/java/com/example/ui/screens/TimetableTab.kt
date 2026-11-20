@@ -75,7 +75,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,6 +86,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.ringsAlarm
 import com.example.data.local.Course
 import com.example.data.local.LectureSlot
@@ -151,7 +151,8 @@ fun TimetableTab(
     }
     var isCardDismissed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var currentAnchor by remember { mutableStateOf(WeekParity.getWeekAAnchor(context)) }
-    val conflicts = remember(allSlots) { findConflicts(allSlots) }
+    val conflictFallbackLabel = stringResource(R.string.label_class)
+    val conflicts = remember(allSlots, conflictFallbackLabel) { findConflicts(allSlots, conflictFallbackLabel) }
 
     // Tell the rest of the app which day is showing, so "Add class" starts on that day.
     androidx.compose.runtime.LaunchedEffect(selectedDay) { onSelectedDayChange(selectedDay) }
@@ -353,7 +354,7 @@ fun TimetableTab(
                         FilterChip(
                             selected = selectedWeekFilter == w,
                             onClick = { selectedWeekFilter = w },
-                            label = { ShrinkToFitText(text = if (w == "All") "All Weeks" else w, style = MaterialTheme.typography.labelSmall) },
+                            label = { ShrinkToFitText(text = when (w) { "All" -> stringResource(R.string.timetable_all_weeks); "Week A" -> stringResource(R.string.timetable_week_a); else -> stringResource(R.string.timetable_week_b) }, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -410,9 +411,9 @@ fun TimetableTab(
 
                         Text(
                             text = if (noClassesAtAll) {
-                                "Add your lectures to keep track of your weekly schedule."
+                                stringResource(R.string.timetable_empty_no_classes)
                             } else {
-                                "Enjoy your free time or add lectures to keep track of your weekly schedule."
+                                stringResource(R.string.timetable_empty_free_day)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -552,7 +553,7 @@ private fun TimetableBreakIndicator(gapMinutes: Int) {
 
 private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCourse>) {
     if (slots.isEmpty()) {
-        com.example.ui.AppMessages.show("No classes to export")
+        com.example.ui.AppMessages.show(context.getString(R.string.msg_no_classes_to_export))
         return
     }
 
@@ -560,12 +561,12 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
     val hasAlternating = slots.any { weekTypeOf(it.slot) != WeekType.ALL }
     if (hasAlternating && anchorMillis == null) {
         com.example.ui.AppMessages.show(
-            "Week A anchor is not set, so alternating classes may be offset by a week",
+            context.getString(R.string.timetable_anchor_not_set),
             long = true
         )
     }
 
-    val icsContent = buildTimetableIcs(slots, anchorMillis)
+    val icsContent = buildTimetableIcs(slots, anchorMillis, defaultTitle = context.getString(R.string.label_lecture))
 
     val exportsDir = java.io.File(context.cacheDir, "exports")
     if (!exportsDir.exists()) {
@@ -601,7 +602,7 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.timetable_export_chooser_title)))
                 return
             } catch (_: Exception) {
                 // Fall through to last fallback
@@ -610,13 +611,13 @@ private fun exportTimetableToIcs(context: Context, slots: List<LectureSlotWithCo
     }
 
     // Last fallback: plain-text share with a message explaining that no calendar app could open the file.
-    com.example.ui.AppMessages.show("No calendar app could open the file", long = true)
+    com.example.ui.AppMessages.show(context.getString(R.string.msg_no_calendar_app_could_open_file), long = true)
     try {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, icsContent)
         }
-        context.startActivity(Intent.createChooser(sendIntent, "Export Timetable"))
+        context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.timetable_export_chooser_title)))
     } catch (_: Exception) {
         // Nothing more we can do
     }
@@ -643,7 +644,7 @@ fun TimetableSlotCard(
     val isSlotEnabled = slot.isEnabled
     val slotScope = rememberCoroutineScope()
     // The next date this weekly class takes place, and whether it is cancelled on this phone.
-    val cancelledKeys by com.example.reminder.CancelledClassStore.keysFlow(context).collectAsState()
+    val cancelledKeys by com.example.reminder.CancelledClassStore.keysFlow(context).collectAsStateWithLifecycle()
     val nextOccurrence = remember(slot, cancelledKeys) {
         com.example.reminder.CancelledClassStore.nextOccurrenceMillis(context, slot)
     }
@@ -702,7 +703,7 @@ fun TimetableSlotCard(
                             contentColor = courseColor
                         ) {
                             Text(
-                                text = course?.code ?: "Class",
+                                text = course?.code ?: stringResource(R.string.label_class),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -744,11 +745,11 @@ fun TimetableSlotCard(
 
                         if (conflictsWith.isNotEmpty()) {
                             val conflictText = if (conflictsWith.size <= 2) {
-                                "Overlaps ${conflictsWith.joinToString(", ")}"
+stringResource(R.string.timetable_overlaps_format, conflictsWith.joinToString(", "))
                             } else {
-                                "Overlaps ${conflictsWith.take(2).joinToString(", ")} +${conflictsWith.size - 2}"
+                                stringResource(R.string.timetable_overlaps_more_format, conflictsWith.take(2).joinToString(", "), conflictsWith.size - 2)
                             }
-                            val conflictDescription = "Time conflict with ${conflictsWith.joinToString(", ")}"
+                            val conflictDescription = stringResource(R.string.timetable_conflict_description_format, conflictsWith.joinToString(", "))
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = MaterialTheme.colorScheme.errorContainer,
@@ -858,7 +859,7 @@ fun TimetableSlotCard(
 
                 // Course Name
                 Text(
-                    text = course?.name ?: "Lecture",
+                    text = course?.name ?: stringResource(R.string.label_lecture),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

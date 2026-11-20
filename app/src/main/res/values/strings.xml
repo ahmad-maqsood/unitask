@@ -1198,6 +1198,17 @@
     <string name="group_vm_duplicate_course_name">This group already has a course named %1$s.</string>
     <string name="group_vm_sign_in_to_create">You must be signed in to create a group.</string>
     <string name="group_vm_sign_in_to_join">You must be signed in to join a group.</string>
+    <string name="group_vm_offline_try_again">You\'re offline. Connect to the internet and try again.</string>
+    <string name="group_error_not_signed_in">You are not signed in.</string>
+    <string name="group_error_server_unreachable">Could not reach the server. Check your connection and try again.</string>
+    <string name="group_error_name_blank">The group name cannot be blank.</string>
+    <string name="group_error_username_length">The username must be 3 to 30 characters.</string>
+    <string name="group_error_username_taken">That username is taken.</string>
+    <string name="group_error_username_maybe_taken">That username may have just been taken, or the connection failed.</string>
+    <string name="group_error_join_fields_required">Enter the group username and the join code.</string>
+    <string name="group_error_wrong_join_code">Wrong join code, or that group no longer exists.</string>
+    <string name="group_error_already_member">You are already in this group.</string>
+    <string name="group_error_no_such_group">No group with that username.</string>
     <string name="group_vm_now_admin">%1$s is now an admin</string>
     <string name="group_vm_no_longer_admin">%1$s is no longer an admin</string>
     <string name="group_vm_ownership_transferred">Ownership transferred successfully</string>

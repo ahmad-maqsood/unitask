@@ -1124,6 +1124,17 @@
     <string name="group_vm_duplicate_course_name">اس گروپ میں %1$s نام کا کورس پہلے سے موجود ہے۔</string>
     <string name="group_vm_sign_in_to_create">گروپ بنانے کے لیے سائن ان ہونا ضروری ہے۔</string>
     <string name="group_vm_sign_in_to_join">گروپ جوائن کرنے کے لیے سائن ان ہونا ضروری ہے۔</string>
+    <string name="group_vm_offline_try_again">آپ آف لائن ہیں۔ انٹرنیٹ سے جڑیں اور دوبارہ کوشش کریں۔</string>
+    <string name="group_error_not_signed_in">آپ سائن اِن نہیں ہیں۔</string>
+    <string name="group_error_server_unreachable">سرور تک رسائی نہیں ہو سکی۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔</string>
+    <string name="group_error_name_blank">گروپ کا نام خالی نہیں ہو سکتا۔</string>
+    <string name="group_error_username_length">یوزر نیم 3 سے 30 حروف کا ہونا چاہیے۔</string>
+    <string name="group_error_username_taken">یہ یوزر نیم پہلے سے لیا جا چکا ہے۔</string>
+    <string name="group_error_username_maybe_taken">ہو سکتا ہے یہ یوزر نیم ابھی لیا گیا ہو، یا کنکشن ناکام ہو گیا۔</string>
+    <string name="group_error_join_fields_required">گروپ کا یوزر نیم اور جوائن کوڈ درج کریں۔</string>
+    <string name="group_error_wrong_join_code">جوائن کوڈ غلط ہے، یا وہ گروپ اب موجود نہیں۔</string>
+    <string name="group_error_already_member">آپ پہلے ہی اس گروپ میں ہیں۔</string>
+    <string name="group_error_no_such_group">اس یوزر نیم کا کوئی گروپ نہیں ملا۔</string>
     <string name="group_vm_now_admin">%1$s اب ایڈمن ہے</string>
     <string name="group_vm_no_longer_admin">%1$s اب ایڈمن نہیں رہا</string>
     <string name="group_vm_ownership_transferred">ملکیت کامیابی سے منتقل ہو گئی</string>

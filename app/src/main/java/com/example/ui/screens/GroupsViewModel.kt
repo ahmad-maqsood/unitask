@@ -92,7 +92,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     val isOnline: StateFlow<Boolean> = repository.observeIsOnline()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val offlineMessage = "You're offline. Connect to the internet and try again."
+    private val offlineMessage: String get() = str(R.string.group_vm_offline_try_again)
 
     /**
      * Group changes (add, edit, delete, roles, join codes) must reach the server, so they cannot run offline.
@@ -102,6 +102,25 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         if (isOnline.value) return true
         _snackbarMessage.tryEmit(offlineMessage)
         return false
+    }
+
+    /**
+     * The text for a failure from create, join or edit group. The repository sends short codes
+     * (GroupRepository.ERROR_*); anything else, such as a raw server message, is shown as it came.
+     */
+    private fun groupErrorText(error: Throwable, @StringRes fallback: Int): String = when (error.message) {
+        GroupRepository.ERROR_GROUP_LIMIT -> str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
+        GroupRepository.ERROR_NOT_SIGNED_IN -> str(R.string.group_error_not_signed_in)
+        GroupRepository.ERROR_SERVER_UNREACHABLE -> str(R.string.group_error_server_unreachable)
+        GroupRepository.ERROR_GROUP_NAME_BLANK -> str(R.string.group_error_name_blank)
+        GroupRepository.ERROR_USERNAME_LENGTH -> str(R.string.group_error_username_length)
+        GroupRepository.ERROR_USERNAME_TAKEN -> str(R.string.group_error_username_taken)
+        GroupRepository.ERROR_USERNAME_MAYBE_TAKEN -> str(R.string.group_error_username_maybe_taken)
+        GroupRepository.ERROR_JOIN_FIELDS_REQUIRED -> str(R.string.group_error_join_fields_required)
+        GroupRepository.ERROR_WRONG_JOIN_CODE -> str(R.string.group_error_wrong_join_code)
+        GroupRepository.ERROR_ALREADY_MEMBER -> str(R.string.group_error_already_member)
+        GroupRepository.ERROR_NO_SUCH_GROUP -> str(R.string.group_error_no_such_group)
+        else -> error.message ?: str(fallback)
     }
 
     /** Text from strings.xml, so every message can be translated. */
@@ -437,12 +456,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(newGroupId)
                 onComplete(true, joinCode)
             }.onFailure { error ->
-                val text = if (error.message == "group_limit_reached") {
-                    str(R.string.groups_error_group_limit, GroupRepository.MAX_GROUPS_PER_OWNER)
-                } else {
-                    error.message ?: str(R.string.groups_error_create_group_failed)
-                }
-                onComplete(false, text)
+                onComplete(false, groupErrorText(error, R.string.groups_error_create_group_failed))
             }
         }
     }
@@ -469,7 +483,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 selectGroup(groupId)
                 onComplete(true, null)
             }.onFailure { error ->
-                onComplete(false, error.message ?: str(R.string.groups_error_join_group_failed))
+                onComplete(false, groupErrorText(error, R.string.groups_error_join_group_failed))
             }
         }
     }
@@ -702,7 +716,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
                 _snackbarMessage.emit(str(R.string.group_vm_settings_updated))
                 onComplete(true, null)
             }.onFailure { e ->
-                onComplete(false, e.message ?: str(R.string.groups_error_update_group_failed))
+                onComplete(false, groupErrorText(e, R.string.groups_error_update_group_failed))
             }
         }
     }

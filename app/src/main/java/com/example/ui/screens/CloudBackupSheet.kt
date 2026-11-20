@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -97,6 +98,7 @@ fun CloudBackupSheet(
     onAuthChanged: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val credentialManager = remember { CredentialManager.create(context) }
     var isLoading by remember { mutableStateOf(false) }
@@ -395,7 +397,7 @@ fun CloudBackupSheet(
                                 }, scope = coroutineScope)
                             } catch (e: Exception) {
                                 isLoading = false
-                                errorMessage = context.getString(R.string.cloud_error_delete_failed, e.message.orEmpty())
+                                errorMessage = resources.getString(R.string.cloud_error_delete_failed, e.message.orEmpty())
                             }
                         }
                     },

@@ -12,6 +12,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.R
@@ -113,6 +114,7 @@ fun SnoozeDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val task = taskWithCourse.task
     val choices = snoozeChoices(System.currentTimeMillis(), task.deadlineMillis)
 
@@ -143,7 +145,7 @@ fun SnoozeDialog(
                             SnoozeStore.set(context, buildSnoozeEntry(context, taskWithCourse, groupEntry, choice.atMillis))
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.task_card_snoozed_until, formatSnoozeTime(context, choice.atMillis)),
+                                resources.getString(R.string.task_card_snoozed_until, formatSnoozeTime(context, choice.atMillis)),
                                 Toast.LENGTH_SHORT
                             ).show()
                             onDismiss()

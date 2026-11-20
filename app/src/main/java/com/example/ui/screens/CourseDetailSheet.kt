@@ -113,12 +113,12 @@ fun CourseDetailSheet(
                 val loss = queryCourseDeleteLoss(db, course)
                 val warning = formatCourseDeleteWarning(loss.taskCount, loss.classCount, loss.attachmentCount)
                 deleteWarningMessage = if (warning.isNotBlank()) {
-                    context.getString(R.string.course_delete_will_be_deleted_with_warning_format, course.code, warning)
+                    uiResources.getString(R.string.course_delete_will_be_deleted_with_warning_format, course.code, warning)
                 } else {
-                    context.getString(R.string.course_delete_will_be_deleted_format, course.code)
+                    uiResources.getString(R.string.course_delete_will_be_deleted_format, course.code)
                 }
             } catch (_: Exception) {
-                deleteWarningMessage = context.getString(R.string.course_delete_fallback_format, course.code)
+                deleteWarningMessage = uiResources.getString(R.string.course_delete_fallback_format, course.code)
             }
         } else {
             deleteWarningMessage = null
@@ -128,7 +128,7 @@ fun CourseDetailSheet(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = stringResource(R.string.course_card_delete_course),
-            message = deleteWarningMessage ?: context.getString(R.string.course_delete_fallback_format, course.code),
+            message = deleteWarningMessage ?: uiResources.getString(R.string.course_delete_fallback_format, course.code),
             onConfirm = { onDeleteCourse(course) },
             onDismiss = { showDeleteConfirm = false }
         )

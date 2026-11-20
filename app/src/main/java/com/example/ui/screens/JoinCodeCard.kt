@@ -87,10 +87,10 @@ internal fun JoinCodeCard(
                             type = "text/plain"
                             putExtra(
                                 Intent.EXTRA_TEXT,
-                                context.getString(R.string.join_code_share_text, username, joinCode)
+                                uiResources.getString(R.string.join_code_share_text, username, joinCode)
                             )
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.join_code_share_title)))
+                        context.startActivity(Intent.createChooser(shareIntent, uiResources.getString(R.string.join_code_share_title)))
                     },
                     modifier = Modifier.testTag("share_join_code_button")
                 ) {

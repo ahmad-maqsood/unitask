@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -430,10 +431,10 @@ private fun DeletedTaskCard(
     val daysLeftText = remember(daysLeft) {
         formatTrashDaysLeft(daysLeft) { daysLeftResources.getQuantityString(R.plurals.trash_days_left, it, it) }
     }
-    val dueContext = LocalContext.current
+    val dueResources = LocalResources.current
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
         formatTrashTaskDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) { date, time ->
-            dueContext.getString(R.string.reminder_due_at, date, time)
+            dueResources.getString(R.string.reminder_due_at, date, time)
         }
     }
 

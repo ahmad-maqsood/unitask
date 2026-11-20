@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -157,20 +158,21 @@ private fun FullscreenTimerPanel(
 ) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val resources = LocalResources.current
     val countdown = state.mode == TimerMode.COUNTDOWN
     val modeText = when {
         state.pomodoroPhase != null ->
-            context.getString(
+            resources.getString(
                 R.string.timer_mode_pomodoro_format,
                 state.pomodoroRound,
                 TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
             )
         countdown ->
-            context.getString(
+            resources.getString(
                 R.string.timer_mode_countdown_format,
                 TimerLogic.formatDuration((state.countdownTotalMillis / 60_000L).toInt(), context)
             )
-        else -> context.getString(R.string.timer_mode_stopwatch)
+        else -> resources.getString(R.string.timer_mode_stopwatch)
     }
     val endMillis = TimerLogic.scheduledEndTimeMillis(state)
 

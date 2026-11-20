@@ -111,6 +111,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -156,6 +157,7 @@ fun NoteEditorScreen(
         if (editorLoaded) viewModel.watchForOutsideChanges()
     }
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val courses by viewModel.activeCourses.collectAsStateWithLifecycle(emptyList())
 
@@ -303,7 +305,7 @@ fun NoteEditorScreen(
     }
 
     val showImageLimitMessage = {
-        com.example.ui.AppMessages.show(context.getString(R.string.msg_note_image_limit, NoteImages.MAX_IMAGES_PER_NOTE))
+        com.example.ui.AppMessages.show(resources.getString(R.string.msg_note_image_limit, NoteImages.MAX_IMAGES_PER_NOTE))
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -324,12 +326,12 @@ fun NoteEditorScreen(
                             insertImageLine(current, NoteImages.imageMarkdown(imageName))
                         }
                     } else {
-                        com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_add_image))
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_add_image))
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
-                    com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_add_image))
+                    com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_add_image))
                 } finally {
                     isImportingImage = false
                 }
@@ -364,18 +366,18 @@ fun NoteEditorScreen(
                             body = currentBody,
                             format = format
                         )
-                        val message = context.getString(if (ok) R.string.msg_saved_to_device else R.string.msg_could_not_save_file)
+                        val message = resources.getString(if (ok) R.string.msg_saved_to_device else R.string.msg_could_not_save_file)
                         com.example.ui.AppMessages.show(message)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Exception) {
-                        com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_save_file))
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_save_file))
                     } finally {
                         if (isPdf) isWorking = false
                     }
                 }
             } else {
-                com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_save_file))
+                com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_save_file))
             }
         }
     }
@@ -438,7 +440,7 @@ fun NoteEditorScreen(
     val openLinkByTitle: (String) -> Unit = { title ->
         val target = findNoteForLink(allNotes, title)
         if (target == null) {
-            com.example.ui.AppMessages.show(context.getString(R.string.msg_no_note_called, title))
+            com.example.ui.AppMessages.show(resources.getString(R.string.msg_no_note_called, title))
         } else {
             openLinkedNote(target.id)
         }
@@ -1098,7 +1100,7 @@ fun NoteEditorScreen(
                             format = format
                         )
                     } catch (_: Exception) {
-                        com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_share_file))
+                        com.example.ui.AppMessages.show(resources.getString(R.string.msg_could_not_share_file))
                     } finally {
                         if (isPdf) isWorking = false
                     }

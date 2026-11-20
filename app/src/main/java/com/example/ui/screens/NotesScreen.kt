@@ -337,7 +337,7 @@ fun NotesScreen(
                                         } else {
                                             NoteShare.combinedMarkdown(
                                                 chosen.map { noteDisplayTitle(it.note) to it.note.body },
-                                                untitled = context.getString(R.string.note_untitled)
+                                                untitled = uiResources.getString(R.string.note_untitled)
                                             )
                                         }
                                         coroutineScope.launch {

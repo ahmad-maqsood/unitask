@@ -228,7 +228,7 @@ private fun SummaryCard(
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = if (todayMillis == 0L) LocalContext.current.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, LocalContext.current),
+                text = if (todayMillis == 0L) stringResource(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, LocalContext.current),
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.testTag("timer_history_today_total")
@@ -237,7 +237,7 @@ private fun SummaryCard(
             Row(modifier = Modifier.fillMaxWidth()) {
                 SummaryStat(
                     label = stringResource(R.string.timer_history_last_7_days),
-                    value = if (weekMillis == 0L) LocalContext.current.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(weekMillis, LocalContext.current),
+                    value = if (weekMillis == 0L) stringResource(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(weekMillis, LocalContext.current),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryStat(

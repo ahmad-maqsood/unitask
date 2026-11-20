@@ -819,6 +819,7 @@ private fun SettingsRow(
 @Composable
 private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     var selected by remember { mutableStateOf(NotificationSound.choice(context)) }
     val player = remember { arrayOfNulls<Ringtone>(1) }
     DisposableEffect(Unit) { onDispose { try { player[0]?.stop() } catch (e: Exception) { Log.w("UniTask", "Could not stop the sound preview", e) } } }
@@ -886,7 +887,7 @@ private fun SoundPickerDialog(onChanged: () -> Unit, onDismiss: () -> Unit) {
                     onSelect = {
                         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                             putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, context.getString(R.string.sound_picker_title))
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, uiResources.getString(R.string.sound_picker_title))
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                             NotificationSound.phoneUri(context)?.let {

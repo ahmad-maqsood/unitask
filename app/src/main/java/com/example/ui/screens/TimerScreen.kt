@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -142,6 +143,7 @@ fun TimerScreen(
     }
 
     val context = LocalContext.current
+    val resources = LocalResources.current
     val view = LocalView.current
 
     // One bulb setting, shown both in full screen and in the normal top bar, so the two always
@@ -639,7 +641,7 @@ fun TimerScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = if (todayMillis == 0L) context.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, context),
+                                text = if (todayMillis == 0L) resources.getString(R.string.timer_duration_min, 0) else TimerHistoryLogic.formatTotal(todayMillis, context),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )

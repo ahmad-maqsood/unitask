@@ -117,6 +117,8 @@
     <string name="announcement_host_clear_all">Clear all</string>
     <string name="announcement_host_remove_notification">Remove notification</string>
     <string name="announcement_host_remove_announcement">Remove announcement</string>
+    <string name="announcement_host_posted">Posted %1$s</string>
+    <string name="announcement_host_expires">Expires %1$s</string>
     <string name="announcement_host_tab_notifications">Notifications</string>
     <string name="announcement_host_tab_announcements">Announcements</string>
     <string name="announcement_host_no_notifications_yet">No notifications yet. Reminders and updates from UniTask will be kept here for 30 days.</string>

@@ -113,6 +113,8 @@
     <string name="announcement_host_clear_all">سب صاف کریں</string>
     <string name="announcement_host_remove_notification">نوٹیفکیشن ہٹائیں</string>
     <string name="announcement_host_remove_announcement">اعلان ہٹائیں</string>
+    <string name="announcement_host_posted">پوسٹ کیا گیا %1$s</string>
+    <string name="announcement_host_expires">ختم ہوگا %1$s</string>
     <string name="announcement_host_tab_notifications">نوٹیفکیشنز</string>
     <string name="announcement_host_tab_announcements">اعلانات</string>
     <string name="announcement_host_no_notifications_yet">ابھی تک کوئی نوٹیفکیشن نہیں۔ UniTask کی یاد دہانیاں اور اپڈیٹس یہاں 30 دن تک رکھی جائیں گی۔</string>

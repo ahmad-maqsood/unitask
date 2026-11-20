@@ -563,7 +563,8 @@ private fun NotificationRow(
 
 @Composable
 private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
-    val meta = remember(item.id, item.createdAt, item.expiresAt) { announcementMeta(item) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val meta = remember(item.id, item.createdAt, item.expiresAt) { announcementMeta(context, item) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -593,10 +594,10 @@ private fun AnnouncementRow(item: Announcement, onRemove: () -> Unit) {
     }
 }
 
-private fun announcementMeta(item: Announcement): String {
+private fun announcementMeta(context: android.content.Context, item: Announcement): String {
     val parts = mutableListOf<String>()
-    item.createdAtMillis?.let { parts.add("Posted " + DateFormats.monthDayClock(it)) }
-    item.expiresAtMillis?.let { parts.add("Expires " + DateFormats.monthDayClock(it)) }
+    item.createdAtMillis?.let { parts.add(context.getString(R.string.announcement_host_posted, DateFormats.monthDayClock(it))) }
+    item.expiresAtMillis?.let { parts.add(context.getString(R.string.announcement_host_expires, DateFormats.monthDayClock(it))) }
     return parts.joinToString(" · ")
 }
 

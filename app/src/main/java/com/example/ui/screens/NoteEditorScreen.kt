@@ -366,6 +366,8 @@ fun NoteEditorScreen(
                         )
                         val message = context.getString(if (ok) R.string.msg_saved_to_device else R.string.msg_could_not_save_file)
                         com.example.ui.AppMessages.show(message)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (_: Exception) {
                         com.example.ui.AppMessages.show(context.getString(R.string.msg_could_not_save_file))
                     } finally {

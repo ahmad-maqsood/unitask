@@ -309,6 +309,8 @@ object DriveBackupManager {
                     if (age > THIRTY_DAYS_MS) {
                         try {
                             store.delete(f.id)
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             // A failed prune is not fatal: it is tried again on the next backup.
                             android.util.Log.w("UniTask", "Drive prune failed", e)

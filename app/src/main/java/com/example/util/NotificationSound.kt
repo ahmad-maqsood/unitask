@@ -113,7 +113,7 @@ object NotificationSound {
             val title = try {
                 phoneUri(context)?.let { RingtoneManager.getRingtone(context, it)?.getTitle(context) }
             } catch (_: Exception) { null }
-            "From phone: ${title ?: "custom sound"}"
+            context.getString(R.string.sound_from_phone_format, title ?: context.getString(R.string.sound_custom_fallback))
         }
         else -> context.getString((BUILT_IN.firstOrNull { it.key == c } ?: BUILT_IN.first()).labelRes)
     }

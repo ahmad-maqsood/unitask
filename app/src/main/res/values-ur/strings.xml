@@ -1057,6 +1057,7 @@
     <string name="snooze_time_today">آج، %1$s</string>
     <string name="snooze_time_tomorrow">کل، %1$s</string>
     <string name="snooze_time_date">%1$s، %2$s</string>
+    <string name="task_due_overdue_format">تاخیر شدہ! (%1$s)</string>
     <string name="snooze_dialog_current">%1$s تک مؤخر ہے۔ نیا وقت چنیں یا اسے ختم کریں۔</string>
     <string name="snooze_dialog_hint">اس ٹاسک کے لیے بعد میں ایک اضافی یاد دہانی حاصل کریں۔ آپ کی باقی یاد دہانیاں پھر بھی بجیں گی۔</string>
     <string name="pomodoro_phase_focus">توجہ</string>

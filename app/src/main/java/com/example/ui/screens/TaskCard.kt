@@ -118,7 +118,7 @@ fun TaskCard(
 
     // Calculate relative due text
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
-        formatDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+        formatDueDate(context, task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
     }
 
     val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, task.status, isEnabled) {
@@ -653,7 +653,7 @@ fun TaskCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = if (isOverdue) "Overdue! ($dueText)" else dueText,
+                            text = if (isOverdue) stringResource(R.string.task_due_overdue_format, dueText) else dueText,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
                             ),
@@ -786,7 +786,7 @@ fun StatusToggleChip(
 
 private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
-internal fun formatDueDate(epochMillis: Long, hour: Int, minute: Int): String {
+internal fun formatDueDate(context: android.content.Context, epochMillis: Long, hour: Int, minute: Int): String {
     val calendarDue = Calendar.getInstance().apply {
         timeInMillis = epochMillis
         set(Calendar.HOUR_OF_DAY, hour)
@@ -804,10 +804,8 @@ internal fun formatDueDate(epochMillis: Long, hour: Int, minute: Int): String {
     val formattedTime = DateFormats.clock(calendarDue.timeInMillis)
 
     return when {
-        isToday -> "Today, $formattedTime"
-        isTomorrow -> "Tomorrow, $formattedTime"
-        else -> {
-            "${DateFormats.monthDay(calendarDue.timeInMillis)}, $formattedTime"
-        }
+        isToday -> context.getString(R.string.snooze_time_today, formattedTime)
+        isTomorrow -> context.getString(R.string.snooze_time_tomorrow, formattedTime)
+        else -> context.getString(R.string.snooze_time_date, DateFormats.monthDay(calendarDue.timeInMillis), formattedTime)
     }
 }

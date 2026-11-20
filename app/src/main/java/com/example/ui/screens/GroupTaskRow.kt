@@ -90,7 +90,7 @@ fun GroupTaskRow(
     }
 
     val dueText = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute) {
-        formatDueDate(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
+        formatDueDate(context, task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute)
     }
     val isOverdue = remember(task.dueDateEpochMillis, task.dueTimeHour, task.dueTimeMinute, isDone, isEnabled) {
         if (isDone || !isEnabled) {
@@ -384,7 +384,7 @@ fun GroupTaskRow(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = if (isOverdue) "Overdue! ($dueText)" else dueText,
+                            text = if (isOverdue) stringResource(R.string.task_due_overdue_format, dueText) else dueText,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
                             ),

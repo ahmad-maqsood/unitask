@@ -250,8 +250,13 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * The ids of the tasks this person has ticked in the open group, or null until they have been read
+     * (the saved copy comes first). One value carries both facts, so the screen never sees "loaded" and
+     * the ticks out of step. Opening another group starts again from null.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val myDoneTaskIds: StateFlow<Set<String>> = kotlinx.coroutines.flow.combine(
+    val myDoneTaskIds: StateFlow<Set<String>?> = kotlinx.coroutines.flow.combine(
         _currentUser,
         _selectedGroupId
     ) { user, groupId ->
@@ -259,10 +264,12 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     }.flatMapLatest { (uid, groupId) ->
         if (!uid.isNullOrBlank() && !groupId.isNullOrBlank()) {
             repository.observeGroupDoneTasks(uid, groupId)
+                .map<Set<String>, Set<String>?> { it }
+                .onStart { emit(null) }
         } else {
             flowOf(emptySet())
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     
     // Deadline alarms and "new task" notices for all groups are handled app-wide by
@@ -490,7 +497,7 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun toggleTaskDone(task: GroupTask) {
         val user = _currentUser.value ?: return
-        val currentDone = myDoneTaskIds.value.contains(task.id)
+        val currentDone = myDoneTaskIds.value.orEmpty().contains(task.id)
         repository.setTaskDone(user.uid, task.groupId, task.id, !currentDone)
     }
 

@@ -98,6 +98,7 @@ fun GroupsTab(
     val selectedGroupMembers by viewModel.selectedGroupMembers.collectAsStateWithLifecycle()
     val selectedGroupTasks by viewModel.selectedGroupTasks.collectAsStateWithLifecycle()
     val selectedGroupCourses by viewModel.selectedGroupCourses.collectAsStateWithLifecycle()
+    // null until the done marks have been read; the group screen waits for them before drawing its tasks.
     val myDoneTaskIds by viewModel.myDoneTaskIds.collectAsStateWithLifecycle()
     val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
 
@@ -201,7 +202,8 @@ fun GroupsTab(
                     tasks = selectedGroupTasks,
                     courses = selectedGroupCourses,
                     members = selectedGroupMembers,
-                    doneTaskIds = myDoneTaskIds,
+                    doneTaskIds = myDoneTaskIds.orEmpty(),
+                    doneMarksLoaded = myDoneTaskIds != null,
                     isLoading = isActionLoading,
                     onBack = { viewModel.clearSelectedGroup() },
                     onAddTaskClick = { viewModel.openAddTaskDialog() },

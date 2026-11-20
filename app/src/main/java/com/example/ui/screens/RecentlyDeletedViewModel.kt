@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.LectureSlot
 import com.example.data.local.isArchived

@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.Repositories
 import com.example.data.groups.GroupRepository
 import com.example.data.groups.GroupTaskEntry

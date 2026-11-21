@@ -20,7 +20,8 @@ import kotlinx.coroutines.CancellationException
  * brands, or a force stop. Before this guard, nothing noticed until the phone restarted or the app was
  * opened. Now [run] checks about every 15 minutes (and when "Check reminders" opens):
  *
- * 1. A reminder that should have rung more than 5 minutes ago and never did is shown now.
+ * 1. A reminder that should have rung more than 5 minutes ago and never did is shown now. This
+ *    covers personal and group reminders.
  * 2. Every upcoming reminder alarm that is missing is set again.
  * 3. Snoozes, class alarms, group reminders and the daily summary are set again.
  *
@@ -37,6 +38,7 @@ object ReminderGuard {
         val now = System.currentTimeMillis()
 
         step("late reminders") { deliverLate(app, database, scheduler, now) }
+        step("late group reminders") { GroupReminderScheduler(app).deliverLate(now) }
         step("forget old reminders") { MissedReminders.pruneExpired(app, now) }
         step("task alarms") { scheduler.rearmMissing(database) }
         step("snoozed reminders") { SnoozeStore.restoreAll(app) }

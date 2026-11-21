@@ -212,6 +212,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
             intent.getStringExtra(EXTRA_REMINDER_OPTION),
             intent.getLongExtra(EXTRA_TRIGGER_AT, 0L)
         )
+        // Same for a group reminder, so the guard does not show it a second time as "late".
+        intent.getStringExtra(EXTRA_REMINDER_OPTION)
+            ?.takeIf { it.startsWith("GROUP_") }
+            ?.let { GroupReminderScheduler(context).markHandled(it.removePrefix("GROUP_")) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
@@ -440,6 +444,17 @@ class TaskReminderReceiver : BroadcastReceiver() {
             for (other in com.example.data.local.ReminderOption.entries) {
                 if (other.offsetMinutes <= currentOption.offsetMinutes) continue
                 val olderId = ((taskId and 0x7FFFFFFF) * 31 + other.name.hashCode()).toInt()
+                notificationManager?.cancel(olderId)
+                cancelSilenceAlarm(context, olderId)
+            }
+        }
+        // Same for group reminders: their id comes from "GROUP_<groupId>|<taskId>|<OPTION>".
+        val groupOptionName = reminderOption?.takeIf { it.startsWith("GROUP_") }?.substringAfterLast('|')
+        val currentGroupOption = ReminderOption.entries.firstOrNull { it.name == groupOptionName }
+        if (!isSilence && isGroupTask && currentGroupOption != null) {
+            for (other in ReminderOption.entries) {
+                if (other.offsetMinutes <= currentGroupOption.offsetMinutes) continue
+                val olderId = "GROUP_$groupId|$groupTaskId|${other.name}".hashCode()
                 notificationManager?.cancel(olderId)
                 cancelSilenceAlarm(context, olderId)
             }

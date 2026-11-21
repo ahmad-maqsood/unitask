@@ -253,7 +253,8 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 - Notifications include **Mark as Done** and **Snooze 30m** actions.
 - Snooze from the task card for 30 minutes, 1 hour, 3 hours or tomorrow morning. The card shows "Snoozed until ...".
 - On Android 13 and newer, reminders ring at the exact time. Reminders are skipped for tasks that were already finished or deleted.
-- A **Missed reminder** notification reports reminders that were due while the phone was off.
+- A **Missed reminder** notification reports reminders that were due while the phone was off. Group task reminders are listed in the same notification.
+- A reminder whose alarm was removed by a battery cleaner is shown late, within 12 hours, for personal and group tasks. A newer reminder of a task replaces its earlier ones in the notification shade.
 - **Check reminders** in Settings tests notifications, exact alarms and battery settings, can fix detected problems and can send a test reminder.
 - Optional alarm-style ringing for high-priority tasks, class reminders and a daily morning summary.
 - Notifications are grouped by type to keep the notification shade readable.

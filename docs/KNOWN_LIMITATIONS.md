@@ -19,6 +19,7 @@ The short list of limitations that matter most to users is in the [README](../RE
 ## Reminders and widget
 
 - Reminders depend on notification permissions and the phone's battery settings (see [Reliable notifications](../README.md#reliable-notifications)).
+- A group reminder that was missed while the phone was off is listed in the **Missed reminder** notification only if the task is in the copy of your groups saved on the phone and is still open there. Open the Groups tab once with internet to refresh that copy.
 - Snoozes and the **Delete when done** setting belong to the phone on which they were set. **Delete when done** is kept in backups.
 - The home-screen widget is read-only. Tapping a row opens the application, but tasks cannot be completed from the widget.
 

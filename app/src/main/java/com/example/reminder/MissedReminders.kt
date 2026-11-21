@@ -154,7 +154,6 @@ object MissedReminders {
             save(context, keys.filterNot { (parseKey(it)?.triggerAt ?: 0L) <= now }.toSet())
             due
         }
-        if (missed.isEmpty()) return
 
         val lines = mutableListOf<String>()
         for (taskId in missed.map { it.taskId }.distinct()) {
@@ -165,6 +164,15 @@ object MissedReminders {
                 task.title,
                 DateFormats.shortDateAtClock(context, task.deadlineMillis)
             )
+        }
+        // Group reminders that were missed join the same notification, so the phone shows one, not many.
+        lines += try {
+            GroupReminderScheduler(context).takeMissedLines(now)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("UniTask", "Could not list the missed group reminders", e)
+            emptyList()
         }
         if (lines.isEmpty()) return
 

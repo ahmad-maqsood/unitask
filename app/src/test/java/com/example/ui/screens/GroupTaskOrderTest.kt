@@ -25,13 +25,21 @@ class GroupTaskOrderTest {
     }
 
     @Test
-    fun openTasksKeepTheirOrderAndFinishedOnesAreNewestDeadlineFirst() {
-        assertEquals(listOf("b", "d", "c", "a"), ids(orderGroupTasks(byDeadline, setOf("a", "c"))))
+    fun openTasksKeepTheirOrderAndFinishedOnesKeepTheirOrderToo() {
+        assertEquals(listOf("b", "d", "a", "c"), ids(orderGroupTasks(byDeadline, setOf("a", "c"))))
     }
 
     @Test
-    fun everythingDoneIsNewestDeadlineFirst() {
-        assertEquals(listOf("d", "c", "b", "a"), ids(orderGroupTasks(byDeadline, setOf("a", "b", "c", "d"))))
+    fun everythingDoneKeepsTheDeadlineOrder() {
+        assertEquals(ids(byDeadline), ids(orderGroupTasks(byDeadline, setOf("a", "b", "c", "d"))))
+    }
+
+    @Test
+    fun twoFinishedTasksDoNotSwapWhenTheDoneMarksArrive() {
+        val two = listOf(task("a"), task("b"))
+        val before = ids(orderGroupTasks(two, emptySet()))
+        val after = ids(orderGroupTasks(two, setOf("a", "b")))
+        assertEquals(before, after)
     }
 
     @Test

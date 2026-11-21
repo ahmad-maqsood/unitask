@@ -43,6 +43,78 @@ class GroupReminderScheduler(private val context: Context) {
          */
         fun optionsFor(task: GroupTask): Set<ReminderOption> =
             task.reminderOptions?.let { decodeReminderOptions(it) } ?: DEFAULT_REMINDERS
+
+        /** A waiting reminder is treated as lost once it is this late (same rule as personal reminders). */
+        const val LATE_GRACE_MILLIS = MissedReminders.LATE_GRACE_MILLIS
+
+        /** Reminders older than this are no longer useful and are forgotten. */
+        const val LATE_WINDOW_MILLIS = MissedReminders.WINDOW_MILLIS
+
+        private fun triggerOf(value: String): Long = value.substringBefore(SEP).toLongOrNull() ?: 0L
+
+        /**
+         * Which waiting reminders are overdue by more than [graceMillis] but still inside [windowMillis].
+         * These alarms never rang although the phone was on. [waiting] maps a key to its saved value.
+         * Oldest first.
+         */
+        fun pickLate(
+            waiting: Map<String, String>,
+            now: Long,
+            graceMillis: Long = LATE_GRACE_MILLIS,
+            windowMillis: Long = LATE_WINDOW_MILLIS
+        ): List<String> =
+            waiting.entries
+                .filter { triggerOf(it.value) <= now - graceMillis && triggerOf(it.value) > now - windowMillis }
+                .sortedBy { triggerOf(it.value) }
+                .map { it.key }
+    }
+
+    /**
+     * A copy of every alarm that is waiting to ring, with everything needed to show it. An entry leaves
+     * when the alarm rings ([markHandled]) or is cancelled. After a reboot or a cleaner wiped the alarms,
+     * an entry that is still here and past its time never rang, so [deliverLate] shows it.
+     */
+    private val waitingPrefs = context.getSharedPreferences("group_reminders_waiting", Context.MODE_PRIVATE)
+
+    private fun waitingEntries(): Map<String, String> =
+        waitingPrefs.all.mapNotNull { (k, v) -> (v as? String)?.let { k to it } }.toMap()
+
+    private fun taskIdOf(key: String): String = key.split("|").getOrNull(1).orEmpty()
+
+    private fun forgetWaiting(matches: (String) -> Boolean) {
+        val keys = waitingPrefs.all.keys.filter(matches)
+        if (keys.isNotEmpty()) waitingPrefs.edit { keys.forEach { remove(it) } }
+    }
+
+    /** The alarm rang: it is not waiting any more. [key] is the extra the receiver got, without "GROUP_". */
+    fun markHandled(key: String) {
+        if (waitingPrefs.contains(key)) waitingPrefs.edit { remove(key) }
+    }
+
+    /**
+     * Shows the group reminders whose alarm never rang (an app cleaner removed it, or the phone was
+     * off), through the normal receiver. Returns how many were sent. Step 1 of ReminderGuard.
+     */
+    fun deliverLate(now: Long = System.currentTimeMillis()): Int {
+        // Reminders past the window can never be shown, so the list must not keep them.
+        forgetWaiting { key -> waitingPrefs.getString(key, null)?.let { triggerOf(it) <= now - LATE_WINDOW_MILLIS } == true }
+        val waiting = waitingEntries()
+        var sent = 0
+        for (key in pickLate(waiting, now)) {
+            val parts = waiting[key]?.split(SEP) ?: continue
+            // Forget it first: a stuck copy of the alarm must never ring a second time, and a failure
+            // below must not send the same reminder again and again.
+            cancelKey(key)
+            val trigger = parts.getOrNull(0)?.toLongOrNull() ?: continue
+            if (parts.size < 5) continue
+            // No label: "1 day before" is no longer true. The snoozed flag makes the receiver check first
+            // that the task is still open and not turned off on this phone.
+            val intent = buildIntent(key, trigger, parts[1], parts[2], parts[3], "", parts.getOrNull(5).orEmpty())
+                .apply { putExtra(ReminderSnooze.EXTRA_SNOOZED, true) }
+            context.sendBroadcast(intent)
+            sent++
+        }
+        return sent
     }
 
     // groupId|taskId|OPTION_NAME
@@ -80,20 +152,35 @@ class GroupReminderScheduler(private val context: Context) {
                 if (prefs.getString(key, null) != value) {
                     prefs.edit { putString(key, value) }
                 }
+                // The waiting copy lets a reminder that never rang be shown late (see deliverLate).
+                if (waitingPrefs.getString(key, null) != value) {
+                    waitingPrefs.edit { putString(key, value) }
+                }
                 // Always (re)set: it is idempotent, and it repairs alarms the system dropped.
                 setAlarm(key, trigger, task.title, groupLabel, dueInfo, option.label, task.priority)
             }
         }
 
-        for (key in prefs.all.keys.toList()) {
-            if (key.startsWith("$groupId|") && key !in wanted) cancelKey(key)
-        }
-
-        // A snoozed reminder must not outlive its task (deleted, or done on another phone).
         val openTaskIds = tasks
             .filter { it.id !in doneIds && GroupTaskOffStore.keyOf(groupId, it.id) !in turnedOff }
             .map { it.id }
             .toSet()
+
+        for (key in prefs.all.keys.toList()) {
+            // keepWaiting: a reminder that is past but never rang is decided just below.
+            if (key.startsWith("$groupId|") && key !in wanted) cancelKey(key, keepWaiting = true)
+        }
+        // Keep the waiting copy of a past reminder only while its task is still open and the reminder is
+        // still inside the window. Without this, this clean-up would delete a lost reminder before the
+        // guard could show it.
+        forgetWaiting { key ->
+            key.startsWith("$groupId|") && key !in wanted && run {
+                val trigger = waitingPrefs.getString(key, null)?.let { triggerOf(it) } ?: 0L
+                !(trigger <= now && trigger > now - LATE_WINDOW_MILLIS && taskIdOf(key) in openTaskIds)
+            }
+        }
+
+        // A snoozed reminder must not outlive its task (deleted, or done on another phone).
         SnoozeStore.entries(context)
             .filter { it.groupId == groupId && it.groupTaskId !in openTaskIds }
             .forEach { SnoozeStore.clear(context, it.key, cancelAlarm = true) }
@@ -107,6 +194,7 @@ class GroupReminderScheduler(private val context: Context) {
                 cancelKey(key)
             }
         }
+        forgetWaiting { it.startsWith("$groupId|$taskId|") }
         SnoozeStore.clearGroupTask(context, groupId, taskId)
     }
 
@@ -117,6 +205,7 @@ class GroupReminderScheduler(private val context: Context) {
                 cancelKey(key)
             }
         }
+        forgetWaiting { it.startsWith("$groupId|") }
         SnoozeStore.clearGroup(context, groupId)
     }
 
@@ -125,6 +214,7 @@ class GroupReminderScheduler(private val context: Context) {
         for (key in prefs.all.keys.toList()) {
             if (key.substringBefore('|') !in keepGroupIds) cancelKey(key)
         }
+        forgetWaiting { it.substringBefore('|') !in keepGroupIds }
         SnoozeStore.clearGroupsNotIn(context, keepGroupIds)
     }
 
@@ -149,6 +239,33 @@ class GroupReminderScheduler(private val context: Context) {
             data = ("unitask://group-reminder/" + Uri.encode(key)).toUri()
         }
 
+    /** The intent (with every extra the notification needs) for one group reminder. */
+    private fun buildIntent(
+        key: String,
+        trigger: Long,
+        title: String,
+        label: String,
+        dueInfo: String,
+        optionLabel: String,
+        priority: String
+    ): Intent {
+        val parts = key.split("|")
+        val groupId = parts.getOrNull(0).orEmpty()
+        val taskId = parts.getOrNull(1).orEmpty()
+        return intentFor(key).apply {
+            putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, title)
+            putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, label)
+            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, dueInfo)
+            putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, optionLabel)
+            // The receiver derives its notification id from this, so every alarm gets its own.
+            putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, "GROUP_$key")
+            putExtra(TaskReminderReceiver.EXTRA_PRIORITY, priority)
+            putExtra(TaskReminderReceiver.EXTRA_TRIGGER_AT, trigger)
+            if (groupId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_ID, groupId)
+            if (taskId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_TASK_ID, taskId)
+        }
+    }
+
     private fun setAlarm(
         key: String,
         trigger: Long,
@@ -158,20 +275,7 @@ class GroupReminderScheduler(private val context: Context) {
         optionLabel: String,
         priority: String = ""
     ) {
-        val parts = key.split("|")
-        val groupId = parts.getOrNull(0).orEmpty()
-        val taskId = parts.getOrNull(1).orEmpty()
-        val intent = intentFor(key).apply {
-            putExtra(TaskReminderReceiver.EXTRA_TASK_TITLE, title)
-            putExtra(TaskReminderReceiver.EXTRA_COURSE_CODE, label)
-            putExtra(TaskReminderReceiver.EXTRA_DUE_INFO, dueInfo)
-            putExtra(TaskReminderReceiver.EXTRA_REMINDER_LABEL, optionLabel)
-            // The receiver derives its notification id from this, so every alarm gets its own.
-            putExtra(TaskReminderReceiver.EXTRA_REMINDER_OPTION, "GROUP_$key")
-            putExtra(TaskReminderReceiver.EXTRA_PRIORITY, priority)
-            if (groupId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_ID, groupId)
-            if (taskId.isNotBlank()) putExtra(TaskReminderReceiver.EXTRA_GROUP_TASK_ID, taskId)
-        }
+        val intent = buildIntent(key, trigger, title, label, dueInfo, optionLabel, priority)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             key.hashCode(),
@@ -203,7 +307,8 @@ class GroupReminderScheduler(private val context: Context) {
         }
     }
 
-    private fun cancelKey(key: String) {
+    /** Cancels the alarm and forgets the key. The waiting copy goes too, unless [keepWaiting] is set. */
+    private fun cancelKey(key: String, keepWaiting: Boolean = false) {
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             key.hashCode(),
@@ -215,5 +320,6 @@ class GroupReminderScheduler(private val context: Context) {
             pendingIntent.cancel()
         }
         prefs.edit { remove(key) }
+        if (!keepWaiting) forgetWaiting { it == key }
     }
 }

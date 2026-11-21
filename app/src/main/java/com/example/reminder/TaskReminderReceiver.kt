@@ -212,6 +212,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
             intent.getStringExtra(EXTRA_REMINDER_OPTION),
             intent.getLongExtra(EXTRA_TRIGGER_AT, 0L)
         )
+        // Same for a group reminder, so the guard does not show it a second time as "late".
+        intent.getStringExtra(EXTRA_REMINDER_OPTION)
+            ?.takeIf { it.startsWith("GROUP_") }
+            ?.let { GroupReminderScheduler(context).markHandled(it.removePrefix("GROUP_")) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED

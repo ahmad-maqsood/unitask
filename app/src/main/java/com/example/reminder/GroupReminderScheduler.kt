@@ -9,7 +9,11 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.example.MainActivity
+import com.example.R
+import com.example.data.groups.GroupCacheRepository
 import com.example.data.groups.GroupTask
+import com.example.util.AuthStorage
+import com.example.util.DateFormats
 import com.example.data.local.ReminderOption
 import com.example.data.local.decodeReminderOptions
 import com.example.data.local.computeDeadlineMillis
@@ -89,6 +93,39 @@ class GroupReminderScheduler(private val context: Context) {
     /** The alarm rang: it is not waiting any more. [key] is the extra the receiver got, without "GROUP_". */
     fun markHandled(key: String) {
         if (waitingPrefs.contains(key)) waitingPrefs.edit { remove(key) }
+    }
+
+    /**
+     * For the "missed reminders" notification after the phone started: one line for every group task
+     * whose reminder should have rung in the last 12 hours while the phone was off. Needs no internet:
+     * the saved copy of the groups tells whether the task is still open. A task that is done, deleted,
+     * turned off on this phone, or not in the saved copy gets no line. Everything that was waiting and
+     * is past is forgotten here, so the guard does not show the same reminders again one by one.
+     */
+    suspend fun takeMissedLines(now: Long = System.currentTimeMillis()): List<String> {
+        val missed = pickLate(waitingEntries(), now, graceMillis = 0L)
+        if (missed.isEmpty()) return emptyList()
+        forgetWaiting { it in missed }
+
+        val uid = AuthStorage.getLastUid(context).orEmpty()
+        val state = GroupCacheRepository(context).getGroupsState(uid) ?: return emptyList()
+        val turnedOff = GroupTaskOffStore.keys(context)
+        val lines = LinkedHashMap<String, String>()
+        for (key in missed) {
+            val groupId = key.substringBefore('|')
+            val taskId = taskIdOf(key)
+            val itemKey = "$groupId|$taskId"
+            if (itemKey in lines || GroupTaskOffStore.keyOf(groupId, taskId) in turnedOff) continue
+            val snapshot = state.loaded.firstOrNull { it.groupId == groupId } ?: continue
+            val task = snapshot.tasks.firstOrNull { it.id == taskId } ?: continue
+            if (task.id in snapshot.done) continue
+            lines[itemKey] = context.getString(
+                R.string.missed_reminder_line,
+                "${task.title} (${snapshot.groupName})",
+                DateFormats.shortDateAtClock(context, deadlineMillis(task))
+            )
+        }
+        return lines.values.toList()
     }
 
     /**

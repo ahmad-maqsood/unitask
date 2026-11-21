@@ -45,4 +45,13 @@ class GroupLateRemindersTest {
         )
         assertEquals(listOf("g|a|AT_DEADLINE", "g|b|AT_DEADLINE"), GroupReminderScheduler.pickLate(waiting, now))
     }
+
+    @Test
+    fun withNoGraceEverythingPastInsideTheWindowIsPicked() {
+        val waiting = mapOf(
+            "g|a|AT_DEADLINE" to value(now - 1 * minute),
+            "g|b|AT_DEADLINE" to value(now + hour)
+        )
+        assertEquals(listOf("g|a|AT_DEADLINE"), GroupReminderScheduler.pickLate(waiting, now, graceMillis = 0L))
+    }
 }

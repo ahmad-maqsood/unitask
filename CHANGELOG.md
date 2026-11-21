@@ -2,6 +2,29 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.7.0] - 21-11-2026
+[Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.7.0)
+
+### Added
+- Added comprehensive localization support for Urdu, covering UI elements, notifications, error messages, backup/restore status, timer labels, and settings.
+
+### Improved
+- Group task lists now display finished tasks at the end and maintain deadline order to prevent unexpected reordering.
+- Group reminders now utilize 'ReminderGuard' to display missed notifications caused by system restarts or battery cleaners.
+- Missed group reminders are now consolidated into a single 'Missed reminder' notification alongside personal reminders.
+- Updated group reminders to ensure newer notifications replace earlier ones for the same task.
+- Improved robustness of cancellation handling for Drive backup/restore, note saving, and file imports to prevent false error messages.
+- Search functionality now correctly matches 'My tasks' in the selected app language.
+- Timetable cancelled-classes list now uses lifecycle-aware state collection to reduce background resource usage.
+
+### Fixed
+- Fixed an issue where the QR scanner camera would continue to initialize after the dialog was closed.
+- Resolved an issue where cancelled restore operations would skip files instead of stopping immediately.
+
+### Developer & project maintenance
+- Refined ProGuard rules for @Serializable classes to improve R8 code shrinking.
+- Removed unused Gradle settings and documentation workflows.
+
 ## [4.6.0] - 18-11-2026
 [Download APK](https://github.com/CondaLabs/unitask/releases/tag/v4.6.0)
 

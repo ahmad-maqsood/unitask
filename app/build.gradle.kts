@@ -10,7 +10,11 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(37) }
+  compileSdk {
+    version = release(37) {
+      minorApiLevel = 1
+    }
+  }
 
   defaultConfig {
     applicationId = "com.aistudio.unitask.zrvqk"

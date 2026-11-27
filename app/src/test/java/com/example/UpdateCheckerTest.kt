@@ -38,11 +38,11 @@ class UpdateCheckerTest {
     @Test
     fun apkUrlPointsAtTheReleaseAsset() {
         assertEquals(
-            "https://github.com/CondaLabs/unitask/releases/download/v4.5.0/UniTask-4.5.0.apk",
+            "https://github.com/ahmad-maqsood/unitask/releases/download/v4.5.0/UniTask-4.5.0.apk",
             UpdateChecker.apkUrlForTag("v4.5.0")
         )
         assertEquals(
-            "https://github.com/CondaLabs/unitask/releases/download/v4.6.0-beta.1/UniTask-4.6.0-beta.1.apk",
+            "https://github.com/ahmad-maqsood/unitask/releases/download/v4.6.0-beta.1/UniTask-4.6.0-beta.1.apk",
             UpdateChecker.apkUrlForTag("v4.6.0-beta.1")
         )
     }

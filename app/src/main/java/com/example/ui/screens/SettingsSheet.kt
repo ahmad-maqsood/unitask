@@ -112,8 +112,8 @@ import com.example.ui.theme.AccentTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private const val SOURCE_CODE_URL = "https://github.com/CondaLabs/unitask"
-private const val LATEST_RELEASE_URL = "https://github.com/CondaLabs/unitask/releases/latest"
+private const val SOURCE_CODE_URL = "https://github.com/ahmad-maqsood/unitask"
+private const val LATEST_RELEASE_URL = "https://github.com/ahmad-maqsood/unitask/releases/latest"
 internal const val REPORT_FORM_URL =
     "https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform?usp=pp_url&entry.1106186054="
 private const val FEATURE_FORM_URL =
@@ -599,7 +599,7 @@ fun SettingsButton(
                                     SettingsRow(
                                         icon = Icons.Default.Code,
                                         title = stringResource(R.string.settings_source_code),
-                                        subtitle = "github.com/CondaLabs/unitask",
+                                        subtitle = "github.com/ahmad-maqsood/unitask",
                                         onClick = {
                                             try {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, SOURCE_CODE_URL.toUri()))

@@ -2,6 +2,24 @@
 
 All notable changes to UniTask are documented in this file.
 
+## [4.8.0] - 27-11-2026
+[Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.8.0)
+
+### Added
+- Introduced a Markdown guide accessible via the book icon in the notes top bar, featuring interactive examples and previews with Urdu text support.
+- Added a 'Plum' accent theme with high-contrast light and dark color schemes.
+
+### Improved
+- Updated repository links and the in-app update checker to reflect the migration to the new repository owner.
+
+### Developer & project maintenance
+- Updated Android Compose BOM, CameraX, Robolectric, AGP, and Gradle Wrapper.
+- Refreshed automated README screenshots.
+- Added the official v4.7.0 changelog entry to documentation.
+- Implemented a new release workflow to automate versioning via input.
+- Removed the unused foojay toolchain resolver plugin from CI to resolve build issues.
+- Updated GitHub Actions including setup-java, CodeQL, and OSSF Scorecard.
+
 ## [4.7.0] - 21-11-2026
 [Download APK](https://github.com/ahmad-maqsood/unitask/releases/tag/v4.7.0)
 

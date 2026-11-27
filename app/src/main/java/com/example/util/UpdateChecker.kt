@@ -39,13 +39,13 @@ sealed class UpdateResult {
 object UpdateChecker {
 
     private const val RELEASES_PAGE =
-        "https://github.com/CondaLabs/unitask/releases/latest"
+        "https://github.com/ahmad-maqsood/unitask/releases/latest"
 
     private const val RELEASE_BY_TAG_API =
-        "https://api.github.com/repos/CondaLabs/unitask/releases/tags/"
+        "https://api.github.com/repos/ahmad-maqsood/unitask/releases/tags/"
 
     private const val RELEASE_DOWNLOAD_BASE =
-        "https://github.com/CondaLabs/unitask/releases/download/"
+        "https://github.com/ahmad-maqsood/unitask/releases/download/"
 
     /** "v4.5.0" becomes ".../releases/download/v4.5.0/UniTask-4.5.0.apk". */
     fun apkUrlForTag(tag: String): String {

@@ -1348,4 +1348,27 @@
     <string name="timer_notif_countdown_format">%1$d منٹ کا کاؤنٹ ڈاؤن</string>
     <string name="backup_reminder_never">آپ کے کورسز، ٹاسکس اور نوٹس صرف اس فون میں ہیں، اور آپ نے ابھی تک بیک اپ نہیں بنایا۔</string>
     <string name="backup_reminder_days_ago_format">آپ کا آخری بیک اپ %1$d دن پہلے بنا تھا۔ آپ کے کورسز، ٹاسکس اور نوٹس صرف اس فون میں ہیں۔</string>
+    <string name="markdown_guide_open">مارک ڈاؤن گائیڈ</string>
+    <string name="markdown_guide_intro">مارک ڈاؤن سادہ متن ہے جس میں چند نشان استعمال ہوتے ہیں۔ نوٹ میں ترمیم کرتے وقت یہ نشان لکھیں، پھر نتیجہ دیکھنے کے لیے آنکھ والے آئیکن پر ٹیپ کریں۔</string>
+    <string name="markdown_guide_you_type">آپ لکھتے ہیں</string>
+    <string name="markdown_guide_you_see">آپ دیکھتے ہیں</string>
+    <string name="markdown_guide_tip">انہیں زبانی یاد رکھنے کی ضرورت نہیں۔ ایڈیٹر کے نیچے موجود ٹول بار ان میں سے زیادہ تر خود شامل کر دیتا ہے، اور تصاویر بھی لگا سکتا ہے۔</string>
+    <string name="markdown_guide_headings_title">سرخیاں</string>
+    <string name="markdown_guide_headings_help">لائن کے شروع میں # لکھیں اور پھر ایک اسپیس دیں۔ جتنے زیادہ # ہوں گے، سرخی اتنی چھوٹی ہوگی۔</string>
+    <string name="markdown_guide_emphasis_title">موٹا، ترچھا اور کٹا ہوا متن</string>
+    <string name="markdown_guide_emphasis_help">الفاظ کے دونوں طرف نشان لگائیں: موٹے متن کے لیے دو ستارے، ترچھے کے لیے ایک ستارہ، اور کاٹنے کے لیے دو ٹِلڈا (~~)۔</string>
+    <string name="markdown_guide_lists_title">فہرستیں</string>
+    <string name="markdown_guide_lists_help">نقطوں والی فہرست کے لیے - لکھیں، اور ترتیب وار مراحل کے لیے نمبر اور نقطہ۔ کسی آئٹم کو اندر کرنے کے لیے شروع میں دو اسپیس دیں۔</string>
+    <string name="markdown_guide_checklist_title">چیک لسٹ</string>
+    <string name="markdown_guide_checklist_help">[ ] کا مطلب ہے کام باقی ہے اور [x] کا مطلب ہے مکمل۔ پریویو میں کسی آئٹم پر ٹیپ کرکے ٹک لگائیں۔ نیچے آزما کر دیکھیں۔</string>
+    <string name="markdown_guide_quote_title">اقتباس</string>
+    <string name="markdown_guide_quote_help">کسی تعریف یا اقتباس کو نمایاں کرنے کے لیے لائن کے شروع میں &gt; لکھیں اور ایک اسپیس دیں۔</string>
+    <string name="markdown_guide_code_title">کوڈ</string>
+    <string name="markdown_guide_code_help">جملے کے اندر کوڈ کے دونوں طرف ایک بیک ٹِک (`) لگائیں۔ پورے بلاک کے لیے اس سے پہلے اور بعد میں الگ لائن پر تین بیک ٹِک لکھیں۔ رنگوں کے لیے زبان کا نام بھی لکھیں۔</string>
+    <string name="markdown_guide_links_title">لنکس</string>
+    <string name="markdown_guide_links_help">[متن](پتہ) ویب سائٹ کھولتا ہے۔ [[نوٹ کا عنوان]] آپ کا کوئی دوسرا نوٹ کھولتا ہے۔</string>
+    <string name="markdown_guide_tables_title">جدول</string>
+    <string name="markdown_guide_tables_help">کالموں کو | سے الگ کریں۔ ڈیش والی دوسری لائن کالموں کے ناموں کے نیچے آتی ہے۔</string>
+    <string name="markdown_guide_divider_title">تقسیم کی لکیر</string>
+    <string name="markdown_guide_divider_help">موضوعات کو الگ کرنے کے لیے ایک الگ لائن پر تین ڈیش لکھیں اور اس سے اوپر ایک خالی لائن چھوڑیں۔</string>
 </resources>

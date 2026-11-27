@@ -368,4 +368,16 @@ class NotesFlowTest {
 
         composeRule.onNodeWithTag("note_export_dialog").assertDoesNotExist()
     }
+
+    @Test
+    fun guideButtonOpensMarkdownGuideAndBackReturnsToList() {
+        waitForNotesList()
+        composeRule.onNodeWithTag("notes_markdown_guide_button").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("markdown_guide_screen").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("markdown_guide_back_button").performClick()
+        composeRule.waitForIdle()
+        waitForNotesList()
+    }
 }

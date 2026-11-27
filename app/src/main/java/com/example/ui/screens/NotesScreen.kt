@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -116,6 +117,7 @@ fun NotesScreen(
     onOpenNote: (Long) -> Unit,
     onNewNote: () -> Unit,
     onClose: () -> Unit,
+    onOpenGuide: () -> Unit,
     viewModel: NotesViewModel = viewModel(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
@@ -358,6 +360,16 @@ fun NotesScreen(
                         }
                     }
                   } else {
+                    IconButton(
+                        onClick = onOpenGuide,
+                        modifier = Modifier.testTag("notes_markdown_guide_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                            contentDescription = stringResource(R.string.markdown_guide_open)
+                        )
+                    }
+
                     Box {
                         IconButton(
                             onClick = { showSortMenu = true },

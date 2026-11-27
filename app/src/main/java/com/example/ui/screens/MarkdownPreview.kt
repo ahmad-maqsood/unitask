@@ -166,6 +166,32 @@ fun MarkdownPreview(
 }
 
 /**
+ * Renders a short piece of markdown at its natural height, without its own scrolling, so it can
+ * sit inside another list (used by the Markdown guide). Use [MarkdownPreview] for whole notes.
+ */
+@Composable
+internal fun MarkdownSnippet(
+    markdown: String,
+    onToggleChecklist: (lineIndex: Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val blocks = remember(markdown) { parseMarkdownIndexed(markdown).blocks }
+    Column(modifier = modifier.fillMaxWidth()) {
+        blocks.forEachIndexed { index, block ->
+            Box(modifier = Modifier.padding(top = blockGap(blocks.getOrNull(index - 1), block))) {
+                RenderMarkdownBlock(
+                    block = block,
+                    onToggleChecklist = onToggleChecklist,
+                    imageContent = null,
+                    context = context
+                )
+            }
+        }
+    }
+}
+
+/**
  * The list item that shows block [block]. With a header, item 0 is the header and the blocks
  * follow it. Block 0 maps to the very top so the header stays in view.
  */

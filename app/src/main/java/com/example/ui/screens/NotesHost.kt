@@ -46,6 +46,7 @@ fun NotesHost(
     var editorSession by rememberSaveable { mutableIntStateOf(0) }
     // When a new note is started inside a folder, it is filed into that folder
     var newNoteFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showMarkdownGuide by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     com.example.ui.RegisterMessageHost(snackbarHostState)
     val coroutineScope = rememberCoroutineScope()
@@ -57,7 +58,7 @@ fun NotesHost(
         }
     }
 
-    BackHandler(enabled = editorTarget == null) {
+    BackHandler(enabled = editorTarget == null && !showMarkdownGuide) {
         onClose()
     }
 
@@ -93,6 +94,8 @@ fun NotesHost(
                     // Keeps it above the formatting toolbar.
                     .padding(bottom = 56.dp)
             )
+        } else if (showMarkdownGuide) {
+            MarkdownGuideScreen(onClose = { showMarkdownGuide = false })
         } else {
             NotesScreen(
                 onOpenNote = { id ->
@@ -106,6 +109,7 @@ fun NotesHost(
                     editorTarget = "new"
                 },
                 onClose = onClose,
+                onOpenGuide = { showMarkdownGuide = true },
                 viewModel = viewModel,
                 snackbarHostState = snackbarHostState
             )

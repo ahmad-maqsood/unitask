@@ -1040,6 +1040,7 @@
     <string name="accent_amber">Golden amber</string>
     <string name="accent_graphite">Graphite</string>
     <string name="accent_mocha">Mocha</string>
+    <string name="accent_plum">Plum</string>
     <string name="accent_selected_desc">%1$s, selected</string>
     <string name="repeat_none">Does not repeat</string>
     <string name="repeat_daily">Every day</string>

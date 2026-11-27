@@ -23,7 +23,8 @@ enum class AccentTheme(val label: String, @StringRes val labelRes: Int, val swat
     COBALT("Cobalt blue", R.string.accent_cobalt, Color(0xFF1653C5)),
     AMBER("Golden amber", R.string.accent_amber, Color(0xFFB07408)),
     GRAPHITE("Graphite", R.string.accent_graphite, Color(0xFF454F5F)),
-    MOCHA("Mocha", R.string.accent_mocha, Color(0xFF7B4D32))
+    MOCHA("Mocha", R.string.accent_mocha, Color(0xFF7B4D32)),
+    PLUM("Plum", R.string.accent_plum, Color(0xFF8E2A7C))
 }
 
 fun lightSchemeFor(accent: AccentTheme): ColorScheme = when (accent) {
@@ -37,6 +38,7 @@ fun lightSchemeFor(accent: AccentTheme): ColorScheme = when (accent) {
     AccentTheme.AMBER -> AmberLightScheme
     AccentTheme.GRAPHITE -> GraphiteLightScheme
     AccentTheme.MOCHA -> MochaLightScheme
+    AccentTheme.PLUM -> PlumLightScheme
 }
 
 fun darkSchemeFor(accent: AccentTheme): ColorScheme = when (accent) {
@@ -50,6 +52,7 @@ fun darkSchemeFor(accent: AccentTheme): ColorScheme = when (accent) {
     AccentTheme.AMBER -> AmberDarkScheme
     AccentTheme.GRAPHITE -> GraphiteDarkScheme
     AccentTheme.MOCHA -> MochaDarkScheme
+    AccentTheme.PLUM -> PlumDarkScheme
 }
 
 // Indigo is the original look. It uses the colours already defined in Color.kt.
@@ -670,4 +673,69 @@ private val MochaDarkScheme = darkColorScheme(
         surfaceContainer = Color(0xFF2C2520),
         surfaceContainerHigh = Color(0xFF382E29),
         surfaceContainerHighest = Color(0xFF433730)
+    )
+
+// ---------- Plum ----------
+private val PlumLightScheme = lightColorScheme(
+        primary = Color(0xFF8E2A7C),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFFBDAF3),
+        onPrimaryContainer = Color(0xFF451139),
+        secondary = Color(0xFFA8466B),
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFFBDAE6),
+        onSecondaryContainer = Color(0xFF451124),
+        tertiary = Color(0xFF8C6112),
+        onTertiary = Color(0xFFFFFFFF),
+        tertiaryContainer = Color(0xFFFBEFD5),
+        onTertiaryContainer = Color(0xFF45330F),
+        error = ErrorLight,
+        onError = OnErrorLight,
+        errorContainer = ErrorContainerLight,
+        onErrorContainer = OnErrorContainerLight,
+        background = Color(0xFFFAF6F9),
+        onBackground = Color(0xFF24141F),
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF24141F),
+        surfaceVariant = Color(0xFFF3EAF0),
+        onSurfaceVariant = Color(0xFF694D62),
+        outline = Color(0xFF997B91),
+        outlineVariant = Color(0xFFE5D6E0),
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFFDF9FC),
+        surfaceContainer = Color(0xFFF7F1F5),
+        surfaceContainerHigh = Color(0xFFF4EBF1),
+        surfaceContainerHighest = Color(0xFFF0E4EC)
+    )
+
+private val PlumDarkScheme = darkColorScheme(
+        primary = Color(0xFFE48AD2),
+        onPrimary = Color(0xFF390E30),
+        primaryContainer = Color(0xFF582451),
+        onPrimaryContainer = Color(0xFFFFD6F5),
+        secondary = Color(0xFFE293AE),
+        onSecondary = Color(0xFF390E1C),
+        secondaryContainer = Color(0xFF532235),
+        onSecondaryContainer = Color(0xFFFFD6E4),
+        tertiary = Color(0xFFE6BD6A),
+        onTertiary = Color(0xFF39290E),
+        tertiaryContainer = Color(0xFF594522),
+        onTertiaryContainer = Color(0xFFFFEFCF),
+        error = ErrorDark,
+        onError = OnErrorDark,
+        errorContainer = ErrorContainerDark,
+        onErrorContainer = OnErrorContainerDark,
+        background = Color(0xFF1C101A),
+        onBackground = Color(0xFFF4E9F1),
+        surface = Color(0xFF281725),
+        onSurface = Color(0xFFF4E9F1),
+        surfaceVariant = Color(0xFF3C2637),
+        onSurfaceVariant = Color(0xFFC8ABC0),
+        outline = Color(0xFF926E88),
+        outlineVariant = Color(0xFF4C3046),
+        surfaceContainerLowest = Color(0xFF160C14),
+        surfaceContainerLow = Color(0xFF241421),
+        surfaceContainer = Color(0xFF2E1C2A),
+        surfaceContainerHigh = Color(0xFF382333),
+        surfaceContainerHighest = Color(0xFF432A3D)
     )

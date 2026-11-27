@@ -41,6 +41,18 @@ The `certificate SHA-256 digest` line should read:
 f000bcf3c12e6ed4764b30765f6d58e083f163b1c2ba997f35f6a03e3468b818
 ```
 
+## Preparing a release (maintainers)
+
+1. Open **Actions**, then **Build release APK**, and choose **Run workflow** on the `main` branch.
+2. Enter the version, for example `4.8.0` or `4.8.0-beta1`, and tick **Prepare a draft release**. The workflow sets `versionName` to it and works out the next `versionCode`, so you do not edit `app/build.gradle.kts` by hand.
+3. Review the draft release and the `chore: release` pull request, which holds the version bump and the changelog entry. Merge the pull request, then publish the draft.
+
+Merge that pull request before preparing the next release. For a test APK, leave the box unticked. With the version left empty, the numbers already in the file are used.
+
+If a run stops after pushing the `release/changelog-v...` branch but before opening its pull request, delete that branch (and any draft release it made) before running again.
+
+The release tag points at the version-bump commit. The provenance records the commit the run started from, and the workflow's only source change on top of it is that version bump.
+
 ## Important notes
 
 - Download APKs and provenance files from the same official GitHub Release.

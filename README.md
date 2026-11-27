@@ -139,12 +139,12 @@ Reminders, backup and account options, one section at a time.
 
 ### Themes
 
-UniTask follows the system theme or can be set to light or dark, with ten accent colours chosen in Settings.
+UniTask follows the system theme or can be set to light or dark, with eleven accent colours chosen in Settings.
 
 <table align="center">
   <tr>
     <td align="center" valign="top"><a href="docs/screenshots/theme_dark.jpg"><img src="docs/screenshots/theme_dark.jpg" width="220" alt="Dark theme" /></a><br/><sub><b>Dark theme</b><br/>Deadlines in dark mode</sub></td>
-    <td align="center" valign="top"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Ten accent colours, shown here in Rose</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Eleven accent colours, shown here in Rose</sub></td>
   </tr>
 </table>
 
@@ -216,6 +216,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 ### Notes
 
 - **Markdown notes.** Notes with an optional course tag, opened from the More menu in the top bar.
+- **Markdown guide.** The book icon at the top of Notes opens a short guide that shows what to type and what you get.
   - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
   - Edit and Preview modes with interactive checklists that can be ticked in Preview.
   - **Find in note** searches the text of the open note, in both Edit and Preview.
@@ -263,7 +264,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 
 ### Personalisation
 
-- Light, dark or system theme, and ten accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite and Mocha.
+- Light, dark or system theme, and eleven accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite, Mocha and Plum.
 - Themed icon on Android 13 and newer.
 - Notification sounds: the phone default, four built-in sounds or any ringtone on the phone. Each sound has its own notification channel, so Android remembers the volume you set.
 - English and Urdu (right-to-left layout included). The app follows the phone language; on Android 13 and newer you can also pick the language in **Settings, General, Language**.

@@ -33,8 +33,8 @@ sealed class UpdateResult {
 
 /**
  * Asks GitHub for the newest release of the app and compares its tag (for example "v1.0.1")
- * with this app's versionName (app/build.gradle.kts). Remember to raise versionName
- * whenever you publish a new release.
+ * with this app's versionName (app/build.gradle.kts). The "Build release APK" workflow
+ * sets versionName and versionCode from the version you type there.
  */
 object UpdateChecker {
 

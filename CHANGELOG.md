@@ -100,7 +100,7 @@ All notable changes to UniTask are documented in this file.
 - Resolved an issue where the update checker failed to follow redirects after the repository moved to a new organization; it now follows up to 5 redirects.
 
 ### Developer & project maintenance
-- Migrated all repository links and references to the ahmad-maqsood organization.
+- Updated repository links and references to the author's personal GitHub repository.
 - Removed obsolete legacy code related to group chat cleanup and personal sync cancellation.
 - Added a CODEOWNERS file to manage review requirements.
 - Improved screenshot automation to capture additional screens and added a --readme-only mode for gallery layout updates.

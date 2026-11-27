@@ -1,14 +1,21 @@
 name: Build release APK
 # Run manually from Actions > Build release APK.
 # Leave both options unticked for a test APK build.
+# Type a version (for example 4.8.0) and versionName and versionCode in app/build.gradle.kts are
+# set for you. Leave it empty to build with the numbers already in that file.
 # Use "Test AI release notes" to test Gemini without creating a release or building an APK.
-# Tick "Prepare draft release" only when preparing a new version's draft release and CHANGELOG PR.
+# Tick "Prepare draft release" (on main, with a version) to get a draft release and a pull request
+# holding the version bump and the CHANGELOG entry.
 # Nothing is published and main is never modified by this workflow.
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Version, e.g. 4.8.0 or 4.8.0-beta1 (required for a draft release)'
+        type: string
+        required: false
       prepare_release:
-        description: 'Prepare a draft GitHub release and CHANGELOG pull request (does not publish)'
+        description: 'Prepare a draft GitHub release and a version + CHANGELOG pull request (does not publish)'
         type: boolean
         default: false
       test_release_notes:
@@ -39,10 +46,23 @@ jobs:
           fetch-depth: 0
 
       - name: Validate workflow options
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
           if [ "${{ inputs.prepare_release }}" = "true" ] && [ "${{ inputs.test_release_notes }}" = "true" ]; then
             echo "::error::Choose either test AI release notes or prepare a draft release, not both."
             exit 1
+          fi
+          if [ "${{ inputs.prepare_release }}" = "true" ]; then
+            if [ -z "$VERSION_INPUT" ]; then
+              echo "::error::Enter a version to prepare a draft release."
+              exit 1
+            fi
+            # The release pull request is built on the commit this run started from
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::Prepare a draft release from the main branch."
+              exit 1
+            fi
           fi
 
       - name: Ensure release labels exist
@@ -55,6 +75,15 @@ jobs:
           gh label create bug --color "D73A4A" --description "Bug fixes for release notes" --force
           gh label create maintenance --color "FBCA04" --description "Maintenance and project updates" --force
           gh label create skip-release-notes --color "BFD4F2" --description "Exclude this pull request from release summaries" --force
+
+      - name: Set the app version
+        if: ${{ inputs.version != '' }}
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          python3 .github/scripts/bump_version.py --self-test
+          python3 .github/scripts/bump_version.py --version "$VERSION_INPUT"
+          git diff -- app/build.gradle.kts
 
       - name: Read app version
         id: version
@@ -95,7 +124,7 @@ jobs:
             TAG="v$NAME"
             BRANCH="release/changelog-v$NAME"
             if gh release view "$TAG" >/dev/null 2>&1; then
-              echo "::error::A GitHub Release named $TAG already exists. Increase versionName first."
+              echo "::error::A GitHub Release named $TAG already exists. Choose a new version."
               exit 1
             fi
             if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
@@ -107,7 +136,7 @@ jobs:
               exit 1
             fi
             if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-              echo "::error::Branch $BRANCH already exists. Review the earlier changelog PR."
+              echo "::error::Branch $BRANCH already exists. Review its pull request, or delete the branch if an earlier run stopped before opening one."
               exit 1
             fi
             EXISTING_PR=$(gh pr list --state all --head "$BRANCH" --json number --jq 'length')
@@ -124,7 +153,7 @@ jobs:
           if [ -z "$BASE_CODE" ]; then
             echo "::warning::Could not read versionCode at $BASE_TAG, so the versionCode check was skipped."
           elif [ "$CODE" -lt "$BASE_CODE" ]; then
-            echo "::error::versionCode $CODE is lower than $BASE_CODE in $BASE_TAG. Phones will refuse this update. Raise versionCode in app/build.gradle.kts."
+            echo "::error::versionCode $CODE is lower than $BASE_CODE in $BASE_TAG. Phones will refuse this update. Enter a version so it is raised automatically."
             exit 1
           elif [ "$CODE" -eq "$BASE_CODE" ]; then
             echo "::warning::versionCode $CODE is the same as in $BASE_TAG. Raise it unless this is meant to replace that build."
@@ -270,12 +299,32 @@ jobs:
             ${{ runner.temp }}/UniTask-${{ steps.version.outputs.name }}.apk.intoto.jsonl
           retention-days: 14
 
+      # The release tag must point at a commit that has the new version numbers. main is protected,
+      # so the bump is committed on the release branch and reaches main through the pull request.
+      - name: Commit the version bump
+        if: ${{ inputs.prepare_release }}
+        id: release_commit
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          BRANCH="release/changelog-v$NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add app/build.gradle.kts
+          # Nothing to commit when the file already held these numbers
+          git diff --cached --quiet || git commit -m "chore: set version $NAME (versionCode $CODE)"
+          git push origin "$BRANCH"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Create draft GitHub release
         if: ${{ inputs.prepare_release }}
         env:
           GH_TOKEN: ${{ github.token }}
           NAME: ${{ steps.version.outputs.name }}
           BASE_TAG: ${{ steps.notes.outputs.base_tag }}
+          RELEASE_SHA: ${{ steps.release_commit.outputs.sha }}
         run: |
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           PROVENANCE="$RUNNER_TEMP/UniTask-$NAME.apk.intoto.jsonl"
@@ -292,11 +341,11 @@ jobs:
           FLAGS="--draft"
           case "$NAME" in *-*) FLAGS="$FLAGS --prerelease" ;; esac
           gh release create "v$NAME" "$RUNNER_TEMP/UniTask-$NAME.apk" "$PROVENANCE" "$MAPPING" \
-            --target "$GITHUB_SHA" --title "UniTask $NAME" \
+            --target "$RELEASE_SHA" --title "UniTask $NAME" \
             --notes-file "$RUNNER_TEMP/release-description.md" $FLAGS
           echo "Created draft release v$NAME (compared with $BASE_TAG), including APK provenance and the R8 mapping file." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create CHANGELOG pull request
+      - name: Create the release pull request
         if: ${{ inputs.prepare_release }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -306,22 +355,18 @@ jobs:
           BRANCH="release/changelog-v$NAME"
           RELEASE_URL="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
           RELEASE_DATE=$(TZ=Asia/Karachi date +%d-%m-%Y)
-          git fetch origin main
-          git checkout -b "$BRANCH" origin/main
           python3 .github/scripts/release_notes.py insert-changelog \
             --changelog CHANGELOG.md --version "$NAME" --date "$RELEASE_DATE" \
             --download-url "$RELEASE_URL" --notes-file "$RUNNER_TEMP/changelog-entry.md"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
           git commit -m "docs: add release notes for $TAG"
           git push origin "$BRANCH"
           PR_URL=$(gh pr create --base main --head "$BRANCH" \
-            --title "docs: add CHANGELOG entry for $TAG" \
-            --body "Automatically generated release notes for $TAG. Review all entries, especially **Other Changes**, before merging. The matching GitHub Release is a draft and has not been published.
+            --title "chore: release $TAG" \
+            --body "Version bump and automatically generated release notes for $TAG. Review all entries, especially **Other Changes**, before merging. The matching GitHub Release is a draft and has not been published.
 
-          Merge this PR after reviewing the changelog; publish the draft release separately when ready.
+          Merge this PR after reviewing the changes; publish the draft release separately when ready.
 
           Generated by workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
-          echo "CHANGELOG pull request: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release pull request: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "Draft release: $RELEASE_URL" >> "$GITHUB_STEP_SUMMARY"

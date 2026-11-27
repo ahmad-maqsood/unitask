@@ -55,6 +55,9 @@ jobs:
           python3 -m py_compile .github/scripts/release_notes.py
           python3 .github/scripts/release_notes.py self-test
 
+      - name: Validate version-bump script
+        run: python3 .github/scripts/bump_version.py --self-test
+
       - name: Validate lint report script
         run: |
           python3 -m py_compile .github/scripts/lint_report.py

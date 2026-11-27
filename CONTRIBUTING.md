@@ -30,7 +30,7 @@ A unit test (`StringResourcesParityTest`) fails if a string name exists in one l
 ## Report a bug
 
 - In the app: **Settings, Report a problem**
-- Or [open an issue](https://github.com/CondaLabs/unitask/issues/new/choose) and pick **Bug report**
+- Or [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose) and pick **Bug report**
 - Or use the [form](https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform) (no GitHub account needed)
 
 Please include the app version, your phone model, your Android version, and the steps that cause the problem.
@@ -38,7 +38,7 @@ Please include the app version, your phone model, your Android version, and the 
 ## Suggest a feature or give feedback
 
 - In the app: **Settings, Request a feature**
-- Or [open an issue](https://github.com/CondaLabs/unitask/issues/new/choose) and pick **Feedback or feature idea**
+- Or [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose) and pick **Feedback or feature idea**
 
 ## Security problems
 

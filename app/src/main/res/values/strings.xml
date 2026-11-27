@@ -1040,6 +1040,7 @@
     <string name="accent_amber">Golden amber</string>
     <string name="accent_graphite">Graphite</string>
     <string name="accent_mocha">Mocha</string>
+    <string name="accent_plum">Plum</string>
     <string name="accent_selected_desc">%1$s, selected</string>
     <string name="repeat_none">Does not repeat</string>
     <string name="repeat_daily">Every day</string>
@@ -1422,4 +1423,27 @@
     <string name="timer_notif_countdown_format">%1$d minute countdown</string>
     <string name="backup_reminder_never">Your courses, tasks and notes are only on this phone, and you have not made a backup yet.</string>
     <string name="backup_reminder_days_ago_format">Your last backup was %1$d days ago. Your courses, tasks and notes are only on this phone.</string>
+    <string name="markdown_guide_open">Markdown guide</string>
+    <string name="markdown_guide_intro">Markdown is plain text with a few symbols. Type them while editing a note, then tap the eye icon to preview the result.</string>
+    <string name="markdown_guide_you_type">You type</string>
+    <string name="markdown_guide_you_see">You see</string>
+    <string name="markdown_guide_tip">No need to memorize these. The toolbar at the bottom of the editor adds most of them for you, and can insert images too.</string>
+    <string name="markdown_guide_headings_title">Headings</string>
+    <string name="markdown_guide_headings_help">Start a line with # and a space. More # signs make a smaller heading.</string>
+    <string name="markdown_guide_emphasis_title">Bold, italic and strikethrough</string>
+    <string name="markdown_guide_emphasis_help">Wrap words in symbols: two stars for bold, one star for italic, two tildes (~~) to cross out.</string>
+    <string name="markdown_guide_lists_title">Lists</string>
+    <string name="markdown_guide_lists_help">Use - for bullets, or a number and a dot for steps. Add two spaces first to nest an item.</string>
+    <string name="markdown_guide_checklist_title">Checklists</string>
+    <string name="markdown_guide_checklist_help">[ ] is not done and [x] is done. In preview, tap an item to tick it. Try it below.</string>
+    <string name="markdown_guide_quote_title">Quotes</string>
+    <string name="markdown_guide_quote_help">Start a line with &gt; and a space to make a definition or quote stand out.</string>
+    <string name="markdown_guide_code_title">Code</string>
+    <string name="markdown_guide_code_help">Use one backtick (`) around code inside a sentence. For a block, put three backticks on their own lines before and after it. Add a language name for colors.</string>
+    <string name="markdown_guide_links_title">Links</string>
+    <string name="markdown_guide_links_help">[text](address) opens a website. [[Note title]] opens another of your notes.</string>
+    <string name="markdown_guide_tables_title">Tables</string>
+    <string name="markdown_guide_tables_help">Separate columns with |. The second line, made of dashes, goes under the column names.</string>
+    <string name="markdown_guide_divider_title">Divider line</string>
+    <string name="markdown_guide_divider_help">Put three dashes on their own line, with an empty line above, to separate topics.</string>
 </resources>

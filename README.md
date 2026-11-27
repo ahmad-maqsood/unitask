@@ -9,17 +9,17 @@
 Deadlines, timetable, reminders, personal tasks and study groups in a single application.
 No advertising. No tracking.
 
-[![Release](https://img.shields.io/github/v/release/CondaLabs/unitask?style=flat-square&color=4F46E5)](https://github.com/CondaLabs/unitask/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/CondaLabs/unitask/total?style=flat-square&color=0D9488)](https://github.com/CondaLabs/unitask/releases)
+[![Release](https://img.shields.io/github/v/release/ahmad-maqsood/unitask?style=flat-square&color=4F46E5)](https://github.com/ahmad-maqsood/unitask/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/ahmad-maqsood/unitask/total?style=flat-square&color=0D9488)](https://github.com/ahmad-maqsood/unitask/releases)
 [![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Security scanning](https://img.shields.io/badge/security-scanning%20enabled-0D9488?style=flat-square&logo=github)](docs/SECURITY_SCANNING.md)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CondaLabs/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/CondaLabs/unitask)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ahmad-maqsood/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ahmad-maqsood/badge.svg)](https://hub.xerj.org/contributors/ahmad-maqsood)
 
-[**Download the latest APK**](https://github.com/CondaLabs/unitask/releases/latest)
+[**Download the latest APK**](https://github.com/ahmad-maqsood/unitask/releases/latest)
 
 [Overview](#overview) · [Screenshots](#screenshots) · [Installation](#installation) · [Building from source](#building-from-source) · [Features](#features) · [Architecture](#architecture) · [Privacy](#privacy-and-permissions) · [Security scanning](#security-scanning) · [Repository security](#repository-security) · [Limitations](#known-limitations) · [Support](#support)
 
@@ -139,12 +139,12 @@ Reminders, backup and account options, one section at a time.
 
 ### Themes
 
-UniTask follows the system theme or can be set to light or dark, with ten accent colours chosen in Settings.
+UniTask follows the system theme or can be set to light or dark, with eleven accent colours chosen in Settings.
 
 <table align="center">
   <tr>
     <td align="center" valign="top"><a href="docs/screenshots/theme_dark.jpg"><img src="docs/screenshots/theme_dark.jpg" width="220" alt="Dark theme" /></a><br/><sub><b>Dark theme</b><br/>Deadlines in dark mode</sub></td>
-    <td align="center" valign="top"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Ten accent colours, shown here in Rose</sub></td>
+    <td align="center" valign="top"><a href="docs/screenshots/theme_accent.jpg"><img src="docs/screenshots/theme_accent.jpg" width="220" alt="Accent colours" /></a><br/><sub><b>Accent colours</b><br/>Eleven accent colours, shown here in Rose</sub></td>
   </tr>
 </table>
 
@@ -154,14 +154,14 @@ Each screen is also available separately: [**Deadlines**](docs/screenshots/deadl
 
 ## Installation
 
-1. Open the [latest release](https://github.com/CondaLabs/unitask/releases/latest).
+1. Open the [latest release](https://github.com/ahmad-maqsood/unitask/releases/latest).
 2. Download the `.apk` file and open it on your phone. If Android asks, allow installation from your browser or file manager.
 3. To update an existing installation, use the update button in the top bar or open **Settings, About and help, Check for updates**. The check compares your installed version with the tag of the newest GitHub release. If the check does not work, open **Settings, About and help, Latest release** to go straight to the download page.
 
 UniTask requires **Android 7.0 (API 24)** or newer.
 
 > [!NOTE]
-> Beta builds are published as **pre-releases** on the [Releases page](https://github.com/CondaLabs/unitask/releases). They are not offered by **Check for updates** and must be installed manually.
+> Beta builds are published as **pre-releases** on the [Releases page](https://github.com/ahmad-maqsood/unitask/releases). They are not offered by **Check for updates** and must be installed manually.
 
 ## Building from source
 
@@ -174,7 +174,7 @@ UniTask requires **Android 7.0 (API 24)** or newer.
 **Build and test**
 
 ```bash
-git clone https://github.com/CondaLabs/unitask.git
+git clone https://github.com/ahmad-maqsood/unitask.git
 cd unitask
 ./gradlew assembleDebug        # builds a debug APK in app/build/outputs/apk/debug/
 ./gradlew testDebugUnitTest    # runs the unit tests
@@ -216,6 +216,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 ### Notes
 
 - **Markdown notes.** Notes with an optional course tag, opened from the More menu in the top bar.
+- **Markdown guide.** The book icon at the top of Notes opens a short guide that shows what to type and what you get.
   - Formatting toolbar with shortcuts for headings, bold, italic, strikethrough, checklists, bulleted and numbered lists, quotes, inline code, code blocks, links, tables and images.
   - Edit and Preview modes with interactive checklists that can be ticked in Preview.
   - **Find in note** searches the text of the open note, in both Edit and Preview.
@@ -263,7 +264,7 @@ Without a `.env` file the app still builds, using the placeholders, but groups w
 
 ### Personalisation
 
-- Light, dark or system theme, and ten accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite and Mocha.
+- Light, dark or system theme, and eleven accent colours: Indigo, Ocean teal, Forest green, Rose, Sunset orange, Violet, Cobalt blue, Golden amber, Graphite, Mocha and Plum.
 - Themed icon on Android 13 and newer.
 - Notification sounds: the phone default, four built-in sounds or any ringtone on the phone. Each sound has its own notification channel, so Android remembers the volume you set.
 - English and Urdu (right-to-left layout included). The app follows the phone language; on Android 13 and newer you can also pick the language in **Settings, General, Language**.
@@ -398,11 +399,11 @@ These automated checks are not a professional security audit, do not guarantee t
 
 ## Repository security
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CondaLabs/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/CondaLabs/unitask)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ahmad-maqsood/unitask/badge)](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask)
 
 UniTask uses [OpenSSF Scorecard](https://scorecard.dev/) to automatically assess repository security practices, such as workflow permissions, dependency management and code review protections. The assessment runs on pushes to `main` and weekly, and publishes its results to the public Scorecard service and GitHub Code Scanning.
 
-The Scorecard rating measures observable repository-development practices. It is not an Android application security audit and does not establish that the APK is vulnerability-free. Review the [Scorecard report](https://scorecard.dev/viewer/?uri=github.com/CondaLabs/unitask) for the individual checks and their limitations.
+The Scorecard rating measures observable repository-development practices. It is not an Android application security audit and does not establish that the APK is vulnerability-free. Review the [Scorecard report](https://scorecard.dev/viewer/?uri=github.com/ahmad-maqsood/unitask) for the individual checks and their limitations.
 
 ## Known limitations
 
@@ -418,7 +419,7 @@ More technical details, such as size limits and what a restore does exactly, are
 
 - **Report a problem:** in the app, open **Settings, Report a problem**, or use the [form](https://docs.google.com/forms/d/e/1FAIpQLSdJpx67ioTDiYOvbntGTh-5AGFb213DFMJNitEl12MYYZSYNw/viewform). No GitHub account is needed.
 - **Request a feature:** use **Settings, Request a feature** in the app.
-- **Bugs and ideas:** [open an issue](https://github.com/CondaLabs/unitask/issues/new/choose).
+- **Bugs and ideas:** [open an issue](https://github.com/ahmad-maqsood/unitask/issues/new/choose).
 - **Security issues:** please do not use a public issue. See [SECURITY.md](SECURITY.md).
 - **Release notes:** see the [changelog](CHANGELOG.md).
 

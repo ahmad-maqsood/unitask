@@ -33,19 +33,19 @@ sealed class UpdateResult {
 
 /**
  * Asks GitHub for the newest release of the app and compares its tag (for example "v1.0.1")
- * with this app's versionName (app/build.gradle.kts). Remember to raise versionName
- * whenever you publish a new release.
+ * with this app's versionName (app/build.gradle.kts). The "Build release APK" workflow
+ * sets versionName and versionCode from the version you type there.
  */
 object UpdateChecker {
 
     private const val RELEASES_PAGE =
-        "https://github.com/CondaLabs/unitask/releases/latest"
+        "https://github.com/ahmad-maqsood/unitask/releases/latest"
 
     private const val RELEASE_BY_TAG_API =
-        "https://api.github.com/repos/CondaLabs/unitask/releases/tags/"
+        "https://api.github.com/repos/ahmad-maqsood/unitask/releases/tags/"
 
     private const val RELEASE_DOWNLOAD_BASE =
-        "https://github.com/CondaLabs/unitask/releases/download/"
+        "https://github.com/ahmad-maqsood/unitask/releases/download/"
 
     /** "v4.5.0" becomes ".../releases/download/v4.5.0/UniTask-4.5.0.apk". */
     fun apkUrlForTag(tag: String): String {

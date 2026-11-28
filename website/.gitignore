@@ -1,0 +1,6 @@
+node_modules/
+dist/
+public/screenshots/*.webp
+public/app-icon.png
+.DS_Store
+*.log

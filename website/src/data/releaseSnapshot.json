@@ -1,0 +1,17 @@
+{
+  "tagName": "v4.8.0",
+  "name": "UniTask 4.8.0",
+  "publishedAt": "2026-11-27T07:41:23Z",
+  "htmlUrl": "https://github.com/ahmad-maqsood/unitask/releases/tag/v4.8.0",
+  "body": "## What's New\r\n- Access the new interactive Markdown guide via the book icon in the notes top bar to preview syntax and Urdu text.\r\n- Personalize your app with the new 'Plum' accent theme, available in both light and dark modes with high-contrast accessibility.\r\n\r\n## Improvements\r\n- Updated repository links and the update checker to ensure you stay connected to the new project home.\r\n",
+  "apk": {
+    "name": "UniTask-4.8.0.apk",
+    "size": 7375833,
+    "downloadUrl": "https://github.com/ahmad-maqsood/unitask/releases/download/v4.8.0/UniTask-4.8.0.apk"
+  },
+  "attestation": {
+    "name": "UniTask-4.8.0.apk.intoto.jsonl",
+    "size": 11269,
+    "downloadUrl": "https://github.com/ahmad-maqsood/unitask/releases/download/v4.8.0/UniTask-4.8.0.apk.intoto.jsonl"
+  }
+}

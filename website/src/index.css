@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  --accent-light: #4F46E5;
+  --accent-light-hover: #4338CA;
+  --accent-light-container: #E3E6FF;
+  --accent-light-on-container: #1E1B4B;
+
+  --accent-dark: #6366F1;
+  --accent-dark-text: #9AA8FF;
+  --accent-dark-hover: #5558EB;
+  --accent-dark-container: #2A2F63;
+  --accent-dark-on-container: #DDE2FF;
+
+  --accent-swatch: #4F46E5;
+
+  --accent: var(--accent-light);
+  --accent-hover: var(--accent-light-hover);
+  --accent-text: var(--accent-light);
+  --accent-container: var(--accent-light-container);
+  --accent-on-container: var(--accent-light-on-container);
+}
+
+.dark {
+  --accent: var(--accent-dark);
+  --accent-hover: var(--accent-dark-hover);
+  --accent-text: var(--accent-dark-text);
+  --accent-container: var(--accent-dark-container);
+  --accent-on-container: var(--accent-dark-on-container);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    overflow-x: clip;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+}
+
+/* Architectural hairline grid receding smoothly into the canvas */
+.hero-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 12%, #000 18%, transparent 80%);
+}
+
+.dark .hero-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+}
+
+/* Editorial dot matrix backdrop for legal and secondary views */
+.editorial-dot-bg {
+  background-image: radial-gradient(rgba(15, 23, 42, 0.09) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 80% 65% at 50% 0%, #000 10%, transparent 78%);
+}
+
+.dark .editorial-dot-bg {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+}
+
+/* Accent-tinted headline emphasis that keeps high legibility in both themes */
+.accent-headline-grad {
+  background-image: linear-gradient(
+    115deg,
+    var(--accent-light) 0%,
+    color-mix(in srgb, var(--accent-light) 74%, #0F172A) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .accent-headline-grad {
+  background-image: linear-gradient(
+    115deg,
+    #FFFFFF 0%,
+    var(--accent-dark-text) 58%,
+    color-mix(in srgb, var(--accent-dark-text) 85%, #FFFFFF) 100%
+  );
+}
+
+.accent-btn {
+  background-color: var(--accent);
+  color: #ffffff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 10px 26px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.accent-btn:hover {
+  background-color: var(--accent-hover);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.24) inset,
+    0 14px 32px -10px color-mix(in srgb, var(--accent) 82%, transparent);
+}
+
+.accent-text {
+  color: var(--accent-text);
+}
+
+.accent-icon-box {
+  background-color: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent-text);
+}
+
+.dark .accent-icon-box {
+  background-color: color-mix(in srgb, var(--accent-dark-text) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-dark-text) 24%, transparent);
+}
+
+.accent-tab-active {
+  background-color: color-mix(in srgb, var(--accent) 9%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  color: var(--accent-on-container);
+}
+
+.dark .accent-tab-active {
+  background-color: color-mix(in srgb, var(--accent-dark-text) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent-dark-text) 40%, transparent);
+  color: #ffffff;
+}
+
+/* Machined glass elevation */
+.glass-panel {
+  box-shadow:
+    0 24px 60px -28px rgba(15, 23, 42, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.dark .glass-panel {
+  box-shadow:
+    0 32px 80px -32px rgba(0, 0, 0, 0.78),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.glass-card {
+  box-shadow:
+    0 4px 16px -8px rgba(15, 23, 42, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.dark .glass-card {
+  box-shadow:
+    0 12px 32px -20px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+/* Sculpted phone hardware shell */
+.phone-chassis {
+  background: linear-gradient(155deg, #272B3B 0%, #12151F 42%, #0B0D14 100%);
+  box-shadow:
+    0 32px 72px -20px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+    0 2px 6px rgba(255, 255, 255, 0.14) inset;
+}
+
+.dark .phone-chassis {
+  box-shadow:
+    0 36px 84px -18px rgba(0, 0, 0, 0.88),
+    0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+    0 2px 8px rgba(255, 255, 255, 0.1) inset;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

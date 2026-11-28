@@ -1,0 +1,6 @@
+{
+  "name": "UniTask — Open-Source Android Task Manager",
+  "description": "Marketing website for UniTask, a free, local-first open-source Android app for university students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

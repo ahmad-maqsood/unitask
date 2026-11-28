@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniTask Privacy Policy</title>
+    <meta
+      name="description"
+      content="How the UniTask Android app handles your data, including local storage, optional Google sign-in, and private Google Drive backup."
+    />
+    <meta name="theme-color" content="#090B10" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="UniTask Privacy Policy" />
+    <meta
+      property="og:description"
+      content="How the UniTask Android app handles your data, including local storage, optional Google sign-in, and private Google Drive backup."
+    />
+    <meta property="og:image" content="%BASE_URL%app-icon.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="UniTask Privacy Policy" />
+    <meta
+      name="twitter:description"
+      content="How UniTask handles local data, optional study groups, and hidden Google Drive appdata backup."
+    />
+    <meta name="twitter:image" content="%BASE_URL%app-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%app-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('unitask-site-theme');
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+          var root = document.documentElement;
+          root.classList.toggle('dark', theme === 'dark');
+          root.style.colorScheme = theme;
+        } catch (_e) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[#F6F7F9] text-[#111422] dark:bg-[#090B10] dark:text-[#EEF1F8] antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
